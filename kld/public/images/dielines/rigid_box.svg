@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:lc="https://librecad.org" xmlns:xlink="http://www.w3.org/1999/xlink" width="744mm" height="330.5mm" viewBox="0 0 744 330.5">
+    <g lc:layername="0" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5">
+        <g lc:blockname="*U1">
+            <g lc:layername="0" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+            <g lc:layername="Defpoints" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+            <g lc:layername="cuts" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+            <g lc:layername="folds" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+        </g>
+        <g lc:blockname="traditional">
+            <g lc:layername="0" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+            <g lc:layername="Defpoints" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+            <g lc:layername="cuts" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5">
+                <line x1="0" y1="6.25" x2="58.5" y2="6.25"/>
+                <line x1="58.5" y1="6.25" x2="58.5" y2="64.75"/>
+                <line x1="61.5" y1="64.75" x2="61.5" y2="5.25"/>
+                <line x1="61.5" y1="5.25" x2="298.5" y2="5.25"/>
+                <line x1="298.5" y1="5.25" x2="298.5" y2="64.75"/>
+                <line x1="298.58578644" y1="65.25" x2="298.58578644" y2="65.25"/>
+                <line x1="301.5" y1="64.75" x2="301.5" y2="6.25"/>
+                <line x1="301.5" y1="6.25" x2="360" y2="6.25"/>
+                <line x1="360" y1="6.25" x2="360" y2="324.25"/>
+                <line x1="360" y1="324.25" x2="301.5" y2="324.25"/>
+                <line x1="301.5" y1="324.25" x2="301.5" y2="265.75"/>
+                <line x1="298.5" y1="265.75" x2="298.5" y2="325.25"/>
+                <line x1="298.5" y1="325.25" x2="61.5" y2="325.25"/>
+                <line x1="61.5" y1="325.25" x2="61.5" y2="265.75"/>
+                <line x1="61.41421356" y1="265.25" x2="61.41421356" y2="265.25"/>
+                <line x1="58.5" y1="265.75" x2="58.5" y2="324.25"/>
+                <line x1="58.5" y1="324.25" x2="0" y2="324.25"/>
+                <line x1="0" y1="324.25" x2="0" y2="6.25"/>
+                <line x1="0" y1="6.25" x2="0" y2="6.25"/>
+                <line x1="375" y1="1" x2="435" y2="1"/>
+                <line x1="435" y1="1" x2="435" y2="61"/>
+                <line x1="438" y1="61" x2="438" y2="0"/>
+                <line x1="438" y1="0" x2="681" y2="0"/>
+                <line x1="681" y1="0" x2="681" y2="61"/>
+                <line x1="681.08578644" y1="61.5" x2="681.08578644" y2="61.5"/>
+                <line x1="684" y1="61" x2="684" y2="1"/>
+                <line x1="684" y1="1" x2="744" y2="1"/>
+                <line x1="744" y1="1" x2="744" y2="329.5"/>
+                <line x1="744" y1="329.5" x2="684" y2="329.5"/>
+                <line x1="684" y1="329.5" x2="684" y2="269.5"/>
+                <line x1="681" y1="269.5" x2="681" y2="330.5"/>
+                <line x1="681" y1="330.5" x2="438" y2="330.5"/>
+                <line x1="438" y1="330.5" x2="438" y2="269.5"/>
+                <line x1="437.91421356" y1="269" x2="437.91421356" y2="269"/>
+                <line x1="435" y1="269.5" x2="435" y2="329.5"/>
+                <line x1="435" y1="329.5" x2="375" y2="329.5"/>
+                <line x1="375" y1="329.5" x2="375" y2="1"/>
+                <line x1="375" y1="1" x2="375" y2="1"/>
+                <path d="M58.5,64.75 C58.5,65.75 59,66.25 60,66.25 "/>
+                <path d="M60,66.25 C60.70710678,66.25 61.1785113,65.91666667 61.41421356,65.25 "/>
+                <path d="M61.41421356,65.25 C61.47140452,65.08823954 61.5,64.92157288 61.5,64.75 "/>
+                <path d="M298.5,64.75 C298.5,64.92157288 298.52859548,65.08823954 298.58578644,65.25 "/>
+                <path d="M298.58578644,65.25 C298.8214887,65.91666667 299.29289322,66.25 300,66.25 "/>
+                <path d="M300,66.25 C301,66.25 301.5,65.75 301.5,64.75 "/>
+                <path d="M301.5,265.75 C301.5,264.75 301,264.25 300,264.25 "/>
+                <path d="M300,264.25 C299.29289322,264.25 298.8214887,264.58333333 298.58578644,265.25 "/>
+                <path d="M298.58578644,265.25 C298.52859548,265.41176046 298.5,265.57842712 298.5,265.75 "/>
+                <path d="M61.5,265.75 C61.5,265.57842712 61.47140452,265.41176046 61.41421356,265.25 "/>
+                <path d="M61.41421356,265.25 C61.1785113,264.58333333 60.70710678,264.25 60,264.25 "/>
+                <path d="M60,264.25 C59,264.25 58.5,264.75 58.5,265.75 "/>
+                <path d="M435,61 C435,62 435.5,62.5 436.5,62.5 "/>
+                <path d="M436.5,62.5 C437.20710678,62.5 437.6785113,62.16666667 437.91421356,61.5 "/>
+                <path d="M437.91421356,61.5 C437.97140452,61.33823954 438,61.17157288 438,61 "/>
+                <path d="M681,61 C681,61.17157288 681.02859548,61.33823954 681.08578644,61.5 "/>
+                <path d="M681.08578644,61.5 C681.3214887,62.16666667 681.79289322,62.5 682.5,62.5 "/>
+                <path d="M682.5,62.5 C683.5,62.5 684,62 684,61 "/>
+                <path d="M684,269.5 C684,268.5 683.5,268 682.5,268 "/>
+                <path d="M682.5,268 C681.79289322,268 681.3214887,268.33333333 681.08578644,269 "/>
+                <path d="M681.08578644,269 C681.02859548,269.16176046 681,269.32842712 681,269.5 "/>
+                <path d="M438,269.5 C438,269.32842712 437.97140452,269.16176046 437.91421356,269 "/>
+                <path d="M437.91421356,269 C437.6785113,268.33333333 437.20710678,268 436.5,268 "/>
+                <path d="M436.5,268 C435.5,268 435,268.5 435,269.5 "/>
+            </g>
+            <g lc:layername="folds" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5">
+                <line x1="0" y1="66.25" x2="60" y2="66.25"/>
+                <line x1="60" y1="66.25" x2="60" y2="264.25"/>
+                <line x1="0" y1="264.25" x2="60" y2="264.25"/>
+                <line x1="61.41421356" y1="65.25" x2="298.58578644" y2="65.25"/>
+                <line x1="300" y1="66.25" x2="300" y2="264.25"/>
+                <line x1="298.58578644" y1="265.25" x2="61.41421356" y2="265.25"/>
+                <line x1="300" y1="66.25" x2="360" y2="66.25"/>
+                <line x1="300" y1="264.25" x2="360" y2="264.25"/>
+                <line x1="375" y1="62.5" x2="436.5" y2="62.5"/>
+                <line x1="436.5" y1="62.5" x2="436.5" y2="268"/>
+                <line x1="375" y1="268" x2="436.5" y2="268"/>
+                <line x1="437.91421356" y1="61.5" x2="681.08578644" y2="61.5"/>
+                <line x1="682.5" y1="62.5" x2="682.5" y2="268"/>
+                <line x1="681.08578644" y1="269" x2="437.91421356" y2="269"/>
+                <line x1="682.5" y1="62.5" x2="744" y2="62.5"/>
+                <line x1="682.5" y1="268" x2="744" y2="268"/>
+                <line x1="300" y1="66.25" x2="300" y2="66.251"/>
+            </g>
+        </g>
+    </g>
+    <g lc:layername="Defpoints" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+    <g lc:layername="cuts" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+    <g lc:layername="folds" lc:is_locked="false" lc:is_construction="false" fill="none" stroke="black" stroke-width="5"/>
+
+    <style>
+      * {
+        stroke-width: 2px !important;
+      }
+      svg { overflow: visible !important; }
+      </style>
+    
+</svg>

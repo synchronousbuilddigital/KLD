@@ -1,0 +1,31 @@
+{
+  "name": "kld-backend",
+  "version": "1.0.0",
+  "description": "Keyline Design - Backend API Server",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "keyline",
+    "design",
+    "packaging",
+    "backend"
+  ],
+  "author": "KLD Team",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.1",
+    "nodemailer": "^9.0.5",
+    "nodemon": "^3.1.14"
+  }
+}

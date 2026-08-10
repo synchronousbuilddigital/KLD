@@ -1,0 +1,152 @@
+/* =============================================
+   HoverPreviewCard – floating 3D preview popup
+   ============================================= */
+
+.hover-preview-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 1px solid rgba(210, 198, 182, 0.4);
+  box-shadow:
+    0 40px 80px -20px rgba(0, 0, 0, 0.2),
+    0 20px 40px -10px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+
+  /* Entry animation */
+  opacity: 0;
+  transform: translateY(20px) scale(0.92);
+  transition:
+    opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-preview-card--visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Small triangle pointer pointing down toward the hovered item */
+.hover-preview-card__pointer {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 12px solid rgba(255, 255, 255, 0.92);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.06));
+}
+
+/* ---- Header ---- */
+.hover-preview-card__header {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  right: 28px;
+  z-index: 2;
+}
+
+.hover-preview-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: #1c1917;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hover-preview-card__subtitle {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #B8956A;
+  margin: 6px 0 0;
+}
+
+/* ---- 3D Viewport ---- */
+.hover-preview-card__viewport {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1400px;
+  overflow: visible;
+}
+
+/* ---- Non-box floating image ---- */
+.hover-preview-card__float-container {
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.hover-preview-card__float-img {
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 30px 30px rgba(0, 0, 0, 0.15));
+  animation: hoverFloat 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes hoverFloat {
+  0% {
+    transform: translateY(0px) rotateY(-12deg) rotateX(4deg) scale(1);
+  }
+
+  25% {
+    transform: translateY(-12px) rotateY(0deg) rotateX(0deg) scale(1.03);
+  }
+
+  50% {
+    transform: translateY(-18px) rotateY(12deg) rotateX(-4deg) scale(1);
+  }
+
+  75% {
+    transform: translateY(-8px) rotateY(0deg) rotateX(0deg) scale(1.02);
+  }
+
+  100% {
+    transform: translateY(0px) rotateY(-12deg) rotateX(4deg) scale(1);
+  }
+}
+
+/* ---- State dots ---- */
+.hover-preview-card__dots {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  z-index: 2;
+}
+
+.hover-preview-card__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e7e5e4;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-preview-card__dot--active {
+  background: #B8956A;
+  transform: scale(1.4);
+  box-shadow: 0 0 8px rgba(184, 149, 106, 0.4);
+}
