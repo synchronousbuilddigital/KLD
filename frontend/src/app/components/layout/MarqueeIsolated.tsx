@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import './MarqueeIsolated.css';
-import HoverPreviewCard from '../../pages/HoverPreviewCard';
+import HoverPreviewCard, { TargetRect } from '../../pages/HoverPreviewCard';
 
 const boxTypes = [
   { label: "Tuck End", img: "/images/box.png" },
@@ -17,15 +17,18 @@ const boxTypes = [
 
 export default function MarqueeIsolated() {
   const [hoveredItem, setHoveredItem] = useState<{ label: string; img: string } | null>(null);
-  const [cardPos, setCardPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = useCallback((box: { label: string; img: string }, e: React.MouseEvent<HTMLDivElement>) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     const rect = e.currentTarget.getBoundingClientRect();
-    setCardPos({
-      x: rect.left + rect.width / 2,
-      y: rect.top
+    setTargetRect({
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      bottom: rect.bottom
     });
     setHoveredItem(box);
   }, []);
@@ -37,15 +40,16 @@ export default function MarqueeIsolated() {
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
+    const handleScrollOrResize = () => {
       setHoveredItem(null);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    // Also listen to wheel events in case it's a custom scroll container
-    window.addEventListener('wheel', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true });
+    window.addEventListener('wheel', handleScrollOrResize, { passive: true });
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('wheel', handleScroll);
+      window.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('wheel', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
     };
   }, []);
 
@@ -70,7 +74,11 @@ export default function MarqueeIsolated() {
   return (
     <>
       <section className="marquee-section">
-        <div className="marquee-container" id="marquee-container">
+        <div 
+          className={`marquee-container ${hoveredItem ? 'is-paused' : ''}`} 
+          id="marquee-container"
+          style={{ animationPlayState: hoveredItem ? 'paused' : undefined }}
+        >
           {Array.from({ length: 10 }).map((_, i) => (
             <React.Fragment key={i}>
               {renderItems()}
@@ -82,8 +90,7 @@ export default function MarqueeIsolated() {
       {hoveredItem && (
         <HoverPreviewCard
           item={hoveredItem}
-          posX={cardPos.x}
-          posY={cardPos.y}
+          targetRect={targetRect}
           onMouseEnter={() => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
           }}

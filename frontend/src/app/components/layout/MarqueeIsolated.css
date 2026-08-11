@@ -16,8 +16,10 @@
     animation: scroll 25s linear infinite;
 }
 
-.marquee-container:hover {
-    animation-play-state: paused;
+.marquee-container:hover,
+.marquee-container.is-paused,
+.marquee-section:hover .marquee-container {
+    animation-play-state: paused !important;
 }
 
 @keyframes scroll {

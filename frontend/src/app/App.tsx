@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Package, ChevronRight, Sliders, RefreshCw, Layers, Image as ImageIcon, Printer } from 'lucide-react';
+import { ArrowRight, Package, ChevronRight, ChevronDown, Check, Sliders, RefreshCw, Layers, Image as ImageIcon, Printer } from 'lucide-react';
 import NewHomeLanding from './pages/NewHomeLanding';
 import PackagingCollections from './pages/PackagingCollections';
 import MockupDetails from './pages/MockupDetails';
@@ -471,6 +471,7 @@ export default function App() {
 
   // Design Lab Interactive Workspace States
   const [activeTab, setActiveTab] = useState('dimensions');
+  const [isStudioDropdownOpen, setIsStudioDropdownOpen] = useState(false);
   const [width, setWidth] = useState(305);
   const [height, setHeight] = useState(305);
   const [depth, setDepth] = useState(305);
@@ -507,6 +508,7 @@ export default function App() {
           id: 'active-session-draft',
           name: `Current Custom Box (${width} × ${depth} × ${height} mm)`,
           category: 'Tuck End Box',
+          tabCategory: 'projects',
           dimensions: { L: width, W: depth, H: height },
           updatedAt: new Date().toISOString(),
           isDraft: true,
@@ -969,36 +971,73 @@ export default function App() {
                 <div className="lg:col-span-5 border-r border-zinc-800/80 p-8 flex flex-col justify-between bg-zinc-900/20">
                   <div className="space-y-6">
 
-                    {/* Selector Tabs */}
-                    <div className="flex border border-zinc-800 rounded-xl bg-zinc-950/50 p-1 gap-1">
+                    {/* Selector Dropdown */}
+                    <div className="relative w-full z-30">
                       <button
-                        onClick={() => setActiveTab('dimensions')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'dimensions' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
+                        type="button"
+                        onClick={() => setIsStudioDropdownOpen(!isStudioDropdownOpen)}
+                        className="w-full flex items-center justify-between bg-zinc-900/90 border border-zinc-700/80 hover:border-zinc-500 text-white rounded-xl px-4 py-3 shadow-md transition-all cursor-pointer"
                       >
-                        <Sliders className="w-3.5 h-3.5" /> Size
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-bold">
+                            {activeTab === 'dimensions' && <Sliders className="w-4 h-4 text-black" />}
+                            {activeTab === 'folding' && <RefreshCw className="w-4 h-4 text-black" />}
+                            {activeTab === 'materials' && <Layers className="w-4 h-4 text-black" />}
+                            {activeTab === 'artwork' && <ImageIcon className="w-4 h-4 text-black" />}
+                          </div>
+                          <div className="text-left">
+                            <div className="text-xs font-bold text-white uppercase tracking-wider">
+                              {activeTab === 'dimensions' && 'Size & Dimensions'}
+                              {activeTab === 'folding' && 'Assembly & Fold States'}
+                              {activeTab === 'materials' && 'Material & Finish Simulator'}
+                              {activeTab === 'artwork' && 'Brand & Artwork Decal'}
+                            </div>
+                            <div className="text-[10px] text-zinc-400 font-medium">
+                              {activeTab === 'dimensions' && 'Customize Box Width, Depth & Height'}
+                              {activeTab === 'folding' && 'Animate Lid & Flap Fold Sequences'}
+                              {activeTab === 'materials' && 'Kraft, Matte, Gloss & Gold Foil'}
+                              {activeTab === 'artwork' && 'Apply Packaging Design Decal & Texture'}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isStudioDropdownOpen ? 'rotate-180' : ''}`} />
                       </button>
-                      <button
-                        onClick={() => setActiveTab('folding')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'folding' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" /> Fold
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('materials')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'materials' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                      >
-                        <Layers className="w-3.5 h-3.5" /> Finish
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('artwork')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'artwork' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                      >
-                        <ImageIcon className="w-3.5 h-3.5" /> Brand
-                      </button>
+
+                      {isStudioDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-zinc-700/90 rounded-xl shadow-2xl overflow-hidden z-50 divide-y divide-zinc-800/80">
+                          {[
+                            { id: 'dimensions', label: 'Size & Dimensions', icon: Sliders, desc: 'Customize Box Width, Depth & Height' },
+                            { id: 'folding', label: 'Assembly & Fold States', icon: RefreshCw, desc: 'Animate Lid & Flap Fold Sequences' },
+                            { id: 'materials', label: 'Material & Finish Simulator', icon: Layers, desc: 'Kraft, Matte, Gloss & Gold Foil' },
+                            { id: 'artwork', label: 'Brand & Artwork Decal', icon: ImageIcon, desc: 'Apply Packaging Design Decal & Texture' },
+                          ].map((opt) => {
+                            const IconComp = opt.icon;
+                            const isSelected = activeTab === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => {
+                                  setActiveTab(opt.id);
+                                  setIsStudioDropdownOpen(false);
+                                }}
+                                className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
+                                  isSelected ? 'bg-zinc-800 text-white font-bold' : 'hover:bg-zinc-800/60 text-zinc-300'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <IconComp className={`w-4 h-4 ${isSelected ? 'text-amber-400' : 'text-zinc-400'}`} />
+                                  <div>
+                                    <div className="text-xs font-bold">{opt.label}</div>
+                                    <div className="text-[10px] text-zinc-400">{opt.desc}</div>
+                                  </div>
+                                </div>
+                                {isSelected && <Check className="w-4 h-4 text-amber-400" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* TAB 1: Dimensions Controls */}
@@ -1370,9 +1409,9 @@ export default function App() {
               </motion.div>
             </section>
 
-            <PackagingCollections onCategorySelect={handleCategorySelect} />
+            <PackagingCollections onCategorySelect={handleCategorySelect} showExploreButton={true} />
 
-            <TopDielineTemplates onNavigate={(cat) => setCurrentView('library')} />
+            <TopDielineTemplates onNavigate={(cat) => setCurrentView('library')} showExploreButton={true} />
 
             <AboutKelineTools />
           </>

@@ -39,28 +39,25 @@ export const TemplateDetailCard = ({
           onClick();
         }
       }} 
-      className="flex flex-col gap-3 group/detail cursor-pointer" 
+      className="group/detail block bg-white rounded-2xl border border-zinc-200/90 shadow-sm hover:shadow-xl hover:border-zinc-900 transition-all duration-300 overflow-hidden cursor-pointer p-5" 
       style={{ textDecoration: 'none' }}
     >
-      <div
-        className="relative rounded-[16px] h-[220px] p-6 flex items-center justify-between transition-all duration-300 group-hover/detail:-translate-y-1"
-        style={{
-          background: 'var(--card-bg)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid var(--card-border)',
-          boxShadow: 'var(--shadow-rest)'
-        }}
-      >
-
-        {/* Badges */}
-        <div className="absolute top-3 right-3 flex gap-2 z-10">
-          <span className="bg-white px-2 py-1 rounded-[6px] text-[11px] font-medium text-zinc-500 shadow-sm">Printable</span>
-          <span className="bg-white px-2 py-1 rounded-[6px] text-[11px] font-medium text-zinc-500 shadow-sm">Downloadable</span>
+      {/* Top Preview Canvas Box */}
+      <div className="relative rounded-xl h-[190px] p-4 bg-gradient-to-b from-zinc-50 to-zinc-100/60 border border-zinc-100 flex items-center justify-between overflow-hidden mb-4 group-hover/detail:bg-indigo-50/30 transition-colors">
+        
+        {/* Badges Top Right */}
+        <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+          <span className="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-zinc-600 border border-zinc-200/80 shadow-xs">
+            Printable
+          </span>
+          <span className="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-zinc-600 border border-zinc-200/80 shadow-xs">
+            Downloadable
+          </span>
         </div>
 
-        {/* Dieline Left */}
-        <div className="w-1/2 h-full flex items-center justify-center relative pr-4">
-          <svg viewBox="0 0 100 100" className="w-full h-full max-h-[140px] transition-transform duration-500 group-hover/detail:scale-[1.03]">
+        {/* Dieline 2D Vector Left */}
+        <div className="w-1/2 h-full flex items-center justify-center relative pr-2">
+          <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] transition-transform duration-300 group-hover/detail:scale-105">
             {type === 'straight' && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M25,25 h50 M25,75 h50 M40,20 v60 M60,20 v60 M75,25 v50 M25,25 v50" stroke="#EF4444" strokeDasharray="1.5 1.5" />
@@ -98,8 +95,8 @@ export const TemplateDetailCard = ({
         </div>
 
         {/* 3D Box Right */}
-        <div className="w-1/2 h-full flex items-center justify-center pl-4 relative">
-          <svg viewBox="0 0 100 100" className="w-full h-full max-h-[140px] drop-shadow-md transition-transform duration-500 group-hover/detail:-translate-y-2 group-hover/detail:scale-[1.03]">
+        <div className="w-1/2 h-full flex items-center justify-center pl-2 relative">
+          <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] drop-shadow-md transition-transform duration-300 group-hover/detail:-translate-y-1.5 group-hover/detail:scale-105">
             <ellipse cx="60" cy="88" rx="20" ry="4" fill="rgba(0,0,0,0.1)" />
             {type === 'cake' ? (
               <>
@@ -122,7 +119,25 @@ export const TemplateDetailCard = ({
           </svg>
         </div>
       </div>
-      <h4 className="text-[17px] font-medium pl-2 group-hover/detail:text-[var(--accent)] transition-colors" style={{ color: 'var(--ink)' }}>{title} card game box dieline</h4>
+
+      {/* Bottom Title & Action Widget Footer */}
+      <div className="flex items-center justify-between pt-1">
+        <div className="min-w-0 flex-1 pr-2">
+          <h4 className="text-base font-bold text-zinc-900 group-hover/detail:text-indigo-600 transition-colors leading-snug truncate">
+            {title} card game box dieline
+          </h4>
+          <p className="text-[11px] text-zinc-400 font-medium mt-0.5">
+            Vector CAD Blueprint • 3D Studio
+          </p>
+        </div>
+
+        {/* Hover Arrow Action Badge */}
+        <div className="w-8 h-8 rounded-xl bg-zinc-100 group-hover/detail:bg-zinc-900 group-hover/detail:text-white text-zinc-600 flex items-center justify-center transition-all shrink-0 ml-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
     </a>
   );
 };

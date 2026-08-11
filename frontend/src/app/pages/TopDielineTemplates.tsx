@@ -75,10 +75,15 @@ const categories = [
   }
 ];
 
-export default function TopDielineTemplates({ onNavigate }: { onNavigate?: (category: string) => void }) {
+interface Props {
+  onNavigate?: (category: string) => void;
+  showExploreButton?: boolean;
+}
+
+export default function TopDielineTemplates({ onNavigate, showExploreButton = false }: Props) {
   return (
     <section id="top-dielines" className="py-12 overflow-hidden font-sans bg-white">
-      <div className="max-w-[1700px] mx-auto px-4 md:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 md:px-8">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -136,24 +141,26 @@ export default function TopDielineTemplates({ onNavigate }: { onNavigate?: (cate
           ))}
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10 flex"
-        >
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              if (onNavigate) onNavigate('all');
-            }}
-            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-semibold transition-all hover:bg-zinc-800 hover:shadow-lg duration-200 bg-zinc-900 text-white"
+        {showExploreButton && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="mt-10 flex justify-center"
           >
-            View All Dieline Templates <ArrowRight className="w-4 h-4" />
-          </a>
-        </motion.div>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (onNavigate) onNavigate('all');
+              }}
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-semibold transition-all hover:bg-zinc-800 hover:shadow-lg duration-200 bg-zinc-900 text-white"
+            >
+              View All Dieline Templates <ArrowRight className="w-4 h-4" />
+            </a>
+          </motion.div>
+        )}
       </div>
     </section>
   );

@@ -137,13 +137,15 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     };
   }, []);
 
-  // Load items from MongoDB on mount (with localStorage fallback if offline/guest)
+  // Load items from MongoDB on mount (with localStorage fallback & sync)
   useEffect(() => {
-    const fetchMongoDBItems = async () => {
+    const fetchWorkspaceItems = async () => {
+      let mongoItems: WorkspaceItem[] = [];
       const token = localStorage.getItem('token');
+      
       if (token) {
         try {
-          const res = await fetch('/api/mockups/saved', {
+          const res = await fetch('http://localhost:5000/api/mockups/saved', {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
@@ -151,45 +153,60 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           });
           const data = await res.json();
           if (res.ok && data.success && Array.isArray(data.data?.designs)) {
-            if (data.data.designs.length > 0) {
-              const mongoItems: WorkspaceItem[] = data.data.designs.map((d: any) => ({
-                id: d._id,
-                name: d.name,
-                category: d.category || 'Custom Box',
-                tabCategory: d.tabCategory || 'projects',
-                dimensions: d.dimensions || { L: 150, W: 70, H: 200, glueTab: 15, tuck: 18, flapH: 35 },
-                updatedAt: d.updatedAt || new Date().toISOString(),
-                isFavorite: !!d.isFavorite,
-                isDraft: d.isDraft !== undefined ? d.isDraft : true,
-                tags: d.tags || []
-              }));
-              setItems(mongoItems);
-              setIsLoading(false);
-              return;
-            }
+            mongoItems = data.data.designs.map((d: any) => ({
+              id: d._id,
+              name: d.name,
+              category: d.category || 'Custom Box',
+              tabCategory: d.tabCategory || 'projects',
+              dimensions: d.dimensions || { L: 150, W: 70, H: 200, glueTab: 15, tuck: 18, flapH: 35 },
+              updatedAt: d.updatedAt || new Date().toISOString(),
+              isFavorite: !!d.isFavorite,
+              isDraft: d.isDraft !== undefined ? d.isDraft : false,
+              tags: d.tags || []
+            }));
           }
         } catch (err) {
-          console.log('MongoDB fetch error, falling back to local state:', err);
+          console.log('MongoDB fetch error, using local workspace items:', err);
         }
       }
 
-      // Fallback to stored items or defaults
+      // Local storage items fallback / merge
+      let localItems: WorkspaceItem[] = [];
       try {
         const stored = localStorage.getItem('kld_workspace_items');
         if (stored) {
-          setItems(JSON.parse(stored));
-        } else {
-          setItems(defaultItems);
-          localStorage.setItem('kld_workspace_items', JSON.stringify(defaultItems));
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            localItems = parsed.map(item => ({
+              ...item,
+              tabCategory: item.tabCategory || 'projects'
+            }));
+          }
         }
-      } catch {
-        setItems(defaultItems);
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        console.log('Local storage parse error:', err);
       }
+
+      // If no local items found at all, seed with default demo items
+      if (localItems.length === 0 && mongoItems.length === 0) {
+        localItems = defaultItems;
+        try {
+          localStorage.setItem('kld_workspace_items', JSON.stringify(defaultItems));
+        } catch {}
+      }
+
+      // Merge MongoDB and Local Storage items without duplicates
+      const mongoIds = new Set(mongoItems.map(i => i.id));
+      const combined = [...mongoItems, ...localItems.filter(i => !mongoIds.has(i.id))];
+
+      // Sort by last updated (newest / most recent first)
+      combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+      setItems(combined);
+      setIsLoading(false);
     };
 
-    fetchMongoDBItems();
+    fetchWorkspaceItems();
   }, []);
 
   // Save items state to state & local cache

@@ -268,7 +268,42 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     const dimH_mm = Math.round(store.H * 25.4);
     const modelName = currentTitle;
 
-    // 1. Save locally to localStorage so it appears in Workspace immediately
+    const newItemData = {
+      name: `${modelName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
+      type: 'DIELINE',
+      category: modelName,
+      tabCategory: 'projects',
+      variantId: 1,
+      dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm },
+      isDraft: false,
+      isFavorite: false
+    };
+
+    let createdId = 'saved-' + Date.now();
+
+    // 1. Post to API backend if authenticated
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
+      try {
+        let res = await fetch('http://localhost:5000/api/mockups/saved', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${savedToken}`
+          },
+          credentials: 'include',
+          body: JSON.stringify(newItemData)
+        });
+        let data = await res.json();
+        if (res.ok && data.data?.design?._id) {
+          createdId = data.data.design._id;
+        }
+      } catch (err) {
+        console.error("Backend save error:", err);
+      }
+    }
+
+    // 2. Save locally to localStorage so it appears in Workspace immediately
     try {
       const stored = localStorage.getItem('kld_workspace_items');
       let items: any[] = [];
@@ -277,49 +312,20 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       }
       if (!Array.isArray(items)) items = [];
       const newItem = {
-        id: 'saved-' + Date.now(),
-        name: `${modelName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
-        category: modelName,
-        dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm },
-        updatedAt: new Date().toISOString(),
-        isDraft: false,
-        isFavorite: false
+        id: createdId,
+        ...newItemData,
+        updatedAt: new Date().toISOString()
       };
+      items = items.filter(i => i.id !== createdId);
       items.unshift(newItem);
       localStorage.setItem('kld_workspace_items', JSON.stringify(items));
     } catch (err) {
       console.error("Local save error:", err);
     }
 
-    // 2. Post to API backend if available
-    try {
-      const bodyData = JSON.stringify({
-        name: `${modelName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
-        type: 'DIELINE',
-        category: modelName,
-        variantId: 1,
-        dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm }
-      });
-      const savedToken = localStorage.getItem('token');
-      let res = await fetch('http://localhost:5000/api/mockups/saved', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(savedToken ? { 'Authorization': `Bearer ${savedToken}` } : {})
-        },
-        credentials: 'include',
-        body: bodyData
-      });
-      let data = await res.json();
-
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000);
-    } catch (err) {
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000);
-    } finally {
-      setIsSaving(false);
-    }
+    setIsSaved(true);
+    setIsSaving(false);
+    setTimeout(() => setIsSaved(false), 3000);
   };
 
   const getGeometryForModel = (L: number, W: number, H: number, glueTab: number) => {
@@ -362,7 +368,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               </svg>
             </div>
 
-            <span className="font-semibold text-sm text-zinc-900 hidden sm:inline">Dieline generator</span>
+            <span className="font-bold text-sm text-zinc-900 hidden sm:inline">{currentTitle}</span>
 
             <div className="relative">
               <button 
@@ -397,21 +403,6 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Model Selector */}
-          <div className="hidden md:flex items-center gap-2">
-            <label className="text-xs font-semibold text-zinc-500">Box Model:</label>
-            <select
-              value={store.boxModel}
-              onChange={(e) => store.setBoxModel(e.target.value as any)}
-              className="bg-zinc-50 border border-zinc-300 text-zinc-800 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-blue-500 font-medium"
-            >
-              <option value="te">Straight Tuck End Box</option>
-              <option value="rte">Reverse Tuck End Box</option>
-              <option value="auto_lock">Auto Lock Bottom Box</option>
-              <option value="cake">Cake Box with Handle & Window</option>
-            </select>
           </div>
 
           {/* Right Action Buttons */}

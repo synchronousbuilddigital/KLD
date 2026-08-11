@@ -19,9 +19,10 @@ const categories = [
 
 interface Props {
   onCategorySelect?: (id: string) => void;
+  showExploreButton?: boolean;
 }
 
-export default function PackagingCollections({ onCategorySelect }: Props) {
+export default function PackagingCollections({ onCategorySelect, showExploreButton = false }: Props) {
   const handleExploreClick = () => {
     window.dispatchEvent(new CustomEvent('navigate', { detail: 'models' }));
     if (onCategorySelect) {
@@ -63,15 +64,17 @@ export default function PackagingCollections({ onCategorySelect }: Props) {
           ))}
         </div>
 
-        <div className="packaging-collections-explore-wrapper">
-          <button
-            onClick={handleExploreClick}
-            className="packaging-collections-explore-btn"
-          >
-            <span>Explore All 3D Models & Dielines</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        {showExploreButton && (
+          <div className="packaging-collections-explore-wrapper">
+            <button
+              onClick={handleExploreClick}
+              className="packaging-collections-explore-btn"
+            >
+              <span>Explore All 3D Models & Dielines</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

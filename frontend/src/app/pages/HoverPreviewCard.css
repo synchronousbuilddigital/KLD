@@ -3,7 +3,7 @@
    ============================================= */
 
 .hover-preview-card {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: 28px;
@@ -16,13 +16,21 @@
   flex-direction: column;
   align-items: center;
   pointer-events: auto;
+  box-sizing: border-box;
 
-  /* Entry animation */
+  /* Entry animation base */
   opacity: 0;
-  transform: translateY(20px) scale(0.92);
   transition:
     opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-preview-card--above {
+  transform: translateY(16px) scale(0.94);
+}
+
+.hover-preview-card--below {
+  transform: translateY(-16px) scale(0.94);
 }
 
 .hover-preview-card--visible {
@@ -30,18 +38,33 @@
   transform: translateY(0) scale(1);
 }
 
-/* Small triangle pointer pointing down toward the hovered item */
+/* Small triangle pointer pointing toward the hovered item */
 .hover-preview-card__pointer {
   position: absolute;
-  bottom: -10px;
-  left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
+  z-index: 10;
+}
+
+.hover-preview-card__pointer--above {
+  bottom: -10px;
+  top: auto;
   border-left: 12px solid transparent;
   border-right: 12px solid transparent;
-  border-top: 12px solid rgba(255, 255, 255, 0.92);
+  border-top: 12px solid rgba(255, 255, 255, 0.94);
+  border-bottom: none;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.06));
+}
+
+.hover-preview-card__pointer--below {
+  top: -10px;
+  bottom: auto;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 12px solid rgba(255, 255, 255, 0.94);
+  border-top: none;
+  filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.06));
 }
 
 /* ---- Header ---- */
