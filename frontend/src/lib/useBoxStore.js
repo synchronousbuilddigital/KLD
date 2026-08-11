@@ -1,7 +1,9 @@
 import { create } from "zustand";
 
 export const useBoxStore = create((set) => ({
-  // Default Dimensions
+  // Default Dimensions & Unit
+  unit: "in",
+  setUnit: (u) => set({ unit: u }),
   L: 4.7244,
   W: 2.3622,
   H: 6.2992,

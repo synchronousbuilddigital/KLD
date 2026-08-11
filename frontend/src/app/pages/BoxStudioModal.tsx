@@ -467,13 +467,13 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Custom size</h3>
                 <div className="flex bg-zinc-100 p-0.5 rounded-md border border-zinc-200 text-[11px] font-semibold">
                   <button
-                    onClick={() => setUnit("mm")}
+                    onClick={() => { setUnit("mm"); store.setUnit("mm"); }}
                     className={`px-2 py-0.5 rounded ${unit === "mm" ? "bg-white text-blue-600 shadow-sm font-bold" : "text-zinc-500"}`}
                   >
                     mm
                   </button>
                   <button
-                    onClick={() => setUnit("in")}
+                    onClick={() => { setUnit("in"); store.setUnit("in"); }}
                     className={`px-2 py-0.5 rounded ${unit === "in" ? "bg-white text-blue-600 shadow-sm font-bold" : "text-zinc-500"}`}
                   >
                     in
@@ -662,11 +662,21 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               </div>
               <div>
                 <span className="text-zinc-400">Inner dimensions:</span>{" "}
-                <span>{(store.L - 2 * store.T).toFixed(4)} × {(store.W - 2 * store.T).toFixed(4)} × {(store.H - 2 * store.T).toFixed(4)} in</span>
+                <span>
+                  {unit === 'in' 
+                    ? `${(store.L - 2 * store.T).toFixed(4)} × ${(store.W - 2 * store.T).toFixed(4)} × ${(store.H - 2 * store.T).toFixed(4)} in`
+                    : `${((store.L - 2 * store.T) * 25.4).toFixed(2)} × ${((store.W - 2 * store.T) * 25.4).toFixed(2)} × ${((store.H - 2 * store.T) * 25.4).toFixed(2)} mm`
+                  }
+                </span>
               </div>
               <div>
                 <span className="text-zinc-400">Outer dimensions:</span>{" "}
-                <span>{(store.L + 2 * store.T).toFixed(4)} × {(store.W + 2 * store.T).toFixed(4)} × {(store.H + 2 * store.T).toFixed(4)} in</span>
+                <span>
+                  {unit === 'in'
+                    ? `${(store.L + 2 * store.T).toFixed(4)} × ${(store.W + 2 * store.T).toFixed(4)} × ${(store.H + 2 * store.T).toFixed(4)} in`
+                    : `${((store.L + 2 * store.T) * 25.4).toFixed(2)} × ${((store.W + 2 * store.T) * 25.4).toFixed(2)} × ${((store.H + 2 * store.T) * 25.4).toFixed(2)} mm`
+                  }
+                </span>
               </div>
             </div>
 
@@ -684,6 +694,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 W={store.W}
                 H={store.H}
                 T={store.T}
+                unit={unit}
                 materialType={store.materialCategory}
                 isEditorMode={true}
                 activeColor={store.packageColor}
@@ -808,11 +819,21 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
             <div className="grid grid-cols-2 gap-2 text-[10px]">
               <div className="bg-white border border-zinc-200 p-2.5 rounded-xl">
                 <span className="text-zinc-400 font-semibold block uppercase tracking-wider mb-0.5">Manufacture Cut Size</span>
-                <span className="font-mono font-bold text-zinc-800 text-xs">{(store.L * 1.0).toFixed(3)} × {(store.W * 1.01).toFixed(3)} × {(store.H * 1.31).toFixed(3)} in</span>
+                <span className="font-mono font-bold text-zinc-800 text-xs">
+                  {unit === 'in'
+                    ? `${(store.L * 1.0).toFixed(3)} × ${(store.W * 1.01).toFixed(3)} × ${(store.H * 1.31).toFixed(3)} in`
+                    : `${(store.L * 25.4).toFixed(1)} × ${(store.W * 1.01 * 25.4).toFixed(1)} × ${(store.H * 1.31 * 25.4).toFixed(1)} mm`
+                  }
+                </span>
               </div>
               <div className="bg-white border border-zinc-200 p-2.5 rounded-xl">
                 <span className="text-zinc-400 font-semibold block uppercase tracking-wider mb-0.5">Inner Cavity Size</span>
-                <span className="font-mono font-bold text-zinc-800 text-xs">{(store.L - 2*store.T).toFixed(3)} × {(store.W - 2*store.T).toFixed(3)} × {(store.H - 2*store.T).toFixed(3)} in</span>
+                <span className="font-mono font-bold text-zinc-800 text-xs">
+                  {unit === 'in'
+                    ? `${(store.L - 2*store.T).toFixed(3)} × ${(store.W - 2*store.T).toFixed(3)} × ${(store.H - 2*store.T).toFixed(3)} in`
+                    : `${((store.L - 2*store.T) * 25.4).toFixed(1)} × ${((store.W - 2*store.T) * 25.4).toFixed(1)} × ${((store.H - 2*store.T) * 25.4).toFixed(1)} mm`
+                  }
+                </span>
               </div>
             </div>
 

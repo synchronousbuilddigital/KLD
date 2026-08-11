@@ -101,8 +101,11 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     L, W, H, T, sizeMode, glueFlapWidth, bleed,
     trimColor, creaseColor, bleedColor, dimColor,
     showOverallDims, showBasicDims, showBleedLine, showAnnotations,
-    theme, generatorMethod, packageColor, boxModel, materialCategory
+    theme, generatorMethod, packageColor, boxModel, materialCategory,
+    unit: storeUnit
   } = useBoxStore();
+
+  const currentUnit = props.unit || storeUnit || "mm";
 
   // --- THE PACDORA 2T MATH REVEALED IN THE VIDEO ---
   let manuL = L, manuW = W, manuH = H;
@@ -470,7 +473,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               textAnchor="middle" stroke="none"
               style={{ transformOrigin: `${(x1 + x2) / 2}px ${yBot - manuH / 2 - 0.1}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
             >
-              {manuL.toFixed(4)} in
+              {currentUnit === 'in' ? `${manuL.toFixed(4)} in` : `${(manuL * 25.4).toFixed(1)} mm`}
             </text>
 
             <line x1={x2 + 0.05} y1={yBot - manuH / 2} x2={x3 - 0.05} y2={yBot - manuH / 2} markerStart="url(#arrow-cyan-start)" markerEnd="url(#arrow-cyan-end)" />
@@ -479,7 +482,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               textAnchor="middle" stroke="none"
               style={{ transformOrigin: `${(x2 + x3) / 2}px ${yBot - manuH / 2 - 0.1}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
             >
-              {manuW.toFixed(4)} in
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(1)} mm`}
             </text>
 
             <line x1={x3 + manuL / 2} y1={yTop + 0.05} x2={x3 + manuL / 2} y2={yBot - 0.05} markerStart="url(#arrow-cyan-start)" markerEnd="url(#arrow-cyan-end)" />
@@ -488,7 +491,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               alignmentBaseline="middle" stroke="none"
               style={{ transformOrigin: `${x3 + manuL / 2 + 0.15}px ${(yTop + yBot) / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
             >
-              {manuH.toFixed(4)} in
+              {currentUnit === 'in' ? `${manuH.toFixed(4)} in` : `${(manuH * 25.4).toFixed(1)} mm`}
             </text>
           </g>
         )}
@@ -511,7 +514,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               alignmentBaseline="middle" textAnchor="middle" stroke="none"
               style={{ transformOrigin: `${(x1 + x2) / 2}px ${yBot - manuH / 1.2 + 0.05}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
             >
-              {(manuL * 25.4).toFixed(0)} mm
+              {currentUnit === 'in' ? `${manuL.toFixed(4)} in` : `${(manuL * 25.4).toFixed(0)} mm`}
             </text>
 
             {/* Side Panel Width (Panel 2) */}
@@ -522,7 +525,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               alignmentBaseline="middle" textAnchor="middle" stroke="none"
               style={{ transformOrigin: `${(x2 + x3) / 2}px ${yTop + manuH / 3.5 + 0.05}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
             >
-              {(manuW * 25.4).toFixed(0)} mm
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(0)} mm`}
             </text>
 
             {/* Height (Panel 3) */}
@@ -533,7 +536,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               alignmentBaseline="middle" textAnchor="middle" stroke="none"
               style={{ transformOrigin: `${x3 + manuL / 2}px ${(yTop + yBot) / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
             >
-              {(manuH * 25.4).toFixed(0)} mm
+              {currentUnit === 'in' ? `${manuH.toFixed(4)} in` : `${(manuH * 25.4).toFixed(0)} mm`}
             </text>
           </g>
         )}
@@ -644,11 +647,11 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
               const nearestX = [x1, x2, x3, x4, x5].reduce((prev, curr) => Math.abs(curr - leftEdgeX) < Math.abs(prev - leftEdgeX) ? curr : prev);
               const distXinches = Math.abs(leftEdgeX - nearestX);
-              const distXmm = (distXinches * 25.4).toFixed(0);
+              const distXmm = currentUnit === 'in' ? `${distXinches.toFixed(2)} in` : `${(distXinches * 25.4).toFixed(0)} mm`;
 
               const nearestY = [yTop, yBot].reduce((prev, curr) => Math.abs(curr - topEdgeY) < Math.abs(prev - topEdgeY) ? curr : prev);
               const distYinches = Math.abs(topEdgeY - nearestY);
-              const distYmm = (distYinches * 25.4).toFixed(0);
+              const distYmm = currentUnit === 'in' ? `${distYinches.toFixed(2)} in` : `${(distYinches * 25.4).toFixed(0)} mm`;
 
               return (
                 <>
