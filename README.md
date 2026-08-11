@@ -12,3 +12,23 @@ An advanced, production-ready web application for 3D packaging visualization, pa
 - **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion, Lucide Icons
 - **Backend**: Node.js, Express, MongoDB, JWT Authentication
 - **Geometry & Export Engine**: Custom vector calculation libraries, DXF generator, PDF exporter
+
+## Project Structure
+```text
+KLD/
+├── frontend/             # React + Vite + Tailwind CSS frontend application
+├── backend/              # Node.js + Express API server & Vercel serverless functions
+│   └── api/index.js      # Vercel serverless function entrypoint
+├── vercel.json           # Vercel deployment configuration
+└── package.json          # Root npm scripts for development & build
+```
+
+## Getting Started
+
+### Development
+- **Run Frontend**: `npm run dev:frontend`
+- **Run Backend**: `npm run dev:backend`
+
+### Production Build
+- **Build Frontend**: `npm run build:frontend`
+

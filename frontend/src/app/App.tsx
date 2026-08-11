@@ -411,7 +411,8 @@ export default function App() {
     if (id) {
       window.history.pushState(null, '', `/mockup/${id}`);
     } else {
-      window.history.pushState(null, '', '/');
+      const targetPath = currentView === 'models' ? '/3d-models' : '/';
+      window.history.pushState(null, '', targetPath);
     }
   };
 
@@ -449,6 +450,12 @@ export default function App() {
     };
     const handleHashChange = () => {
       setCurrentView(getViewFromUrl());
+      const path = window.location.pathname.replace('/', '').toLowerCase();
+      if (path.startsWith('mockup/')) {
+        setActiveCategoryId(path.split('/')[1] || null);
+      } else {
+        setActiveCategoryId(null);
+      }
     };
 
     window.addEventListener('navigate', handleNavigate);
@@ -594,6 +601,10 @@ export default function App() {
     window.addEventListener('maintenance-mode-change', handleMaintenanceChange);
     return () => window.removeEventListener('maintenance-mode-change', handleMaintenanceChange);
   }, []);
+
+  if (activeCategoryId) {
+    return <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />;
+  }
 
   if (currentView === 'models') {
     return <ModelsPage onNavigate={navigateTo} onCategorySelect={(id) => handleCategorySelect(id)} />;
@@ -918,10 +929,6 @@ export default function App() {
         }} 
       />
     );
-  }
-
-  if (activeCategoryId) {
-    return <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />;
   }
 
   return (

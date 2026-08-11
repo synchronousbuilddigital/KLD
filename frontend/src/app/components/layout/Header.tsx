@@ -51,18 +51,18 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
 
   return (
     <>
-      <header className="main-header border-b border-zinc-200/80 bg-white/95 backdrop-blur-md transition-all duration-200">
+      <header className="main-header transition-all duration-200">
         
         {/* LOGO */}
         <div 
           className="logo group flex items-center gap-2.5 cursor-pointer select-none" 
           onClick={() => handleNavClick('landing', '/')}
         >
-          <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-              <path d="m3.3 7 8.7 5 8.7-5" />
-              <path d="M12 22V12" />
+          <div className="w-8 h-8 rounded-xl bg-[#C89A63] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
           </div>
           <span className="font-extrabold tracking-wider text-sm text-zinc-900">KEYLINE DESIGN</span>

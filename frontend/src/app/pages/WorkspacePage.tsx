@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Folder, Star, Clock, Plus, Search, Filter, Trash2, Edit3, Eye, 
   Sparkles, CheckCircle2, Box, Layers, ArrowRight, Grid, List, RefreshCw,
-  Printer, Upload, SlidersHorizontal, ChevronDown, Copy, Check
+  Printer, Upload, SlidersHorizontal, ChevronDown, Copy, Check, X
 } from 'lucide-react';
 import Header from '../components/layout/Header';
 import '../../styles/new-home.css';
+import './UserProfilePage.css';
 
 export interface WorkspaceItem {
   id: string;
@@ -121,7 +122,15 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     document.body.style.width = '100%';
     document.body.style.overflowX = 'hidden';
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleNav('landing');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
+      window.removeEventListener('keydown', handleKeyDown);
       document.body.style.zoom = '';
       document.body.style.width = '';
       document.body.style.overflowX = '';
@@ -362,68 +371,99 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
   // Dynamic Page Header Title based on active tab
   const activeSidebarObj = sidebarItems.find(s => s.id === sidebarTab) || sidebarItems[0];
+  const sectionSubtitles: Record<string, string> = {
+    recent: 'Your active design sessions and auto-saved drafts in real time.',
+    projects: 'Organize and manage your custom structural 3D packaging models.',
+    prints: 'Exported CAD dielines and print-ready production files.',
+    ai: 'Custom artwork textures and patterns generated with AI.',
+    favorites: 'Your quick-access starred packaging designs.'
+  };
 
   return (
-    <div className="new-home-landing min-h-screen font-sans flex flex-col relative z-0" style={{ backgroundColor: '#FAF9F6', '--bg-primary': '#FAF9F6' } as React.CSSProperties}>
-      {/* Main Header Nav */}
-      <Header activeNav="workspace" onNavigate={handleNav} />
-
-      {/* Main Spacious Workspace Container (Full Viewport Height Dashboard) */}
-      <div className="flex-1 flex flex-col md:flex-row w-full max-w-[1500px] mx-auto px-6 md:px-12 relative z-10" style={{ paddingTop: '100px', paddingBottom: '80px', minHeight: 'calc(100vh - 80px)' }}>
-        
-        {/* ========================================================
-            LEFT SIDEBAR NAVIGATION PANEL (Spacious Layout)
-           ======================================================== */}
-        <aside className="w-full md:w-[280px] shrink-0 pr-0 md:pr-10 mb-8 md:mb-0 border-b md:border-b-0 md:border-r border-zinc-200/60 pb-8 md:pb-0">
-          <div className="sticky top-28 flex flex-col gap-3">
-            <div className="px-3 mb-2">
-              <h3 className="text-[12px] font-black uppercase tracking-widest text-zinc-400">
-                WORKSPACE NAV
-              </h3>
+    <div className="user-profile-page font-sans">
+      {/* ========================================================
+          LEFT SIDEBAR NAVIGATION PANEL (Corner-anchored Full Height)
+         ======================================================== */}
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-top-section">
+          {/* LOGO */}
+          <div 
+            className="sidebar-logo" 
+            onClick={() => handleNav('landing')} 
+            title="Return to Packaging Studio"
+          >
+            <div className="w-7 h-7 rounded-lg bg-[#C89A63] text-white flex items-center justify-center shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
             </div>
-
-            <nav className="flex flex-col gap-2.5">
-              {sidebarItems.map((item) => {
-                const IconComponent = item.icon;
-                const isActive = sidebarTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setSidebarTab(item.id)}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-[14px] font-bold transition-all duration-200 text-left ${
-                      isActive 
-                        ? 'bg-white text-zinc-900 border-2 border-zinc-900 shadow-[0_4px_20px_rgba(0,0,0,0.06)] translate-x-1' 
-                        : 'text-zinc-600 border-2 border-transparent hover:bg-zinc-200/50 hover:text-zinc-900'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <IconComponent className={`w-4 h-4 ${isActive ? 'text-zinc-900 stroke-[2.5]' : 'text-zinc-500'}`} />
-                      <span>{item.label}</span>
-                    </div>
-
-                    {item.count > 0 && (
-                      <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-black ${
-                        isActive ? 'bg-zinc-900 text-white' : 'bg-zinc-200/80 text-zinc-600'
-                      }`}>
-                        {item.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
+            <span>KEYLINE DESIGN</span>
           </div>
-        </aside>
 
-        {/* ========================================================
-            RIGHT MAIN WORKSPACE CONTENT AREA (Spacious Dashboard)
-           ======================================================== */}
-        <main className="flex-1 min-w-0 pl-0 md:pl-10 flex flex-col">
-          
-          {/* TOP ACTION BAR: Upload button & Quick Box Creator */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-5 mb-10">
-            <div className="flex items-center gap-3.5 flex-wrap">
-              {/* Upload Dieline Button (Matches reference screenshot button styling) */}
+          <div className="sidebar-section-title">WORKSPACE NAV</div>
+
+          <nav className="sidebar-menu-list">
+            {sidebarItems.map((item) => {
+              const IconComponent = item.icon;
+              const isActive = sidebarTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setSidebarTab(item.id)}
+                  className={`sidebar-menu-btn ${isActive ? 'active' : ''}`}
+                >
+                  <IconComponent className={`w-4 h-4 ${isActive ? 'text-zinc-900' : 'text-zinc-500'}`} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.count > 0 && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                      isActive ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'
+                    }`}>
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="sidebar-bottom-section">
+          <button 
+            className="sidebar-logout-link"
+            onClick={() => handleNav('landing')}
+          >
+            <ArrowRight className="w-4 h-4 rotate-180 text-zinc-500" /> Back to Studio
+          </button>
+        </div>
+      </aside>
+
+      {/* ========================================================
+          RIGHT MAIN WORKSPACE CONTENT AREA (Expanded & Spacious Dashboard)
+         ======================================================== */}
+      <main className="dashboard-main">
+        {/* Top Header Bar with Title & Close (✕) Button */}
+        <div className="main-top-header mb-6">
+          <div className="page-title-block">
+            <h1>{activeSidebarObj.label}</h1>
+            <p>{sectionSubtitles[sidebarTab] || 'Access your saved 3D packaging models and dielines.'}</p>
+          </div>
+
+          <button 
+            className="page-close-btn" 
+            onClick={() => handleNav('landing')}
+            title="Close Workspace (Esc)"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* SECTION ACTION BAR: Only visible on Projects section */}
+        {sidebarTab === 'projects' && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl border border-zinc-200/80 shadow-sm">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Upload Dieline Button */}
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -433,93 +473,104 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               />
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-3 bg-white border-2 border-zinc-900 hover:bg-zinc-900 hover:text-white text-zinc-900 font-extrabold text-xs rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2.5"
+                className="px-5 py-2.5 bg-white border-2 border-zinc-900 hover:bg-zinc-900 hover:text-white text-zinc-900 font-extrabold text-xs rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" /> Upload dieline to model
               </button>
 
               <button 
                 onClick={() => handleNav('landing')}
-                className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2.5"
+                className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Box className="w-4 h-4" /> Create New Box
               </button>
             </div>
 
-            {/* Fast Search Filter Bar */}
-            <div className="relative w-full sm:w-[280px]">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+            {/* Search Filter Bar */}
+            <div className="relative w-full sm:w-[320px]">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search models or size..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-zinc-200/90 rounded-2xl text-xs font-bold outline-none focus:border-zinc-900 shadow-sm transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200/90 rounded-xl text-xs font-bold outline-none focus:border-zinc-900 focus:bg-white shadow-inner transition-all"
               />
             </div>
           </div>
+        )}
 
-          {/* Upload Success Alert Banner */}
-          <AnimatePresence>
-            {uploadSuccessMsg && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3.5 rounded-2xl text-xs font-bold mb-8 flex items-center gap-2.5 shadow-sm"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{uploadSuccessMsg}</span>
-              </motion.div>
+        {/* Upload Success Alert Banner */}
+        <AnimatePresence>
+          {uploadSuccessMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3 rounded-xl text-xs font-bold mb-6 flex items-center gap-2.5 shadow-sm"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{uploadSuccessMsg}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* CONTROLS ROW */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold px-3 py-1 bg-zinc-200/70 text-zinc-700 rounded-full">
+              {filteredItems.length} items
+            </span>
+          </div>
+
+          {/* Top Right Controls: Search (if not in projects), Sort & Grid/List View Toggles */}
+          <div className="flex items-center gap-3 flex-wrap self-end sm:self-auto">
+            {sidebarTab !== 'projects' && (
+              <div className="relative w-full sm:w-[260px]">
+                <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                <input 
+                  type="text" 
+                  placeholder="Search in this section..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-zinc-200/90 rounded-xl text-xs font-bold outline-none focus:border-zinc-900 shadow-sm transition-all"
+                />
+              </div>
             )}
-          </AnimatePresence>
 
-          {/* SECTION HEADER BAR & TOP RIGHT CONTROLS */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 mb-8">
-            
-            {/* Dynamic Section Title */}
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900 tracking-tight flex items-center gap-3">
-                {activeSidebarObj.label}
-              </h1>
+            {/* Sort Selector */}
+            <div className="flex items-center gap-2 bg-white border border-zinc-200/90 rounded-xl px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm">
+              <span className="text-zinc-400 font-medium">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-transparent outline-none cursor-pointer text-zinc-900 font-bold pr-1"
+              >
+                <option value="last_saved">Last saved</option>
+                <option value="newest">Newest first</option>
+                <option value="name">Alphabetical</option>
+              </select>
             </div>
 
-            {/* Top Right Controls: Sort & Grid/List View Toggles */}
-            <div className="flex items-center gap-4 self-end sm:self-auto">
-              
-              {/* Sort Selector */}
-              <div className="flex items-center gap-2 bg-white border border-zinc-200/90 rounded-2xl px-4 py-2 text-xs font-bold text-zinc-700 shadow-sm">
-                <span className="text-zinc-400 font-medium">Sort:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-transparent outline-none cursor-pointer text-zinc-900 font-bold pr-1"
-                >
-                  <option value="last_saved">Last saved</option>
-                  <option value="newest">Newest first</option>
-                  <option value="name">Alphabetical</option>
-                </select>
-              </div>
-
-              {/* Grid / List View Toggle Icons */}
-              <div className="bg-white border border-zinc-200/90 p-1.5 rounded-2xl flex items-center shadow-sm">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-xl transition-colors ${viewMode === 'grid' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
-                  title="Grid View"
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-xl transition-colors ${viewMode === 'list' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
-                  title="List View"
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Grid / List View Toggle Icons */}
+            <div className="bg-white border border-zinc-200/90 p-1 rounded-xl flex items-center shadow-sm">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
+                title="Grid View"
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
+                title="List View"
+              >
+                <List className="w-4 h-4" />
+              </button>
             </div>
           </div>
+        </div>
 
           {/* ========================================================
               MODEL DISPLAY CONTENT AREA (GRID / LIST / TAILORED EMPTY STATE)
@@ -815,7 +866,6 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           )}
 
         </main>
-      </div>
     </div>
   );
 }
