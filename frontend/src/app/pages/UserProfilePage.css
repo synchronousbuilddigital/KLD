@@ -2,19 +2,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 .user-profile-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  position: relative;
+  width: 100%;
   min-height: 100vh;
   background-color: #FAFAFA;
   color: #18181b;
   font-family: 'Inter', sans-serif;
-  z-index: 999999;
-  overflow: hidden;
   display: flex;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* LEFT SIDEBAR PANEL */
@@ -22,6 +18,8 @@
   width: 250px;
   min-width: 250px;
   height: 100vh;
+  position: sticky;
+  top: 0;
   background: #FFFFFF;
   border-right: 1px solid #E5E7EB;
   display: flex;
@@ -29,6 +27,7 @@
   justify-content: space-between;
   padding: 24px 16px;
   box-sizing: border-box;
+  z-index: 10;
 }
 
 .sidebar-top-section {

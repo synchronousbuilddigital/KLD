@@ -1,13 +1,13 @@
 /* =============================================
-   PACKAGING COLLECTIONS — MATCHING IMAGE 1 DESIGN
+   PACKAGING COLLECTIONS — MATCHING IMAGE 1 DESIGN & REDESIGNED 3D MODELS PAGE
    ============================================= */
 
 .packaging-collections-section {
   position: relative;
   width: 100%;
   background: #ffffff;
-  padding-top: 40px;
-  padding-bottom: 50px;
+  padding-top: 32px;
+  padding-bottom: 20px;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: #09090b;
 }
@@ -47,6 +47,125 @@
   gap: 16px;
 }
 
+/* =============================================
+   3D MODELS PAGE CONTROL BAR & FILTER PILLS
+   ============================================= */
+.models-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 30px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.models-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.models-pill-btn {
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  color: #52525b;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.models-pill-btn:hover {
+  background: #f4f4f5;
+  color: #09090b;
+  border-color: #d4d4d8;
+}
+
+.models-pill-btn.active {
+  background: #09090b;
+  color: #ffffff;
+  border-color: #09090b;
+  box-shadow: 0 4px 12px rgba(9, 9, 11, 0.15);
+}
+
+.models-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  width: 280px;
+  transition: all 0.2s ease;
+}
+
+.models-search-wrapper:focus-within {
+  background: #ffffff;
+  border-color: #09090b;
+  box-shadow: 0 0 0 3px rgba(9, 9, 11, 0.08);
+}
+
+.models-search-icon {
+  width: 15px;
+  height: 15px;
+  color: #a1a1aa;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.models-search-input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #09090b;
+  outline: none;
+  width: 100%;
+}
+
+.models-search-input::placeholder {
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.models-search-clear {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: 6px;
+}
+
+.models-search-clear:hover {
+  color: #09090b;
+}
+
+/* 3D Models Page Specific Spacing */
+.packaging-collections-section--models {
+  padding-top: 0px;
+  padding-bottom: 24px;
+  background: transparent;
+}
+
+.packaging-collections-section--models .packaging-collections-container {
+  max-width: 1380px;
+  padding: 0;
+}
+
+.packaging-collections-section--models .packaging-collections-grid {
+  gap: 20px 20px;
+}
+
+/* Default legacy horizontal card */
 .packaging-collections-card {
   position: relative;
   background: #ffffff;
@@ -56,9 +175,9 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
-  gap: 14px;
-  min-height: 125px;
+  padding: 8px 8px 8px 16px;
+  gap: 12px;
+  min-height: 130px;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
@@ -80,6 +199,8 @@
   flex: 1;
   min-width: 0;
   padding-right: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .packaging-collections-card__title {
@@ -104,8 +225,8 @@
 }
 
 .packaging-collections-card__right {
-  width: 150px;
-  height: 105px;
+  width: 155px;
+  height: 114px;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
@@ -153,19 +274,22 @@
 }
 
 @media (max-width: 1280px) {
-  .packaging-collections-grid {
+  .packaging-collections-grid,
+  .packaging-collections-grid--models {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 900px) {
-  .packaging-collections-grid {
+  .packaging-collections-grid,
+  .packaging-collections-grid--models {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 600px) {
-  .packaging-collections-grid {
+  .packaging-collections-grid,
+  .packaging-collections-grid--models {
     grid-template-columns: 1fr;
   }
 }

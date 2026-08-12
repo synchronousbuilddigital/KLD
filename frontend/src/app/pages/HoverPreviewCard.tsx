@@ -74,10 +74,12 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
   };
 
   const itemCenterX = rect.left + rect.width / 2;
-  const itemTop = rect.top;
 
-  // Anchor the card's bottom strictly ABOVE the hovered item (never hangs down)
-  const bottomPx = window.innerHeight - itemTop + 14;
+  // Determine whether to place card above or below item based on available viewport space
+  const spaceAbove = rect.top;
+
+  // Place below if not enough room above (e.g. near top navbar header)
+  const positionMode = (spaceAbove < CARD_H + 20) ? 'below' : 'above';
 
   let left = itemCenterX - CARD_W / 2;
   const minLeft = 12;
@@ -87,23 +89,34 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
   let pointerLeft = itemCenterX - left;
   pointerLeft = Math.max(28, Math.min(CARD_W - 28, pointerLeft));
 
-  const card = (
-    <div
-      className={`hover-preview-card hover-preview-card--above ${visible ? 'hover-preview-card--visible' : ''}`}
-      style={{
+  const positionStyle: React.CSSProperties = positionMode === 'below' 
+    ? {
         position: 'fixed',
         left: `${left}px`,
-        bottom: `${bottomPx}px`,
+        top: `${Math.min(window.innerHeight - CARD_H - 12, rect.bottom + 14)}px`,
         width: `${CARD_W}px`,
         height: `${CARD_H}px`,
         zIndex: 9999,
-      }}
+      }
+    : {
+        position: 'fixed',
+        left: `${left}px`,
+        bottom: `${window.innerHeight - rect.top + 14}px`,
+        width: `${CARD_W}px`,
+        height: `${CARD_H}px`,
+        zIndex: 9999,
+      };
+
+  const card = (
+    <div
+      className={`hover-preview-card hover-preview-card--${positionMode} ${visible ? 'hover-preview-card--visible' : ''}`}
+      style={positionStyle}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* Pointer triangle - always points down to item */}
+      {/* Pointer triangle - points to item (up if below, down if above) */}
       <div 
-        className="hover-preview-card__pointer hover-preview-card__pointer--above" 
+        className={`hover-preview-card__pointer hover-preview-card__pointer--${positionMode}`} 
         style={{ left: `${pointerLeft}px` }}
       />
 

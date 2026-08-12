@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Folder, Star, Clock, Plus, Search, Filter, Trash2, Edit3, Eye, 
   Sparkles, CheckCircle2, Box, Layers, ArrowRight, Grid, List, RefreshCw,
-  Printer, Upload, SlidersHorizontal, ChevronDown, Copy, Check, X
+  Printer, Upload, SlidersHorizontal, ChevronDown, Copy, Check, X, User
 } from 'lucide-react';
 import Header from '../components/layout/Header';
 import '../../styles/new-home.css';
@@ -37,90 +37,26 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   const [sortBy, setSortBy] = useState<'last_saved' | 'newest' | 'name'>('last_saved');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Local state for Workspace Items
+  // Local state for Workspace Items & Authentication
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token'));
+
+  useEffect(() => {
+    const handleAuth = () => {
+      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token'));
+    };
+    window.addEventListener('auth-change', handleAuth);
+    return () => window.removeEventListener('auth-change', handleAuth);
+  }, []);
 
   // Hidden File Input Ref for "Upload dieline to model"
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState<string | null>(null);
 
-  // Sample items representing different sections
-  const defaultItems: WorkspaceItem[] = [
-    {
-      id: 'model-1',
-      name: 'Custom Tuck End Cosmetics Box',
-      category: 'Tuck End Box',
-      tabCategory: 'projects',
-      dimensions: { L: 150, W: 70, H: 200, glueTab: 15, tuck: 18, flapH: 35 },
-      updatedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
-      isDraft: true,
-      isFavorite: true,
-      tags: ['Cosmetics', 'Tuck End']
-    },
-    {
-      id: 'model-2',
-      name: 'E-Commerce Mailer Box Draft',
-      category: 'Mailer Box',
-      tabCategory: 'projects',
-      dimensions: { L: 220, W: 160, H: 90, glueTab: 20, tuck: 22, flapH: 45 },
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      isDraft: true,
-      isFavorite: false,
-      tags: ['E-Commerce', 'Mailer']
-    },
-    {
-      id: 'proj-1',
-      name: 'Luxury Perfume Packaging Suite',
-      category: 'Rigid Box',
-      tabCategory: 'projects',
-      dimensions: { L: 120, W: 120, H: 150, glueTab: 0, tuck: 0, flapH: 0 },
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      isDraft: false,
-      isFavorite: true,
-      tags: ['Perfume', 'Rigid']
-    },
-    {
-      id: 'proj-2',
-      name: 'Artisanal Coffee Bean Dispenser',
-      category: 'Snap Lock Box',
-      tabCategory: 'projects',
-      dimensions: { L: 100, W: 100, H: 180, glueTab: 15, tuck: 15, flapH: 30 },
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 days ago
-      isDraft: false,
-      isFavorite: false,
-      tags: ['Coffee', 'Snap Lock']
-    },
-    {
-      id: 'print-1',
-      name: 'Print-Ready Mailer CAD Dieline (PDF/DXF)',
-      category: 'Print Dieline',
-      tabCategory: 'prints',
-      dimensions: { L: 250, W: 180, H: 80, glueTab: 20, tuck: 20, flapH: 40 },
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-      isDraft: false,
-      isFavorite: false,
-      tags: ['PDF Export', '300 DPI']
-    },
-    {
-      id: 'ai-1',
-      name: 'AI Generated Marble Gold Texture Foil',
-      category: 'AI Texture',
-      tabCategory: 'ai',
-      dimensions: { L: 140, W: 140, H: 140, glueTab: 15, tuck: 15, flapH: 25 },
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-      isDraft: false,
-      isFavorite: true,
-      tags: ['AI Pattern', 'Gold Foil']
-    }
-  ];
-
   // Smooth layout setup
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.body.style.zoom = '1';
-    document.body.style.width = '100%';
-    document.body.style.overflowX = 'hidden';
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -131,9 +67,6 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.zoom = '';
-      document.body.style.width = '';
-      document.body.style.overflowX = '';
     };
   }, []);
 
@@ -170,34 +103,31 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
         }
       }
 
-      // Local storage items fallback / merge
+      // Local storage items fallback / merge (Filtering out any mock dummy items and auto drafts)
       let localItems: WorkspaceItem[] = [];
       try {
         const stored = localStorage.getItem('kld_workspace_items');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            localItems = parsed.map(item => ({
-              ...item,
-              tabCategory: item.tabCategory || 'projects'
-            }));
+            const mockIds = new Set(['model-1', 'model-2', 'proj-1', 'proj-2', 'print-1', 'ai-1', 'active-session-draft']);
+            localItems = parsed
+              .filter(item => !mockIds.has(item.id))
+              .map(item => ({
+                ...item,
+                tabCategory: item.tabCategory || 'projects'
+              }));
           }
         }
+        // Save cleaned items without mock or auto-draft data back to localStorage
+        localStorage.setItem('kld_workspace_items', JSON.stringify(localItems));
       } catch (err) {
         console.log('Local storage parse error:', err);
       }
 
-      // If no local items found at all, seed with default demo items
-      if (localItems.length === 0 && mongoItems.length === 0) {
-        localItems = defaultItems;
-        try {
-          localStorage.setItem('kld_workspace_items', JSON.stringify(defaultItems));
-        } catch {}
-      }
-
       // Merge MongoDB and Local Storage items without duplicates
       const mongoIds = new Set(mongoItems.map(i => i.id));
-      const combined = [...mongoItems, ...localItems.filter(i => !mongoIds.has(i.id))];
+      let combined = [...mongoItems, ...localItems.filter(i => !mongoIds.has(i.id))].filter(i => i.id !== 'active-session-draft');
 
       // Sort by last updated (newest / most recent first)
       combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -687,46 +617,67 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 </div>
               </div>
             ) : (
-              /* RECENT WORK & PROJECTS CUSTOM EMPTY STATE */
-              <div className="flex-1 min-h-[460px] bg-white rounded-3xl p-12 md:p-20 text-center border-2 border-dashed border-zinc-200/80 flex flex-col items-center justify-center shadow-sm my-2">
-                <div className="relative w-36 h-36 mb-8 flex items-center justify-center">
-                  <svg viewBox="0 0 120 120" className="w-full h-full drop-shadow-md">
-                    <polygon points="25,45 28,52 35,53 30,58 31,65 25,61 19,65 20,58 15,53 22,52" fill="#EAB308" className="animate-pulse" />
-                    <g stroke="#18181b" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M40 70 L75 90 L110 70 L75 50 Z" fill="#F4F4F5" />
-                      <path d="M40 70 L40 95 L75 115 L75 90 Z" fill="#E4E4E7" />
-                      <path d="M110 70 L110 95 L75 115 Z" fill="#D4D4D8" />
-                      <path d="M40 70 L25 45 L60 25 L75 50 Z" fill="#FFFFFF" />
-                      <path d="M110 70 L125 45 L90 25 L75 50 Z" fill="#F4F4F5" />
-                      <path d="M75 50 L75 20" strokeDasharray="3 3" />
-                    </g>
-                  </svg>
-                </div>
-
-                <h3 className="text-xl font-extrabold text-zinc-900 mb-2">
-                  {sidebarTab === 'recent' ? 'No Recent Work Found' : 'No Saved Projects Yet'}
-                </h3>
-                <p className="text-sm text-zinc-500 mb-8 max-w-md leading-relaxed">
-                  {sidebarTab === 'recent' 
-                    ? 'Your active design sessions and auto-saved drafts will automatically appear here as you work in the 3D studio.'
-                    : 'Create, save, and organize your structural packaging projects and box prototypes in one place.'}
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center gap-4">
+              !isLoggedIn ? (
+                /* UNAUTHENTICATED WORKSPACE CARD */
+                <div className="flex-1 min-h-[460px] bg-white rounded-3xl p-12 md:p-20 text-center border-2 border-dashed border-zinc-200/80 flex flex-col items-center justify-center shadow-sm my-2">
+                  <div className="w-20 h-20 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-6 shadow-sm">
+                    <Box className="w-10 h-10 stroke-[2]" />
+                  </div>
+                  <h3 className="text-xl font-extrabold text-zinc-900 mb-2">
+                    Sign In to View Your Workspace
+                  </h3>
+                  <p className="text-sm text-zinc-500 mb-8 max-w-md leading-relaxed">
+                    Log in to your account to save 3D box models, custom dielines, and access your personal workspace across devices.
+                  </p>
                   <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-6 py-3 bg-white border-2 border-zinc-900 text-zinc-900 text-xs font-extrabold rounded-2xl shadow-sm hover:bg-zinc-900 hover:text-white transition-all flex items-center gap-2.5"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-sign-in-modal'))}
+                    className="px-6 py-3.5 bg-zinc-900 text-white text-xs font-extrabold rounded-2xl shadow-md hover:bg-zinc-800 transition-all flex items-center gap-2.5 cursor-pointer active:scale-95"
                   >
-                    <Upload className="w-4 h-4" /> Upload Dieline
-                  </button>
-                  <button
-                    onClick={() => handleNav('landing')}
-                    className="px-6 py-3 bg-zinc-900 text-white text-xs font-extrabold rounded-2xl shadow-md hover:bg-zinc-800 transition-all flex items-center gap-2.5"
-                  >
-                    <Plus className="w-4 h-4" /> Create New Box
+                    <User className="w-4 h-4 text-amber-400" /> Sign In / Create Account
                   </button>
                 </div>
-              </div>
+              ) : (
+                /* RECENT WORK & PROJECTS CUSTOM EMPTY STATE FOR LOGGED IN USERS */
+                <div className="flex-1 min-h-[460px] bg-white rounded-3xl p-12 md:p-20 text-center border-2 border-dashed border-zinc-200/80 flex flex-col items-center justify-center shadow-sm my-2">
+                  <div className="relative w-36 h-36 mb-8 flex items-center justify-center">
+                    <svg viewBox="0 0 120 120" className="w-full h-full drop-shadow-md">
+                      <polygon points="25,45 28,52 35,53 30,58 31,65 25,61 19,65 20,58 15,53 22,52" fill="#EAB308" className="animate-pulse" />
+                      <g stroke="#18181b" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M40 70 L75 90 L110 70 L75 50 Z" fill="#F4F4F5" />
+                        <path d="M40 70 L40 95 L75 115 L75 90 Z" fill="#E4E4E7" />
+                        <path d="M110 70 L110 95 L75 115 Z" fill="#D4D4D8" />
+                        <path d="M40 70 L25 45 L60 25 L75 50 Z" fill="#FFFFFF" />
+                        <path d="M110 70 L125 45 L90 25 L75 50 Z" fill="#F4F4F5" />
+                        <path d="M75 50 L75 20" strokeDasharray="3 3" />
+                      </g>
+                    </svg>
+                  </div>
+
+                  <h3 className="text-xl font-extrabold text-zinc-900 mb-2">
+                    {sidebarTab === 'recent' ? 'No Recent Work Found' : 'No Saved Projects Yet'}
+                  </h3>
+                  <p className="text-sm text-zinc-500 mb-8 max-w-md leading-relaxed">
+                    {sidebarTab === 'recent' 
+                      ? 'Your active design sessions and auto-saved drafts will automatically appear here as you work in the 3D studio.'
+                      : 'Create, save, and organize your structural packaging projects and box prototypes in one place.'}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-center gap-4">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-6 py-3 bg-white border-2 border-zinc-900 text-zinc-900 text-xs font-extrabold rounded-2xl shadow-sm hover:bg-zinc-900 hover:text-white transition-all flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4" /> Upload Dieline
+                    </button>
+                    <button
+                      onClick={() => handleNav('landing')}
+                      className="px-6 py-3 bg-zinc-900 text-white text-xs font-extrabold rounded-2xl shadow-md hover:bg-zinc-800 transition-all flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Create New Box
+                    </button>
+                  </div>
+                </div>
+              )
             )
 
           ) : viewMode === 'grid' ? (

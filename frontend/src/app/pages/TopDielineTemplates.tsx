@@ -78,19 +78,22 @@ const categories = [
 interface Props {
   onNavigate?: (category: string) => void;
   showExploreButton?: boolean;
+  searchQuery?: string;
 }
 
-export default function TopDielineTemplates({ onNavigate, showExploreButton = false }: Props) {
+export default function TopDielineTemplates({ onNavigate, showExploreButton = false, searchQuery = '' }: Props) {
+  const filteredCategories = categories.filter(cat => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return cat.title.toLowerCase().includes(q) || cat.id.toLowerCase().includes(q);
+  });
+
+  const displayCategories = filteredCategories.length > 0 ? filteredCategories : categories;
+
   return (
-    <section id="top-dielines" className="py-12 overflow-hidden font-sans bg-white">
+    <section id="top-dielines" className="py-8 overflow-hidden font-sans bg-white">
       <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-3 mb-8"
-        >
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
             <Grid className="w-5 h-5" />
           </div>
@@ -102,20 +105,13 @@ export default function TopDielineTemplates({ onNavigate, showExploreButton = fa
               Explore production-ready dieline CAD blueprints by category
             </p>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true, margin: "-50px" }}
-        >
-          {categories.map((cat, i) => (
-            <motion.a
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {displayCategories.map((cat, i) => (
+            <a
               href="#"
-              key={i}
-              variants={slideUpVariant}
+              key={cat.id || i}
               onClick={(e) => {
                 e.preventDefault();
                 if (onNavigate) {
@@ -137,9 +133,9 @@ export default function TopDielineTemplates({ onNavigate, showExploreButton = fa
               <div className="dieline-card-icon">
                 {cat.icon}
               </div>
-            </motion.a>
+            </a>
           ))}
-        </motion.div>
+        </div>
 
         {showExploreButton && (
           <motion.div

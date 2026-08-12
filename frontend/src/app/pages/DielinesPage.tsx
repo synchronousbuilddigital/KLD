@@ -11,12 +11,12 @@ import {
   FileText, 
   Scissors,
   CheckCircle2,
-  FolderOpen
+  FolderOpen,
+  Search
 } from 'lucide-react';
 import Header from '../components/layout/Header';
 import TemplateLibraryPage, { TemplateDetailCard } from './TemplateLibraryPage';
 import TopDielineTemplates from './TopDielineTemplates';
-import ElasticFooter from '../components/layout/ElasticFooter';
 import BoxStudioModal from './BoxStudioModal';
 
 interface DielinesPageProps {
@@ -42,6 +42,7 @@ const CATEGORY_ITEMS = [
 export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cake" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -70,17 +71,20 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   };
 
   const filteredCards = [
-    { id: 'te', title: 'Straight Tuck End Box', type: 'straight', model: 'te' },
-    { id: 'rte', title: 'Reverse Tuck End Box', type: 'reverse', model: 'rte' },
-    { id: 'auto_lock', title: 'Auto Lock Bottom Box', type: 'auto_lock', model: 'auto_lock' },
-    { id: 'cake', title: 'Cake Box with Handle & Window', type: 'cake', model: 'cake' },
+    { id: 'te', title: 'Straight Tuck End Box', type: 'straight', model: 'te', categories: ['all', 'te'] },
+    { id: 'rte', title: 'Reverse Tuck End Box', type: 'reverse', model: 'rte', categories: ['all', 'rte', 'tuck_end', 'folding'] },
+    { id: 'auto_lock', title: 'Auto Lock Bottom Box', type: 'auto_lock', model: 'auto_lock', categories: ['all', 'auto_lock', 'box_lid', 'rigid_box'] },
+    { id: 'cake', title: 'Cake Box with Handle & Window', type: 'cake', model: 'cake', categories: ['all', 'cake', 'paper_bag', 'envelope'] },
   ].filter(card => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesTitle = card.title.toLowerCase().includes(q);
+      const matchesType = card.type.toLowerCase().includes(q);
+      if (!matchesTitle && !matchesType) return false;
+    }
+
     if (activeCategory === 'all') return true;
-    if (activeCategory === 'te' && card.model === 'te') return true;
-    if (activeCategory === 'rte' && (card.model === 'rte' || activeCategory === 'tuck_end' || activeCategory === 'folding')) return true;
-    if (activeCategory === 'auto_lock' && (card.model === 'auto_lock' || activeCategory === 'box_lid' || activeCategory === 'rigid_box')) return true;
-    if (activeCategory === 'cake' && (card.model === 'cake' || activeCategory === 'paper_bag' || activeCategory === 'envelope')) return true;
-    return true;
+    return card.categories.includes(activeCategory);
   });
 
   return (
@@ -142,55 +146,92 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
         </aside>
 
         {/* RIGHT MAIN CONTENT AREA */}
-        <main className="flex-1 min-w-0 flex flex-col gap-10">
+        <main className="flex-1 min-w-0 flex flex-col gap-8">
           
-          {/* HERO TITLE HEADER */}
-          <div className="bg-gradient-to-r from-zinc-50 via-indigo-50/20 to-zinc-50 border border-zinc-200/70 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          {/* TOP SECTION HEADER WITH SEARCH BAR IN RIGHT CORNER */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-200 mb-3">
-                ✨ 4 Production-Ready Box Models
-              </div>
-              <h1 className="text-[32px] md:text-[40px] font-bold tracking-tight text-zinc-900 leading-tight">
-                Interactive Dieline & Box Studio
-              </h1>
-              <p className="text-zinc-600 text-sm md:text-base max-w-2xl mt-2 leading-relaxed">
-                Select any box model below to customize dimensions, view 2D vector dielines, fold/unfold in 3D, and export print-ready DXF, PDF, or SVG files.
+              <h2 className="text-2xl font-bold text-zinc-900 tracking-tight flex items-center gap-2.5">
+                <Box className="w-6 h-6 text-indigo-600" />
+                Featured Production Dieline Models
+              </h2>
+              <p className="text-xs text-zinc-500 mt-1 font-medium">
+                Vector 2D/3D parametric dieline models with DXF, PDF, SVG export
               </p>
+            </div>
+
+            {/* Search Input Bar in Right Corner */}
+            <div className="relative w-full sm:w-80 shrink-0">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search box models & dielines..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 bg-zinc-50 hover:bg-zinc-100/60 border border-zinc-200/90 rounded-xl text-xs font-semibold text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-zinc-200 transition-colors"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
 
           {/* ACTIVE BOX MODELS GRID */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
-                <Box className="w-5 h-5 text-indigo-600" />
-                Featured Production Dieline Models
-              </h2>
-              {activeCategory !== 'all' && (
+            {activeCategory !== 'all' && (
+              <div className="flex items-center justify-between bg-indigo-50/50 border border-indigo-100 rounded-xl px-4 py-2">
+                <span className="text-xs font-semibold text-indigo-900">
+                  Filtering by: <span className="font-bold">{CATEGORY_ITEMS.find(c => c.id === activeCategory)?.label || activeCategory}</span>
+                </span>
                 <button
                   onClick={() => setActiveCategory('all')}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
                 >
-                  Show All Models
+                  Clear Filter
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredCards.map((card) => (
-                <TemplateDetailCard
-                  key={card.id}
-                  title={card.title}
-                  type={card.type}
-                  onClick={() => setSelectedBoxModel(card.model as any)}
-                />
-              ))}
-            </div>
+            {filteredCards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredCards.map((card) => (
+                  <TemplateDetailCard
+                    key={card.id}
+                    title={card.title}
+                    type={card.type}
+                    onClick={() => setSelectedBoxModel(card.model as any)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-zinc-50 border border-dashed border-zinc-300 rounded-2xl p-10 text-center flex flex-col items-center justify-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-1">
+                  <Box className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-zinc-900">No Production 3D Box Models Found</h3>
+                <p className="text-xs text-zinc-500 max-w-md leading-relaxed">
+                  {searchQuery 
+                    ? `No 3D box models matched your search "${searchQuery}".` 
+                    : `Currently no production 3D box models are available for category "${CATEGORY_ITEMS.find(c => c.id === activeCategory)?.label || activeCategory}".`}
+                </p>
+                <button
+                  onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
+                  className="mt-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  Show All Production Box Models
+                </button>
+              </div>
+            )}
           </div>
 
           {/* CATEGORY EXPLORER */}
-          <div className="border-t border-zinc-200 pt-8">
-            <TopDielineTemplates onNavigate={handleCategorySelect} />
+          <div className="border-t border-zinc-200 pt-6">
+            <TopDielineTemplates onNavigate={handleCategorySelect} searchQuery={searchQuery} />
           </div>
 
         </main>
@@ -204,9 +245,6 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
           initialModel={selectedBoxModel}
         />
       )}
-
-      {/* Footer */}
-      <ElasticFooter />
     </div>
   );
 }

@@ -86,13 +86,24 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Prevent background scrolling when studio is open
+  // Prevent background scrolling and handle browser back button (Chrome Back) in 1 click
   useEffect(() => {
     if (isOpen) {
       const origOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
+
+      // Push history state so browser BACK button triggers popstate and closes modal in 1 click
+      window.history.pushState({ modal: 'box-studio' }, '', window.location.href);
+
+      const handlePopState = () => {
+        onClose();
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
       return () => {
         document.body.style.overflow = origOverflow;
+        window.removeEventListener('popstate', handlePopState);
       };
     }
   }, [isOpen]);
@@ -301,6 +312,13 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   };
 
   const handleSaveProject = async () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token');
+    if (!isLoggedIn) {
+      alert("⚠️ Login Required: Please sign in or create an account to save your design to your workspace.");
+      window.dispatchEvent(new CustomEvent('open-sign-in-modal'));
+      return;
+    }
+
     setIsSaving(true);
     const dimL_mm = Math.round(store.L * 25.4);
     const dimW_mm = Math.round(store.W * 25.4);
@@ -311,6 +329,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       name: `${modelName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
       type: 'DIELINE',
       category: modelName,
+      boxModel: store.boxModel,
       tabCategory: 'projects',
       variantId: 1,
       dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm },
@@ -355,7 +374,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         ...newItemData,
         updatedAt: new Date().toISOString()
       };
-      items = items.filter(i => i.id !== createdId);
+      items = items.filter(i => i.id !== createdId && i.id !== 'active-session-draft');
       items.unshift(newItem);
       localStorage.setItem('kld_workspace_items', JSON.stringify(items));
     } catch (err) {
@@ -390,14 +409,6 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         {/* TOP NAVBAR */}
         <header className="h-14 bg-white border-b border-zinc-200 px-4 md:px-6 flex items-center justify-between shrink-0 shadow-sm z-20">
           <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-700 transition-colors cursor-pointer"
-              title="Go Back"
-            >
-              <ArrowLeft className="w-5 h-5 text-zinc-700" />
-            </button>
-
             <div className="flex items-center justify-center w-7 h-7 text-zinc-900">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />

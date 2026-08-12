@@ -25,8 +25,15 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
         setCurrentUser(u ? JSON.parse(u) : null);
       } catch { setCurrentUser(null); }
     };
+    const handleOpenSignInModal = () => {
+      setIsSignInModalOpen(true);
+    };
     window.addEventListener('auth-change', handleAuthChange);
-    return () => window.removeEventListener('auth-change', handleAuthChange);
+    window.addEventListener('open-sign-in-modal', handleOpenSignInModal);
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('open-sign-in-modal', handleOpenSignInModal);
+    };
   }, []);
 
   const handleNavClick = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'admin' | 'workspace', targetPath: string) => {

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Package, ChevronRight, ChevronDown, Check, Sliders, RefreshCw, Layers, Image as ImageIcon, Printer } from 'lucide-react';
+import { ArrowRight, Package, ChevronRight, ChevronDown, Check, Sliders, RefreshCw, Layers, Image as ImageIcon, Printer, Save, Bookmark } from 'lucide-react';
 import NewHomeLanding from './pages/NewHomeLanding';
 import PackagingCollections from './pages/PackagingCollections';
 import MockupDetails from './pages/MockupDetails';
@@ -20,6 +20,9 @@ import RSCBoxPrototype, { SealState } from './pages/RSCBoxPrototype';
 import { getRscGeometry } from '../geometry';
 import MockupsPage from './pages/MockupsPage';
 import WorkshopPage from './pages/WorkshopPage';
+import SignInModal from './components/modals/SignInModal';
+import BoxStudioModal from './pages/BoxStudioModal';
+import { useBoxStore } from '../lib/useBoxStore';
 
 const slideUpVariant = {
   initial: { opacity: 0, y: 40 },
@@ -409,6 +412,22 @@ export default function App() {
     return null;
   });
   const [stepIndex, setStepIndex] = useState(0);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cake' }>({
+    isOpen: false,
+    model: 'rte'
+  });
+
+  useEffect(() => {
+    const handleOpenSignIn = () => setIsSignInModalOpen(true);
+    const handleAuthChange = () => setIsSignInModalOpen(false);
+    window.addEventListener('open-sign-in-modal', handleOpenSignIn);
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => {
+      window.removeEventListener('open-sign-in-modal', handleOpenSignIn);
+      window.removeEventListener('auth-change', handleAuthChange);
+    };
+  }, []);
 
   const handleCategorySelect = (id: string | null) => {
     setActiveCategoryId(id);
@@ -421,6 +440,7 @@ export default function App() {
   };
 
   const navigateTo = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop', extra?: any) => {
+    setIsSignInModalOpen(false); // Close any open sign-in modal when navigating
     setCurrentView(view);
     setActiveCategoryId(null);
     let targetPath = '/';
@@ -430,15 +450,29 @@ export default function App() {
     else if (view === 'dielines') targetPath = '/dielines';
     else if (view === 'pricing') targetPath = '/pricing';
     else if (view === 'about') targetPath = '/about-us';
-    else if (view === 'profile') targetPath = '/profile';
-    window.history.pushState(null, '', targetPath);
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
 
     if (extra && extra.boxConfig) {
-      if (extra.boxConfig.dimensions) {
-        if (extra.boxConfig.dimensions.L) setWidth(extra.boxConfig.dimensions.L);
-        if (extra.boxConfig.dimensions.W) setDepth(extra.boxConfig.dimensions.W);
-        if (extra.boxConfig.dimensions.H) setHeight(extra.boxConfig.dimensions.H);
+      const box = extra.boxConfig;
+      if (box.dimensions) {
+        if (box.dimensions.L) setWidth(box.dimensions.L);
+        if (box.dimensions.W) setDepth(box.dimensions.W);
+        if (box.dimensions.H) setHeight(box.dimensions.H);
       }
+      if (box.material) setMaterial(box.material);
+      if (box.artwork) setArtwork(box.artwork);
+      if (box.customColor) setCustomColor(box.customColor);
+      if (box.sealState) setSealState(box.sealState);
+      if (box.foldProgress !== undefined) setFoldProgress(box.foldProgress);
+
+      setTimeout(() => {
+        const studioEl = document.getElementById('design-lab');
+        if (studioEl) {
+          studioEl.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
     }
   };
 
@@ -475,7 +509,6 @@ export default function App() {
 
   // Design Lab Interactive Workspace States
   const [activeTab, setActiveTab] = useState('dimensions');
-  const [isStudioDropdownOpen, setIsStudioDropdownOpen] = useState(false);
   const [width, setWidth] = useState(305);
   const [height, setHeight] = useState(305);
   const [depth, setDepth] = useState(305);
@@ -492,7 +525,7 @@ export default function App() {
     const handleCustomNavigate = (e: any) => {
       const targetView = e.detail;
       if (targetView) {
-        setCurrentView(targetView);
+        navigateTo(targetView);
         window.scrollTo(0, 0);
       }
     };
@@ -500,38 +533,7 @@ export default function App() {
     return () => window.removeEventListener('navigate', handleCustomNavigate);
   }, []);
 
-  // Auto-save active box session to workspace drafts in localStorage
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const stored = localStorage.getItem('kld_workspace_items');
-        let items = stored ? JSON.parse(stored) : [];
-        
-        const activeDraftIndex = items.findIndex((i: any) => i.id === 'active-session-draft');
-        const draftObj = {
-          id: 'active-session-draft',
-          name: `Current Custom Box (${width} × ${depth} × ${height} mm)`,
-          category: 'Tuck End Box',
-          tabCategory: 'projects',
-          dimensions: { L: width, W: depth, H: height },
-          updatedAt: new Date().toISOString(),
-          isDraft: true,
-          isFavorite: activeDraftIndex >= 0 ? items[activeDraftIndex].isFavorite : false
-        };
 
-        if (activeDraftIndex >= 0) {
-          items[activeDraftIndex] = draftObj;
-        } else {
-          items.unshift(draftObj);
-        }
-        localStorage.setItem('kld_workspace_items', JSON.stringify(items));
-      } catch (err) {
-        console.log('Error auto-saving session draft:', err);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [width, depth, height]);
 
   useEffect(() => {
     let mounted = true;
@@ -893,18 +895,66 @@ export default function App() {
 
   if (currentView === 'workspace') {
     return (
-      <WorkspacePage 
-        onNavigate={(v, extra) => navigateTo(v as any, extra)} 
-        onBack={() => navigateTo('landing')} 
-        onOpenStudioWithBox={(box) => {
-          if (box && box.dimensions) {
-            if (box.dimensions.L) setWidth(box.dimensions.L);
-            if (box.dimensions.W) setDepth(box.dimensions.W);
-            if (box.dimensions.H) setHeight(box.dimensions.H);
-          }
-          navigateTo('landing');
-        }} 
-      />
+      <>
+        <WorkspacePage 
+          onNavigate={(v, extra) => navigateTo(v as any, extra)} 
+          onBack={() => navigateTo('landing')} 
+          onOpenStudioWithBox={(box) => {
+            if (!box) return;
+
+            // Detect if this box is a Dieline Studio model (saved from BoxStudioModal or Dielines Page)
+            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cake' | null = box.boxModel || null;
+
+            if (!boxModelKey && box.category) {
+              const cat = box.category.toLowerCase();
+              if (cat.includes('reverse tuck') || cat.includes('rte')) boxModelKey = 'rte';
+              else if (cat.includes('straight tuck') || cat.includes('te')) boxModelKey = 'te';
+              else if (cat.includes('auto lock') || cat.includes('lock')) boxModelKey = 'auto_lock';
+              else if (cat.includes('cake')) boxModelKey = 'cake';
+            }
+
+            // If item is a Dieline Model (or has boxModel / type === 'DIELINE')
+            if (boxModelKey || box.type === 'DIELINE') {
+              const finalModel = boxModelKey || 'rte';
+
+              // Sync dimensions to useBoxStore in inches
+              if (box.dimensions) {
+                const inL = (box.dimensions.L || 120) / 25.4;
+                const inW = (box.dimensions.W || 60) / 25.4;
+                const inH = (box.dimensions.H || 160) / 25.4;
+                useBoxStore.setState({ L: inL, W: inW, H: inH, boxModel: finalModel });
+              } else {
+                useBoxStore.setState({ boxModel: finalModel });
+              }
+
+              // Open BoxStudioModal directly for this exact saved dieline!
+              setActiveDielineBox({ isOpen: true, model: finalModel });
+              return;
+            }
+
+            // Otherwise, for Interactive Design Lab 3D Studio prototypes:
+            if (box.dimensions) {
+              if (box.dimensions.L) setWidth(box.dimensions.L);
+              if (box.dimensions.W) setDepth(box.dimensions.W);
+              if (box.dimensions.H) setHeight(box.dimensions.H);
+            }
+            if (box.material) setMaterial(box.material);
+            if (box.artwork) setArtwork(box.artwork);
+            if (box.customColor) setCustomColor(box.customColor);
+            if (box.sealState) setSealState(box.sealState);
+            if (box.foldProgress !== undefined) setFoldProgress(box.foldProgress);
+
+            navigateTo('landing', { boxConfig: box });
+          }} 
+        />
+        {activeDielineBox.isOpen && (
+          <BoxStudioModal
+            isOpen={activeDielineBox.isOpen}
+            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+            initialModel={activeDielineBox.model}
+          />
+        )}
+      </>
     );
   }
 
@@ -936,7 +986,7 @@ export default function App() {
         {stepIndex >= 7 && (
           <>
             {/* Interactive Design Lab Section */}
-            <section className="bg-zinc-950 text-white py-24 px-8 border-t border-zinc-900">
+            <section id="design-lab" className="bg-zinc-950 text-white py-24 px-8 border-t border-zinc-900">
               <motion.div className="max-w-6xl mx-auto mb-16 text-left" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
                 <span className="text-amber-500 font-mono text-sm tracking-wider uppercase">Interactive Design Lab</span>
                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight mt-2 text-white">
@@ -954,73 +1004,36 @@ export default function App() {
                 <div className="lg:col-span-5 border-r border-zinc-800/80 p-8 flex flex-col justify-between bg-zinc-900/20">
                   <div className="space-y-6">
 
-                    {/* Selector Dropdown */}
-                    <div className="relative w-full z-30">
+                    {/* Selector Tabs */}
+                    <div className="flex border border-zinc-800 rounded-xl bg-zinc-950/50 p-1 gap-1">
                       <button
-                        type="button"
-                        onClick={() => setIsStudioDropdownOpen(!isStudioDropdownOpen)}
-                        className="w-full flex items-center justify-between bg-zinc-900/90 border border-zinc-700/80 hover:border-zinc-500 text-white rounded-xl px-4 py-3 shadow-md transition-all cursor-pointer"
+                        onClick={() => setActiveTab('dimensions')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'dimensions' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                          }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-bold">
-                            {activeTab === 'dimensions' && <Sliders className="w-4 h-4 text-black" />}
-                            {activeTab === 'folding' && <RefreshCw className="w-4 h-4 text-black" />}
-                            {activeTab === 'materials' && <Layers className="w-4 h-4 text-black" />}
-                            {activeTab === 'artwork' && <ImageIcon className="w-4 h-4 text-black" />}
-                          </div>
-                          <div className="text-left">
-                            <div className="text-xs font-bold text-white uppercase tracking-wider">
-                              {activeTab === 'dimensions' && 'Size & Dimensions'}
-                              {activeTab === 'folding' && 'Assembly & Fold States'}
-                              {activeTab === 'materials' && 'Material & Finish Simulator'}
-                              {activeTab === 'artwork' && 'Brand & Artwork Decal'}
-                            </div>
-                            <div className="text-[10px] text-zinc-400 font-medium">
-                              {activeTab === 'dimensions' && 'Customize Box Width, Depth & Height'}
-                              {activeTab === 'folding' && 'Animate Lid & Flap Fold Sequences'}
-                              {activeTab === 'materials' && 'Kraft, Matte, Gloss & Gold Foil'}
-                              {activeTab === 'artwork' && 'Apply Packaging Design Decal & Texture'}
-                            </div>
-                          </div>
-                        </div>
-                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isStudioDropdownOpen ? 'rotate-180' : ''}`} />
+                        <Sliders className="w-3.5 h-3.5" /> Size
                       </button>
-
-                      {isStudioDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-zinc-700/90 rounded-xl shadow-2xl overflow-hidden z-50 divide-y divide-zinc-800/80">
-                          {[
-                            { id: 'dimensions', label: 'Size & Dimensions', icon: Sliders, desc: 'Customize Box Width, Depth & Height' },
-                            { id: 'folding', label: 'Assembly & Fold States', icon: RefreshCw, desc: 'Animate Lid & Flap Fold Sequences' },
-                            { id: 'materials', label: 'Material & Finish Simulator', icon: Layers, desc: 'Kraft, Matte, Gloss & Gold Foil' },
-                            { id: 'artwork', label: 'Brand & Artwork Decal', icon: ImageIcon, desc: 'Apply Packaging Design Decal & Texture' },
-                          ].map((opt) => {
-                            const IconComp = opt.icon;
-                            const isSelected = activeTab === opt.id;
-                            return (
-                              <button
-                                key={opt.id}
-                                type="button"
-                                onClick={() => {
-                                  setActiveTab(opt.id);
-                                  setIsStudioDropdownOpen(false);
-                                }}
-                                className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
-                                  isSelected ? 'bg-zinc-800 text-white font-bold' : 'hover:bg-zinc-800/60 text-zinc-300'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <IconComp className={`w-4 h-4 ${isSelected ? 'text-amber-400' : 'text-zinc-400'}`} />
-                                  <div>
-                                    <div className="text-xs font-bold">{opt.label}</div>
-                                    <div className="text-[10px] text-zinc-400">{opt.desc}</div>
-                                  </div>
-                                </div>
-                                {isSelected && <Check className="w-4 h-4 text-amber-400" />}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
+                      <button
+                        onClick={() => setActiveTab('folding')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'folding' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                          }`}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Fold
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('materials')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'materials' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                          }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" /> Finish
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('artwork')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'artwork' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                          }`}
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" /> Brand
+                      </button>
                     </div>
 
                     {/* TAB 1: Dimensions Controls */}
@@ -1331,7 +1344,7 @@ export default function App() {
                 {/* viewport column (Right) */}
                 <div className="lg:col-span-7 flex flex-col items-center justify-center p-8 bg-black/50 relative overflow-hidden min-h-[400px]">
 
-                  {/* Viewport Header Actions (Tape/Blade) */}
+                  {/* Viewport Header Actions (Tape / Blade Seal Toggle) */}
                   <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -1373,18 +1386,20 @@ export default function App() {
                   {/* Blueprint grid lines background */}
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293708_1px,transparent_1px),linear-gradient(to_bottom,#1f293708_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-                  {/* 3D Box scene viewport */}
+                  {/* 3D Box scene viewport (Enlarged box display) */}
                   <div className="w-full h-full flex-1 flex items-center justify-center absolute inset-0" style={{ perspective: 2000 }}>
-                    <RSCBoxPrototype
-                      width={width}
-                      depth={depth}
-                      height={height}
-                      foldProgress={foldProgress}
-                      material={material}
-                      baseStyle={(materialStyles as Record<string, any>)[material]}
-                      renderArtwork={renderArtwork}
-                      sealState={sealState}
-                    />
+                    <div style={{ transform: 'scale(1.15)', transformOrigin: 'center center', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <RSCBoxPrototype
+                        width={width}
+                        depth={depth}
+                        height={height}
+                        foldProgress={foldProgress}
+                        material={material}
+                        baseStyle={(materialStyles as Record<string, any>)[material]}
+                        renderArtwork={renderArtwork}
+                        sealState={sealState}
+                      />
+                    </div>
                   </div>
 
                 </div>
@@ -1404,6 +1419,18 @@ export default function App() {
 
       {/* Elastic Footer FX - Portaled natively outside main wrapper */}
       {stepIndex >= 7 && <ElasticFooter />}
+
+      {/* Global Dieline CAD & 3D Studio Modal for Resuming Saved Dieline Projects */}
+      {activeDielineBox.isOpen && (
+        <BoxStudioModal
+          isOpen={activeDielineBox.isOpen}
+          onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+          initialModel={activeDielineBox.model}
+        />
+      )}
+
+      {/* Global Sign In / Create Account Modal */}
+      {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
     </>
   );
 }

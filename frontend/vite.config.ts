@@ -1,17 +1,21 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
+// Safely declare __dirname for IDE TypeScript check
+declare const __dirname: string
 
-function figmaAssetResolver() {
+function figmaAssetResolver(): Plugin {
   return {
     name: 'figma-asset-resolver',
-    resolveId(id) {
+    resolveId(id: string) {
       if (id.startsWith('figma:asset/')) {
         const filename = id.replace('figma:asset/', '')
-        return path.resolve(__dirname, 'src/assets', filename)
+        const baseDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd()
+        return path.resolve(baseDir, 'src/assets', filename)
       }
+      return null
     },
   }
 }
@@ -27,7 +31,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Alias @ to the src directory
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(typeof __dirname !== 'undefined' ? __dirname : process.cwd(), './src'),
     },
   },
 

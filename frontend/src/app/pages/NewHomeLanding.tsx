@@ -61,32 +61,8 @@ export default function NewHomeLanding() {
       setTimeout(() => document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' }), 300);
     }
 
-    // Scroll observer to update URL path dynamically in browser address bar (e.g. /3d-models)
-    const sectionMap: Record<string, string> = {
-      'packaging-collections': '3d-models',
-      'top-dielines': 'dielines',
-      'about-us': 'about-us'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const mappedPath = sectionMap[entry.target.id];
-          if (mappedPath && window.location.pathname !== `/${mappedPath}`) {
-            window.history.replaceState(null, '', `/${mappedPath}`);
-          }
-        }
-      });
-    }, { threshold: 0.4 });
-
-    ['packaging-collections', 'top-dielines', 'about-us'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
     return () => {
       window.removeEventListener('auth-change', handleAuthChange);
-      observer.disconnect();
     };
   }, []);
 
