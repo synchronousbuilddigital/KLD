@@ -557,6 +557,7 @@ export default function EditorModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 L={store.L} W={store.W} H={store.H} T={store.T} 
                 materialType={store.materialType} 
                 isEditorMode={true} 
+                colorDieline={true}
                 activeColor={activeColor}
                 activeSurface={activeSurface}
                 decals={surfaceDecals}
@@ -788,6 +789,7 @@ export default function EditorModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     L={store.L} W={store.W} H={store.H} T={store.T} 
                     materialType={store.materialType} 
                     isEditorMode={true} 
+                    colorDieline={true}
                     activeColor={activeColor}
                     activeSurface={activeSurface}
                     decals={exportFileType === 'dieline' ? [] : surfaceDecals}

@@ -95,7 +95,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const containerRef = useRef(null);
   const svgRef = forwardedRef || props.innerRef || internalRef;
 
-  const { isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface, activeDecalId, setActiveDecalId } = props;
+  const { isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface, activeDecalId, setActiveDecalId, colorDieline = false } = props;
 
   const {
     L, W, H, T, sizeMode, glueFlapWidth, bleed,
@@ -187,13 +187,14 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const [textureDataUrl, setTextureDataUrl] = useState("");
 
   useEffect(() => {
-    const colorToUse = activeColor !== undefined ? activeColor : packageColor;
+    // Only apply color to the 2D dieline texture if colorDieline is true
+    const colorToUse = colorDieline ? (activeColor !== undefined ? activeColor : packageColor) : "transparent";
     const catToUse = materialCategory || "white_paperboard";
     const canvas = generateCardboardCanvas(catToUse, colorToUse);
     if (canvas) {
       setTextureDataUrl(canvas.toDataURL("image/jpeg", 0.6));
     }
-  }, [materialCategory, packageColor, activeColor]);
+  }, [materialCategory, packageColor, activeColor, colorDieline]);
 
   useEffect(() => {
     setView({ x: -pad - (baseW * 0.2), y: -pad - (baseH * 0.2), w: baseW * 1.4, h: baseH * 1.4 });
