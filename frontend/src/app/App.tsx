@@ -18,6 +18,8 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import WorkspacePage from './pages/WorkspacePage';
 import RSCBoxPrototype, { SealState } from './pages/RSCBoxPrototype';
 import { getRscGeometry } from '../geometry';
+import MockupsPage from './pages/MockupsPage';
+import WorkshopPage from './pages/WorkshopPage';
 
 const slideUpVariant = {
   initial: { opacity: 0, y: 40 },
@@ -382,10 +384,12 @@ function HeroSlideshow({ visible }: { visible: boolean }) {
 }
 
 export default function App() {
-  const getViewFromUrl = (): 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' => {
+  const getViewFromUrl = (): 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'mockups' | 'workshop' => {
     const path = window.location.pathname.replace('/', '').toLowerCase();
     const hash = window.location.hash.replace('#', '').toLowerCase();
     const route = path || hash;
+    if (route === 'mockups') return 'mockups';
+    if (route === 'workshop') return 'workshop';
     if (route === 'admin') return 'admin';
     if (route === 'workspace') return 'workspace';
     if (route === 'profile') return 'profile';
@@ -396,7 +400,7 @@ export default function App() {
     return 'landing';
   };
 
-  const [currentView, setCurrentView] = useState<'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace'>(getViewFromUrl);
+  const [currentView, setCurrentView] = useState<'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop'>(getViewFromUrl);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(() => {
     const path = window.location.pathname.replace('/', '').toLowerCase();
     if (path.startsWith('mockup/')) {
@@ -416,7 +420,7 @@ export default function App() {
     }
   };
 
-  const navigateTo = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace', extra?: any) => {
+  const navigateTo = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop', extra?: any) => {
     setCurrentView(view);
     setActiveCategoryId(null);
     let targetPath = '/';
@@ -558,38 +562,9 @@ export default function App() {
   }, []);
 
   // Emulate flawless "Fit to Screen" scaling
+  // Removed auto-zooming logic based on user feedback
   useEffect(() => {
-    const handleResize = () => {
-      const BASE_WIDTH = 1440;
-      const BASE_HEIGHT = 900;
-      const currentWidth = window.innerWidth;
-      const currentHeight = window.innerHeight;
-
-      // Calculate scale to perfectly fit both the height and width of the screen without clipping
-      const scale = Math.min(currentWidth / BASE_WIDTH, currentHeight / BASE_HEIGHT);
-
-      // Apply zoom to body so the entire document scales
-      document.body.style.zoom = scale.toString();
-      document.documentElement.style.setProperty('--app-scale', scale.toString());
-
-      // Crucial fix: Make the body wide enough to fill the entire screen after zoom is applied.
-      // This completely eliminates "pillar-boxing" (extra space on the sides).
-      document.body.style.width = `${currentWidth / scale}px`;
-
-      document.body.style.overflowX = 'hidden';
-      document.body.style.margin = '0 auto';
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Initial setup
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      document.body.style.zoom = '';
-      document.body.style.width = '';
-      document.body.style.overflowX = '';
-      document.body.style.margin = '';
-    };
+    // Zooming disabled
   }, []);
 
   const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(() => {
@@ -931,6 +906,14 @@ export default function App() {
         }} 
       />
     );
+  }
+
+  if (currentView === 'mockups') {
+    return <MockupsPage />;
+  }
+
+  if (currentView === 'workshop') {
+    return <WorkshopPage />;
   }
 
   return (

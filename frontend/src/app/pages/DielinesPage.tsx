@@ -20,7 +20,7 @@ import ElasticFooter from '../components/layout/ElasticFooter';
 import BoxStudioModal from './BoxStudioModal';
 
 interface DielinesPageProps {
-  onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile') => void;
+  onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => void;
 }
 
 const CATEGORY_ITEMS = [

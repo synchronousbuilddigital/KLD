@@ -22,7 +22,7 @@ import ElasticFooter from '../components/layout/ElasticFooter';
 import '../../styles/new-home.css';
 
 interface AboutUsPageProps {
-  onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile') => void;
+  onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => void;
 }
 
 export default function AboutUsPage({ onNavigate }: AboutUsPageProps) {

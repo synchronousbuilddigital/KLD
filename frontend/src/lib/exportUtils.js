@@ -337,7 +337,7 @@ function parsePathToLines(pathStr) {
   return lines;
 }
 
-export function exportDXF(dielineData, filename = "dieline.dxf") {
+export function generateDXFString(dielineData) {
   const { cutPaths, bleedPaths, foldLines } = dielineData;
 
   let dxf = "";
@@ -406,6 +406,11 @@ export function exportDXF(dielineData, filename = "dieline.dxf") {
   }
 
   dxf += "0\nENDSEC\n0\nEOF\n";
+  return dxf;
+}
+
+export function exportDXF(dielineData, filename = "dieline.dxf") {
+  const dxf = generateDXFString(dielineData);
 
   // Trigger browser file download
   const blob = new Blob([dxf], { type: "application/dxf" });

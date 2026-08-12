@@ -337,7 +337,7 @@ export function generateRTEDielineLegacy({ L, W, H, T = 0.018, glueFlapWidth = 0
   return {
     width: x5, height: yBot + coverD + lipD, cutPaths,
     bleedPaths: buildContinuousBleed(nBleed), foldLines,
-    dimensions: { L: nL, W: nW, H: nH, x1, x2, x3, x4, x5, yTop, yBot, dustD }
+    dimensions: { L: nL, W: nW, H: nH, x1, x2, x3, x4, x5, yTop, yBot, dustD: actualDustD }
   };
 }
 

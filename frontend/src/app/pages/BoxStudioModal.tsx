@@ -5,7 +5,8 @@ import { ArrowLeft, RotateCcw, Maximize2, Play, Download, Check, Info, Save, Pri
 import { useBoxStore } from "../../lib/useBoxStore";
 import DielineSVG from "../../components/DielineSVG";
 import Box3DViewer from "../../components/Box3DViewer";
-import { exportSVG, exportDXF, exportPDF } from "../../lib/exportUtils";
+import MaterialDropdown from "../../components/dieline/MaterialDropdown";
+import { exportSVG, exportDXF, exportPDF, generateDXFString } from "../../lib/exportUtils";
 import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
@@ -236,9 +237,35 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     }
   };
 
+  const handlePrint = () => {
+    try {
+      const params = {
+        L: store.L,
+        W: store.W,
+        H: store.H,
+        T: store.T,
+        glueFlapWidth: store.glueFlapWidth,
+        bleed: store.bleed
+      };
+      let dielineData;
+      if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
+      else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
+      else if (store.boxModel === "cake") dielineData = generateCakeBoxDieline(params);
+      else dielineData = generateRTEDielineDXF(params);
+      
+      const dxfString = generateDXFString(dielineData);
+      
+      // Store in localStorage so dieline-tool.html can pick it up automatically
+      localStorage.setItem("autoLoadDXF", dxfString);
+      window.open('/dieline-tool.html', '_blank');
+    } catch (err) {
+      console.error("Print Error:", err);
+    }
+  };
+
   const handleExportPDF = async () => {
     try {
-      const svgElement = document.querySelector("#dieline-canvas-area svg") as SVGSVGElement | null;
+      const svgElement = document.querySelector("#dieline-svg-wrapper svg") as SVGSVGElement | null;
       if (svgElement) {
         await exportPDF(svgElement, `${store.boxModel}_dieline.pdf`, "CMYK");
       } else {
@@ -250,9 +277,21 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     }
   };
 
+  const handleExportAI = () => {
+    try {
+      const svgElement = document.querySelector("#dieline-svg-wrapper svg") as SVGSVGElement | null;
+      if (svgElement) {
+        // AI can natively open SVG files and editing is perfectly preserved
+        exportSVG(svgElement, `${store.boxModel}_dieline.ai`);
+      }
+    } catch (err) {
+      console.error("AI Export Error:", err);
+    }
+  };
+
   const handleExportSVG = () => {
     try {
-      const svgElement = document.querySelector("#dieline-canvas-area svg") as SVGSVGElement | null;
+      const svgElement = document.querySelector("#dieline-svg-wrapper svg") as SVGSVGElement | null;
       if (svgElement) {
         exportSVG(svgElement, `${store.boxModel}_dieline.svg`);
       }
@@ -343,7 +382,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[999999] bg-[#fafafa] flex flex-col font-sans text-zinc-900 overflow-hidden w-full h-full">
+    <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col font-sans text-zinc-900 overflow-hidden w-full h-full">
       <StudioErrorBoundary onClose={onClose}>
         <div className="relative w-full h-full flex flex-col overflow-hidden">
 
@@ -430,15 +469,15 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               )}
             </button>
 
-            {/* Download Dieline Button */}
+            {/* Print Button */}
             <button
-              onClick={handleExportPDF}
+              onClick={handlePrint}
               className="px-3.5 py-2 rounded-lg text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-95 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
               style={{ backgroundColor: '#007aff' }}
             >
-              <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-              <span className="hidden sm:inline">Download the dieline</span>
-              <span className="sm:hidden">Download</span>
+              <Printer className="w-3.5 h-3.5 text-white" />
+              <span className="hidden sm:inline">Print</span>
+              <span className="sm:hidden">Print</span>
             </button>
 
           </div>
@@ -523,16 +562,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Material</span>
               </div>
-              <select
-                value={store.materialCategory}
-                onChange={(e) => store.setMaterialCategory(e.target.value as any)}
-                className="w-full bg-white border border-zinc-300 rounded-lg px-3 py-2 text-xs text-zinc-800 font-medium focus:outline-none focus:border-blue-500"
-              >
-                <option value="white_paperboard">350g white paperboard (0.018 in)</option>
-                <option value="kraft_paperboard">Natural kraft paperboard (0.019 in)</option>
-                <option value="corrugated">Corrugated flute board (0.060 in)</option>
-                <option value="art_paper">Coated art paper (0.015 in)</option>
-              </select>
+              <MaterialDropdown />
             </div>
 
             {/* Size Mode Radio Buttons */}
@@ -673,6 +703,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
 
             {/* 2D Vector CAD Canvas */}
             <div
+              id="dieline-svg-wrapper"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: "center",
@@ -754,7 +785,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={handleExportPDF}
+                  onClick={handleExportAI}
                   className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all text-xs font-semibold text-zinc-800 text-left"
                 >
                   <span className="w-6 h-6 rounded bg-amber-500 text-zinc-900 font-extrabold text-[10px] flex items-center justify-center shrink-0">

@@ -8,7 +8,7 @@ import ElasticFooter from '../components/layout/ElasticFooter';
 import '../../styles/new-home.css';
 
 interface ModelsPageProps {
-  onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile') => void;
+  onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => void;
   onCategorySelect: (categoryId: string) => void;
 }
 
@@ -17,13 +17,6 @@ export default function ModelsPage({ onNavigate, onCategorySelect }: ModelsPageP
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.body.style.zoom = '1';
-    document.body.style.width = '100%';
-    document.body.style.overflowX = 'hidden';
-    return () => {
-      document.body.style.zoom = '';
-      document.body.style.width = '';
-    };
   }, []);
 
   return (

@@ -135,23 +135,8 @@ export function generateTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.625
   function deformY(x, y) {
     const panel = getTemplatePanel(x);
     
-    let yTop_new, yBot_new;
-    if (panel.index === 0) {
-      yTop_new = yTop_base_new + nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 1) {
-      yTop_new = yTop_base_new + nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 2) {
-      yTop_new = yTop_base_new - nT/2;
-      yBot_new = yBot_base_new + nT/2;
-    } else if (panel.index === 3) {
-      yTop_new = yTop_base_new + nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 4) {
-      yTop_new = yTop_base_new - nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    }
+    let yTop_new = yTop_base_new;
+    let yBot_new = yBot_base_new;
 
     if (y >= panel.yBot_tpl && y <= panel.yTop_tpl) {
       // Body Region (yBot_tpl=140 is bottom of box, yTop_tpl=300 is top of box)
@@ -299,7 +284,7 @@ export function generateTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.625
   function deformPoint([x_mm, y_mm]) {
     const x = x_mm / MM_TO_IN;
     const y = y_mm / MM_TO_IN;
-    return [deformX(x), deformY(x, y)];
+    return [deformX(x), deformY_global(y)];
   }
 
   function deformPointBleed([x_mm, y_mm]) {

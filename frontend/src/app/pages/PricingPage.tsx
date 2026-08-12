@@ -9,7 +9,7 @@ import ElasticFooter from '../components/layout/ElasticFooter';
 
 interface PricingPageProps {
   onBack?: () => void;
-  onNavigate?: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile') => void;
+  onNavigate?: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => void;
 }
 
 export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
@@ -45,7 +45,7 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<'BASE' | 'PRO'>('PRO');
 
-  const handleNav = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile') => {
+  const handleNav = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => {
     if (onNavigate) {
       onNavigate(view);
     } else {

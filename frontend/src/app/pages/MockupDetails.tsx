@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, Bookmark, Check } from 'lucide-react';
 import '../../styles/new-home.css';
 import { mockupCategories, MockupVariant } from '../data/mockupData';
+import { useBoxStore } from '../../lib/useBoxStore';
 import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import Header from '../components/layout/Header';
 import SignInModal from '../components/modals/SignInModal';
@@ -23,6 +24,17 @@ interface MockupDetailsProps {
 
 const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVariant }: any) => {
   const isHovered = hoveredVariant?.id === variant.id;
+  const setBoxModel = useBoxStore((state: any) => state.setBoxModel);
+
+  const handleClick = () => {
+    if (variant.name === 'Reverse Tuck End Box') {
+      setBoxModel('rte');
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+    } else if (variant.name === 'Tuck End Box') {
+      setBoxModel('te');
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+    }
+  };
 
   return (
     <div 
@@ -30,6 +42,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       style={{ textDecoration: 'none' }}
       onMouseEnter={() => setHoveredVariant(variant)}
       onMouseLeave={() => setHoveredVariant(null)}
+      onClick={handleClick}
     >
       <div
         className="relative rounded-[16px] h-[260px] p-6 flex flex-col items-center justify-center transition-all duration-300 group-hover/detail:-translate-y-1 overflow-hidden"

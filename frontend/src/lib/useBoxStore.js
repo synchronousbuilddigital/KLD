@@ -43,10 +43,10 @@ export const useBoxStore = create((set) => ({
   setSizeMode: (mode) => set({ sizeMode: mode }),
 
   // Line Colors
-  trimColor: "#0055ff", // Bright Pure Blue
-  creaseColor: "#ff0000", // Bright Pure Red
-  bleedColor: "#00cc00", // Bright Pure Green
-  dimColor: "#00a2ff", // Bright Cyan
+  trimColor: "#3f46ad", // Indigo Blue
+  creaseColor: "#ff4d4f", // Bright Red
+  bleedColor: "#16a34a", // Soft Green
+  dimColor: "#4a90e2", // Bright Blue
 
   // Theme State
   theme: "light",

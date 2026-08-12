@@ -108,124 +108,59 @@ export function generateRTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.62
     }
   }
 
-  // Helper to determine template panel region for Y mapping (in inches)
-  function getTemplatePanel(x) {
-    const x1_tpl = 16.0 / MM_TO_IN;
-    const x2_tpl = 136.0 / MM_TO_IN;
-    const x3_tpl = 196.0 / MM_TO_IN;
-    const x4_tpl = 316.0 / MM_TO_IN;
-    
-    if (x < x1_tpl) {
-      return { index: 0, yTop_tpl: 79.25 / MM_TO_IN, yBot_tpl: 239.25 / MM_TO_IN, type: 'glue' };
-    } else if (x < x2_tpl) {
-      return { index: 1, yTop_tpl: 79.25 / MM_TO_IN, yBot_tpl: 239.25 / MM_TO_IN, type: 'L' };
-    } else if (x < x3_tpl) {
-      return { index: 2, yTop_tpl: 79.75 / MM_TO_IN, yBot_tpl: 239.25 / MM_TO_IN, type: 'W' };
-    } else if (x < x4_tpl) {
-      return { index: 3, yTop_tpl: 79.25 / MM_TO_IN, yBot_tpl: 239.25 / MM_TO_IN, type: 'L' };
-    } else {
-      return { index: 4, yTop_tpl: 79.75 / MM_TO_IN, yBot_tpl: 239.75 / MM_TO_IN, type: 'W' };
-    }
-  }
+  function deformY_global(y) {
+    const yBleedTop_tpl = 0.0 / MM_TO_IN;
+    const yLipTop_tpl = 5.0 / MM_TO_IN;
+    const yTuckTop_tpl = 20.0 / MM_TO_IN;
+    const yDustTop_tpl = 36.75 / MM_TO_IN;
+    const yDustBodyTop_tpl = 41.75 / MM_TO_IN;
+    const yBodyTop_tpl = 79.25 / MM_TO_IN;
+    const yBodyBot_tpl = 239.25 / MM_TO_IN;
+    const yDustBodyBot_tpl = 277.25 / MM_TO_IN;
+    const yDustBot_tpl = 282.25 / MM_TO_IN;
+    const yTuckBot_tpl = 299.0 / MM_TO_IN;
+    const yLipBot_tpl = 314.0 / MM_TO_IN;
+    const yBleedBot_tpl = 319.0 / MM_TO_IN;
 
-  // Helper to deform Y coordinate with cardboard thickness adjustments (in inches)
-  function deformY(x, y) {
-    const panel = getTemplatePanel(x);
-    
-    let yTop_new, yBot_new;
-    if (panel.index === 0) {
-      yTop_new = yTop_base_new - nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 1) {
-      yTop_new = yTop_base_new - nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 2) {
-      yTop_new = yTop_base_new + nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 3) {
-      yTop_new = yTop_base_new - nT/2;
-      yBot_new = yBot_base_new - nT/2;
-    } else if (panel.index === 4) {
-      yTop_new = yTop_base_new + nT/2;
-      yBot_new = yBot_base_new + nT/2;
-    }
+    const lipHeight = 15.0 / MM_TO_IN;
+    const yBleedTop_new = yTop_base_new - nW - lipHeight - nBleed;
+    const yLipTop_new = yTop_base_new - nW - lipHeight;
+    const yTuckTop_new = yTop_base_new - nW;
+    const yDustTop_new = yTop_base_new - dustD_new - nBleed;
+    const yDustBodyTop_new = yTop_base_new - dustD_new;
+    const yBodyTop_new = yTop_base_new;
+    const yBodyBot_new = yBot_base_new;
+    const yDustBodyBot_new = yBot_base_new + dustD_new;
+    const yDustBot_new = yBot_base_new + dustD_new + nBleed;
+    const yTuckBot_new = yBot_base_new + nW;
+    const yLipBot_new = yBot_base_new + nW + lipHeight;
+    const yBleedBot_new = yBot_base_new + nW + lipHeight + nBleed;
 
-    if (y >= panel.yTop_tpl && y <= panel.yBot_tpl) {
-      // Body Region
-      const h_tpl = panel.yBot_tpl - panel.yTop_tpl;
-      return yTop_new + (y - panel.yTop_tpl) * (nH / h_tpl);
-    } else if (y < panel.yTop_tpl) {
-      // Top Flap Region
-      if (panel.type === 'L' || panel.type === 'glue') {
-        // Panel 1/3 top tuck flap
-        const yTuck_tpl = 20.0 / MM_TO_IN;
-        const coverD_tpl = panel.yTop_tpl - yTuck_tpl;
-        if (y >= yTuck_tpl) {
-          // On cover
-          return yTop_new - (panel.yTop_tpl - y) * (nW / coverD_tpl);
-        } else {
-          // On lip or bleed
-          const yTuck_new = yTop_new - nW;
-          if (y >= 5.0 / MM_TO_IN) {
-            // On lip
-            return yTuck_new - (yTuck_tpl - y);
-          } else {
-            // In bleed
-            return yTuck_new - (15.0 / MM_TO_IN) - ((5.0 / MM_TO_IN) - y) * (nBleed / bleed_tpl);
-          }
-        }
-      } else {
-        // Panel 2/4 top dust flap
-        const dustHeight_tpl = panel.yTop_tpl - (41.75 / MM_TO_IN);
-        if (y >= 41.75 / MM_TO_IN) {
-          // On dust flap
-          return yTop_new - (panel.yTop_tpl - y) * (dustD_new / dustHeight_tpl);
-        } else {
-          // In bleed
-          return yTop_new - dustD_new - ((41.75 / MM_TO_IN) - y) * (nBleed / bleed_tpl);
-        }
-      }
-    } else {
-      // Bottom Flap Region
-      if (panel.index === 3) {
-        // Panel 3 bottom tuck flap
-        const yTuck_tpl = 299.0 / MM_TO_IN;
-        const coverD_tpl = yTuck_tpl - panel.yBot_tpl;
-        if (y <= yTuck_tpl) {
-          // On cover
-          return yBot_new + (y - panel.yBot_tpl) * (nW / coverD_tpl);
-        } else {
-          // On lip or bleed
-          const yTuck_new = yBot_new + nW;
-          if (y <= 314.0 / MM_TO_IN) {
-            // On lip
-            return yTuck_new + (y - yTuck_tpl);
-          } else {
-            // In bleed
-            return yTuck_new + (15.0 / MM_TO_IN) + (y - (314.0 / MM_TO_IN)) * (nBleed / bleed_tpl);
-          }
-        }
-      } else if (panel.type === 'W') {
-        // Panel 2/4 bottom dust flap
-        const dustHeight_tpl = (277.25 / MM_TO_IN) - panel.yBot_tpl;
-        if (y <= 277.25 / MM_TO_IN) {
-          // On dust flap
-          return yBot_new + (y - panel.yBot_tpl) * (dustD_new / dustHeight_tpl);
-        } else {
-          // In bleed
-          return yBot_new + dustD_new + (y - (277.25 / MM_TO_IN)) * (nBleed / bleed_tpl);
-        }
-      } else {
-        // Other bottom flaps (like Panel 1 bottom line, glue flap bottom)
-        return yBot_new + (y - panel.yBot_tpl);
+    const tplAnchors = [
+      yBleedTop_tpl, yLipTop_tpl, yTuckTop_tpl, yDustTop_tpl, yDustBodyTop_tpl, yBodyTop_tpl,
+      yBodyBot_tpl, yDustBodyBot_tpl, yDustBot_tpl, yTuckBot_tpl, yLipBot_tpl, yBleedBot_tpl
+    ];
+    const newAnchors = [
+      yBleedTop_new, yLipTop_new, yTuckTop_new, yDustTop_new, yDustBodyTop_new, yBodyTop_new,
+      yBodyBot_new, yDustBodyBot_new, yDustBot_new, yTuckBot_new, yLipBot_new, yBleedBot_new
+    ];
+
+    if (y <= tplAnchors[0]) return newAnchors[0] - (tplAnchors[0] - y);
+    if (y >= tplAnchors[tplAnchors.length - 1]) return newAnchors[newAnchors.length - 1] + (y - tplAnchors[tplAnchors.length - 1]);
+
+    for (let i = 0; i < tplAnchors.length - 1; i++) {
+      if (y >= tplAnchors[i] && y <= tplAnchors[i + 1]) {
+        const t = (y - tplAnchors[i]) / (tplAnchors[i + 1] - tplAnchors[i]);
+        return newAnchors[i] + t * (newAnchors[i + 1] - newAnchors[i]);
       }
     }
+    return y;
   }
 
   function deformPoint([x_mm, y_mm]) {
     const x = x_mm / MM_TO_IN;
     const y = y_mm / MM_TO_IN;
-    return [deformX(x), deformY(x, y)];
+    return [deformX(x), deformY_global(y)];
   }
 
   // --- SEGMENT CHAINING ENGINE ---

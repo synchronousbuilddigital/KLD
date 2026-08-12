@@ -433,20 +433,19 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
         {/* When in editor mode, fill the shape with the photorealistic texture and add a subtle drop shadow */}
         <g
-          stroke={isEditorMode ? "#8d7051" : trimColor}
+          stroke={trimColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
           fill={isEditorMode ? "url(#kraft-pattern)" : (packageColor && packageColor !== "transparent" ? packageColor : "none")}
           strokeLinejoin="round"
           strokeLinecap="round"
-          style={isEditorMode ? { filter: "url(#drop-shadow)" } : {}}
+          filter={isEditorMode ? "drop-shadow(0px 8px 16px rgba(0,0,0,0.15))" : undefined}
+          style={{ transition: "fill 0.3s ease-in-out" }}
         >
-          {cutPaths.map((p, i) => (
-            <path key={`cut-${i}`} d={p} />
-          ))}
+          {cutPaths.map((p, i) => <path key={`cut-${i}`} d={p} />)}
         </g>
 
         <g
-          stroke={isEditorMode ? "#8d7051" : creaseColor}
+          stroke={creaseColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
           strokeDasharray={dashPattern}
           fill="none"
