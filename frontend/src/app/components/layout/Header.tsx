@@ -58,25 +58,25 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
 
   return (
     <>
-      <header className="main-header transition-all duration-200">
+      <header className="main-header transition-all duration-300">
         
         {/* LOGO */}
         <div 
           className="logo group flex items-center gap-3 cursor-pointer select-none" 
           onClick={() => handleNavClick('landing', '/')}
         >
-          <div className="w-10 h-10 rounded-xl bg-[#C89A63] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-9 h-9 rounded-xl bg-[#C89A63] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
               <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
           </div>
-          <span className="font-black tracking-widest text-base text-zinc-950">KEYLINE DESIGN</span>
+          <span className="font-black tracking-widest text-sm text-zinc-950 uppercase">KEYLINE DESIGN</span>
         </div>
 
         {/* CENTER NAVIGATION LINKS */}
-        <nav className="nav-links flex items-center gap-2 bg-zinc-100/90 p-2 rounded-full border border-zinc-200/80 shadow-inner">
+        <nav className="nav-links flex items-center gap-1 bg-zinc-100/80 p-1.5 rounded-full border border-zinc-200/70 backdrop-blur-sm">
           {navItems.map((item) => {
             const isActive = activeNav === item.id;
             return (
@@ -84,10 +84,10 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
                 key={item.id}
                 href={item.path}
                 onClick={(e) => { e.preventDefault(); handleNavClick(item.id as any, item.path); }}
-                className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-150 ${
+                className={`px-4.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 ${
                   isActive 
-                    ? 'bg-white text-zinc-950 shadow-md font-extrabold border border-zinc-200/90 scale-[1.02]' 
-                    : 'text-zinc-700 hover:text-zinc-950 hover:bg-zinc-200/60'
+                    ? 'bg-zinc-950 text-white shadow-xs' 
+                    : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-200/60 font-semibold'
                 }`}
               >
                 {item.label}
@@ -96,38 +96,38 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
           })}
         </nav>
 
-        {/* RIGHT ACTION BUTTONS — START DESIGNING FIRST, WORKSPACE SHIFTED RIGHT */}
-        <div className="flex items-center gap-3">
+        {/* RIGHT ACTION BUTTONS */}
+        <div className="flex items-center gap-2.5">
           
-          {/* 1. START DESIGNING BUTTON (LEFT) */}
+          {/* 1. START DESIGNING BUTTON */}
           <button 
-            className="btn btn-header group bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-extrabold px-6 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+            className="group bg-zinc-950 hover:bg-zinc-800 active:scale-95 text-white text-xs font-bold px-4.5 py-2 rounded-full shadow-xs hover:shadow-sm transition-all flex items-center gap-1.5"
             onClick={() => setIsSignInModalOpen(true)}
           >
             <span>Start Designing</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
-          {/* 2. WORKSPACE BUTTON (SHIFTED TO THE RIGHT OF START DESIGNING) */}
+          {/* 2. WORKSPACE BUTTON */}
           <button 
             onClick={(e) => { e.preventDefault(); handleNavClick('workspace', '/workspace'); }}
-            className={`px-5 py-2.5 rounded-full text-sm font-extrabold flex items-center gap-2 transition-all border shadow-sm ${
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all border ${
               activeNav === 'workspace'
                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-100'
-                : 'bg-zinc-100 hover:bg-zinc-200/80 text-zinc-800 border-zinc-200/90'
+                : 'bg-zinc-100/90 hover:bg-zinc-200/90 text-zinc-800 border-zinc-200/80'
             }`}
             title="Saved History & Workspace"
           >
-            <Folder className="w-4 h-4 text-indigo-500" />
+            <Folder className="w-3.5 h-3.5 text-indigo-500" />
             <span>Workspace</span>
           </button>
 
           {/* USER PROFILE AVATAR DROPDOWN IF LOGGED IN */}
           {isLoggedIn && (
-            <div className="group relative cursor-pointer ml-1">
+            <div className="group relative cursor-pointer ml-0.5">
               <div 
                 onClick={() => handleNavClick(currentUser?.role === 'ADMIN' ? 'admin' : 'profile', currentUser?.role === 'ADMIN' ? '/admin' : '/profile')}
-                className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-extrabold text-base uppercase shadow-sm border border-zinc-800"
+                className="w-8 h-8 rounded-full bg-zinc-950 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-xs border border-zinc-800 hover:ring-2 hover:ring-zinc-300 transition-all"
                 title={currentUser?.role === 'ADMIN' ? 'Admin Control Center' : 'View Profile'}
               >
                 {currentUser?.fullName?.[0] || currentUser?.email?.[0] || 'A'}
