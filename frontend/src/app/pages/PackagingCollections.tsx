@@ -255,9 +255,6 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
 
                 <div className="packaging-collections-card__body">
                   <div>
-                    <div className="card-meta-row">
-                      <span className="packaging-card-tag">{cat.tag || '3D Model'}</span>
-                    </div>
                     <h3 className="packaging-collections-card__title">{cat.title}</h3>
                     <p className="packaging-collections-card__sub">{cat.subtitle}</p>
                   </div>
