@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, Share2, HelpCircle, Bookmark, Check } from 'lucide-react';
 import { getReverseTuckGeometry } from '../../geometry';
+import { API_BASE_URL } from '../../config/api';
 import {
   EditorLayout,
   Toolbar,
@@ -33,7 +34,7 @@ export default function ReverseTuckEditorPage() {
       dimensions: { L, W, H, glueTab, tuck }
     });
     try {
-      let res = await fetch('http://localhost:5000/api/mockups/saved', {
+      let res = await fetch(`${API_BASE_URL}/mockups/saved`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -46,7 +47,7 @@ export default function ReverseTuckEditorPage() {
       if (res.status === 401 || data.message === 'Token expired.') {
         try {
           const savedRefreshToken = localStorage.getItem('refreshToken');
-          const refreshRes = await fetch('http://localhost:5000/api/auth/refresh', {
+          const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ export default function ReverseTuckEditorPage() {
             if (refreshData.data.refreshToken) {
               localStorage.setItem('refreshToken', refreshData.data.refreshToken);
             }
-            res = await fetch('http://localhost:5000/api/mockups/saved', {
+            res = await fetch(`${API_BASE_URL}/mockups/saved`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

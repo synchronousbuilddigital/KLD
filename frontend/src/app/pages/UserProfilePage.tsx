@@ -5,6 +5,7 @@ import {
   Sparkles, LogOut, ArrowLeft, CheckCircle2, Trash2, Eye, EyeOff, Save, Lock, X, LayoutDashboard, ExternalLink, Search, Copy, Filter
 } from 'lucide-react';
 import { authService, UserProfile } from '../../services/auth';
+import { API_BASE_URL } from '../../config/api';
 import './UserProfilePage.css';
 
 interface SavedDesignItem {
@@ -64,7 +65,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
 
   const fetchProfileFromBackend = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users/me', {
+      const res = await fetch(`${API_BASE_URL}/users/me`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -81,7 +82,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
   const fetchSavedProjects = async () => {
     setIsLoadingProjects(true);
     try {
-      const res = await fetch('http://localhost:5000/api/mockups/saved', {
+      const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -101,7 +102,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
     setIsUpdating(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/users/me', {
+      const res = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -133,7 +134,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
     setIsUpdating(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/users/me/password', {
+      const res = await fetch(`${API_BASE_URL}/users/me/password`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -158,7 +159,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
   const handleDeleteProject = async (projectId: string) => {
     if (!confirm('Are you sure you want to delete this saved packaging project?')) return;
     try {
-      await fetch(`http://localhost:5000/api/mockups/saved/${projectId}`, {
+      await fetch(`${API_BASE_URL}/mockups/saved/${projectId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -170,7 +171,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
 
   const handleDuplicateProject = async (project: SavedDesignItem) => {
     try {
-      const res = await fetch('http://localhost:5000/api/mockups/saved', {
+      const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

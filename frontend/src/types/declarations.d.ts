@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 // Global TypeScript Module Declarations for Keyline Design
 declare module '*.svg' {
   const content: string;

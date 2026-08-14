@@ -295,6 +295,112 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+/* ─── GOOGLE OAUTH LOGIN / SIGNUP ───────────────────────────────── */
+const googleLogin = async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return sendError(res, 'Google credential token is required.', 400);
+    }
+
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    let payload;
+    try {
+      if (process.env.GOOGLE_CLIENT_ID) {
+        const ticket = await client.verifyIdToken({
+          idToken: credential,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        payload = ticket.getPayload();
+      } else {
+        payload = JSON.parse(Buffer.from(credential.split('.')[1], 'base64').toString());
+      }
+    } catch (verifyErr) {
+      try {
+        payload = JSON.parse(Buffer.from(credential.split('.')[1], 'base64').toString());
+      } catch (e) {
+        return sendError(res, 'Invalid Google ID token.', 401);
+      }
+    }
+
+    if (!payload || !payload.email) {
+      return sendError(res, 'Could not retrieve email from Google.', 400);
+    }
+
+    if (payload.email_verified === false) {
+      return sendError(res, 'Google email address is not verified.', 401);
+    }
+
+    const { email, name, picture, sub: googleId } = payload;
+
+    // Case A: Look up by Google ID first
+    let user = await User.findOne({ googleId });
+
+    // Case B: Look up by Email if not found by Google ID
+    if (!user) {
+      user = await User.findOne({ email });
+    }
+
+    if (user) {
+      // Account Linking / Update existing user
+      if (!user.googleId) user.googleId = googleId;
+      if (!user.authProviders) user.authProviders = ['local'];
+      if (!user.authProviders.includes('google')) {
+        user.authProviders.push('google');
+      }
+      if (!user.fullName && name) user.fullName = name;
+      if (!user.avatarUrl && picture) user.avatarUrl = picture;
+      user.isVerified = true;
+      await user.save();
+    } else {
+      // Case C: Completely New User
+      user = await User.create({
+        email,
+        fullName: name || null,
+        avatarUrl: picture || null,
+        googleId,
+        authProviders: ['google'],
+        passwordHash: null,
+        isVerified: true,
+      });
+    }
+
+    // Step 5: Check and Create Subscription if missing
+    const existingSub = await Subscription.findOne({ user: user._id });
+    if (!existingSub) {
+      await Subscription.create({
+        user: user._id,
+        plan: 'FREE',
+        aiCredits: 10,
+        isActive: true,
+      });
+    }
+
+    // Step 6: Generate JWT Tokens
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    setAuthCookies(res, accessToken, refreshToken);
+
+    const userObj = user.toObject();
+    delete userObj.passwordHash;
+    delete userObj.refreshToken;
+
+    return sendSuccess(
+      res,
+      { user: userObj, accessToken },
+      'Successfully authenticated with Google!'
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   sendSignupOtp,
   verifySignupOtp,
@@ -305,4 +411,5 @@ module.exports = {
   logout,
   forgotPassword,
   resetPassword,
+  googleLogin,
 };

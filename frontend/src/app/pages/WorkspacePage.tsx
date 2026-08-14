@@ -7,6 +7,7 @@ import {
   Printer, Upload, SlidersHorizontal, ChevronDown, Copy, Check, X, User
 } from 'lucide-react';
 import Header from '../components/layout/Header';
+import { API_BASE_URL } from '../../config/api';
 import '../../styles/new-home.css';
 import './UserProfilePage.css';
 
@@ -78,7 +79,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
       
       if (token) {
         try {
-          const res = await fetch('http://localhost:5000/api/mockups/saved', {
+          const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`

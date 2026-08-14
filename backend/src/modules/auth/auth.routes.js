@@ -12,6 +12,7 @@ const {
   logout,
   forgotPassword,
   resetPassword,
+  googleLogin,
 } = require('./auth.controller');
 
 // Validation rules
@@ -34,6 +35,7 @@ router.post('/verify-signup-otp', verifySignupOtp);
 router.post('/register', registerValidation, register);
 router.post('/verify-email', verifyEmail);
 router.post('/login', loginValidation, login);
+router.post('/google', googleLogin);
 router.post('/refresh', refresh);
 router.post('/logout', authenticate, logout);
 router.post('/forgot-password', body('email').isEmail(), forgotPassword);

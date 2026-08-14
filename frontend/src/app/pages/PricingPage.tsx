@@ -7,6 +7,8 @@ import '../../styles/new-home.css';
 import Header from '../components/layout/Header';
 import ElasticFooter from '../components/layout/ElasticFooter';
 
+import { API_BASE_URL } from '../../config/api';
+
 interface PricingPageProps {
   onBack?: () => void;
   onNavigate?: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => void;
@@ -56,7 +58,7 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
   useEffect(() => {
     const fetchLiveConfig = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/plans');
+        const res = await fetch(`${API_BASE_URL}/plans`);
         const data = await res.json();
         if (data.success && data.data) {
           setPlanConfig(data.data);
@@ -84,7 +86,7 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
     try {
       setIsCheckingCoupon(true);
       setCouponMsg(null);
-      const res = await fetch('http://localhost:5000/api/plans/apply-coupon', {
+      const res = await fetch(`${API_BASE_URL}/plans/apply-coupon`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: couponCodeInput.trim() })

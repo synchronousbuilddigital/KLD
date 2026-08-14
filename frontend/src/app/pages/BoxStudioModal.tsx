@@ -11,7 +11,7 @@ import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCakeBoxDieline } from "../../lib/cakeBoxDielineGenerator";
-import { getStraightTuckGeometry, getReverseTuckGeometry, getAutoLockBottomGeometry, getRscGeometry } from "../../geometry";
+import { API_BASE_URL } from "../../config/api";
 
 interface BoxStudioModalProps {
   isOpen: boolean;
@@ -343,7 +343,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
       try {
-        let res = await fetch('http://localhost:5000/api/mockups/saved', {
+        let res = await fetch(`${API_BASE_URL}/mockups/saved`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

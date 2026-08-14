@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../config/api';
 
 export interface UserProfile {
   id: string;
@@ -80,6 +80,24 @@ export const authService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Login failed');
+    if (data.data?.user) {
+      localStorage.setItem('user', JSON.stringify(data.data.user));
+      localStorage.setItem('isLoggedIn', 'true');
+      window.dispatchEvent(new Event('auth-change'));
+    }
+    return data;
+  },
+
+  // Google OAuth Login
+  googleLogin: async (credential: string) => {
+    const res = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ credential }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Google authentication failed');
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('isLoggedIn', 'true');

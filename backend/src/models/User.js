@@ -13,9 +13,19 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: 8,
+      required: false,
       select: false, // Never returned in queries by default
+    },
+    googleId: {
+      type: String,
+      default: null,
+      unique: true,
+      sparse: true,
+    },
+    authProviders: {
+      type: [String],
+      enum: ['local', 'google'],
+      default: ['local'],
     },
     fullName: {
       type: String,
@@ -55,13 +65,15 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre('save', async function () {
-  if (!this.isModified('passwordHash')) return;
+  if (!this.isModified('passwordHash') || !this.passwordHash || typeof this.passwordHash !== 'string') return;
+  if (this.passwordHash.startsWith('$2a$') || this.passwordHash.startsWith('$2b$')) return;
   const salt = await bcrypt.genSalt(12);
   this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
 });
 
 // Method to compare entered password with stored hash
 userSchema.methods.comparePassword = async function (enteredPassword) {
+  if (!this.passwordHash || typeof this.passwordHash !== 'string' || typeof enteredPassword !== 'string') return false;
   return await bcrypt.compare(enteredPassword, this.passwordHash);
 };
 

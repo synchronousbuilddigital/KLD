@@ -27,7 +27,7 @@ const themes: Record<string, any> = {
     cyan: "#a9b396",
     inputBg: "#ffffff",
     gridColor: "rgba(169, 179, 150, 0.15)",
-    activeBg: "rgba(212, 140, 112, 0.15)"
+    activeBg: "rgba(169, 179, 150, 0.25)"
   }
 };
 
@@ -40,7 +40,7 @@ export default function WorkshopPage() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playDirection, setPlayDirection] = useState(-1);
-  const [activeSidebarTab, setActiveSidebarTab] = useState("Layout");
+  const [activeSidebarTab, setActiveSidebarTab] = useState("Assets");
   const [activeAnimation, setActiveAnimation] = useState("none");
   const [contextMenu, setContextMenu] = useState<any>(null);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
@@ -107,9 +107,6 @@ export default function WorkshopPage() {
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
               }
             </button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
-            </button>
             <button style={{ background: t.cyan, color: store.theme === 'dark' ? '#3a2e26' : '#fff', border: "none", padding: "8px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.15)` }}>
               Super export
             </button>
@@ -118,47 +115,95 @@ export default function WorkshopPage() {
 
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-          {/* --- LEFT TOOLBAR --- */}
-          <div style={{ width: "72px", background: t.bgPanel, borderRight: `2px solid ${t.border}`, display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0", gap: "20px", zIndex: 10, overflowY: "auto" }}>
+          {/* --- LEFT TOOLBAR (ORIGINAL 3 TABS WITH ROUNDED BOX STYLING) --- */}
+          <div style={{ width: "76px", background: t.bgPanel, borderRight: `2px solid ${t.border}`, display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0", gap: "20px", zIndex: 10, overflowY: "auto" }}>
             {[
-              { id: 'Assets', icon: <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg> },
-              { id: 'Layout', icon: <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg> },
-              { id: 'Video', icon: <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg> }
-            ].map((item, i) => (
-              <div key={i} onClick={() => {
-                setActiveSidebarTab(item.id);
-                if (item.id !== 'Video') {
-                  setIsPlaying(false);
-                  setFoldProgress(1); // Reset to fully formed
-                }
-              }} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", cursor: "pointer", color: activeSidebarTab === item.id ? t.cyan : t.textMuted }}>
-                <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: activeSidebarTab === item.id ? t.activeBg : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {item.icon}
+              { id: 'Assets', label: 'ASSETS', icon: <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg> },
+              { id: 'Layout', label: 'LAYOUT', icon: <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg> },
+              { id: 'Video', label: 'VIDEO', icon: <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="3" ry="3" /></svg> }
+            ].map((item, i) => {
+              const isActive = activeSidebarTab === item.id;
+              return (
+                <div 
+                  key={i} 
+                  onClick={() => {
+                    setActiveSidebarTab(item.id);
+                    if (item.id !== 'Video') {
+                      setIsPlaying(false);
+                      setFoldProgress(1);
+                    }
+                  }} 
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", cursor: "pointer", color: isActive ? t.cyan : t.textMuted }}
+                >
+                  <div style={{ 
+                    width: "52px", 
+                    height: "52px", 
+                    borderRadius: "18px", 
+                    background: isActive ? t.activeBg : "transparent", 
+                    border: isActive ? `1.5px solid ${t.cyan}` : "1.5px solid transparent",
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "center",
+                    transition: "all 0.2s ease"
+                  }}>
+                    {item.icon}
+                  </div>
+                  <span style={{ fontSize: "10px", fontWeight: isActive ? "800" : "600", letterSpacing: "0.5px" }}>
+                    {item.label}
+                  </span>
                 </div>
-                <span style={{ fontSize: "10px", fontWeight: activeSidebarTab === item.id ? "700" : "500", textTransform: 'uppercase', letterSpacing: "0.5px" }}>{item.id}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* --- LEFT PANEL --- */}
+          {/* --- LEFT PANEL (ORIGINAL WORKSHOP CONTENT WITH MODERN BOX STYLING) --- */}
           <div style={{ width: "320px", background: t.bgPanel, padding: "24px", display: "flex", flexDirection: "column", overflowY: "auto", zIndex: 10, borderRight: `2px solid ${t.border}` }}>
 
             {activeSidebarTab === "Assets" && (
               <div>
                 <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>GRAPHICS EDITOR</div>
-                <div style={{ border: `2px dashed ${t.cyan}`, borderRadius: "16px", padding: "40px", display: "flex", justifyContent: "center", marginBottom: "32px", cursor: "pointer", background: t.activeBg }} onClick={() => setIsStudioOpen(true)}>
-                  <button style={{ background: t.cyan, color: '#fff', border: "none", padding: "14px 28px", borderRadius: "8px", fontWeight: "600", fontSize: "14px", cursor: "pointer", boxShadow: `0 4px 12px rgba(212, 140, 112, 0.3)` }}>Open Canvas</button>
+                
+                {/* Rounded Dashed Box Container */}
+                <div 
+                  style={{ 
+                    border: `2px dashed ${t.cyan}`, 
+                    borderRadius: "20px", 
+                    padding: "36px 20px", 
+                    display: "flex", 
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center", 
+                    marginBottom: "32px", 
+                    cursor: "pointer", 
+                    background: t.activeBg,
+                    transition: "transform 0.2s ease"
+                  }} 
+                  onClick={() => setIsStudioOpen(true)}
+                >
+                  <button style={{ 
+                    background: t.cyan, 
+                    color: '#fff', 
+                    border: "none", 
+                    padding: "14px 28px", 
+                    borderRadius: "14px", 
+                    fontWeight: "700", 
+                    fontSize: "14px", 
+                    cursor: "pointer", 
+                    boxShadow: `0 6px 18px rgba(169, 179, 150, 0.4)` 
+                  }}>
+                    Open Canvas
+                  </button>
                 </div>
 
                 <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>MATERIAL BASE</div>
                 <div style={{ display: "flex", gap: "12px" }}>
-                  <div onClick={() => store.setMaterialType && store.setMaterialType('corrugated', 0.0591)} style={{ flex: 1, cursor: "pointer", background: t.inputBg, border: store.materialType === 'corrugated' ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "12px", overflow: "hidden" }}>
+                  <div onClick={() => store.setMaterialType && store.setMaterialType('corrugated', 0.0591)} style={{ flex: 1, cursor: "pointer", background: t.inputBg, border: store.materialType === 'corrugated' ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: store.materialType === 'corrugated' ? `0 4px 12px rgba(169,179,150,0.2)` : 'none' }}>
                     <div style={{ height: "80px", background: "repeating-linear-gradient(45deg, #d4a373, #d4a373 5px, #c89565 5px, #c89565 10px)" }}></div>
-                    <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", fontWeight: "600", color: t.textMain }}>Corrugated</div>
+                    <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: t.textMain }}>Corrugated</div>
                   </div>
-                  <div onClick={() => store.setMaterialType && store.setMaterialType('paperboard', 0.0181)} style={{ flex: 1, cursor: "pointer", background: t.inputBg, border: store.materialType === 'paperboard' ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "12px", overflow: "hidden" }}>
+                  <div onClick={() => store.setMaterialType && store.setMaterialType('paperboard', 0.0181)} style={{ flex: 1, cursor: "pointer", background: t.inputBg, border: store.materialType === 'paperboard' ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: store.materialType === 'paperboard' ? `0 4px 12px rgba(169,179,150,0.2)` : 'none' }}>
                     <div style={{ height: "80px", background: "#fdfbf7" }}></div>
-                    <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", fontWeight: "600", color: t.textMain }}>Paperboard</div>
+                    <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: t.textMain }}>Paperboard</div>
                   </div>
                 </div>
               </div>
@@ -176,7 +221,7 @@ export default function WorkshopPage() {
                     { id: 'offset', label: 'Offset', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'offset' ? t.cyan : t.textMuted}><polygon points="12,6 5,10 12,14 19,10" opacity="0.6" /><polygon points="16,13 9,17 16,21 23,17" /></svg> },
                     { id: 'cascade', label: 'Cascade', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'cascade' ? t.cyan : t.textMuted}><polygon points="7,4 1,7 7,10 13,7" opacity="0.4" /><polygon points="12,9 6,12 12,15 18,12" opacity="0.7" /><polygon points="17,14 11,17 17,20 23,17" /></svg> },
                   ].map(l => (
-                    <div key={l.id} onClick={() => store.setSceneLayout && store.setSceneLayout(l.id)} style={{ cursor: "pointer", background: t.inputBg, border: store.sceneLayout === l.id ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "12px", padding: "20px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", boxShadow: store.sceneLayout === l.id ? `2px 3px 0px rgba(212, 140, 112, 0.2)` : `2px 3px 0px rgba(58,46,38,0.05)` }}>
+                    <div key={l.id} onClick={() => store.setSceneLayout && store.setSceneLayout(l.id)} style={{ cursor: "pointer", background: t.inputBg, border: store.sceneLayout === l.id ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "16px", padding: "20px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", boxShadow: store.sceneLayout === l.id ? `2px 3px 0px rgba(212, 140, 112, 0.2)` : `2px 3px 0px rgba(58,46,38,0.05)` }}>
                       {l.icon}
                       <div style={{ fontSize: "11px", fontWeight: "600", color: store.sceneLayout === l.id ? t.cyan : t.textMain, textAlign: "center" }}>{l.label}</div>
                     </div>
@@ -211,7 +256,7 @@ export default function WorkshopPage() {
                             setIsPlaying(true);
                           } else {
                             setIsPlaying(false);
-                            setFoldProgress(1); // fully formed box for other animations
+                            setFoldProgress(1);
                           }
                         }}
                         onMouseEnter={(e) => {
@@ -241,12 +286,12 @@ export default function WorkshopPage() {
                         </div>
                         
                         <a 
-                             href={vid.src}
-                             download={`${vid.label} Animation.mp4`}
-                             onClick={(e) => e.stopPropagation()}
-                             style={{ position: "absolute", bottom: "12px", right: "12px", background: "rgba(0,0,0,0.5)", width: "32px", height: "32px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "background 0.2s" }}
-                             onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.7)"}
-                             onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
+                          href={vid.src}
+                          download={`${vid.label} Animation.mp4`}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ position: "absolute", bottom: "12px", right: "12px", background: "rgba(0,0,0,0.5)", width: "32px", height: "32px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "background 0.2s" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.7)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
                         >
                           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         </a>
@@ -256,7 +301,6 @@ export default function WorkshopPage() {
                 </div>
               </div>
             )}
-
 
           </div>
 
@@ -335,7 +379,7 @@ export default function WorkshopPage() {
                       <span style={{ fontWeight: "400", fontSize: "17px" }}>Custom size</span>
                       <div style={{ display: "flex", background: "#f5f5f5", borderRadius: "20px", padding: "2px", border: "1px solid #e5e5e5" }}>
                         <button style={{ border: "none", background: "transparent", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#666" }}>mm</button>
-                        <button style={{ border: "1px solid #8b5cf6", background: "#ffffff", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#8b5cf6", fontWeight: "500", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>in</button>
+                        <button style={{ border: "1px solid #d48c70", background: "#ffffff", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#d48c70", fontWeight: "500", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>in</button>
                       </div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
@@ -360,7 +404,7 @@ export default function WorkshopPage() {
                       if (newW > 0 && store.setDim) store.setDim('W', newW);
                       if (newH > 0 && store.setDim) store.setDim('H', newH);
                       setContextMenu(null);
-                    }} style={{ width: "100%", padding: "12px", background: "#b3b3b3", color: "white", border: "none", borderRadius: "10px", fontWeight: "600", fontSize: "16px", cursor: "pointer", marginTop: "4px" }}>
+                    }} style={{ width: "100%", padding: "12px", background: t.cyan, color: "white", border: "none", borderRadius: "10px", fontWeight: "600", fontSize: "16px", cursor: "pointer", marginTop: "4px" }}>
                       Apply
                     </button>
                   </div>
