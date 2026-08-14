@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Users, Package, CreditCard, Sparkles, Shield, Search, Filter, RefreshCw, 
+import {
+  Users, Package, CreditCard, Sparkles, Shield, Search, Filter, RefreshCw,
   ExternalLink, Trash2, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Lock, AlertTriangle, Layers, Database,
   TrendingUp, DollarSign, ChevronDown, ChevronUp, Folder, Tag, Gift, Plus, Calendar, Percent, Lightbulb, Clock
 } from 'lucide-react';
@@ -54,7 +54,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'projects' | 'cms' | 'membership' | 'settings'>('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
-  
+
   // Membership & Promotion state
   const [basePriceMonthly, setBasePriceMonthly] = useState<number>(1000);
   const [basePriceYearly, setBasePriceYearly] = useState<number>(600);
@@ -82,7 +82,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [newCouponMaxUses, setNewCouponMaxUses] = useState(1000);
   const [newCouponExpiresAt, setNewCouponExpiresAt] = useState('');
   const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
-  
+
   // Users state
   const [usersList, setUsersList] = useState<AdminUserItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -134,8 +134,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     window.dispatchEvent(new Event('maintenance-mode-change'));
     setStatusMsg({
       type: 'success',
-      text: nextState 
-        ? 'System Maintenance Mode ENABLED! Non-admin users will see the maintenance notice screen.' 
+      text: nextState
+        ? 'System Maintenance Mode ENABLED! Non-admin users will see the maintenance notice screen.'
         : 'System Maintenance Mode DISABLED! Platform is fully operational for all users.'
     });
   };
@@ -145,13 +145,23 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     fetchUsers(false);
     fetchProjects(false);
 
+    const handleProjectSaved = () => {
+      fetchStats(true);
+      fetchUsers(true);
+      fetchProjects(true);
+    };
+    window.addEventListener('project-saved', handleProjectSaved);
+
     const interval = setInterval(() => {
       fetchStats(true);
       fetchUsers(true);
       fetchProjects(true);
     }, 10000); // Silent background sync every 10 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      window.removeEventListener('project-saved', handleProjectSaved);
+      clearInterval(interval);
+    };
   }, [userSearch, userRoleFilter, projectSearch]);
 
   const getAuthHeaders = () => {
@@ -269,11 +279,13 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/projects/${projectId}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       if (res.ok) {
         setProjectsList(prev => prev.filter(p => p._id !== projectId));
-        fetchStats();
+        window.dispatchEvent(new CustomEvent('project-saved'));
+        fetchStats(true);
       } else {
         alert('Failed to delete project.');
       }
@@ -296,18 +308,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
       model = "cake";
     }
 
-    try {
-      const store = (window as any).__BOX_STORE__;
-      if (store) {
-        store.setBoxModel(model);
-        store.setDim('L', L_mm / 25.4);
-        store.setDim('W', W_mm / 25.4);
-        store.setDim('H', H_mm / 25.4);
-      }
-    } catch (e) {}
-
-    window.dispatchEvent(new CustomEvent('navigate', { detail: 'dielines' }));
-    onBack();
+    window.dispatchEvent(new CustomEvent('open-box-studio', {
+      detail: { model, L: L_mm, W: W_mm, H: H_mm }
+    }));
   };
 
   /* ─── MEMBERSHIP & COUPON API HANDLERS ──────────────────────────── */
@@ -498,37 +501,37 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
         {/* SIDEBAR NAVIGATION */}
         <aside className="admin-sidebar">
           <nav className="admin-nav">
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
               <Shield className="w-4 h-4" /> Executive Overview
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => setActiveTab('users')}
             >
               <Users className="w-4 h-4" /> User Management
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'projects' ? 'active' : ''}`}
               onClick={() => setActiveTab('projects')}
             >
               <Package className="w-4 h-4" /> Saved Projects
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'cms' ? 'active' : ''}`}
               onClick={() => setActiveTab('cms')}
             >
               <Layers className="w-4 h-4" /> Template & Model CMS
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'membership' ? 'active' : ''}`}
               onClick={() => setActiveTab('membership')}
             >
               <CreditCard className="w-4 h-4 text-emerald-600" /> Membership & Coupons
             </button>
-            <button 
+            <button
               className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => setActiveTab('settings')}
             >
@@ -543,7 +546,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
           {activeTab === 'overview' && (
             <div className="admin-tab-content">
               <h2 className="admin-page-title">Executive Dashboard Overview</h2>
-              
+
               {/* KPI STAT CARDS */}
               <div className="admin-kpi-grid">
                 <div className="kpi-card" style={{ borderTop: '3px solid #10b981' }}>
@@ -673,8 +676,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                 <h2 className="admin-page-title">User Account Directory</h2>
                 <div className="admin-search-bar">
                   <Search className="w-4 h-4 text-gray-400" />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="Search users by name or email..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
@@ -716,8 +719,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                             </td>
                             <td>
                               {isEditing ? (
-                                <select 
-                                  value={editPlan} 
+                                <select
+                                  value={editPlan}
                                   onChange={(e) => setEditPlan(e.target.value as any)}
                                   style={{
                                     padding: '5px 8px',
@@ -740,17 +743,17 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                             </td>
                             <td>
                               {isEditing ? (
-                                <input 
-                                  type="number" 
-                                  value={editCredits} 
-                                  onChange={(e) => setEditCredits(parseInt(e.target.value) || 0)} 
-                                  style={{ 
-                                    width: '80px', 
-                                    padding: '5px 8px', 
-                                    borderRadius: '6px', 
-                                    border: '2px solid #2563eb', 
-                                    fontSize: '0.85rem', 
-                                    fontWeight: 700, 
+                                <input
+                                  type="number"
+                                  value={editCredits}
+                                  onChange={(e) => setEditCredits(parseInt(e.target.value) || 0)}
+                                  style={{
+                                    width: '80px',
+                                    padding: '5px 8px',
+                                    borderRadius: '6px',
+                                    border: '2px solid #2563eb',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
                                     outline: 'none',
                                     boxSizing: 'border-box'
                                   }}
@@ -761,8 +764,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                             </td>
                             <td>
                               {isEditing ? (
-                                <select 
-                                  value={editVerified ? 'true' : 'false'} 
+                                <select
+                                  value={editVerified ? 'true' : 'false'}
                                   onChange={(e) => setEditVerified(e.target.value === 'true')}
                                   style={{
                                     padding: '5px 8px',
@@ -785,7 +788,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                               )}
                             </td>
                             <td>
-                              <button 
+                              <button
                                 style={{
                                   cursor: 'pointer',
                                   background: user.savedProjectsCount ? '#fef3c7' : '#f4f4f5',
@@ -888,16 +891,16 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
 
                   <div className="admin-search-bar">
                     <Search className="w-4 h-4 text-gray-400" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Search by project or user..."
                       value={projectSearch}
                       onChange={(e) => setProjectSearch(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && fetchProjects()}
                     />
                     {projectSearch && (
-                      <button 
-                        onClick={() => { setProjectSearch(''); fetchProjects(); }} 
+                      <button
+                        onClick={() => { setProjectSearch(''); fetchProjects(); }}
                         style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', padding: '0 4px', fontSize: '0.85rem' }}
                         title="Clear filter"
                       >
@@ -927,10 +930,10 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                   ) : (
                     groupedProjects.map((group) => {
                       const userEmail = group.userObj?.email || 'guest@system.local';
-                      const isExpanded = Boolean(expandedUsers[userEmail]) || Boolean(projectSearch);
+                      const isExpanded = expandedUsers[userEmail] !== false;
 
                       return (
-                        <div 
+                        <div
                           key={userEmail}
                           style={{
                             background: '#ffffff',
@@ -942,7 +945,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                           }}
                         >
                           {/* USER FOLDER HEADER */}
-                          <div 
+                          <div
                             onClick={() => toggleUserExpand(userEmail)}
                             style={{
                               padding: '16px 20px',
@@ -971,7 +974,11 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                               </div>
                             </div>
 
-                            <button 
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleUserExpand(userEmail);
+                              }}
                               style={{
                                 background: isExpanded ? '#18181b' : '#f4f4f5',
                                 color: isExpanded ? '#ffffff' : '#18181b',
@@ -1107,7 +1114,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
               <div className="admin-panel-card">
                 <h3 className="panel-title">Active 3D Packaging Models & Studio Generators</h3>
                 <div className="admin-list" style={{ gap: '16px' }}>
-                  
+
                   {/* Template 1 */}
                   <div className="admin-list-row" style={{ padding: '16px 20px', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
@@ -1121,12 +1128,11 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button 
+                      <button
                         className="open-studio-btn"
                         style={{ padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700 }}
                         onClick={() => {
-                          window.dispatchEvent(new CustomEvent('navigate', { detail: 'dielines' }));
-                          onBack();
+                          window.dispatchEvent(new CustomEvent('open-box-studio', { detail: { model: 'te', L: 150, W: 70, H: 200 } }));
                         }}
                         title="Open and Inspect 3D Canvas Model"
                       >
@@ -1148,12 +1154,11 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button 
+                      <button
                         className="open-studio-btn"
                         style={{ padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700 }}
                         onClick={() => {
-                          window.dispatchEvent(new CustomEvent('navigate', { detail: 'dielines' }));
-                          onBack();
+                          window.dispatchEvent(new CustomEvent('open-box-studio', { detail: { model: 'rte', L: 150, W: 70, H: 200 } }));
                         }}
                         title="Open and Inspect 3D Canvas Model"
                       >
@@ -1175,12 +1180,11 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button 
+                      <button
                         className="open-studio-btn"
                         style={{ padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700 }}
                         onClick={() => {
-                          window.dispatchEvent(new CustomEvent('navigate', { detail: 'dielines' }));
-                          onBack();
+                          window.dispatchEvent(new CustomEvent('open-box-studio', { detail: { model: 'auto_lock', L: 150, W: 70, H: 200 } }));
                         }}
                         title="Open and Inspect 3D Canvas Model"
                       >
@@ -1198,7 +1202,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
           {activeTab === 'membership' && (
             <div className="admin-tab-content">
               {/* HERO METRICS HEADER */}
-              <div 
+              <div
                 style={{
                   background: 'linear-gradient(135deg, #18181b 0%, #27272a 100%)',
                   borderRadius: '20px',
@@ -1228,8 +1232,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={handleSavePlanConfig} 
+                  <button
+                    onClick={handleSavePlanConfig}
                     disabled={isSavingPlanConfig}
                     style={{
                       background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
@@ -1253,7 +1257,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
               </div>
 
               {/* SUB-TAB NAVIGATION PILLS */}
-              <div 
+              <div
                 style={{
                   display: 'flex',
                   gap: '8px',
@@ -1334,7 +1338,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
               {membershipSubTab === 'prices' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
                   {/* BASE PLAN CARD */}
-                  <div 
+                  <div
                     style={{
                       background: '#ffffff',
                       borderRadius: '20px',
@@ -1365,9 +1369,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1.5px solid #e4e4e7', borderRadius: '10px', padding: '0 12px' }}>
                           <span style={{ fontWeight: 800, color: '#71717a', fontSize: '1rem' }}>₹</span>
-                          <input 
-                            type="number" 
-                            value={basePriceMonthly} 
+                          <input
+                            type="number"
+                            value={basePriceMonthly}
                             onChange={(e) => setBasePriceMonthly(Number(e.target.value))}
                             style={{ border: 'none', width: '100%', padding: '10px 8px', fontSize: '1rem', fontWeight: 800, outline: 'none', color: '#18181b' }}
                           />
@@ -1380,9 +1384,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1.5px solid #e4e4e7', borderRadius: '10px', padding: '0 12px' }}>
                           <span style={{ fontWeight: 800, color: '#71717a', fontSize: '1rem' }}>₹</span>
-                          <input 
-                            type="number" 
-                            value={basePriceYearly} 
+                          <input
+                            type="number"
+                            value={basePriceYearly}
                             onChange={(e) => setBasePriceYearly(Number(e.target.value))}
                             style={{ border: 'none', width: '100%', padding: '10px 8px', fontSize: '1rem', fontWeight: 800, outline: 'none', color: '#18181b' }}
                           />
@@ -1398,9 +1402,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1.5px solid #e4e4e7', borderRadius: '10px', padding: '0 12px' }}>
                           <Sparkles className="w-4 h-4 text-amber-500 mr-1" />
-                          <input 
-                            type="number" 
-                            value={baseAiCredits} 
+                          <input
+                            type="number"
+                            value={baseAiCredits}
                             onChange={(e) => setBaseAiCredits(Number(e.target.value))}
                             style={{ border: 'none', width: '100%', padding: '10px 8px', fontSize: '1rem', fontWeight: 800, outline: 'none', color: '#18181b' }}
                           />
@@ -1410,7 +1414,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                   </div>
 
                   {/* PRO PLAN CARD */}
-                  <div 
+                  <div
                     style={{
                       background: '#ffffff',
                       borderRadius: '20px',
@@ -1441,9 +1445,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1.5px solid #e4e4e7', borderRadius: '10px', padding: '0 12px' }}>
                           <span style={{ fontWeight: 800, color: '#71717a', fontSize: '1rem' }}>₹</span>
-                          <input 
-                            type="number" 
-                            value={proPriceMonthly} 
+                          <input
+                            type="number"
+                            value={proPriceMonthly}
                             onChange={(e) => setProPriceMonthly(Number(e.target.value))}
                             style={{ border: 'none', width: '100%', padding: '10px 8px', fontSize: '1rem', fontWeight: 800, outline: 'none', color: '#18181b' }}
                           />
@@ -1456,9 +1460,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1.5px solid #e4e4e7', borderRadius: '10px', padding: '0 12px' }}>
                           <span style={{ fontWeight: 800, color: '#71717a', fontSize: '1rem' }}>₹</span>
-                          <input 
-                            type="number" 
-                            value={proPriceYearly} 
+                          <input
+                            type="number"
+                            value={proPriceYearly}
                             onChange={(e) => setProPriceYearly(Number(e.target.value))}
                             style={{ border: 'none', width: '100%', padding: '10px 8px', fontSize: '1rem', fontWeight: 800, outline: 'none', color: '#18181b' }}
                           />
@@ -1474,9 +1478,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', border: '1.5px solid #e4e4e7', borderRadius: '10px', padding: '0 12px' }}>
                           <Sparkles className="w-4 h-4 text-indigo-600 mr-1" />
-                          <input 
-                            type="number" 
-                            value={proAiCredits} 
+                          <input
+                            type="number"
+                            value={proAiCredits}
                             onChange={(e) => setProAiCredits(Number(e.target.value))}
                             style={{ border: 'none', width: '100%', padding: '10px 8px', fontSize: '1rem', fontWeight: 800, outline: 'none', color: '#18181b' }}
                           />
@@ -1504,9 +1508,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                       </div>
 
                       <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: promoActive ? '#dcfce7' : '#f4f4f5', padding: '6px 12px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={promoActive} 
+                        <input
+                          type="checkbox"
+                          checked={promoActive}
                           onChange={(e) => setPromoActive(e.target.checked)}
                           style={{ width: '16px', height: '16px', accentColor: '#10b981' }}
                         />
@@ -1519,10 +1523,10 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       <div>
                         <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>Campaign Title</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Festival Sale" 
-                          value={promoTitle} 
+                        <input
+                          type="text"
+                          placeholder="e.g. Festival Sale"
+                          value={promoTitle}
                           onChange={(e) => setPromoTitle(e.target.value)}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', fontWeight: 700 }}
                         />
@@ -1531,19 +1535,19 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div>
                           <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>Discount Badge %</label>
-                          <input 
-                            type="number" 
-                            placeholder="40" 
-                            value={promoDiscountPercent} 
+                          <input
+                            type="number"
+                            placeholder="40"
+                            value={promoDiscountPercent}
                             onChange={(e) => setPromoDiscountPercent(Number(e.target.value))}
                             style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', fontWeight: 700 }}
                           />
                         </div>
                         <div>
                           <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>Start Date</label>
-                          <input 
-                            type="date" 
-                            value={promoStartsAt} 
+                          <input
+                            type="date"
+                            value={promoStartsAt}
                             onChange={(e) => setPromoStartsAt(e.target.value)}
                             style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem' }}
                           />
@@ -1554,9 +1558,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>
                           Campaign Expiry Date (Auto-Expires After Date)
                         </label>
-                        <input 
-                          type="date" 
-                          value={promoEndsAt} 
+                        <input
+                          type="date"
+                          value={promoEndsAt}
                           onChange={(e) => setPromoEndsAt(e.target.value)}
                           style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem' }}
                         />
@@ -1564,10 +1568,10 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
 
                       <div>
                         <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>Campaign Description Subtitle</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Save 40% on all plans for a limited time!" 
-                          value={promoDescription} 
+                        <input
+                          type="text"
+                          placeholder="e.g. Save 40% on all plans for a limited time!"
+                          value={promoDescription}
                           onChange={(e) => setPromoDescription(e.target.value)}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem' }}
                         />
@@ -1584,7 +1588,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                       Exact right-to-left infinite scrolling ticker preview as seen by customers on live site:
                     </div>
 
-                    <div 
+                    <div
                       style={{
                         background: promoActive ? '#fef3c7' : '#f4f4f5',
                         color: promoActive ? '#78350f' : '#71717a',
@@ -1608,7 +1612,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                           animation: adminPreviewTicker 18s linear infinite;
                         }
                       `}</style>
-                      
+
                       <div className="admin-preview-track" style={{ display: 'flex', alignItems: 'center' }}>
                         {[1, 2, 3, 4, 5].map((idx) => (
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '0 16px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
@@ -1651,45 +1655,45 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                     <form onSubmit={handleCreateCoupon} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', alignItems: 'end' }}>
                       <div>
                         <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>COUPON CODE (UPPERCASE)</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. DIWALI50" 
-                          value={newCouponCode} 
+                        <input
+                          type="text"
+                          placeholder="e.g. DIWALI50"
+                          value={newCouponCode}
                           onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontFamily: 'monospace', fontWeight: 900, fontSize: '0.95rem', textTransform: 'uppercase' }}
                         />
                       </div>
                       <div>
                         <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>DISCOUNT PERCENTAGE (%)</label>
-                        <input 
-                          type="number" 
-                          placeholder="20" 
-                          value={newCouponDiscountPercent} 
+                        <input
+                          type="number"
+                          placeholder="20"
+                          value={newCouponDiscountPercent}
                           onChange={(e) => setNewCouponDiscountPercent(Number(e.target.value))}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', fontWeight: 700 }}
                         />
                       </div>
                       <div>
                         <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>MAX USAGE LIMIT</label>
-                        <input 
-                          type="number" 
-                          placeholder="1000" 
-                          value={newCouponMaxUses} 
+                        <input
+                          type="number"
+                          placeholder="1000"
+                          value={newCouponMaxUses}
                           onChange={(e) => setNewCouponMaxUses(Number(e.target.value))}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', fontWeight: 700 }}
                         />
                       </div>
                       <div>
                         <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#3f3f46', display: 'block', marginBottom: '6px' }}>EXPIRATION DATE</label>
-                        <input 
-                          type="date" 
-                          value={newCouponExpiresAt} 
+                        <input
+                          type="date"
+                          value={newCouponExpiresAt}
                           onChange={(e) => setNewCouponExpiresAt(e.target.value)}
                           style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem' }}
                         />
                       </div>
-                      <button 
-                        type="submit" 
+                      <button
+                        type="submit"
                         disabled={isCreatingCoupon}
                         style={{
                           background: '#18181b',
@@ -1757,13 +1761,13 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                                 </span>
                               </td>
                               <td style={{ display: 'flex', gap: '6px' }}>
-                                <button 
+                                <button
                                   onClick={() => handleToggleCoupon(c._id, c.active)}
                                   style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px', border: '1px solid #d4d4d8', background: c.active ? '#fee2e2' : '#dcfce7', color: c.active ? '#991b1b' : '#166534', cursor: 'pointer' }}
                                 >
                                   {c.active ? 'Disable' : 'Enable'}
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleDeleteCoupon(c._id)}
                                   className="delete-btn"
                                   style={{ padding: '5px 10px' }}
@@ -1786,7 +1790,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
           {activeTab === 'settings' && (
             <div className="admin-tab-content">
               <h2 className="admin-page-title">Platform & System Settings</h2>
-              
+
               <div className="admin-panel-card">
                 <h3 className="panel-title">Maintenance & System Mode</h3>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
@@ -1794,8 +1798,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                     <div style={{ fontWeight: 600 }}>System Maintenance Mode</div>
                     <div style={{ fontSize: '0.85rem', color: '#6B7280' }}>When enabled, non-admin users will see a maintenance notice screen.</div>
                   </div>
-                  <button 
-                    className={maintenanceMode ? 'delete-btn' : 'open-studio-btn'} 
+                  <button
+                    className={maintenanceMode ? 'delete-btn' : 'open-studio-btn'}
                     onClick={handleToggleMaintenance}
                   >
                     {maintenanceMode ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode'}
@@ -1836,13 +1840,13 @@ class AdminErrorBoundary extends React.Component<{ onBack: () => void; children:
             {this.state.error?.message || 'An unexpected rendering error occurred while rendering the dashboard.'}
           </p>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
+            <button
               onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
               style={{ padding: '10px 18px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
             >
               <RefreshCw className="w-4 h-4 inline mr-1" /> Reload Page
             </button>
-            <button 
+            <button
               onClick={this.props.onBack}
               style={{ padding: '10px 18px', background: '#e4e4e7', color: '#18181b', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
             >

@@ -381,6 +381,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       console.error("Local save error:", err);
     }
 
+    // 3. Dispatch real-time project-saved event for instant User Profile & Admin Dashboard update
+    window.dispatchEvent(new CustomEvent('project-saved', { detail: newItemData }));
+
     setIsSaved(true);
     setIsSaving(false);
     setTimeout(() => setIsSaved(false), 3000);

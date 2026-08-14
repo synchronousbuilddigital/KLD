@@ -18,7 +18,7 @@ interface SavedDesignItem {
   createdAt?: string;
 }
 
-function UserProfilePage({ onBack }: { onBack: () => void }) {
+function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (view: string) => void }) {
   const [activeTab, setActiveTab] = useState<'profile' | 'projects' | 'subscription' | 'exports'>('profile');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [fullName, setFullName] = useState('');
@@ -26,6 +26,14 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleNavToView = (view: 'models' | 'dielines' | 'landing') => {
+    if (onNavigate) {
+      onNavigate(view);
+    } else {
+      window.dispatchEvent(new CustomEvent('navigate', { detail: view }));
+    }
+  };
   
   const [savedProjects, setSavedProjects] = useState<SavedDesignItem[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
@@ -57,15 +65,27 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
     fetchProfileFromBackend();
     fetchSavedProjects();
 
+    const handleProjectSaved = () => {
+      fetchSavedProjects();
+    };
+    window.addEventListener('project-saved', handleProjectSaved);
+
     return () => {
+      window.removeEventListener('project-saved', handleProjectSaved);
       document.body.style.zoom = '';
       document.body.style.width = '';
     };
   }, []);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
   const fetchProfileFromBackend = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/users/me`, {
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       const data = await res.json();
@@ -81,18 +101,79 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
 
   const fetchSavedProjects = async () => {
     setIsLoadingProjects(true);
+    let mongoDesigns: SavedDesignItem[] = [];
     try {
       const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.data?.designs)) {
-        setSavedProjects(data.data.designs);
+        mongoDesigns = data.data.designs;
       }
     } catch (e) {
-      console.error('Error fetching saved projects', e);
-    } finally {
-      setIsLoadingProjects(false);
+      console.error('Error fetching saved projects from MongoDB', e);
+    }
+
+    // Read local workspace items from localStorage (fallback / sync)
+    let localItems: SavedDesignItem[] = [];
+    try {
+      const stored = localStorage.getItem('kld_workspace_items');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const mockIds = new Set(['model-1', 'model-2', 'proj-1', 'proj-2', 'print-1', 'ai-1', 'active-session-draft']);
+          localItems = parsed
+            .filter((item: any) => !mockIds.has(item.id))
+            .map((item: any) => ({
+              _id: item.id || item._id,
+              name: item.name,
+              type: item.type || 'DIELINE',
+              category: item.category || 'Custom Box',
+              dimensions: item.dimensions || { L: 150, W: 70, H: 200 },
+              createdAt: item.updatedAt || new Date().toISOString(),
+              isFavorite: !!item.isFavorite
+            }));
+        }
+      }
+    } catch (err) {
+      console.error('Error parsing local workspace items in profile:', err);
+    }
+
+    // Merge MongoDB and Local items without duplicates
+    const mongoIds = new Set(mongoDesigns.map(d => d._id));
+    const combined = [
+      ...mongoDesigns,
+      ...localItems.filter(item => !mongoIds.has(item._id))
+    ];
+
+    setSavedProjects(combined);
+    setIsLoadingProjects(false);
+
+    // Auto-sync un-synced local items to MongoDB if logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      const unSynced = localItems.filter(item => !mongoIds.has(item._id) && (!item._id || item._id.length !== 24));
+      for (const item of unSynced) {
+        try {
+          await fetch(`${API_BASE_URL}/mockups/saved`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: item.name,
+              type: item.type || 'DIELINE',
+              category: item.category || 'Custom Box',
+              dimensions: item.dimensions,
+              isFavorite: item.isFavorite
+            })
+          });
+        } catch (syncErr) {
+          console.error('Auto sync local project error:', syncErr);
+        }
+      }
     }
   };
 
@@ -105,7 +186,8 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
       const res = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         credentials: 'include',
         body: JSON.stringify({ fullName })
@@ -137,7 +219,8 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
       const res = await fetch(`${API_BASE_URL}/users/me/password`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         credentials: 'include',
         body: JSON.stringify({ currentPassword, newPassword })
@@ -158,14 +241,39 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
 
   const handleDeleteProject = async (projectId: string) => {
     if (!confirm('Are you sure you want to delete this saved packaging project?')) return;
+    
+    // 1. Instantly remove from local React state
+    setSavedProjects(prev => prev.filter(p => p._id !== projectId && p.id !== projectId));
+
+    // 2. Instantly remove from localStorage cache
     try {
-      await fetch(`${API_BASE_URL}/mockups/saved/${projectId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      setSavedProjects(prev => prev.filter(p => p._id !== projectId));
-    } catch {
-      alert('Failed to delete project.');
+      const stored = localStorage.getItem('kld_workspace_items');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const remaining = parsed.filter((item: any) => item.id !== projectId && item._id !== projectId);
+          localStorage.setItem('kld_workspace_items', JSON.stringify(remaining));
+        }
+      }
+    } catch (e) {
+      console.error('Error removing item from localStorage:', e);
+    }
+
+    // 3. Dispatch real-time event for cross-component sync
+    window.dispatchEvent(new CustomEvent('project-saved'));
+
+    // 4. Delete from MongoDB if authenticated and valid 24-character ObjectId
+    const token = localStorage.getItem('token');
+    if (token && projectId && projectId.length === 24) {
+      try {
+        await fetch(`${API_BASE_URL}/mockups/saved/${projectId}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+          credentials: 'include'
+        });
+      } catch (err) {
+        console.error('MongoDB delete error:', err);
+      }
     }
   };
 
@@ -174,7 +282,8 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
       const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -188,6 +297,7 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
       const data = await res.json();
       if (res.ok && data.success) {
         fetchSavedProjects();
+        window.dispatchEvent(new CustomEvent('project-saved'));
       } else {
         alert(data.message || 'Failed to duplicate project');
       }
@@ -525,9 +635,22 @@ function UserProfilePage({ onBack }: { onBack: () => void }) {
                 <Package className="w-10 h-10 mx-auto mb-3 opacity-40 text-zinc-400" />
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111827', margin: '0 0 4px 0' }}>No Saved Projects Yet</h3>
                 <p style={{ fontSize: '0.88rem', margin: '0 0 20px 0' }}>Design custom packaging box dielines in the studio and click "Save Project".</p>
-                <button className="clean-submit-btn" onClick={onBack}>
-                  Open 3D Design Studio
-                </button>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    className="clean-submit-btn" 
+                    onClick={() => handleNavToView('models')}
+                    style={{ background: '#111827', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Package className="w-4 h-4" /> Explore 3D Mockup Models
+                  </button>
+                  <button 
+                    className="clean-submit-btn" 
+                    onClick={() => handleNavToView('dielines')}
+                    style={{ background: '#ffffff', color: '#111827', border: '1.5px solid #111827', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-500" /> Open Dieline Generator
+                  </button>
+                </div>
               </div>
             ) : filteredProjects.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6B7280' }}>
@@ -706,7 +829,7 @@ class UserProfileErrorBoundary extends React.Component<{ onBack: () => void; chi
   }
 }
 
-export default function UserProfilePageWrapper(props: { onBack: () => void }) {
+export default function UserProfilePageWrapper(props: { onBack: () => void; onNavigate?: (view: string) => void }) {
   return (
     <UserProfileErrorBoundary onBack={props.onBack}>
       <UserProfilePage {...props} />

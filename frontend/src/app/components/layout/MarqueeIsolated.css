@@ -2,11 +2,11 @@
     width: 100%;
     position: relative;
     background: transparent;
-    padding: 20px 0;
+    padding: 10px 0 20px 0;
     overflow-x: clip;
     overflow-y: visible;
-    transform: translateY(-120px);
-    margin-bottom: -120px;
+    transform: none;
+    margin-bottom: 0;
     z-index: 100;
 }
 

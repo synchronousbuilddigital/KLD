@@ -72,72 +72,106 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   }, []);
 
   // Load items from MongoDB on mount (with localStorage fallback & sync)
-  useEffect(() => {
-    const fetchWorkspaceItems = async () => {
-      let mongoItems: WorkspaceItem[] = [];
-      const token = localStorage.getItem('token');
-      
-      if (token) {
+  const fetchWorkspaceItems = async () => {
+    let mongoItems: WorkspaceItem[] = [];
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.data?.designs)) {
+          mongoItems = data.data.designs.map((d: any) => ({
+            id: d._id,
+            name: d.name,
+            category: d.category || 'Custom Box',
+            tabCategory: d.tabCategory || 'projects',
+            dimensions: d.dimensions || { L: 150, W: 70, H: 200, glueTab: 15, tuck: 18, flapH: 35 },
+            updatedAt: d.updatedAt || new Date().toISOString(),
+            isFavorite: !!d.isFavorite,
+            isDraft: d.isDraft !== undefined ? d.isDraft : false,
+            tags: d.tags || []
+          }));
+        }
+      } catch (err) {
+        console.log('MongoDB fetch error, using local workspace items:', err);
+      }
+    }
+
+    // Local storage items fallback / merge (Filtering out any mock dummy items and auto drafts)
+    let localItems: WorkspaceItem[] = [];
+    try {
+      const stored = localStorage.getItem('kld_workspace_items');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const mockIds = new Set(['model-1', 'model-2', 'proj-1', 'proj-2', 'print-1', 'ai-1', 'active-session-draft']);
+          localItems = parsed
+            .filter(item => !mockIds.has(item.id))
+            .map(item => ({
+              ...item,
+              tabCategory: item.tabCategory || 'projects'
+            }));
+        }
+      }
+      localStorage.setItem('kld_workspace_items', JSON.stringify(localItems));
+    } catch (err) {
+      console.log('Local storage parse error:', err);
+    }
+
+    // Merge MongoDB and Local Storage items without duplicates
+    const mongoIds = new Set(mongoItems.map(i => i.id));
+    let combined = [...mongoItems, ...localItems.filter(i => !mongoIds.has(i.id))].filter(i => i.id !== 'active-session-draft');
+
+    // Sort by last updated (newest / most recent first)
+    combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    setItems(combined);
+    setIsLoading(false);
+
+    // Auto-sync un-synced local items to MongoDB if logged in
+    if (token) {
+      const unSynced = localItems.filter(item => !mongoIds.has(item.id) && (!item.id || item.id.length !== 24));
+      for (const item of unSynced) {
         try {
-          const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
+          await fetch(`${API_BASE_URL}/mockups/saved`, {
+            method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
-            }
+            },
+            body: JSON.stringify({
+              name: item.name,
+              type: item.type || 'DIELINE',
+              category: item.category || 'Custom Box',
+              dimensions: item.dimensions,
+              tabCategory: item.tabCategory || 'projects',
+              isFavorite: !!item.isFavorite
+            })
           });
-          const data = await res.json();
-          if (res.ok && data.success && Array.isArray(data.data?.designs)) {
-            mongoItems = data.data.designs.map((d: any) => ({
-              id: d._id,
-              name: d.name,
-              category: d.category || 'Custom Box',
-              tabCategory: d.tabCategory || 'projects',
-              dimensions: d.dimensions || { L: 150, W: 70, H: 200, glueTab: 15, tuck: 18, flapH: 35 },
-              updatedAt: d.updatedAt || new Date().toISOString(),
-              isFavorite: !!d.isFavorite,
-              isDraft: d.isDraft !== undefined ? d.isDraft : false,
-              tags: d.tags || []
-            }));
-          }
-        } catch (err) {
-          console.log('MongoDB fetch error, using local workspace items:', err);
+        } catch (syncErr) {
+          console.error('Auto sync workspace item error:', syncErr);
         }
       }
+    }
+  };
 
-      // Local storage items fallback / merge (Filtering out any mock dummy items and auto drafts)
-      let localItems: WorkspaceItem[] = [];
-      try {
-        const stored = localStorage.getItem('kld_workspace_items');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            const mockIds = new Set(['model-1', 'model-2', 'proj-1', 'proj-2', 'print-1', 'ai-1', 'active-session-draft']);
-            localItems = parsed
-              .filter(item => !mockIds.has(item.id))
-              .map(item => ({
-                ...item,
-                tabCategory: item.tabCategory || 'projects'
-              }));
-          }
-        }
-        // Save cleaned items without mock or auto-draft data back to localStorage
-        localStorage.setItem('kld_workspace_items', JSON.stringify(localItems));
-      } catch (err) {
-        console.log('Local storage parse error:', err);
-      }
-
-      // Merge MongoDB and Local Storage items without duplicates
-      const mongoIds = new Set(mongoItems.map(i => i.id));
-      let combined = [...mongoItems, ...localItems.filter(i => !mongoIds.has(i.id))].filter(i => i.id !== 'active-session-draft');
-
-      // Sort by last updated (newest / most recent first)
-      combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-      setItems(combined);
-      setIsLoading(false);
-    };
-
+  useEffect(() => {
     fetchWorkspaceItems();
+
+    const handleProjectSaved = () => {
+      fetchWorkspaceItems();
+    };
+    window.addEventListener('project-saved', handleProjectSaved);
+
+    return () => {
+      window.removeEventListener('project-saved', handleProjectSaved);
+    };
   }, []);
 
   // Save items state to state & local cache
@@ -178,7 +212,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     const token = localStorage.getItem('token');
     if (token && id.length === 24) {
       try {
-        await fetch(`/api/mockups/saved/${id}`, {
+        await fetch(`${API_BASE_URL}/mockups/saved/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -186,6 +220,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           },
           body: JSON.stringify({ isFavorite: newFavoriteState })
         });
+        window.dispatchEvent(new CustomEvent('project-saved'));
       } catch (err) {
         console.log('MongoDB update favorite error:', err);
       }
@@ -198,12 +233,13 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     if (confirm('Are you sure you want to delete this box item from your workspace?')) {
       const updated = items.filter((item) => item.id !== id);
       updateItemsState(updated);
+      window.dispatchEvent(new CustomEvent('project-saved'));
 
       // Persist deletion to MongoDB if authenticated and valid MongoDB ID
       const token = localStorage.getItem('token');
-      if (token && id.length === 24) {
+      if (token && id && id.length === 24) {
         try {
-          await fetch(`/api/mockups/saved/${id}`, {
+          await fetch(`${API_BASE_URL}/mockups/saved/${id}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -248,7 +284,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
     if (token) {
       try {
-        const res = await fetch('/api/mockups/saved', {
+        const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -272,6 +308,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     };
 
     updateItemsState([newItem, ...items]);
+    window.dispatchEvent(new CustomEvent('project-saved'));
     setUploadSuccessMsg(`Successfully uploaded "${file.name}" to MongoDB database!`);
     setTimeout(() => setUploadSuccessMsg(null), 4000);
   };

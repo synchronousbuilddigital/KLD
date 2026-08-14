@@ -26,6 +26,10 @@ export default function ReverseTuckEditorPage() {
 
   const handleSaveProject = async () => {
     setIsSaving(true);
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const bodyData = JSON.stringify({
       name: `Reverse Tuck Box (${L}×${W}×${H}${unit})`,
       type: 'DIELINE',
@@ -36,9 +40,7 @@ export default function ReverseTuckEditorPage() {
     try {
       let res = await fetch(`${API_BASE_URL}/mockups/saved`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         credentials: 'include',
         body: bodyData
       });
@@ -58,8 +60,8 @@ export default function ReverseTuckEditorPage() {
           });
           const refreshData = await refreshRes.json();
           if (refreshRes.ok && refreshData.data?.accessToken) {
-            const token = refreshData.data.accessToken;
-            localStorage.setItem('token', token);
+            const newToken = refreshData.data.accessToken;
+            localStorage.setItem('token', newToken);
             if (refreshData.data.refreshToken) {
               localStorage.setItem('refreshToken', refreshData.data.refreshToken);
             }
@@ -67,7 +69,7 @@ export default function ReverseTuckEditorPage() {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${newToken}`
               },
               body: bodyData
             });
@@ -80,6 +82,7 @@ export default function ReverseTuckEditorPage() {
 
       if (res.ok && data.success) {
         setIsSaved(true);
+        window.dispatchEvent(new CustomEvent('project-saved'));
         alert('✓ Customized Dieline Project saved successfully to your User Profile!');
       } else if (res.status === 401 || data.message === 'Token expired.') {
         localStorage.removeItem('token');

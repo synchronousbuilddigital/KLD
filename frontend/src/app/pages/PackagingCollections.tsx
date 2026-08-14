@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { ArrowRight, Search, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Search, CheckCircle2, Sparkles } from 'lucide-react';
 import './PackagingCollections.css';
 
 interface CategoryItem {
@@ -15,109 +15,108 @@ interface CategoryItem {
 }
 
 const categories: CategoryItem[] = [
-  { 
-    id: "box-mockups", 
-    title: "Box Mockups", 
+  {
+    id: "box-mockups",
+    title: "Box Mockups",
     subtitle: "Straight & Reverse Tuck Folding Boxes",
-    img: "/images/box.png", 
+    img: "/images/box.png",
     group: "boxes",
     badge: "🔥 MOST POPULAR",
     tag: "3D & DXF Ready",
-    isFeatured: true
+    isFeatured: true,
   },
-  { 
-    id: "pouch-bag-mockups", 
-    title: "Pouch / Bag Mockups", 
+  {
+    id: "pouch-bag-mockups",
+    title: "Pouch / Bag Mockups",
     subtitle: "Stand-Up Foil Pouches & Kraft Bags",
-    img: "/images/pouch.png", 
+    img: "/images/pouch.png",
     group: "pouches",
-    badge: "📐 DXF READY",
-    tag: "Customizable"
+    badge: "⚡ HIGH REVENUE",
+    tag: "3D Visualizer",
+    isFeatured: true,
   },
-  { 
-    id: "bottle-mockups", 
-    title: "Bottle Mockups", 
+  {
+    id: "bottle-mockups",
+    title: "Bottle Mockups",
     subtitle: "Beverage, Essential Oil & Wine Bottles",
-    img: "/images/bottle.png", 
+    img: "/images/bottle.png",
     group: "bottles",
-    badge: "⭐ FEATURED",
-    tag: "Glass & Plastic",
-    isFeatured: true
+    badge: "✦ PREMIUM GLASS",
+    tag: "Pro CAD Dieline",
+    isFeatured: true,
   },
-  { 
-    id: "can-mockups", 
-    title: "Can Mockups", 
+  {
+    id: "can-mockups",
+    title: "Can Mockups",
     subtitle: "Sleek & Standard Aluminum Drink Cans",
-    img: "/images/can.png", 
+    img: "/images/can.png",
     group: "bottles",
-    tag: "Metallic Finish"
+    tag: "3D Studio",
+    isFeatured: true,
   },
-  { 
-    id: "tube-mockups", 
-    title: "Tube Mockups", 
+  {
+    id: "tube-mockups",
+    title: "Tube Mockups",
     subtitle: "Cosmetic & Skincare Squeeze Tubes",
-    img: "/images/tube.png", 
+    img: "/images/tube.png",
     group: "containers",
-    tag: "Cosmetic Grade"
+    tag: "3D Studio",
   },
-  { 
-    id: "cup-container-mockups", 
-    title: "Cup / Container Mockups", 
+  {
+    id: "cup-container-mockups",
+    title: "Cup / Container Mockups",
     subtitle: "Eco Paper Coffee Cups & Tubs",
-    img: "/images/cup.png", 
+    img: "/images/cup.png",
     group: "containers",
-    tag: "Eco Kraft"
+    tag: "Vector Dieline",
   },
-  { 
-    id: "food-packaging-mockups", 
-    title: "Food Packaging Mockups", 
+  {
+    id: "food-packaging-mockups",
+    title: "Food Packaging Mockups",
     subtitle: "Takeout, Noodle & Fast Food Boxes",
-    img: "/images/pizza_box.png", 
-    group: "containers",
-    badge: "⚡ HOT",
-    tag: "Fast Food"
+    img: "/images/pizza_box.png",
+    group: "boxes",
+    tag: "Auto-Lock Dieline",
   },
-  { 
-    id: "water-bottle-mockups", 
-    title: "Water Bottle Mockups", 
+  {
+    id: "water-bottle-mockups",
+    title: "Water Bottle Mockups",
     subtitle: "Sport PET & Mineral Water Bottles",
-    img: "/images/supplement.png", 
+    img: "/images/bottle.png",
     group: "bottles",
-    tag: "Hydration"
+    tag: "3D Visualizer",
   },
-  { 
-    id: "gift-box-mockups", 
-    title: "Gift Box Mockups", 
-    subtitle: "Rigid Luxury & Magnetic Lid Boxes",
-    img: "/images/gift_box.png", 
+  {
+    id: "gift-box-mockups",
+    title: "Gift Box Mockups",
+    subtitle: "Rigid Magnetic Closure & Lid-Base Boxes",
+    img: "/images/gift_box.png",
     group: "boxes",
-    badge: "👑 PREMIUM",
-    tag: "Luxury Rigid",
-    isFeatured: true
+    tag: "3D Studio",
   },
-  { 
-    id: "paper-bag-mockups", 
-    title: "Paper Bag Mockups", 
-    subtitle: "Retail Shopping Bags with Handles",
-    img: "/images/paper_bag.png", 
+  {
+    id: "paper-bag-mockups",
+    title: "Paper Bag Mockups",
+    subtitle: "Twisted Handle Retail Shopping Bags",
+    img: "/images/paper_bag.png",
     group: "pouches",
-    tag: "Retail & Gift"
+    tag: "Vector Blueprint",
   },
-  { 
-    id: "pizza-packaging-mockups", 
-    title: "Pizza Packaging Mockups", 
-    subtitle: "E-Flute Corrugated Folding Pizza Boxes",
-    img: "/images/pizza_box.png", 
+  {
+    id: "pizza-box-mockups",
+    title: "Pizza Box Mockups",
+    subtitle: "Corrugated Square Takeout Pizza Boxes",
+    img: "/images/pizza_box.png",
     group: "boxes",
-    tag: "E-Flute Kraft"
+    tag: "3D Studio",
   },
-  { 
-    id: "supplement-bottle-mockups", 
-    title: "Supplement Bottle Mockups", 
-    subtitle: "Pharma & Vitamin Pill Containers",
-    img: "/images/supplement.png", 
-    group: "bottles",
-    tag: "Pharma Grade"
+  {
+    id: "supplement-jar-mockups",
+    title: "Supplement Jar Mockups",
+    subtitle: "Wide-Mouth Protein & Vitamin Jars",
+    img: "/images/supplement.png",
+    group: "containers",
+    tag: "3D Studio",
   },
 ];
 
@@ -136,13 +135,17 @@ const shortcutTags = [
   { label: '#Containers', value: 'containers' },
 ];
 
-interface Props {
-  onCategorySelect?: (id: string) => void;
+interface PackagingCollectionsProps {
+  onCategorySelect?: (categoryId: string) => void;
   showExploreButton?: boolean;
   isModelsPage?: boolean;
 }
 
-export default function PackagingCollections({ onCategorySelect, showExploreButton = false, isModelsPage = false }: Props) {
+export default function PackagingCollections({
+  onCategorySelect,
+  showExploreButton = true,
+  isModelsPage = false
+}: PackagingCollectionsProps) {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -157,7 +160,7 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
 
   const filteredCategories = categories.filter((cat) => {
     const matchesTab = activeTab === 'all' || cat.group === activeTab;
-    const matchesSearch = searchQuery.trim() === '' || 
+    const matchesSearch = searchQuery.trim() === '' ||
       cat.title.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
       cat.subtitle.toLowerCase().includes(searchQuery.toLowerCase().trim());
     return matchesTab && matchesSearch;
@@ -165,7 +168,6 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
 
   return (
     <section className={`packaging-collections-section ${isModelsPage ? 'packaging-collections-section--models' : 'packaging-collections-section--home'}`} id="packaging-collections">
-      {/* Background Ambient Orbs (Models Page Only) */}
       {isModelsPage && (
         <>
           <div className="ambient-orb ambient-orb-1"></div>
@@ -175,7 +177,6 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
 
       <div className="packaging-collections-container">
 
-        {/* HOME PAGE HEADER */}
         {!isModelsPage && (
           <header className="packaging-collections-header">
             <div>
@@ -187,10 +188,84 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
           </header>
         )}
 
-        {/* CONTROL BAR (MODELS PAGE ONLY) */}
+        {/* PHENOMENAL HERO SEARCH BANNER (MODELS PAGE ONLY) */}
         {isModelsPage && (
-          <div className="models-control-bar">
-            {/* Filter Pills */}
+          <div className="models-search-hero-banner">
+            <div className="models-hero-left">
+              <div className="models-hero-breadcrumb">
+                <span className="breadcrumb-path">Home</span>
+                <span className="breadcrumb-sep">/</span>
+                <span className="breadcrumb-current">3D Mockups Catalog</span>
+              </div>
+
+              <h1 className="models-hero-heading">
+                <span className="sparkle-icon">✨</span> Customize & Download 3D Mockups
+              </h1>
+              <p className="models-hero-subtext">
+                Explore high-quality production-ready 3D packaging mockups including tuck boxes, foil pouches, glass bottles, drink cans, and food containers.
+              </p>
+
+              <div className="models-hero-search-box">
+                <div className="models-hero-search-input-wrapper">
+                  <Sparkles className="hero-search-sparkle-icon" />
+                  <input
+                    type="text"
+                    placeholder="Try 4+ words e.g. Box, Bottle, Can, Pouch, Tube..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="models-hero-search-input"
+                  />
+                  {searchQuery ? (
+                    <button onClick={() => setSearchQuery('')} className="models-hero-search-clear" title="Clear search">
+                      ✕
+                    </button>
+                  ) : (
+                    <div className="models-hero-search-badge">
+                      <Search className="w-3.5 h-3.5" /> <span>Search Catalog</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="models-hero-tags">
+                  <span className="hero-tags-label">Popular searches:</span>
+                  {shortcutTags.map((tag) => (
+                    <button
+                      key={tag.value}
+                      onClick={() => handleShortcutClick(tag.value)}
+                      className={`hero-tag-chip ${activeTab === tag.value ? 'active' : ''}`}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="models-hero-visual-right hidden lg:flex">
+              <div className="showcase-mockup-stack">
+                <img
+                  src="/images/pouch.png"
+                  alt="3D Bag Mockup"
+                  className="showcase-img showcase-img-1"
+                />
+                <img
+                  src="/images/box.png"
+                  alt="3D Box Mockup"
+                  className="showcase-img showcase-img-2"
+                />
+                <img
+                  src="/images/bottle.png"
+                  alt="3D Bottle Mockup"
+                  className="showcase-img showcase-img-3"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CATEGORY FILTER TABS BAR (MODELS PAGE ONLY) */}
+        {isModelsPage && (
+          <div className="models-category-bar">
             <div className="models-filter-pills">
               {filterTabs.map((tab) => (
                 <button
@@ -202,38 +277,6 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
                   <span className="models-pill-count">{tab.count}</span>
                 </button>
               ))}
-            </div>
-
-            {/* Search Input & Shortcuts */}
-            <div className="models-search-block">
-              <div className="models-search-wrapper">
-                <Search className="models-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Filter 3D models..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="models-search-input"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="models-search-clear">
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              <div className="models-shortcut-tags">
-                <span className="shortcut-label">Quick:</span>
-                {shortcutTags.map((tag) => (
-                  <button
-                    key={tag.value}
-                    onClick={() => handleShortcutClick(tag.value)}
-                    className={`shortcut-tag-btn ${activeTab === tag.value ? 'active' : ''}`}
-                  >
-                    {tag.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         )}
@@ -258,7 +301,7 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
                     <h3 className="packaging-collections-card__title">{cat.title}</h3>
                     <p className="packaging-collections-card__sub">{cat.subtitle}</p>
                   </div>
-                  
+
                   <div className="packaging-collections-card__action">
                     <span>Open in 3D Studio</span>
                     <div className="packaging-collections-card__arrow">
@@ -299,7 +342,7 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
           </div>
         )}
 
-        {showExploreButton && (
+        {showExploreButton && !isModelsPage && (
           <div className="packaging-collections-explore-wrapper">
             <button
               onClick={handleExploreClick}

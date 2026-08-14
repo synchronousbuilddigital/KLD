@@ -421,11 +421,30 @@ export default function App() {
   useEffect(() => {
     const handleOpenSignIn = () => setIsSignInModalOpen(true);
     const handleAuthChange = () => setIsSignInModalOpen(false);
+    const handleOpenBoxStudio = (e: any) => {
+      const detail = e?.detail || {};
+      const model = detail.model || 'rte';
+      if (detail.L && detail.W && detail.H) {
+        useBoxStore.setState({
+          L: detail.L / 25.4,
+          W: detail.W / 25.4,
+          H: detail.H / 25.4,
+          boxModel: model
+        });
+      } else {
+        useBoxStore.setState({ boxModel: model });
+      }
+      setActiveDielineBox({ isOpen: true, model });
+    };
+
     window.addEventListener('open-sign-in-modal', handleOpenSignIn);
     window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('open-box-studio', handleOpenBoxStudio as EventListener);
+
     return () => {
       window.removeEventListener('open-sign-in-modal', handleOpenSignIn);
       window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('open-box-studio', handleOpenBoxStudio as EventListener);
     };
   }, []);
 
@@ -664,7 +683,18 @@ export default function App() {
       );
     }
 
-    return <AdminDashboardPage onBack={() => navigateTo('landing')} />;
+    return (
+      <>
+        <AdminDashboardPage onBack={() => navigateTo('landing')} />
+        {activeDielineBox.isOpen && (
+          <BoxStudioModal
+            isOpen={activeDielineBox.isOpen}
+            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+            initialModel={activeDielineBox.model}
+          />
+        )}
+      </>
+    );
   }
 
   if (currentView === 'profile') {
@@ -986,8 +1016,8 @@ export default function App() {
         {stepIndex >= 7 && (
           <>
             {/* Interactive Design Lab Section */}
-            <section id="design-lab" className="bg-zinc-950 text-white py-24 px-8 border-t border-zinc-900">
-              <motion.div className="max-w-6xl mx-auto mb-16 text-left" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
+            <section id="design-lab" className="bg-zinc-950 text-white py-10 px-6 md:px-8 border-t border-zinc-900">
+              <motion.div className="max-w-6xl mx-auto mb-6 text-left" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
                 <span className="text-amber-500 font-mono text-sm tracking-wider uppercase">Interactive Design Lab</span>
                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight mt-2 text-white">
                   Prototype in 3D Real-Time
@@ -998,10 +1028,10 @@ export default function App() {
               </motion.div>
 
               {/* Design Lab Container */}
-              <motion.div className="w-full max-w-6xl mx-auto bg-zinc-900/40 border border-zinc-800/80 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[560px]" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
+              <motion.div className="w-full max-w-6xl mx-auto bg-zinc-900/40 border border-zinc-800/80 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[460px]" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
 
                 {/* Controls Column (Left) */}
-                <div className="lg:col-span-5 border-r border-zinc-800/80 p-8 flex flex-col justify-between bg-zinc-900/20">
+                <div className="lg:col-span-5 border-r border-zinc-800/80 p-5 md:p-6 flex flex-col justify-between bg-zinc-900/20">
                   <div className="space-y-6">
 
                     {/* Selector Tabs */}
@@ -1078,37 +1108,77 @@ export default function App() {
                         </div>
 
                         <div className="pt-4 border-t border-zinc-800/80">
-                          <span className="text-[10px] text-zinc-500 font-mono block mb-2 uppercase tracking-wider">Dynamic 2D Dieline Blueprint</span>
-                          <div className="bg-zinc-950/80 border border-zinc-800/60 rounded-xl p-4 flex items-center justify-center h-44 overflow-hidden relative" style={{ '--w': `${width}px`, '--h': `${height}px`, '--d': `${depth}px`, '--slot': '6px' } as React.CSSProperties}>
-                            <div className="blueprint-rsc scale-[0.18] sm:scale-[0.2] md:scale-[0.22] origin-top-left absolute top-4 left-4">
-                              <div className="bp-glue"></div>
-
-                              <div className="bp-col">
-                                <div className="bp-flap-top bp-d"></div>
-                                <div className="bp-panel bp-left"></div>
-                                <div className="bp-flap-bottom bp-d"></div>
-                              </div>
-
-                              <div className="bp-col">
-                                <div className="bp-flap-top bp-w"></div>
-                                <div className="bp-panel bp-back"></div>
-                                <div className="bp-flap-bottom bp-w"></div>
-                              </div>
-
-                              <div className="bp-col">
-                                <div className="bp-flap-top bp-d"></div>
-                                <div className="bp-panel bp-right"></div>
-                                <div className="bp-flap-bottom bp-d"></div>
-                              </div>
-
-                              <div className="bp-col">
-                                <div className="bp-flap-top bp-w"></div>
-                                <div className="bp-panel bp-front"></div>
-                                <div className="bp-flap-bottom bp-w"></div>
-                              </div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">Dynamic 2D Dieline Blueprint</span>
+                            <div className="flex items-center gap-3 text-[10px] font-mono">
+                              <span className="flex items-center gap-1 text-cyan-400"><span className="w-2 h-0.5 bg-cyan-400 inline-block"></span> Cut</span>
+                              <span className="flex items-center gap-1 text-rose-400"><span className="w-2 h-0.5 bg-rose-400 border-b border-dashed border-rose-400 inline-block"></span> Crease</span>
                             </div>
                           </div>
+                          <div className="bg-zinc-950/90 border border-zinc-800/80 rounded-xl p-3 h-44 overflow-hidden relative flex items-center justify-center">
+                            {/* Dynamic SVG Vector 2D Dieline */}
+                            {(() => {
+                              const totalW = depth * 2 + width * 2 + 40;
+                              const totalH = height + depth + 30;
+                              const startY = depth / 2 + 15;
+                              const flapH = depth / 2;
+                              const p1X = 35; // Glue tab end / Left start
+                              const p2X = p1X + depth; // Left end / Back start
+                              const p3X = p2X + width; // Back end / Right start
+                              const p4X = p3X + depth; // Right end / Front start
+                              const p5X = p4X + width; // Front end
 
+                              return (
+                                <svg
+                                  viewBox={`0 0 ${totalW} ${totalH}`}
+                                  className="w-full h-full p-1"
+                                  preserveAspectRatio="xMidYMid meet"
+                                >
+                                  <g fill="none">
+                                    {/* Panel Fills */}
+                                    <rect x={p1X} y={startY} width={depth} height={height} fill="rgba(56, 189, 248, 0.04)" />
+                                    <rect x={p2X} y={startY} width={width} height={height} fill="rgba(56, 189, 248, 0.06)" />
+                                    <rect x={p3X} y={startY} width={depth} height={height} fill="rgba(56, 189, 248, 0.04)" />
+                                    <rect x={p4X} y={startY} width={width} height={height} fill="rgba(56, 189, 248, 0.06)" />
+
+                                    {/* Outer Cut Lines (Cyan) */}
+                                    <polygon points={`15,${startY + 8} ${p1X},${startY} ${p1X},${startY + height} 15,${startY + height - 8}`} stroke="#38bdf8" strokeWidth="1.5" fill="rgba(56, 189, 248, 0.03)" />
+                                    
+                                    {/* Panels & Flaps Outline */}
+                                    <rect x={p1X} y={15} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <rect x={p1X} y={startY + height} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+
+                                    <rect x={p2X} y={15} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <rect x={p2X} y={startY + height} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+
+                                    <rect x={p3X} y={15} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <rect x={p3X} y={startY + height} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+
+                                    <rect x={p4X} y={15} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <rect x={p4X} y={startY + height} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+
+                                    {/* Main Body Side Borders */}
+                                    <line x1={p1X} y1={startY} x2={p1X} y2={startY + height} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <line x1={p5X} y1={startY} x2={p5X} y2={startY + height} stroke="#38bdf8" strokeWidth="1.5" />
+
+                                    {/* Crease / Fold Lines (Red Dashed) */}
+                                    <line x1={p2X} y1={startY} x2={p2X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    <line x1={p3X} y1={startY} x2={p3X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    <line x1={p4X} y1={startY} x2={p4X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+
+                                    <line x1={p1X} y1={startY} x2={p5X} y2={startY} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    <line x1={p1X} y1={startY + height} x2={p5X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+
+                                    {/* Panel Labels */}
+                                    <text x={p1X + depth/2} y={startY + height/2} fill="#94a3b8" fontSize="10" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">Side (L)</text>
+                                    <text x={p2X + width/2} y={startY + height/2} fill="#e2e8f0" fontSize="11" fontWeight="bold" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">Back ({width}mm)</text>
+                                    <text x={p3X + depth/2} y={startY + height/2} fill="#94a3b8" fontSize="10" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">Side (R)</text>
+                                    <text x={p4X + width/2} y={startY + height/2} fill="#e2e8f0" fontSize="11" fontWeight="bold" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">Front ({width}mm)</text>
+                                  </g>
+                                </svg>
+                              );
+                            })()}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1342,7 +1412,7 @@ export default function App() {
                 </div>
 
                 {/* viewport column (Right) */}
-                <div className="lg:col-span-7 flex flex-col items-center justify-center p-8 bg-black/50 relative overflow-hidden min-h-[400px]">
+                <div className="lg:col-span-7 flex flex-col items-center justify-center p-5 md:p-6 bg-black/50 relative overflow-hidden min-h-[380px]">
 
                   {/* Viewport Header Actions (Tape / Blade Seal Toggle) */}
                   <div className="absolute top-4 right-4 z-10 flex items-center gap-2">

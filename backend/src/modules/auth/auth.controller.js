@@ -187,6 +187,8 @@ const login = async (req, res, next) => {
         plan: sub?.plan || 'FREE',
         aiCredits: sub?.aiCredits || 0,
       },
+      accessToken,
+      refreshToken
     }, 'Logged in successfully.');
   } catch (err) {
     next(err);

@@ -76,7 +76,7 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
         </div>
 
         {/* CENTER NAVIGATION LINKS */}
-        <nav className="nav-links flex items-center gap-1 bg-zinc-100/80 p-1.5 rounded-full border border-zinc-200/70 backdrop-blur-sm">
+        <nav className="nav-links flex items-center gap-1.5 bg-zinc-200/80 p-1.5 px-2 rounded-full border border-zinc-300 shadow-inner backdrop-blur-md">
           {navItems.map((item) => {
             const isActive = activeNav === item.id;
             return (
@@ -84,10 +84,10 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
                 key={item.id}
                 href={item.path}
                 onClick={(e) => { e.preventDefault(); handleNavClick(item.id as any, item.path); }}
-                className={`px-4.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 ${
+                className={`px-5 py-2 rounded-full text-sm font-bold transition-all duration-200 ${
                   isActive 
-                    ? 'bg-zinc-950 text-white shadow-xs' 
-                    : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-200/60 font-semibold'
+                    ? 'bg-zinc-950 text-white shadow-md font-black scale-[1.03] ring-2 ring-zinc-950/20' 
+                    : 'text-zinc-800 hover:text-zinc-950 hover:bg-zinc-300/90 font-bold'
                 }`}
               >
                 {item.label}
@@ -99,32 +99,17 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
         {/* RIGHT ACTION BUTTONS */}
         <div className="flex items-center gap-2.5">
           
-          {/* 1. START DESIGNING BUTTON */}
-          <button 
-            className="group bg-zinc-950 hover:bg-zinc-800 active:scale-95 text-white text-xs font-bold px-4.5 py-2 rounded-full shadow-xs hover:shadow-sm transition-all flex items-center gap-1.5"
-            onClick={() => setIsSignInModalOpen(true)}
-          >
-            <span>Start Designing</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
-
-          {/* 2. WORKSPACE BUTTON */}
-          <button 
-            onClick={(e) => { e.preventDefault(); handleNavClick('workspace', '/workspace'); }}
-            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all border ${
-              activeNav === 'workspace'
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-100'
-                : 'bg-zinc-100/90 hover:bg-zinc-200/90 text-zinc-800 border-zinc-200/80'
-            }`}
-            title="Saved History & Workspace"
-          >
-            <Folder className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Workspace</span>
-          </button>
-
-          {/* USER PROFILE AVATAR DROPDOWN IF LOGGED IN */}
-          {isLoggedIn && (
-            <div className="group relative cursor-pointer ml-0.5">
+          {/* 1. START DESIGNING BUTTON (LOGGED OUT) OR USER PROFILE AVATAR (LOGGED IN) */}
+          {!isLoggedIn ? (
+            <button 
+              className="group bg-zinc-950 hover:bg-zinc-800 active:scale-95 text-white text-xs font-bold px-4.5 py-2 rounded-full shadow-xs hover:shadow-sm transition-all flex items-center gap-1.5"
+              onClick={() => setIsSignInModalOpen(true)}
+            >
+              <span>Start Designing</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          ) : (
+            <div className="group relative cursor-pointer mr-0.5">
               <div 
                 onClick={() => handleNavClick(currentUser?.role === 'ADMIN' ? 'admin' : 'profile', currentUser?.role === 'ADMIN' ? '/admin' : '/profile')}
                 className="w-8 h-8 rounded-full bg-zinc-950 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-xs border border-zinc-800 hover:ring-2 hover:ring-zinc-300 transition-all"
@@ -166,6 +151,20 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
               </div>
             </div>
           )}
+
+          {/* 2. WORKSPACE BUTTON (ALWAYS ON THE FAR RIGHT SIDE) */}
+          <button 
+            onClick={(e) => { e.preventDefault(); handleNavClick('workspace', '/workspace'); }}
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all border ${
+              activeNav === 'workspace'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-100'
+                : 'bg-zinc-100/90 hover:bg-zinc-200/90 text-zinc-800 border-zinc-200/80'
+            }`}
+            title="Saved History & Workspace"
+          >
+            <Folder className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Workspace</span>
+          </button>
         </div>
       </header>
 
