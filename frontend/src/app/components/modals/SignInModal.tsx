@@ -22,7 +22,7 @@ export default function SignInModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '451067192990-5ii3d2qhhne36opb0orr8u5lr9chdl6v.apps.googleusercontent.com';
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse?.credential) return;
