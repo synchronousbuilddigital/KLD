@@ -19,353 +19,414 @@ import {
   useDebouncedDecals
 } from "./sharedUtils";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GEOMETRY BUILDER — matched EXACTLY to autoLockDielineGenerator.js
-// ─────────────────────────────────────────────────────────────────────────────
 function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims) {
-  const extrude = { depth: nT, bevelEnabled: false };
+    const SVG_WIDTH = 387.9;
+    const SVG_HEIGHT = 295.25;
 
-  // Template reference
-  const L_tpl = 120.6;
-  const W_tpl =  60.6;
+    const orig_d = 60.6;
+    const TUCK_FLAP_H = 14.7 * (W / orig_d);
+    const DUST_H = 38.0 * (W / orig_d);
+    const botH = 48.35 * (W / orig_d);
+    const GLUE_W = 16.0 * (W / orig_d);
 
-  // ── MAIN PANELS ────────────────────────────────────────────────────────────
-  const p1Shape = new THREE.Shape();
-  p1Shape.moveTo(-L / 2, -H / 2);
-  p1Shape.lineTo( L / 2, -H / 2);
-  p1Shape.lineTo( L / 2,  H / 2);
-  p1Shape.lineTo(-L / 2,  H / 2);
-  p1Shape.closePath();
+    function createUVGeometry(physWidth, physHeight, svgX, svgY, svgW, svgH, pivotX, pivotY, holes = []) {
+        const shape = new THREE.Shape();
+        shape.moveTo(-physWidth / 2, -physHeight / 2);
+        shape.lineTo(physWidth / 2, -physHeight / 2);
+        shape.lineTo(physWidth / 2, physHeight / 2);
+        shape.lineTo(-physWidth / 2, physHeight / 2);
+        shape.closePath();
 
-  const p3Shape = new THREE.Shape();
-  p3Shape.moveTo(-L / 2, -H / 2);
-  p3Shape.lineTo( L / 2, -H / 2);
-  p3Shape.lineTo( L / 2,  H / 2);
-  p3Shape.lineTo(-L / 2,  H / 2);
-  p3Shape.closePath();
+        if (holes && holes.length > 0) {
+            shape.holes.push(...holes);
+        }
 
-  let windowFilmGeomP1 = null;
-  const p1Holes = getPanelWindowHoles("p1", decals, p1Shape, L, W, H, manuL, manuW, manuH, dims, nT);
-  if (p1Holes.length > 0) {
-    p1Shape.holes.push(...p1Holes);
-    windowFilmGeomP1 = new THREE.ShapeGeometry(p1Holes);
-  }
+        const extrude = { depth: 0.015, bevelEnabled: false };
+        const geo = new THREE.ExtrudeGeometry(shape, extrude);
+        
+        // assign UVs for the front face
+        const pos = geo.attributes.position;
+        const uvs = new Float32Array(pos.count * 2);
+        const u0 = svgX / SVG_WIDTH;
+        const u1 = (svgX + svgW) / SVG_WIDTH;
+        const v1 = 1.0 - (svgY / SVG_HEIGHT);
+        const v0 = 1.0 - ((svgY + svgH) / SVG_HEIGHT);
 
-  let windowFilmGeomP3 = null;
-  const p3Holes = getPanelWindowHoles("p3", decals, p3Shape, L, W, H, manuL, manuW, manuH, dims, nT);
-  if (p3Holes.length > 0) {
-    p3Shape.holes.push(...p3Holes);
-    windowFilmGeomP3 = new THREE.ShapeGeometry(p3Holes);
-  }
+        for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const y = pos.getY(i);
+            const nx = (x + physWidth / 2) / physWidth;
+            const ny = (y + physHeight / 2) / physHeight;
+            uvs[i * 2] = u0 + nx * (u1 - u0);
+            uvs[i * 2 + 1] = v0 + ny * (v1 - v0);
+        }
 
-  const p2Shape = new THREE.Shape();
-  p2Shape.moveTo(0,  -H / 2 + nT);
-  p2Shape.lineTo(W,  -H / 2 + nT);
-  p2Shape.lineTo(W,   H / 2 - nT);
-  p2Shape.lineTo(0,   H / 2 - nT);
-  p2Shape.closePath();
+        geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+        geo.translate(physWidth / 2 - pivotX, physHeight / 2 - pivotY, -0.015);
+        assignMaterialGroups(geo, 0.015);
+        
+        const filmGeom = (holes && holes.length > 0) ? new THREE.ShapeGeometry(holes) : null;
+        if (filmGeom) filmGeom.translate(physWidth / 2 - pivotX, physHeight / 2 - pivotY, 0);
+        
+        return { geo, filmGeom };
+    }
 
-  const p4Shape = new THREE.Shape();
-  p4Shape.moveTo(0,  -H / 2 + nT);
-  p4Shape.lineTo(W,  -H / 2 + nT);
-  p4Shape.lineTo(W,   H / 2 - nT);
-  p4Shape.lineTo(0,   H / 2 - nT);
-  p4Shape.closePath();
+    function createRectShape(w, h) {
+        const shape = new THREE.Shape();
+        shape.moveTo(-w / 2, -h / 2);
+        shape.lineTo(w / 2, -h / 2);
+        shape.lineTo(w / 2, h / 2);
+        shape.lineTo(-w / 2, h / 2);
+        shape.closePath();
+        return shape;
+    }
 
-  let windowFilmGeomP2 = null;
-  const p2Holes = getPanelWindowHoles("p2", decals, p2Shape, L, W, H, manuL, manuW, manuH, dims, nT);
-  if (p2Holes.length > 0) {
-    p2Shape.holes.push(...p2Holes);
-    windowFilmGeomP2 = new THREE.ShapeGeometry(p2Holes);
-  }
+    const p1Holes = getPanelWindowHoles("p1", decals, createRectShape(L, H), L, W, H, manuL, manuW, manuH, dims, nT, 0, 0);
+    const p1Res = createUVGeometry(L, H, 21.0, 80.3, 120.6, 161.5, L / 2, H / 2, p1Holes);
+    const p1Geom = p1Res.geo;
+    const windowFilmGeomP1 = p1Res.filmGeom;
 
-  let windowFilmGeomP4 = null;
-  const p4Holes = getPanelWindowHoles("p4", decals, p4Shape, L, W, H, manuL, manuW, manuH, dims, nT);
-  if (p4Holes.length > 0) {
-    p4Shape.holes.push(...p4Holes);
-    windowFilmGeomP4 = new THREE.ShapeGeometry(p4Holes);
-  }
+    const coverHoles = getPanelWindowHoles("p1_top_cover", decals, createRectShape(L, W), L, W, H, manuL, manuW, manuH, dims, nT, 0, -W/2);
+    const coverRes = createUVGeometry(L, W, 21.0, 19.7, 120.6, 60.6, L / 2, 0, coverHoles);
+    const coverGeom = coverRes.geo;
+    const windowFilmCover = coverRes.filmGeom;
 
-  // ── PARAMETRIC PROPORTIONS (Matching the Pacdora brown box) ────────────────
-  const dH = W * 0.6;
-  const coverH = W * 0.98;
-  const lipH = W * 0.25;
-  const gW = L * 0.15;
-  const depth = W * 0.75;
+    const lipHoles = getPanelWindowHoles("p1_top_lip", decals, createRectShape(L, TUCK_FLAP_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -TUCK_FLAP_H/2);
+    const lipRes = createUVGeometry(L, TUCK_FLAP_H, 21.0, 5.0, 120.6, 14.7, L / 2, 0, lipHoles);
+    const lipGeom = lipRes.geo;
+    const windowFilmLip = lipRes.filmGeom;
 
-  // ── GLUE FLAP ──────────────────────────────────────────────────────────────
-  const chamferTop = H * 0.03;
-  const chamferBot = H * 0.09;
-  const glueShape = new THREE.Shape();
-  glueShape.moveTo(0,   H / 2);
-  glueShape.lineTo(-gW, H / 2 - chamferTop);
-  glueShape.lineTo(-gW, -H / 2 + chamferBot);
-  glueShape.lineTo(0,   -H / 2);
-  glueShape.closePath();
+    const p1BotHoles = getPanelWindowHoles("p1_bot_auto", decals, createRectShape(L, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p1BotRes = createUVGeometry(L, botH, 21.0, 241.8, 120.6, 48.35, L / 2, botH, p1BotHoles);
+    const p1BotGeom = p1BotRes.geo;
+    const windowFilmP1Bot = p1BotRes.filmGeom;
 
-  // ── TOP TUCK COVER ─────────────────────────────────────────────────────────
-  const coverShape = new THREE.Shape();
-  coverShape.moveTo(-L / 2, 0);
-  coverShape.lineTo(-L / 2, coverH);
-  coverShape.lineTo( L / 2, coverH);
-  coverShape.lineTo( L / 2, 0);
-  coverShape.closePath();
+    const glueHoles = getPanelWindowHoles("p1_glue", decals, createRectShape(GLUE_W, H), L, W, H, manuL, manuW, manuH, dims, nT, -GLUE_W/2, 0);
+    const glueRes = createUVGeometry(GLUE_W, H, 5.0, 80.3, 16.0, 161.5, GLUE_W, H / 2, glueHoles);
+    const glueGeom = glueRes.geo;
+    const windowFilmGlue = glueRes.filmGeom;
 
-  // ── TOP LIP ────────────────────────────────────────────────────────────────
-  const lipShape = new THREE.Shape();
-  lipShape.moveTo(-L / 2, 0);
-  lipShape.lineTo(-L / 2 + L * 0.05, 0);
-  lipShape.lineTo(-L / 2 + L * 0.05, lipH - L * 0.05);
-  lipShape.quadraticCurveTo(-L / 2 + L * 0.05, lipH, -L / 2 + L * 0.1, lipH);
-  lipShape.lineTo( L / 2 - L * 0.1, lipH);
-  lipShape.quadraticCurveTo( L / 2 - L * 0.05, lipH, L / 2 - L * 0.05, lipH - L * 0.05);
-  lipShape.lineTo( L / 2 - L * 0.05, 0);
-  lipShape.lineTo( L / 2, 0);
-  lipShape.closePath();
+    const p2Holes = getPanelWindowHoles("p2", decals, createRectShape(W, H), L, W, H, manuL, manuW, manuH, dims, nT, -W/2, 0);
+    const p2Res = createUVGeometry(W, H, 141.6, 80.3, 60.6, 161.5, 0, H / 2, p2Holes);
+    const p2Geom = p2Res.geo;
+    const windowFilmGeomP2 = p2Res.filmGeom;
+    
+    const p2DustHoles = getPanelWindowHoles("p2_top_dust", decals, createRectShape(W, DUST_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
+    const p2DustRes = createUVGeometry(W, DUST_H, 141.6, 42.35, 60.6, 38.0, W / 2, 0, p2DustHoles);
+    const p2DustGeom = p2DustRes.geo;
+    const windowFilmP2Dust = p2DustRes.filmGeom;
 
-  // ── TOP DUST FLAPS (ASYMMETRICAL) ──────────────────────────────────────────
-  const dustShape = new THREE.Shape();
-  dustShape.moveTo(0, 0);
-  dustShape.lineTo(W * 0.15, dH);
-  dustShape.lineTo(W, dH);
-  dustShape.lineTo(W, 0);
-  dustShape.closePath();
+    const p2BotHoles = getPanelWindowHoles("p2_bot_auto", decals, createRectShape(W, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p2BotRes = createUVGeometry(W, botH, 141.6, 241.8, 60.6, 48.35, W / 2, botH, p2BotHoles);
+    const p2BotGeom = p2BotRes.geo;
+    const windowFilmP2Bot = p2BotRes.filmGeom;
 
-  // ── BOTTOM CRASH-LOCK FLAPS (P1 & P3) ──────────────────────────────────────
-  const makeP1Shape = () => {
-    const s = new THREE.Shape();
-    s.moveTo(-L / 2, 0);
-    s.lineTo(-L / 2 + L * 0.15, -depth);
-    s.lineTo(-L / 2 + L * 0.6, -depth);
-    s.lineTo(-L / 2 + L * 0.6, -depth * 0.4);
-    s.lineTo(-L / 2 + L * 0.8, -depth * 0.4);
-    s.lineTo(-L / 2 + L * 0.8, -depth * 0.1);
-    s.lineTo( L / 2, 0);
-    s.closePath();
-    return s;
-  };
+    const p3Holes = getPanelWindowHoles("p3", decals, createRectShape(L, H), L, W, H, manuL, manuW, manuH, dims, nT, 0, 0);
+    const p3Res = createUVGeometry(L, H, 202.2, 80.3, 120.6, 161.5, L / 2, H / 2, p3Holes);
+    const p3Geom = p3Res.geo;
+    const windowFilmGeomP3 = p3Res.filmGeom;
 
-  const makeP3Shape = () => {
-    const s = new THREE.Shape();
-    s.moveTo(-L / 2, 0);
-    s.lineTo(-L / 2 + L * 0.2, -depth * 0.1);
-    s.lineTo(-L / 2 + L * 0.2, -depth * 0.4);
-    s.lineTo(-L / 2 + L * 0.4, -depth * 0.4);
-    s.lineTo(-L / 2 + L * 0.4, -depth);
-    s.lineTo(-L / 2 + L * 0.85, -depth);
-    s.lineTo( L / 2, 0);
-    s.closePath();
-    return s;
-  };
+    const p3BotHoles = getPanelWindowHoles("p3_bot_auto", decals, createRectShape(L, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p3BotRes = createUVGeometry(L, botH, 202.2, 241.8, 120.6, 48.35, L / 2, botH, p3BotHoles);
+    const p3BotGeom = p3BotRes.geo;
+    const windowFilmP3Bot = p3BotRes.filmGeom;
 
-  // ── BOTTOM GUSSETS (P2 & P4) ───────────────────────────────────────────────
-  const makeGussetShape = () => {
-    const s = new THREE.Shape();
-    s.moveTo(0, 0);
-    s.lineTo(W * 0.2, -depth * 0.8);
-    s.lineTo(W * 0.6, -depth * 0.8);
-    s.lineTo(W, 0);
-    s.closePath();
-    return s;
-  };
+    const p4Holes = getPanelWindowHoles("p4", decals, createRectShape(W, H), L, W, H, manuL, manuW, manuH, dims, nT, -W/2, 0);
+    const p4Res = createUVGeometry(W, H, 322.8, 80.3, 60.6, 161.5, 0, H / 2, p4Holes);
+    const p4Geom = p4Res.geo;
+    const windowFilmGeomP4 = p4Res.filmGeom;
+    
+    const p4DustHoles = getPanelWindowHoles("p4_top_dust", decals, createRectShape(W, DUST_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
+    const p4DustRes = createUVGeometry(W, DUST_H, 322.8, 42.35, 60.6, 38.0, W / 2, 0, p4DustHoles);
+    const p4DustGeom = p4DustRes.geo;
+    const windowFilmP4Dust = p4DustRes.filmGeom;
 
-  const geoms = {
-    p1Geom:    new THREE.ExtrudeGeometry(p1Shape,      extrude),
-    p3Geom:    new THREE.ExtrudeGeometry(p3Shape,      extrude),
-    p2Geom:    new THREE.ExtrudeGeometry(p2Shape,      extrude),
-    p4Geom:    new THREE.ExtrudeGeometry(p4Shape,      extrude),
-    glueGeom:  new THREE.ExtrudeGeometry(glueShape,    extrude),
-    coverGeom: new THREE.ExtrudeGeometry(coverShape,   extrude),
-    lipGeom:   new THREE.ExtrudeGeometry(lipShape,     extrude),
-    dustGeom:  new THREE.ExtrudeGeometry(dustShape,    extrude),
-    p1BotGeom: new THREE.ExtrudeGeometry(makeP1Shape(), extrude),
-    p3BotGeom: new THREE.ExtrudeGeometry(makeP3Shape(), extrude),
-    p2BotGeom: new THREE.ExtrudeGeometry(makeGussetShape(), extrude),
-    p4BotGeom: new THREE.ExtrudeGeometry(makeGussetShape(), extrude),
-    windowFilmGeomP1, windowFilmGeomP2, windowFilmGeomP3, windowFilmGeomP4
-  };
+    const p4BotHoles = getPanelWindowHoles("p4_bot_auto", decals, createRectShape(W, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p4BotRes = createUVGeometry(W, botH, 322.8, 241.8, 60.6, 48.35, W / 2, botH, p4BotHoles);
+    const p4BotGeom = p4BotRes.geo;
+    const windowFilmP4Bot = p4BotRes.filmGeom;
 
-  Object.values(geoms).forEach(g => {
-    if (g instanceof THREE.ExtrudeGeometry) assignMaterialGroups(g, nT);
-  });
-  return { ...geoms, coverH };
+    return {
+        p1Geom, coverGeom, lipGeom, p1BotGeom, glueGeom,
+        p2Geom, p2DustGeom, p2BotGeom,
+        p3Geom, p3BotGeom,
+        p4Geom, p4DustGeom, p4BotGeom,
+        coverH: W,
+        windowFilmGeomP1, windowFilmGeomP2, windowFilmGeomP3, windowFilmGeomP4,
+        windowFilmCover, windowFilmLip, windowFilmP1Bot, windowFilmGlue,
+        windowFilmP2Dust, windowFilmP2Bot, windowFilmP3Bot, windowFilmP4Dust, windowFilmP4Bot
+    };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 export default function AutoLockBox3DViewer({
-  L = 100,
-  W = 50,
-  H = 150,
-  T = 1.5,
-  progress = 1,
   zoom = 1,
-  lightingPreset = "studio",
+  overrideL, overrideW, overrideH,
+  overrideLayout, activeAnimation,
+  progress = 0,
   decals = [],
-  overrideLayout = null,
-  activeAnimation = "none"
+  colorOverride = null,
+  disableZoom = false
 }) {
   const store = useBoxStore();
-  const nT    = Math.max(0.015, Number(T) || 0.0197);
-
+  const L = overrideL || store.L;
+  const W = overrideW || store.W;
+  const H = overrideH || store.H;
+  const nT = store.T;
   let manuL = L, manuW = W, manuH = H;
   if (store.sizeMode === "inner") {
-    manuL = L + 2 * T; manuW = W + 2 * T; manuH = H + 2 * T;
+    manuL = L + 2 * nT; manuW = W + 2 * nT; manuH = H + 2 * nT;
   } else if (store.sizeMode === "outer") {
-    manuL = L - 2 * T; manuW = W - 2 * T; manuH = H - 2 * T;
+    manuL = L - 2 * nT; manuW = W - 2 * nT; manuH = H - 2 * nT;
+  }
+  const dims = useMemo(() => {
+    const nGlue = Number(store.glueFlapWidth) || 16.0/25.4;
+    const nManuL = Number(manuL);
+    const nManuW = Number(manuW);
+    const nManuH = Number(manuH);
+    const x1 = nGlue;
+    const x2 = x1 + nManuL;
+    const x3 = x2 + nManuW;
+    const x4 = x3 + nManuL;
+    const x5 = x4 + nManuW;
+    const yTop = nManuW * 1.3;
+    const yBot = yTop + nManuH;
+    return { L: Number(L), W: Number(W), H: Number(H), x1, x2, x3, x4, x5, yTop, yBot };
+  }, [L, W, H, manuL, manuW, manuH, store.glueFlapWidth]);
+
+  const debouncedDecals = useDebouncedDecals(decals, 100);
+  const lightingPreset = store.lightingPreset || "studio";
+
+  // In main.js, 0 is fully closed and 1 is fully open/flat. 
+  // In our UI, progress is 0 (flat) to 1 (closed). So we reverse it:
+  const val = 1.0 - progress;
+
+  let t3 = 0;
+  if (val <= 0.1) t3 = 1.0 - (val / 0.1);
+
+  let t2 = 0;
+  if (val <= 0.1) t2 = 1.0;
+  else if (val <= 0.2) t2 = 1.0 - ((val - 0.1) / 0.1);
+
+  let A = Math.PI / 2;
+  if (val > 0.2 && val <= 0.4) {
+      const sq = (val - 0.2) / 0.2;
+      A = (Math.PI / 2) + sq * (Math.PI / 2);
+  } else if (val > 0.4 && val <= 0.6) {
+      const unsq = (val - 0.4) / 0.2;
+      A = Math.PI - unsq * (Math.PI / 2);
   }
 
-  const dieline = useMemo(() =>
-    generateAutoLockDieline({
-      L: manuL, W: manuW, H: manuH, T,
-      glueFlapWidth: store.glueFlapWidth,
-      bleed: store.bleed,
-    }),
-    [manuL, manuW, manuH, T, store.glueFlapWidth, store.bleed]
-  );
-  const dims = dieline.dimensions;
+  let baseBotAngle = Math.PI / 2;
+  if (val <= 0.2) baseBotAngle = Math.PI / 2;
+  else if (val > 0.2 && val <= 0.4) {
+      const sq = (val - 0.2) / 0.2;
+      baseBotAngle = (Math.PI / 2) + sq * (Math.PI / 2);
+  } else if (val > 0.4 && val <= 0.6) {
+      baseBotAngle = Math.PI;
+  } else {
+      baseBotAngle = Math.PI;
+  }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // KINEMATICS
-  // ─────────────────────────────────────────────────────────────────────────────
-  const tubeAngle   = stageProgress(progress, 0.00, 0.20) * (Math.PI / 2);
-  const p1BotAngle  = stageProgress(progress, 0.20, 0.45) * (Math.PI / 2);
-  const p3BotAngle  = stageProgress(progress, 0.20, 0.45) * (Math.PI / 2 + 5 * Math.PI / 180);
-  const p24BotAngle = stageProgress(progress, 0.25, 0.48) * (Math.PI / 2);
-  const tdAngle     = stageProgress(progress, 0.48, 0.65) * (Math.PI / 2);
-  const coverAngle  = stageProgress(progress, 0.65, 0.83) * (Math.PI / 2);
-  const lipAngle    = stageProgress(progress, 0.83, 1.00) * (105 * Math.PI / 180);
+  let botAngleFront = baseBotAngle;
+  let botAngleRight = baseBotAngle;
+  let botAngleBack = baseBotAngle;
+  let botAngleLeft = baseBotAngle;
 
-  const debouncedDecals = useDebouncedDecals(decals, 150);
+  if (val > 0.6) {
+      let tF = Math.min(Math.max((val - 0.60) / 0.05, 0), 1);
+      botAngleFront = Math.PI * (1 - tF);
+      let tR = Math.min(Math.max((val - 0.65) / 0.05, 0), 1);
+      botAngleRight = Math.PI * (1 - tR);
+      let tB = Math.min(Math.max((val - 0.70) / 0.05, 0), 1);
+      botAngleBack = Math.PI * (1 - tB);
+      let tL = Math.min(Math.max((val - 0.75) / 0.05, 0), 1);
+      botAngleLeft = Math.PI * (1 - tL);
+  }
+
+  let t4 = 0;
+  if (val > 0.80) t4 = (val - 0.80) / 0.20;
+
+  const p2RotY = A * (1 - t4);
+  const p3RotY = (Math.PI - A) * (1 - t4);
+  const p4RotY = A * (1 - t4);
+
+  let glueAngle = A - Math.PI;
+  if (val <= 0.2) glueAngle -= 0.05;
+  const glueRotY = glueAngle * (1 - t4);
+  const gluePosX = -L / 2 + ((1 - t4) * 0.5);
+
+  const bF = botAngleFront / Math.PI;
+  const botFrontPos = [0, -H / 2 + bF * 0.01, 0];
+
+  const bB = botAngleBack / Math.PI;
+  const botBackPos = [0, -H / 2 + bB * 0.02, 0];
+
+  const bR = botAngleRight / Math.PI;
+  const botRightPos = [0, -H / 2 + bR * 0.03, 0];
+
+  const bL = botAngleLeft / Math.PI;
+  const botLeftPos = [0, -H / 2 + bL * 0.04, 0];
+
+  const td2Pos = [0, H / 2 - t2 * 0.01, 0];
+  const td4Pos = [0, H / 2 - t2 * 0.02, 0];
+  const tdRotX = t2 * (-Math.PI / 2);
+
+  const topLidRotX = t3 * -Math.PI / 2;
+  const topTuckRotX = t3 * (-Math.PI / 2 - 0.05);
+  const topTuckScaleX = 1.0 - (t3 * 0.02);
   const geoms = useMemo(() => buildAutoLockGeometries(L, W, H, nT, debouncedDecals, manuL, manuW, manuH, dims), [L, W, H, nT, debouncedDecals, manuL, manuW, manuH, dims]);
-  const { glueGeom, coverGeom, lipGeom,
-          dustGeom, p1BotGeom, p3BotGeom, p2BotGeom, p4BotGeom, coverH } = geoms;
 
-  const texture = useMemo(
-    () => createProceduralTexture(store.materialCategory, store.packageColor),
-    [store.materialCategory, store.packageColor]
-  );
-  
-  const mats = useMemo(
-    () => buildMaterials(store.materialCategory, texture, store.insideColor, store.packageColor),
-    [store.materialCategory, texture, store.insideColor, store.packageColor]
-  );
-  const flap = mats.flap;
+  const [autoTexture, setAutoTexture] = React.useState(null);
+  React.useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load("/auto.svg", (tex) => {
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      setAutoTexture(tex);
+    });
+  }, []);
+
+  const mats = useMemo(() => {
+    const packageColorToUse = colorOverride || store.packageColor;
+    const baseParams = {
+      color: packageColorToUse,
+      map: autoTexture,
+      transparent: true,
+      alphaTest: 0.5,
+      roughness: 0.4,
+      metalness: 0.1,
+      side: THREE.DoubleSide
+    };
+    return {
+      outside: new THREE.MeshStandardMaterial(baseParams),
+      inside: new THREE.MeshStandardMaterial({ ...baseParams, color: store.insideColor }),
+      flap: new THREE.MeshStandardMaterial(baseParams),
+      windowFilm: new THREE.MeshPhysicalMaterial({
+        color: "#ffffff",
+        transmission: 0.9,
+        opacity: 1,
+        metalness: 0,
+        roughness: 0,
+        ior: 1.5,
+        thickness: 0.01,
+        transparent: true,
+        side: THREE.DoubleSide
+      })
+    };
+  }, [store.packageColor, store.insideColor, autoTexture, colorOverride]);
 
   const layout = overrideLayout || store.sceneLayout || "single";
-  const sceneInstances = useMemo(
-    () => buildSceneInstances(layout, L, W, H),
-    [layout, L, W, H]
-  );
+  const sceneInstances = useMemo(() => buildSceneInstances(layout, L, W, H), [layout, L, W, H]);
 
   const D = (panel) => (
-    <MappedDecals
-      panel={panel} decals={debouncedDecals}
-      L={L} W={W} H={H}
-      manuL={manuL} manuW={manuW} manuH={manuH}
-      dims={dims} T={T}
-    />
+    <MappedDecals panel={panel} decals={debouncedDecals} L={L} W={W} H={H} manuL={manuL} manuW={manuW} manuH={manuH} dims={dims} T={nT} isFlatGeometry={true} />
   );
 
   const renderBoxInstance = (key, pos, rot) => (
     <group key={key} position={pos} rotation={rot}>
-
-      {/* ── P1  FRONT PANEL ─────────────────────────────────────────────── */}
-      <group position={[0, 0, -nT]}>
-        <mesh geometry={geoms.p1Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
-          {D("p1")}
-        </mesh>
+      <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
         
-        {geoms.windowFilmGeomP1 && (
-          <mesh geometry={geoms.windowFilmGeomP1} position={[0, 0, nT / 2]}>
-            <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
-          </mesh>
-        )}
-
-        <group position={[0, -H / 2, 0]} rotation={[p1BotAngle, 0, 0]}>
-          <mesh geometry={p1BotGeom} material={flap}>{D("p1_bot_auto")}</mesh>
-        </group>
-      </group>
-
-      {/* ── GLUE FLAP ───────────────────────────────────────────────────── */}
-      <group position={[-L / 2 + nT, 0, -nT]} rotation={[0, -tubeAngle * 0.98, 0]}>
-        <mesh geometry={glueGeom} material={flap}>{D("p1_glue")}</mesh>
-      </group>
-
-      {/* ── TOP COVER & LIP ─────────────────────────────────────────────── */}
-      <group position={[0, H / 2 - nT, 0]} rotation={[coverAngle, 0, 0]}>
-        <mesh geometry={coverGeom} material={flap}>{D("p1_cover")}</mesh>
-        <group position={[0, coverH, 0]} rotation={[lipAngle, 0, 0]}>
-          <mesh geometry={lipGeom} material={flap}>{D("p1_lip")}</mesh>
-        </group>
-      </group>
-
-      {/* ── P2  RIGHT SIDE PANEL ────────────────────────────────────────── */}
-      <group position={[L / 2, 0, 0]} rotation={[0, tubeAngle, 0]}>
-        <mesh geometry={geoms.p2Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
-          {D("p2")}
+        <mesh geometry={geoms.p1Geom} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+            {D("p1")}
         </mesh>
-        {geoms.windowFilmGeomP2 && (
-          <mesh geometry={geoms.windowFilmGeomP2} position={[W / 2, 0, nT / 2]}>
-            <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
-          </mesh>
+        {geoms.windowFilmGeomP1 && (
+            <mesh geometry={geoms.windowFilmGeomP1} material={mats.windowFilm} />
         )}
-
-        <group position={[W / 2, H / 2 - nT, 0]} rotation={[-tdAngle, 0, 0]}>
-          <mesh geometry={dustGeom} material={flap}>{D("p2_top_dust")}</mesh>
+        <group position={[0, H/2, 0]} rotation={[topLidRotX, 0, 0]}>
+            <mesh geometry={geoms.coverGeom} material={[mats.flap, mats.inside, mats.flap]}>
+                {D("p1_top_cover")}
+            </mesh>
+            {geoms.windowFilmCover && <mesh geometry={geoms.windowFilmCover} material={mats.windowFilm} />}
+            <group position={[0, geoms.coverH, 0]} rotation={[topTuckRotX, 0, 0]} scale={[topTuckScaleX, 1, 1]}>
+                <mesh geometry={geoms.lipGeom} material={[mats.flap, mats.inside, mats.flap]}>
+                    {D("p1_top_lip")}
+                </mesh>
+                {geoms.windowFilmLip && <mesh geometry={geoms.windowFilmLip} material={mats.windowFilm} />}
+            </group>
         </group>
 
-        {/* P2 BOTTOM GUSSET — note the Math.PI rotation so it folds INTO the box */}
-        <group position={[W / 2, -H / 2 + nT, 0]} rotation={[p24BotAngle, 0, 0]}>
-          <mesh geometry={p2BotGeom} rotation={[0, 0, Math.PI]} material={flap}>{D("p2_bot_auto")}</mesh>
+        <group position={botLeftPos} rotation={[botAngleLeft, 0, 0]}>
+            <mesh geometry={geoms.p1BotGeom} material={[mats.flap, mats.inside, mats.flap]}>
+                {D("p1_bot_auto")}
+            </mesh>
+            {geoms.windowFilmP1Bot && <mesh geometry={geoms.windowFilmP1Bot} material={mats.windowFilm} />}
         </group>
 
-        {/* ── P3  BACK PANEL ────────────────────────────────────────────── */}
-        <group position={[W, 0, 0]} rotation={[0, tubeAngle, 0]}>
-          <mesh geometry={geoms.p3Geom} position={[L / 2, 0, -nT]} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
-            {D("p3")}
-          </mesh>
-          {geoms.windowFilmGeomP3 && (
-            <mesh geometry={geoms.windowFilmGeomP3} position={[L/2, 0, nT / 2]}>
-              <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
+        <group position={[gluePosX, 0, 0]} rotation={[0, glueRotY, 0]}>
+            <mesh geometry={geoms.glueGeom} material={[mats.flap, mats.inside, mats.flap]}>
+                {D("p1_glue")}
             </mesh>
-          )}
+            {geoms.windowFilmGlue && <mesh geometry={geoms.windowFilmGlue} material={mats.windowFilm} />}
+        </group>
 
-          {/* P3 BOTTOM LOCK FLAP — folds to 95° to tuck UNDER P1 */}
-          <group position={[L / 2, -H / 2, -nT]} rotation={[p3BotAngle, 0, 0]}>
-            <mesh geometry={p3BotGeom} position={[0, 0, nT * 2]} material={flap}>
-              {D("p3_bot_auto")}
+        <group position={[L/2, 0, 0]} rotation={[0, p2RotY, 0]}>
+            <mesh geometry={geoms.p2Geom} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+                {D("p2")}
             </mesh>
-          </group>
-
-          {/* ── P4  LEFT SIDE PANEL ───────────────────────────────────── */}
-          <group position={[L, 0, 0]} rotation={[0, tubeAngle, 0]}>
-            <mesh geometry={geoms.p4Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
-              {D("p4")}
-            </mesh>
-            {geoms.windowFilmGeomP4 && (
-              <mesh geometry={geoms.windowFilmGeomP4} position={[W / 2, 0, nT / 2]}>
-                <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
-              </mesh>
+            {geoms.windowFilmGeomP2 && (
+                <mesh geometry={geoms.windowFilmGeomP2} material={mats.windowFilm} />
             )}
-
-            <group position={[W / 2, H / 2 - nT, 0]} rotation={[-tdAngle, 0, 0]}>
-              <mesh geometry={dustGeom} rotation={[0, Math.PI, 0]} material={flap}>
-                {D("p4_top_dust")}
-              </mesh>
+            
+            <group position={td2Pos} rotation={[tdRotX, 0, 0]}>
+                <mesh geometry={geoms.p2DustGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                    {D("p2_top_dust")}
+                </mesh>
+                {geoms.windowFilmP2Dust && <mesh geometry={geoms.windowFilmP2Dust} position={[W/2, 0, 0]} material={mats.windowFilm} />}
             </group>
 
-            {/* P4 BOTTOM GUSSET */}
-            <group position={[W / 2, -H / 2 + nT, 0]} rotation={[p24BotAngle, 0, 0]}>
-              <mesh geometry={p4BotGeom} rotation={[0, 0, Math.PI]} material={flap}>{D("p4_bot_auto")}</mesh>
+            <group position={botFrontPos} rotation={[botAngleFront, 0, 0]}>
+                <mesh geometry={geoms.p2BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                    {D("p2_bot_auto")}
+                </mesh>
+                {geoms.windowFilmP2Bot && <mesh geometry={geoms.windowFilmP2Bot} position={[W/2, 0, 0]} material={mats.windowFilm} />}
             </group>
-          </group>
+
+            <group position={[W, 0, 0]} rotation={[0, p3RotY, 0]}>
+                <mesh geometry={geoms.p3Geom} position={[L/2, 0, 0]} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+                    {D("p3")}
+                </mesh>
+                {geoms.windowFilmGeomP3 && (
+                    <mesh geometry={geoms.windowFilmGeomP3} position={[L/2, 0, 0]} material={mats.windowFilm} />
+                )}
+                
+                <group position={botRightPos} rotation={[botAngleRight, 0, 0]}>
+                    <mesh geometry={geoms.p3BotGeom} position={[L/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                        {D("p3_bot_auto")}
+                    </mesh>
+                    {geoms.windowFilmP3Bot && <mesh geometry={geoms.windowFilmP3Bot} position={[L/2, 0, 0]} material={mats.windowFilm} />}
+                </group>
+
+                <group position={[L, 0, 0]} rotation={[0, p4RotY, 0]}>
+                    <mesh geometry={geoms.p4Geom} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+                        {D("p4")}
+                    </mesh>
+                    {geoms.windowFilmGeomP4 && (
+                        <mesh geometry={geoms.windowFilmGeomP4} material={mats.windowFilm} />
+                    )}
+                    
+                    <group position={td4Pos} rotation={[tdRotX, 0, 0]}>
+                        <mesh geometry={geoms.p4DustGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                            {D("p4_top_dust")}
+                        </mesh>
+                        {geoms.windowFilmP4Dust && <mesh geometry={geoms.windowFilmP4Dust} position={[W/2, 0, 0]} material={mats.windowFilm} />}
+                    </group>
+
+                    <group position={botBackPos} rotation={[botAngleBack, 0, 0]}>
+                        <mesh geometry={geoms.p4BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                            {D("p4_bot_auto")}
+                        </mesh>
+                        {geoms.windowFilmP4Bot && <mesh geometry={geoms.windowFilmP4Bot} position={[W/2, 0, 0]} material={mats.windowFilm} />}
+                    </group>
+                </group>
+            </group>
         </group>
       </group>
     </group>
   );
 
-  const boxCenterZ = -W / 2;
-  const camPos     = [L * 1.1, H * 1.2, W * 1.8];
+  const boxCenterZ = 0; 
+  const camPos     = [L * 1.5, H * 1.2, W * 2.5];
   const camTarget  = [0, 0, boxCenterZ];
 
   return (
@@ -382,6 +443,7 @@ export default function AutoLockBox3DViewer({
         </SceneAnimator>
 
         <OrbitControls
+          enableZoom={!disableZoom}
           enablePan={false}
           minDistance={W * 1.5}
           maxDistance={Math.max(L, H) * 6}
@@ -393,4 +455,3 @@ export default function AutoLockBox3DViewer({
     </div>
   );
 }
-

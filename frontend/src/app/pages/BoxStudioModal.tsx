@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, RotateCcw, Maximize2, Play, Download, Check, Info, Save, Printer, Share2, Menu, Star, ExternalLink } from "lucide-react";
+import { ArrowLeft, RotateCcw, Maximize2, Play, Download, Check, Info, Save, Printer, Share2, Menu, Star, ExternalLink, Palette } from "lucide-react";
 import { useBoxStore } from "../../lib/useBoxStore";
 import DielineSVG from "../../components/DielineSVG";
 import Box3DViewer from "../../components/Box3DViewer";
 import MaterialDropdown from "../../components/dieline/MaterialDropdown";
+import EditorModal from "./EditorModal";
 import { exportSVG, exportDXF, exportPDF, generateDXFString } from "../../lib/exportUtils";
 import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
@@ -85,10 +86,12 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
-  // Prevent background scrolling and handle browser back button (Chrome Back) in 1 click
+  // Prevent background scrolling when studio is open, set dieline context, and handle browser back button in 1 click
   useEffect(() => {
     if (isOpen) {
+      store.setContextAndModel("dieline", initialModel || store.boxModel);
       const origOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
 
@@ -106,7 +109,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         window.removeEventListener('popstate', handlePopState);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, initialModel]);
 
   // Sync inputs when store dimensions or unit change externally
   useEffect(() => {
@@ -654,6 +657,17 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 />
               </div>
             </div>
+            
+            {/* Customise Button */}
+            <div className="mt-4 pt-4 border-t border-zinc-200">
+              <button
+                onClick={() => setIsEditorOpen(true)}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs py-3 rounded-xl transition-colors shadow-sm"
+              >
+                <Palette className="w-4 h-4" />
+                Customise
+              </button>
+            </div>
 
           </aside>
 
@@ -874,10 +888,18 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
             </div>
 
           </aside>
-
         </div>
 
         </div>
+        
+        {/* Mockup Editor instance using dieline context */}
+        {isEditorOpen && (
+          <EditorModal 
+            isOpen={isEditorOpen} 
+            onClose={() => setIsEditorOpen(false)} 
+            contextType="dieline" 
+          />
+        )}
       </StudioErrorBoundary>
     </div>,
     document.body

@@ -440,24 +440,30 @@ function createShapeTextureURL(decal) {
   }
 
   const canvas = document.createElement("canvas");
+  const aspect = (decal.height || 1) / (decal.width || 1);
   canvas.width = 1024;
-  canvas.height = 1024;
+  canvas.height = Math.round(1024 * aspect);
   const ctx = canvas.getContext("2d");
   
-  ctx.clearRect(0, 0, 1024, 1024);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  const cx = 512;
-  const cy = 512;
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
   
   const strokeW_in = (decal.strokeWidth || 0) / 72;
   const maxDim = Math.max(decal.width || 1, decal.height || 1);
-  const sw = (strokeW_in / maxDim) * 1024;
+  const sw = (strokeW_in / maxDim) * Math.max(canvas.width, canvas.height);
   
   ctx.fillStyle = decal.fillColor || "transparent";
   ctx.strokeStyle = decal.strokeColor || "transparent";
   ctx.lineWidth = sw;
   ctx.lineJoin = "round";
   
+  const tlx = sw / 2;
+  const tly = sw / 2;
+  const rw = canvas.width - sw;
+  const rh = canvas.height - sw;
+
   if (decal.borderStyle === 'dashed') {
     ctx.setLineDash([Math.max(10, sw*2), Math.max(10, sw*2)]);
   } else {
@@ -466,11 +472,6 @@ function createShapeTextureURL(decal) {
   
   ctx.beginPath();
   
-  const rw = 1024 - sw;
-  const rh = 1024 - sw;
-  const tlx = cx - rw/2;
-  const tly = cy - rh/2;
-
   switch (decal.shapeType) {
     case 'line':
     case 'dashed-line':
@@ -484,7 +485,7 @@ function createShapeTextureURL(decal) {
       break;
     case 'rounded-rectangle':
       const r_in = (decal.borderRadius || 36) / 72;
-      const r_px = (r_in / maxDim) * 1024;
+      const r_px = (r_in / maxDim) * Math.max(canvas.width, canvas.height);
       if (ctx.roundRect) {
         ctx.roundRect(tlx, tly, rw, rh, r_px);
       } else {
@@ -493,7 +494,7 @@ function createShapeTextureURL(decal) {
       break;
     case 'oval':
     case 'circle':
-      ctx.ellipse(cx, cy, rw/2, rh/2, 0, 0, Math.PI * 2);
+      ctx.arc(cx, cy, Math.min(rw, rh) / 2, 0, 2 * Math.PI);
       break;
     case 'triangle':
       ctx.moveTo(cx, tly);
@@ -528,10 +529,23 @@ function createShapeTextureURL(decal) {
 
 export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims, T) {
   let cx = 0, cy = 0, rotZ = 0, scaleX = 1, scaleY_sign = 1;
-  const scaleY = H / manuH;
+  let scaleY = H / manuH;
   const { x1, x2, x3, x4, yTop, yBot } = dims;
   const nT = Math.max(0.015, Number(T) || 0.0197);
   const coverDepth = W - 2 * nT;
+
+  if (decal.custom) {
+    cx = decal.x;
+    cy = decal.y;
+    rotZ = decal.rotation || 0;
+    return { cx, cy, rotZ, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+  }
+
+  // The main panels are scaled vertically by H / manuH.
+  // The top and bottom flaps are proportional to the box depth (W), so they scale vertically by W / manuW.
+  if (panel.includes("top") || panel.includes("bot")) {
+    scaleY = W / manuW;
+  }
 
   if      (panel === "p1")          { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-decal.y)*scaleY + H/2; }
   else if (panel === "p2")          { scaleX = W/manuW; cx = (decal.x-x2)*scaleX;        cy = (yTop-decal.y)*scaleY + H/2; }
@@ -548,15 +562,15 @@ export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims
   else if (panel === "p4_top_dust") { scaleX = W/manuW; cx = (decal.x-x4)*scaleX - W/2; cy = (yTop-decal.y)*scaleY; }
   else if (panel === "p4_bot_dust") { scaleX = W/manuW; cx = -((decal.x-x4)*scaleX - W/2); cy = (decal.y-yBot)*scaleY; rotZ = Math.PI; }
   else if (panel === "p1_bot_auto") { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = -((decal.y-yBot)*scaleY); }
-  else if (panel === "p2_bot_auto") { scaleX = W/manuW; cx = -((decal.x-x2)*scaleX - W/2); cy = (decal.y-yBot)*scaleY; rotZ = Math.PI; }
+  else if (panel === "p2_bot_auto") { scaleX = W/manuW; cx = (decal.x-x2)*scaleX - W/2; cy = -((decal.y-yBot)*scaleY); }
   else if (panel === "p3_bot_auto") { scaleX = L/manuL; cx = (decal.x-x3)*scaleX - L/2; cy = -((decal.y-yBot)*scaleY); }
-  else if (panel === "p4_bot_auto") { scaleX = W/manuW; cx = -((decal.x-x4)*scaleX - W/2); cy = (decal.y-yBot)*scaleY; rotZ = Math.PI; }
+  else if (panel === "p4_bot_auto") { scaleX = W/manuW; cx = (decal.x-x4)*scaleX - W/2; cy = -((decal.y-yBot)*scaleY); }
   else if (panel === "p1_glue")     { scaleX = L/manuL; cx = (decal.x-x1)*scaleX;        cy = (yTop-decal.y)*scaleY + H/2; }
   
   return { cx, cy, rotZ, scaleX, scaleY_sign, scaleY };
 }
 
-export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims, panel, T }) {
+export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims, panel, T, isFlatGeometry = false }) {
   const { cx, cy, rotZ, scaleX, scaleY_sign, scaleY } = mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims, T);
 
   const decalW = Math.max(0.001, decal.width  * scaleX);
@@ -586,15 +600,17 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   let   finalDecalW = decalW;
   if (isInside) { rotY = Math.PI; finalDecalW = -decalW; }
 
-  const depth = 0.01;
+  const depth = 0.5;
   const nT = Math.max(0.015, Number(T) || 0.0197);
-  const zPos  = isInside ? 0 : nT;
+  const zPos  = isFlatGeometry ? 0 : (isInside ? 0 : nT);
 
   return (
-    <Decal position={[cx, cy, zPos]} rotation={[0, rotY, rotZ]} scale={[finalDecalW, decalH, depth]}>
+    <Decal position={[cx, cy, zPos]} rotation={[0, rotY, rotZ]} scale={[finalDecalW, decalH, depth]} renderOrder={index + 1}>
       <meshStandardMaterial
         map={texture} transparent depthTest depthWrite={false}
-        polygonOffset polygonOffsetFactor={-(index + 1)} side={THREE.FrontSide}
+        alphaTest={0.01} roughness={0.4} metalness={0.1}
+        polygonOffset polygonOffsetFactor={-(index + 1)} 
+        side={isFlatGeometry && isInside ? THREE.BackSide : THREE.FrontSide}
       />
     </Decal>
   );
@@ -638,7 +654,7 @@ export function getOverlappingDecals(panel, decals, dims, W, T) {
   });
 }
 
-export function getPanelWindowHoles(panel, decals, panelShape, L, W, H, manuL, manuW, manuH, dims, T) {
+export function getPanelWindowHoles(panel, decals, panelShape, L, W, H, manuL, manuW, manuH, dims, T, offsetX = 0, offsetY = 0) {
   if (!decals || decals.length === 0) return [];
   const windowDecals = decals.filter(d => d.isWindow);
   if (windowDecals.length === 0) return [];
@@ -652,6 +668,8 @@ export function getPanelWindowHoles(panel, decals, panelShape, L, W, H, manuL, m
   
   return overlappingWindows.map(d => {
     let { cx, cy, scaleX, scaleY } = mapDecalToPanel(d, panel, L, W, H, manuL, manuW, manuH, dims, T);
+    cx += offsetX;
+    cy += offsetY;
     let windowW = Math.max(0.001, d.width * scaleX);
     let windowH = Math.max(0.001, d.height * scaleY);
     
@@ -687,23 +705,27 @@ export function getPanelWindowHoles(panel, decals, panelShape, L, W, H, manuL, m
   });
 }
 
-export function MappedDecals({ panel, decals, L, W, H, manuL, manuW, manuH, dims, T }) {
+export function MappedDecals({ panel, decals, L, W, H, manuL, manuW, manuH, dims, T, isFlatGeometry = false }) {
   if (!decals || decals.length === 0) return null;
   // Filter out window decals so they don't render as solid shapes
   const printableDecals = decals.filter(d => !d.isWindow);
   if (printableDecals.length === 0) return null;
   
-  const panelDecals = getOverlappingDecals(panel, printableDecals, dims, W, T);
+  const panelDecals = printableDecals.filter(d => {
+    if (d.custom) return d.panel === panel;
+    return getOverlappingDecals(panel, [d], dims, W, T).length > 0;
+  });
 
   return (
     <>
-      {panelDecals.map(d => (
-        <React.Suspense fallback={null} key={d.id}>
+      {panelDecals.map((d, i) => (
+        <React.Suspense fallback={null} key={`${d.id}-${i}`}>
           <DecalItem
             decal={d} L={L} W={W} H={H}
             manuL={manuL} manuW={manuW} manuH={manuH}
             dims={dims} panel={panel} T={T}
             index={decals.findIndex(dec => dec.id === d.id)}
+            isFlatGeometry={isFlatGeometry}
           />
         </React.Suspense>
       ))}

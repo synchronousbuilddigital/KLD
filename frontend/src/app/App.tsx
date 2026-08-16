@@ -18,7 +18,6 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import WorkspacePage from './pages/WorkspacePage';
 import RSCBoxPrototype, { SealState } from './pages/RSCBoxPrototype';
 import { getRscGeometry } from '../geometry';
-import MockupsPage from './pages/MockupsPage';
 import WorkshopPage from './pages/WorkshopPage';
 import SignInModal from './components/modals/SignInModal';
 import BoxStudioModal from './pages/BoxStudioModal';
@@ -988,9 +987,6 @@ export default function App() {
     );
   }
 
-  if (currentView === 'mockups') {
-    return <MockupsPage />;
-  }
 
   if (currentView === 'workshop') {
     return <WorkshopPage />;

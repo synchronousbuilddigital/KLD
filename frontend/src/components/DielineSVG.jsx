@@ -761,7 +761,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                     { cx: -decal.width / 2, cy: 0, handle: 'w', cursor: 'ew-resize', type: 'v-pill' },
                     { cx: decal.width / 2, cy: 0, handle: 'e', cursor: 'ew-resize', type: 'v-pill' }
                   ].map((pos, i) => {
-                    const props = {
+                    const { key, ...restProps } = {
                       key: i,
                       fill: "white",
                       stroke: "#3b82f6",
@@ -775,11 +775,11 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                     };
 
                     if (pos.type === 'corner') {
-                      return <circle cx={pos.cx} cy={pos.cy} r={0.12} {...props} />;
+                      return <circle key={key} cx={pos.cx} cy={pos.cy} r={0.12} {...restProps} />;
                     } else if (pos.type === 'h-pill') {
-                      return <rect x={pos.cx - 0.25} y={pos.cy - 0.08} width={0.5} height={0.16} rx={0.08} {...props} />;
+                      return <rect key={key} x={pos.cx - 0.25} y={pos.cy - 0.08} width={0.5} height={0.16} rx={0.08} {...restProps} />;
                     } else {
-                      return <rect x={pos.cx - 0.08} y={pos.cy - 0.25} width={0.16} height={0.5} rx={0.08} {...props} />;
+                      return <rect key={key} x={pos.cx - 0.08} y={pos.cy - 0.25} width={0.16} height={0.5} rx={0.08} {...restProps} />;
                     }
                   })}
 

@@ -1,164 +1,141 @@
-export function generateAutoLockDieline({ L, W, H, T = 0.018, glueFlapWidth = 0.625, bleed = 0.125, windowDecals }) {
+import { rawAutoLockPaths } from './autoLockDielineRaw';
+
+export function generateAutoLockDieline({ L, W, H, glueFlapWidth = 16.0, windowDecals }) {
   const nL = Number(L);
   const nW = Number(W);
   const nH = Number(H);
   const nGlue = Number(glueFlapWidth);
-  const nBleed = Number(bleed);
 
-  const x0 = 0;
+  // Original parameters from auto.svg
+  const origL = 120.6;
+  const origW = 60.6;
+  const origH = 161.5;
+
+  const origYTop = 80.35;
+  const origYBot = 241.85;
+
+  const yTop = nW * 1.3;
+  const yBot = yTop + nH;
+
+  const origX1 = 21.0;
+  const origX2 = origX1 + origL;
+  const origX3 = origX2 + origW;
+  const origX4 = origX3 + origL;
+  const origX5 = origX4 + origW;
+
   const x1 = nGlue;
   const x2 = x1 + nL;
   const x3 = x2 + nW;
   const x4 = x3 + nL;
   const x5 = x4 + nW;
 
-  const yTop = nW * 1.3; 
-  const yBot = yTop + nH;
-
-  const glueStepY = Math.min(0.25 * nW, 0.25 * nH, 0.5 * nGlue, 0.25);
-  const outerR = Math.min(0.125, nGlue * 0.25);
-  const innerR = Math.min(0.125, nGlue * 0.25);
-
-  // --- MANUFACTURER'S JOINT (Stepped Flap, same as RTE) ---
-  function gluePath() {
-    return `M ${x1},${yTop} ` +
-           `L ${x1},${yTop + glueStepY - innerR} ` +
-           `A ${innerR} ${innerR} 0 0 1 ${x1 - innerR},${yTop + glueStepY} ` +
-           `L ${x0 + outerR},${yTop + glueStepY} ` +
-           `A ${outerR} ${outerR} 0 0 0 ${x0},${yTop + glueStepY + outerR} ` +
-           `L ${x0},${yBot - glueStepY - outerR} ` +
-           `A ${outerR} ${outerR} 0 0 0 ${x0 + outerR},${yBot - glueStepY} ` +
-           `L ${x1 - innerR},${yBot - glueStepY} ` +
-           `A ${innerR} ${innerR} 0 0 1 ${x1},${yBot - glueStepY + innerR} ` +
-           `L ${x1},${yBot}`;
+  function mapX(x) {
+    if (x <= origX1) {
+      return (x / origX1) * nGlue;
+    } else if (x <= origX2) {
+      return x1 + ((x - origX1) / origL) * nL;
+    } else if (x <= origX3) {
+      return x2 + ((x - origX2) / origW) * nW;
+    } else if (x <= origX4) {
+      return x3 + ((x - origX3) / origL) * nL;
+    } else {
+      return x4 + ((x - origX4) / origW) * nW;
+    }
   }
 
-  // --- BIG TUCK FLAP (Clean rectangle with large rounded corners, no taper) ---
-  const lipD = 0.625;
-  const hTopPanel = nW;
-  const topFlapH = hTopPanel + lipD;
-  const tuckCornerR = Math.min(0.25, nW * 0.12, nL * 0.12);
-
-  function topTuckPath() {
-    return `M ${x1},${yTop} ` +
-           `L ${x1},${yTop - topFlapH + tuckCornerR} ` +
-           `A ${tuckCornerR} ${tuckCornerR} 0 0 1 ${x1 + tuckCornerR},${yTop - topFlapH} ` +
-           `L ${x2 - tuckCornerR},${yTop - topFlapH} ` +
-           `A ${tuckCornerR} ${tuckCornerR} 0 0 1 ${x2},${yTop - topFlapH + tuckCornerR} ` +
-           `L ${x2},${yTop}`;
+  function mapY(y) {
+    if (y <= origYTop) {
+      return yTop - ((origYTop - y) / origW) * nW;
+    } else if (y <= origYBot) {
+      return yTop + ((y - origYTop) / origH) * nH;
+    } else {
+      return yBot + ((y - origYBot) / origW) * nW;
+    }
   }
 
-  // --- DUST FLAPS (half tuck height, pentagon with chamfered top corners) ---
-  const dustH = topFlapH / 2;
-  const chamferOuter = Math.min(0.25, nW * 0.12);  // smaller chamfer on outer edge (away from Panel 3)
-  const chamferInner = Math.min(0.35, nW * 0.20);  // larger chamfer on inner edge (toward Panel 3)
-
-  function topDustPathP2() {
-    // Pentagon: straight up both sides, 45° chamfer on both top corners
-    // Left (outer, x2 side): smaller chamfer
-    // Right (inner, x3 side): larger chamfer
-    return `M ${x2},${yTop} ` +
-           `L ${x2},${yTop - dustH + chamferOuter} ` +
-           `L ${x2 + chamferOuter},${yTop - dustH} ` +
-           `L ${x3 - chamferInner},${yTop - dustH} ` +
-           `L ${x3},${yTop - dustH + chamferInner} ` +
-           `L ${x3},${yTop}`;
+  function transformPathStr(d) {
+    const tokens = d.match(/[a-zA-Z]+|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
+    if (!tokens) return d;
+    
+    let result = '';
+    let cmd = '';
+    let i = 0;
+    while (i < tokens.length) {
+      const token = tokens[i];
+      if (/^[a-zA-Z]$/.test(token)) {
+        cmd = token.toUpperCase();
+        result += token + ' ';
+        i++;
+      } else {
+        if (cmd === 'M' || cmd === 'L' || cmd === 'T') {
+          const x = mapX(parseFloat(tokens[i]));
+          const y = mapY(parseFloat(tokens[i+1]));
+          result += x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+          i += 2;
+        } else if (cmd === 'C') {
+          const x1 = mapX(parseFloat(tokens[i]));
+          const y1 = mapY(parseFloat(tokens[i+1]));
+          const x2 = mapX(parseFloat(tokens[i+2]));
+          const y2 = mapY(parseFloat(tokens[i+3]));
+          const x = mapX(parseFloat(tokens[i+4]));
+          const y = mapY(parseFloat(tokens[i+5]));
+          result += x1.toFixed(2) + ',' + y1.toFixed(2) + ' ' + x2.toFixed(2) + ',' + y2.toFixed(2) + ' ' + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+          i += 6;
+        } else if (cmd === 'S' || cmd === 'Q') {
+          const x1 = mapX(parseFloat(tokens[i]));
+          const y1 = mapY(parseFloat(tokens[i+1]));
+          const x = mapX(parseFloat(tokens[i+2]));
+          const y = mapY(parseFloat(tokens[i+3]));
+          result += x1.toFixed(2) + ',' + y1.toFixed(2) + ' ' + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+          i += 4;
+        } else if (cmd === 'A') {
+          const origX = parseFloat(tokens[i+5]);
+          const origY = parseFloat(tokens[i+6]);
+          const rx = parseFloat(tokens[i]);
+          const ry = parseFloat(tokens[i+1]);
+          const sX = Math.abs(mapX(origX) - mapX(origX - rx));
+          const sY = Math.abs(mapY(origY) - mapY(origY - ry));
+          result += sX.toFixed(2) + ',' + sY.toFixed(2) + ' ' +
+                    tokens[i+2] + ' ' + tokens[i+3] + ' ' + tokens[i+4] + ' ' +
+                    mapX(origX).toFixed(2) + ',' + mapY(origY).toFixed(2) + ' ';
+          i += 7;
+        } else if (cmd === 'H') {
+           result += mapX(parseFloat(tokens[i])).toFixed(2) + ' ';
+           i++;
+        } else if (cmd === 'V') {
+           result += mapY(parseFloat(tokens[i])).toFixed(2) + ' ';
+           i++;
+        } else {
+           result += tokens[i] + ' ';
+           i++;
+        }
+      }
+    }
+    return result.trim();
   }
 
-  function topDustPathP4() {
-    // Pentagon: mirror of P2
-    // Left (inner, x4 side): larger chamfer
-    // Right (outer, x5 side): smaller chamfer
-    return `M ${x4},${yTop} ` +
-           `L ${x4},${yTop - dustH + chamferInner} ` +
-           `L ${x4 + chamferInner},${yTop - dustH} ` +
-           `L ${x5 - chamferOuter},${yTop - dustH} ` +
-           `L ${x5},${yTop - dustH + chamferOuter} ` +
-           `L ${x5},${yTop}`;
+  function transformItems(items) {
+    const res = [];
+    for (const item of items) {
+      if (item.type === 'line') {
+        const d = `M ${mapX(item.x1).toFixed(2)},${mapY(item.y1).toFixed(2)} L ${mapX(item.x2).toFixed(2)},${mapY(item.y2).toFixed(2)}`;
+        res.push(d);
+      } else if (item.type === 'path') {
+        res.push(transformPathStr(item.d));
+      }
+    }
+    return res;
   }
 
-  // --- CRASH LOCK BOTTOM FLAPS (Identical P1 and P3, matching standard layout) ---
-  const hookD = nW * 0.75;
-  const midD = nW * 0.5;
-
-  function makeMainBottom(xStart, width) {
-    const xEnd = xStart + width;
-    
-    // Proportional dimensions to ensure it fits even if L is small
-    const hDrop1 = nW * 0.15;
-    const hDrop2 = nW * 0.3;
-    const inX = xStart + Math.min(nW * 0.15, width * 0.25);
-    const hookX = xStart + Math.min(nW * 0.35, width * 0.6);
-    const hookUpX = xStart + Math.min(nW * 0.45, width * 0.7);
-    
-    return `M ${xStart},${yBot} ` +
-           `L ${xStart},${yBot + hDrop1} ` + 
-           `L ${inX},${yBot + hDrop2} ` +     
-           `L ${inX},${yBot + hookD} ` +
-           `L ${hookX},${yBot + hookD} ` +
-           `L ${hookUpX},${yBot + midD} ` + 
-           `L ${xEnd - Math.min(0.05 * nW, width * 0.1)},${yBot + midD} ` +
-           `L ${xEnd - Math.min(0.01 * nW, width * 0.02)},${yBot + 0.02 * nW} ` + 
-           `L ${xEnd},${yBot}`;
-  }
-
-  function makeGusset(xStart, width) {
-    const xEnd = xStart + width;
-    const depth = nW * 0.45; // slightly shorter than midD so it doesn't collide
-    const inset = Math.min(nW * 0.15, width * 0.2);
-    
-    return `M ${xStart},${yBot} ` +
-           `L ${xStart + inset},${yBot + depth} ` +
-           `L ${xEnd - inset},${yBot + depth} ` +
-           `L ${xEnd},${yBot}`;
-  }
-
-  function buildContinuousBleed(b) {
-    if (b === 0) return [];
-    
-    // Top envelope: wraps tuck flap (P1) and dust flaps (P2, P4)
-    let pb = `M ${x1},${yTop - b} ` +
-             `L ${x1 - b},${yTop - b} ` +
-             `L ${x1 - b},${yTop - topFlapH - b} ` +
-             `L ${x2 + b},${yTop - topFlapH - b} ` +
-             `L ${x3 + b},${yTop - dustH - b} ` + 
-             `L ${x3 + b},${yTop - b} ` +
-             `L ${x4 - b},${yTop - b} ` +
-             `L ${x4 - b},${yTop - dustH - b} ` +
-             `L ${x5 + b},${yTop - dustH - b} ` +
-             `L ${x5 + b},${yTop - b} `;
-             
-    // Right Edge
-    pb += `L ${x5 + b},${yBot + b} `;
-    
-    // Bottom Envelope
-    pb += `L ${x5 + b},${yBot + hookD + b} `;
-    pb += `L ${x1 - b},${yBot + hookD + b} `;
-    
-    // Glue Flap Edge (stepped)
-    pb += `L ${x1 - b},${yBot - glueStepY + b} `;
-    pb += `L ${x0 - b},${yBot - glueStepY + b} `;
-    pb += `L ${x0 - b},${yTop + glueStepY - b} `;
-    pb += `L ${x1 - b},${yTop + glueStepY - b} `;
-    pb += `L ${x1},${yTop - b} Z`;
-    
-    return [pb];
-  }
-
-  const cutPaths = [
-    gluePath(),
-    topTuckPath(),
-    topDustPathP2(),
-    `M ${x3},${yTop} L ${x4},${yTop}`, // Panel 3 has no top flap, so it's a straight cut line
-    topDustPathP4(),
-    
-    `M ${x5},${yTop} L ${x5},${yBot}`, // Right edge vertical cut line
-
-    makeMainBottom(x1, nL),
-    makeGusset(x2, nW),
-    makeMainBottom(x3, nL),
-    makeGusset(x4, nW),
-  ];
+  const cutPaths = transformItems(rawAutoLockPaths.cuts);
+  const bleedPaths = transformItems(rawAutoLockPaths.bleeds);
+  
+  let foldLines = rawAutoLockPaths.folds.map(item => {
+    if (item.type === 'line') {
+      return { x1: mapX(item.x1), y1: mapY(item.y1), x2: mapX(item.x2), y2: mapY(item.y2) };
+    }
+    return null;
+  }).filter(Boolean);
 
   if (windowDecals && windowDecals.length > 0) {
     windowDecals.forEach((windowDecal) => {
@@ -195,35 +172,11 @@ export function generateAutoLockDieline({ L, W, H, T = 0.018, glueFlapWidth = 0.
     });
   }
 
-  const foldLines = [
-    // Vertical creases (all go from yTop to yBot cleanly)
-    { x1: x1, y1: yTop, x2: x1, y2: yBot },
-    { x1: x2, y1: yTop, x2: x2, y2: yBot },
-    { x1: x3, y1: yTop, x2: x3, y2: yBot },
-    { x1: x4, y1: yTop, x2: x4, y2: yBot },
-    
-    // Horizontal Panel Folds (Top)
-    { x1: x1, y1: yTop, x2: x2, y2: yTop }, // Panel 1 top flap fold
-    { x1: x2, y1: yTop, x2: x3, y2: yTop }, // Panel 2 top dust fold
-    // Note: Panel 3 has NO top fold because there's no flap, it's a cut line!
-    { x1: x4, y1: yTop, x2: x5, y2: yTop }, // Panel 4 top dust fold
-    
-    // Bottom Horizontal Creases (All panels have bottom flaps)
-    { x1: x1, y1: yBot, x2: x5, y2: yBot },
-    
-    // Tuck lip crease (separates the cover panel from the tuck lip)
-    { x1: x1, y1: yTop - hTopPanel, x2: x2, y2: yTop - hTopPanel }, 
-    
-    // Auto-bottom 45-degree creases (Right sides of MAIN panels, down-left)
-    { x1: x2, y1: yBot, x2: x2 - 0.5 * nW, y2: yBot + 0.5 * nW },
-    { x1: x4, y1: yBot, x2: x4 - 0.5 * nW, y2: yBot + 0.5 * nW }
-  ];
-
   return {
     width: x5, 
-    height: yBot + hookD, 
+    height: yBot + (mapY(300) - mapY(241.85)), 
     cutPaths,
-    bleedPaths: buildContinuousBleed(nBleed), 
+    bleedPaths, 
     foldLines,
     dimensions: { L: nL, W: nW, H: nH, x1, x2, x3, x4, x5, yTop, yBot }
   };

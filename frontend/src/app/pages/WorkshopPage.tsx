@@ -6,28 +6,28 @@ import EditorModal from "./EditorModal";
 
 const themes: Record<string, any> = {
   dark: {
-    bgApp: "#28231f",
-    bgCanvas: "#201c18",
-    bgPanel: "#28231f",
-    border: "rgba(232, 223, 213, 0.15)",
-    textMain: "#fdfbf7",
-    textMuted: "#a89f91",
-    cyan: "#d48c70",
-    inputBg: "#3a332d",
-    gridColor: "rgba(212, 140, 112, 0.15)",
-    activeBg: "rgba(169, 179, 150, 0.25)"
+    bgApp: "#18181b",
+    bgCanvas: "#09090b",
+    bgPanel: "#18181b",
+    border: "rgba(255, 255, 255, 0.1)",
+    textMain: "#ffffff",
+    textMuted: "#a1a1aa",
+    cyan: "#10b981", // emerald-500
+    inputBg: "#27272a",
+    gridColor: "rgba(255, 255, 255, 0.05)",
+    activeBg: "rgba(16, 185, 129, 0.1)"
   },
   light: {
-    bgApp: "#fdfbf7",
-    bgCanvas: "#fffcf7",
-    bgPanel: "#fdfbf7",
-    border: "rgba(58, 46, 38, 0.15)",
-    textMain: "#3a2e26",
-    textMuted: "#7a6a5f",
-    cyan: "#a9b396",
+    bgApp: "#f4f4f5", // zinc-100
+    bgCanvas: "#fafafa", // zinc-50
+    bgPanel: "#ffffff",
+    border: "rgba(0, 0, 0, 0.1)",
+    textMain: "#18181b", // zinc-900
+    textMuted: "#71717a", // zinc-500
+    cyan: "#10b981", // emerald-500
     inputBg: "#ffffff",
     gridColor: "rgba(169, 179, 150, 0.15)",
-    activeBg: "rgba(169, 179, 150, 0.25)"
+    activeBg: "rgba(16, 185, 129, 0.1)"
   }
 };
 
@@ -87,10 +87,9 @@ export default function WorkshopPage() {
         {/* --- TOP NAV --- */}
         <div style={{ height: "64px", background: t.bgPanel, borderBottom: `2px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <a href="#mockups" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", color: t.textMain }}>
-              <div style={{ width: '32px', height: '32px', backgroundColor: t.cyan, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: store.theme === 'dark' ? '#28231f' : '#fff', fontWeight: 'bold' }}>B</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", color: t.textMain }}>
               <span style={{ fontWeight: "400", fontSize: "20px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Mockup Generator</span>
-            </a>
+            </div>
             <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}><IconNav /></button>
             <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}><IconCloud /></button>
           </div>
@@ -160,51 +159,20 @@ export default function WorkshopPage() {
           <div style={{ width: "320px", background: t.bgPanel, padding: "24px", display: "flex", flexDirection: "column", overflowY: "auto", zIndex: 10, borderRight: `2px solid ${t.border}` }}>
 
             {activeSidebarTab === "Assets" && (
-              <div>
-                <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>GRAPHICS EDITOR</div>
-                
-                {/* Rounded Dashed Box Container */}
-                <div 
-                  style={{ 
-                    border: `2px dashed ${t.cyan}`, 
-                    borderRadius: "20px", 
-                    padding: "36px 20px", 
-                    display: "flex", 
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center", 
-                    marginBottom: "32px", 
-                    cursor: "pointer", 
-                    background: t.activeBg,
-                    transition: "transform 0.2s ease"
-                  }} 
-                  onClick={() => setIsStudioOpen(true)}
-                >
-                  <button style={{ 
-                    background: t.cyan, 
-                    color: '#fff', 
-                    border: "none", 
-                    padding: "14px 28px", 
-                    borderRadius: "14px", 
-                    fontWeight: "700", 
-                    fontSize: "14px", 
-                    cursor: "pointer", 
-                    boxShadow: `0 6px 18px rgba(169, 179, 150, 0.4)` 
-                  }}>
-                    Open Canvas
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>GRAPHICS & ASSETS</div>
+                  <button 
+                    onClick={() => setIsStudioOpen(true)}
+                    style={{ width: "100%", background: t.cyan, color: '#fff', border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: "600", fontSize: "14px", cursor: "pointer", boxShadow: `0 4px 12px rgba(16, 185, 129, 0.3)`, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    Design Editor
                   </button>
                 </div>
-
-                <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>MATERIAL BASE</div>
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <div onClick={() => store.setMaterialType && store.setMaterialType('corrugated', 0.0591)} style={{ flex: 1, cursor: "pointer", background: t.inputBg, border: store.materialType === 'corrugated' ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: store.materialType === 'corrugated' ? `0 4px 12px rgba(169,179,150,0.2)` : 'none' }}>
-                    <div style={{ height: "80px", background: "repeating-linear-gradient(45deg, #d4a373, #d4a373 5px, #c89565 5px, #c89565 10px)" }}></div>
-                    <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: t.textMain }}>Corrugated</div>
-                  </div>
-                  <div onClick={() => store.setMaterialType && store.setMaterialType('paperboard', 0.0181)} style={{ flex: 1, cursor: "pointer", background: t.inputBg, border: store.materialType === 'paperboard' ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "16px", overflow: "hidden", boxShadow: store.materialType === 'paperboard' ? `0 4px 12px rgba(169,179,150,0.2)` : 'none' }}>
-                    <div style={{ height: "80px", background: "#fdfbf7" }}></div>
-                    <div style={{ padding: "12px", textAlign: "center", fontSize: "12px", fontWeight: "700", color: t.textMain }}>Paperboard</div>
-                  </div>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>ASSETS LIBRARY</div>
+                  <div style={{ color: t.textMuted, fontSize: "13px", padding: '20px', background: t.inputBg, borderRadius: '8px', border: `1px solid ${t.border}`, textAlign: 'center' }}>No assets available.</div>
                 </div>
               </div>
             )}
