@@ -1,0 +1,18 @@
+.mockup-generator {
+  /* Add any specific animations or styles here if needed */
+}
+
+/* Custom scrollbar for left sidebar */
+.mockup-generator aside::-webkit-scrollbar {
+  width: 6px;
+}
+.mockup-generator aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mockup-generator aside::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+.mockup-generator aside:hover::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}

@@ -570,7 +570,7 @@ export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims
   return { cx, cy, rotZ, scaleX, scaleY_sign, scaleY };
 }
 
-export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims, panel, T, isFlatGeometry = false }) {
+export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims, panel, T, isFlatGeometry = false, clipMask }) {
   const { cx, cy, rotZ, scaleX, scaleY_sign, scaleY } = mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims, T);
 
   const decalW = Math.max(0.001, decal.width  * scaleX);
@@ -600,9 +600,9 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   let   finalDecalW = decalW;
   if (isInside) { rotY = Math.PI; finalDecalW = -decalW; }
 
-  const depth = 0.5;
   const nT = Math.max(0.015, Number(T) || 0.0197);
-  const zPos  = isFlatGeometry ? 0 : (isInside ? 0 : nT);
+  const depth = nT * 1.5; // Restrict projection depth so it only intersects one surface
+  const zPos  = isFlatGeometry ? (isInside ? -nT : 0) : (isInside ? 0 : nT);
 
   return (
     <Decal position={[cx, cy, zPos]} rotation={[0, rotY, rotZ]} scale={[finalDecalW, decalH, depth]} renderOrder={index + 1}>
@@ -610,7 +610,49 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
         map={texture} transparent depthTest depthWrite={false}
         alphaTest={0.01} roughness={0.4} metalness={0.1}
         polygonOffset polygonOffsetFactor={-(index + 1)} 
-        side={isFlatGeometry && isInside ? THREE.BackSide : THREE.FrontSide}
+        side={THREE.FrontSide}
+        onBeforeCompile={(shader) => {
+          if (clipMask && clipMask.tex) {
+            shader.uniforms.maskTex = { value: clipMask.tex };
+            
+            const u0 = clipMask.sx / 387.9;
+            const u1 = (clipMask.sx + clipMask.sw) / 387.9;
+            const v1 = 1.0 - (clipMask.sy / 295.25);
+            const v0 = 1.0 - ((clipMask.sy + clipMask.sh) / 295.25);
+            
+            shader.uniforms.maskBox = { value: new THREE.Vector4(clipMask.px, clipMask.py, clipMask.w, clipMask.h) };
+            shader.uniforms.maskUVBox = { value: new THREE.Vector4(u0, u1, v0, v1) };
+            
+            shader.vertexShader = `
+              varying vec2 vMaskUV;
+              uniform vec4 maskBox;
+              uniform vec4 maskUVBox;
+              ${shader.vertexShader}
+            `.replace(
+              `#include <begin_vertex>`,
+              `#include <begin_vertex>
+               float nx = (position.x + maskBox.x) / maskBox.z;
+               float ny = (position.y + maskBox.y) / maskBox.w;
+               vMaskUV = vec2(
+                 mix(maskUVBox.x, maskUVBox.y, nx),
+                 mix(maskUVBox.z, maskUVBox.w, ny)
+               );
+              `
+            );
+            
+            shader.fragmentShader = `
+              uniform sampler2D maskTex;
+              varying vec2 vMaskUV;
+              ${shader.fragmentShader}
+            `.replace(
+              `#include <alphatest_fragment>`,
+              `#include <alphatest_fragment>
+               vec4 maskColor = texture2D(maskTex, vMaskUV);
+               if (maskColor.a < 0.5) discard;
+              `
+            );
+          }
+        }}
       />
     </Decal>
   );
@@ -705,7 +747,7 @@ export function getPanelWindowHoles(panel, decals, panelShape, L, W, H, manuL, m
   });
 }
 
-export function MappedDecals({ panel, decals, L, W, H, manuL, manuW, manuH, dims, T, isFlatGeometry = false }) {
+export function MappedDecals({ panel, decals, L, W, H, manuL, manuW, manuH, dims, T, isFlatGeometry = false, clipMask }) {
   if (!decals || decals.length === 0) return null;
   // Filter out window decals so they don't render as solid shapes
   const printableDecals = decals.filter(d => !d.isWindow);
@@ -726,6 +768,7 @@ export function MappedDecals({ panel, decals, L, W, H, manuL, manuW, manuH, dims
             dims={dims} panel={panel} T={T}
             index={decals.findIndex(dec => dec.id === d.id)}
             isFlatGeometry={isFlatGeometry}
+            clipMask={clipMask}
           />
         </React.Suspense>
       ))}

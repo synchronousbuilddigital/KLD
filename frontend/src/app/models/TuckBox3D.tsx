@@ -1,7 +1,15 @@
 import React from 'react';
+import { PlacedImage } from '../MockupGenerator';
 import './TuckBox3D.css';
 
-export default function TuckBox3D() {
+interface TuckBox3DProps {
+  placedImages: PlacedImage[];
+  packageColor: string;
+  activeSide: 'outside' | 'inside';
+  openProgress: number;
+}
+
+export default function TuckBox3D({ placedImages, packageColor, activeSide, openProgress }: TuckBox3DProps) {
   return (
     <div className="tuckbox-scene">
       <div className="tuckbox-camera">

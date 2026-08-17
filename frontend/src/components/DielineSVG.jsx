@@ -550,21 +550,21 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
             transform={`translate(${decal.x}, ${decal.y}) ${activeSurface === 'Inside' ? 'scale(-1, 1)' : ''}`}
             onPointerDown={(e) => {
               e.stopPropagation();
-              setActiveDecalId(decal.id);
-              setInteractionMode('drag');
-            }}
-            style={{ cursor: 'move' }}
-          >
-            {decal.type === 'text' ? (
-              <>
-                <rect
-                  x={-decal.width / 2}
-                  y={-decal.height / 2}
-                  width={decal.width}
-                  height={decal.height}
-                  fill="transparent"
-                  style={{ pointerEvents: 'all' }}
-                />
+                  setActiveDecalId(decal.id);
+                  setInteractionMode('drag');
+                }}
+                style={{ cursor: 'move' }}
+              >
+                {decal.type === 'text' ? (
+                  <>
+                    <rect
+                      x={-decal.width / 2}
+                      y={-decal.height / 2}
+                      width={decal.width}
+                      height={decal.height}
+                      fill="transparent"
+                      style={{ pointerEvents: 'all' }}
+                    />
                 <g transform="scale(0.001)">
                   <foreignObject
                     x={-decal.width * 1000 / 2}

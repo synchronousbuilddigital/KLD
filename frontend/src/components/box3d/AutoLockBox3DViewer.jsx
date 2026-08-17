@@ -29,20 +29,13 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
     const botH = 48.35 * (W / orig_d);
     const GLUE_W = 16.0 * (W / orig_d);
 
-    function createUVGeometry(physWidth, physHeight, svgX, svgY, svgW, svgH, pivotX, pivotY, holes = []) {
-        const shape = new THREE.Shape();
-        shape.moveTo(-physWidth / 2, -physHeight / 2);
-        shape.lineTo(physWidth / 2, -physHeight / 2);
-        shape.lineTo(physWidth / 2, physHeight / 2);
-        shape.lineTo(-physWidth / 2, physHeight / 2);
-        shape.closePath();
-
+    function createUVGeometry(baseShape, physWidth, physHeight, svgX, svgY, svgW, svgH, pivotX, pivotY, holes = []) {
         if (holes && holes.length > 0) {
-            shape.holes.push(...holes);
+            baseShape.holes.push(...holes);
         }
 
         const extrude = { depth: 0.015, bevelEnabled: false };
-        const geo = new THREE.ExtrudeGeometry(shape, extrude);
+        const geo = new THREE.ExtrudeGeometry(baseShape, extrude);
         
         // assign UVs for the front face
         const pos = geo.attributes.position;
@@ -81,68 +74,93 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
         return shape;
     }
 
+    function createWideBotShape(w, h) {
+        const shape = new THREE.Shape();
+        shape.moveTo(-w / 2, h / 2);
+        shape.lineTo(w / 2, h / 2);
+        shape.lineTo(w * 0.483, h / 2 - h * 0.9);
+        shape.lineTo(w * 0.45, -h / 2);
+        shape.lineTo(w * 0.397, -h / 2);
+        shape.lineTo(w * 0.248, -h * 0.13);
+        shape.lineTo(0, -h * 0.13);
+        shape.lineTo(-w * 0.116, -h / 2);
+        shape.lineTo(-w * 0.46, -h / 2);
+        shape.closePath();
+        return shape;
+    }
+
+    function createNarrowBotShape(w, h) {
+        const shape = new THREE.Shape();
+        shape.moveTo(-w / 2, h / 2);
+        shape.lineTo(w / 2, h / 2);
+        shape.lineTo(0, h / 2 - w / 2);
+        shape.lineTo(-w * 0.31, h / 2 - w / 2);
+        shape.closePath();
+        return shape;
+    }
+
     const p1Holes = getPanelWindowHoles("p1", decals, createRectShape(L, H), L, W, H, manuL, manuW, manuH, dims, nT, 0, 0);
-    const p1Res = createUVGeometry(L, H, 21.0, 80.3, 120.6, 161.5, L / 2, H / 2, p1Holes);
+    const p1Res = createUVGeometry(createRectShape(L, H), L, H, 21.0, 80.3, 120.6, 161.5, L / 2, H / 2, p1Holes);
     const p1Geom = p1Res.geo;
     const windowFilmGeomP1 = p1Res.filmGeom;
 
     const coverHoles = getPanelWindowHoles("p1_top_cover", decals, createRectShape(L, W), L, W, H, manuL, manuW, manuH, dims, nT, 0, -W/2);
-    const coverRes = createUVGeometry(L, W, 21.0, 19.7, 120.6, 60.6, L / 2, 0, coverHoles);
+    const coverRes = createUVGeometry(createRectShape(L, W), L, W, 21.0, 19.7, 120.6, 60.6, L / 2, 0, coverHoles);
     const coverGeom = coverRes.geo;
     const windowFilmCover = coverRes.filmGeom;
 
     const lipHoles = getPanelWindowHoles("p1_top_lip", decals, createRectShape(L, TUCK_FLAP_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -TUCK_FLAP_H/2);
-    const lipRes = createUVGeometry(L, TUCK_FLAP_H, 21.0, 5.0, 120.6, 14.7, L / 2, 0, lipHoles);
+    const lipRes = createUVGeometry(createRectShape(L, TUCK_FLAP_H), L, TUCK_FLAP_H, 21.0, 5.0, 120.6, 14.7, L / 2, 0, lipHoles);
     const lipGeom = lipRes.geo;
     const windowFilmLip = lipRes.filmGeom;
 
-    const p1BotHoles = getPanelWindowHoles("p1_bot_auto", decals, createRectShape(L, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
-    const p1BotRes = createUVGeometry(L, botH, 21.0, 241.8, 120.6, 48.35, L / 2, botH, p1BotHoles);
+    const p1BotHoles = getPanelWindowHoles("p1_bot_auto", decals, createWideBotShape(L, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p1BotRes = createUVGeometry(createWideBotShape(L, botH), L, botH, 21.0, 241.8, 120.6, 48.35, L / 2, botH, p1BotHoles);
     const p1BotGeom = p1BotRes.geo;
     const windowFilmP1Bot = p1BotRes.filmGeom;
 
     const glueHoles = getPanelWindowHoles("p1_glue", decals, createRectShape(GLUE_W, H), L, W, H, manuL, manuW, manuH, dims, nT, -GLUE_W/2, 0);
-    const glueRes = createUVGeometry(GLUE_W, H, 5.0, 80.3, 16.0, 161.5, GLUE_W, H / 2, glueHoles);
+    const glueRes = createUVGeometry(createRectShape(GLUE_W, H), GLUE_W, H, 5.0, 80.3, 16.0, 161.5, GLUE_W, H / 2, glueHoles);
     const glueGeom = glueRes.geo;
     const windowFilmGlue = glueRes.filmGeom;
 
     const p2Holes = getPanelWindowHoles("p2", decals, createRectShape(W, H), L, W, H, manuL, manuW, manuH, dims, nT, -W/2, 0);
-    const p2Res = createUVGeometry(W, H, 141.6, 80.3, 60.6, 161.5, 0, H / 2, p2Holes);
+    const p2Res = createUVGeometry(createRectShape(W, H), W, H, 141.6, 80.3, 60.6, 161.5, 0, H / 2, p2Holes);
     const p2Geom = p2Res.geo;
     const windowFilmGeomP2 = p2Res.filmGeom;
     
     const p2DustHoles = getPanelWindowHoles("p2_top_dust", decals, createRectShape(W, DUST_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
-    const p2DustRes = createUVGeometry(W, DUST_H, 141.6, 42.35, 60.6, 38.0, W / 2, 0, p2DustHoles);
+    const p2DustRes = createUVGeometry(createRectShape(W, DUST_H), W, DUST_H, 141.6, 42.35, 60.6, 38.0, W / 2, 0, p2DustHoles);
     const p2DustGeom = p2DustRes.geo;
     const windowFilmP2Dust = p2DustRes.filmGeom;
 
-    const p2BotHoles = getPanelWindowHoles("p2_bot_auto", decals, createRectShape(W, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
-    const p2BotRes = createUVGeometry(W, botH, 141.6, 241.8, 60.6, 48.35, W / 2, botH, p2BotHoles);
+    const p2BotHoles = getPanelWindowHoles("p2_bot_auto", decals, createNarrowBotShape(W, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p2BotRes = createUVGeometry(createNarrowBotShape(W, botH), W, botH, 141.6, 241.8, 60.6, 48.35, W / 2, botH, p2BotHoles);
     const p2BotGeom = p2BotRes.geo;
     const windowFilmP2Bot = p2BotRes.filmGeom;
 
     const p3Holes = getPanelWindowHoles("p3", decals, createRectShape(L, H), L, W, H, manuL, manuW, manuH, dims, nT, 0, 0);
-    const p3Res = createUVGeometry(L, H, 202.2, 80.3, 120.6, 161.5, L / 2, H / 2, p3Holes);
+    const p3Res = createUVGeometry(createRectShape(L, H), L, H, 202.2, 80.3, 120.6, 161.5, L / 2, H / 2, p3Holes);
     const p3Geom = p3Res.geo;
     const windowFilmGeomP3 = p3Res.filmGeom;
 
-    const p3BotHoles = getPanelWindowHoles("p3_bot_auto", decals, createRectShape(L, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
-    const p3BotRes = createUVGeometry(L, botH, 202.2, 241.8, 120.6, 48.35, L / 2, botH, p3BotHoles);
+    const p3BotHoles = getPanelWindowHoles("p3_bot_auto", decals, createWideBotShape(L, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p3BotRes = createUVGeometry(createWideBotShape(L, botH), L, botH, 202.2, 241.8, 120.6, 48.35, L / 2, botH, p3BotHoles);
     const p3BotGeom = p3BotRes.geo;
     const windowFilmP3Bot = p3BotRes.filmGeom;
 
     const p4Holes = getPanelWindowHoles("p4", decals, createRectShape(W, H), L, W, H, manuL, manuW, manuH, dims, nT, -W/2, 0);
-    const p4Res = createUVGeometry(W, H, 322.8, 80.3, 60.6, 161.5, 0, H / 2, p4Holes);
+    const p4Res = createUVGeometry(createRectShape(W, H), W, H, 322.8, 80.3, 60.6, 161.5, 0, H / 2, p4Holes);
     const p4Geom = p4Res.geo;
     const windowFilmGeomP4 = p4Res.filmGeom;
     
     const p4DustHoles = getPanelWindowHoles("p4_top_dust", decals, createRectShape(W, DUST_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
-    const p4DustRes = createUVGeometry(W, DUST_H, 322.8, 42.35, 60.6, 38.0, W / 2, 0, p4DustHoles);
+    const p4DustRes = createUVGeometry(createRectShape(W, DUST_H), W, DUST_H, 322.8, 42.35, 60.6, 38.0, W / 2, 0, p4DustHoles);
     const p4DustGeom = p4DustRes.geo;
     const windowFilmP4Dust = p4DustRes.filmGeom;
 
-    const p4BotHoles = getPanelWindowHoles("p4_bot_auto", decals, createRectShape(W, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
-    const p4BotRes = createUVGeometry(W, botH, 322.8, 241.8, 60.6, 48.35, W / 2, botH, p4BotHoles);
+    const p4BotHoles = getPanelWindowHoles("p4_bot_auto", decals, createNarrowBotShape(W, botH), L, W, H, manuL, manuW, manuH, dims, nT, 0, botH/2);
+    const p4BotRes = createUVGeometry(createNarrowBotShape(W, botH), W, botH, 322.8, 241.8, 60.6, 48.35, W / 2, botH, p4BotHoles);
     const p4BotGeom = p4BotRes.geo;
     const windowFilmP4Bot = p4BotRes.filmGeom;
 
@@ -274,6 +292,10 @@ export default function AutoLockBox3DViewer({
   const topLidRotX = t3 * -Math.PI / 2;
   const topTuckRotX = t3 * (-Math.PI / 2 - 0.05);
   const topTuckScaleX = 1.0 - (t3 * 0.02);
+
+  const orig_d = 60.6;
+  const botH = 48.35 * (W / orig_d);
+
   const geoms = useMemo(() => buildAutoLockGeometries(L, W, H, nT, debouncedDecals, manuL, manuW, manuH, dims), [L, W, H, nT, debouncedDecals, manuL, manuW, manuH, dims]);
 
   const [autoTexture, setAutoTexture] = React.useState(null);
@@ -319,8 +341,8 @@ export default function AutoLockBox3DViewer({
   const layout = overrideLayout || store.sceneLayout || "single";
   const sceneInstances = useMemo(() => buildSceneInstances(layout, L, W, H), [layout, L, W, H]);
 
-  const D = (panel) => (
-    <MappedDecals panel={panel} decals={debouncedDecals} L={L} W={W} H={H} manuL={manuL} manuW={manuW} manuH={manuH} dims={dims} T={nT} isFlatGeometry={true} />
+  const D = (panel, clipMask) => (
+    <MappedDecals panel={panel} decals={debouncedDecals} L={L} W={W} H={H} manuL={manuL} manuW={manuW} manuH={manuH} dims={dims} T={nT} isFlatGeometry={true} clipMask={clipMask} />
   );
 
   const renderBoxInstance = (key, pos, rot) => (
@@ -348,7 +370,7 @@ export default function AutoLockBox3DViewer({
 
         <group position={botLeftPos} rotation={[botAngleLeft, 0, 0]}>
             <mesh geometry={geoms.p1BotGeom} material={[mats.flap, mats.inside, mats.flap]}>
-                {D("p1_bot_auto")}
+                {D("p1_bot_auto", { tex: autoTexture, w: L, h: botH, sx: 21.0, sy: 241.8, sw: 120.6, sh: 48.35, px: L/2, py: botH })}
             </mesh>
             {geoms.windowFilmP1Bot && <mesh geometry={geoms.windowFilmP1Bot} material={mats.windowFilm} />}
         </group>
@@ -377,7 +399,7 @@ export default function AutoLockBox3DViewer({
 
             <group position={botFrontPos} rotation={[botAngleFront, 0, 0]}>
                 <mesh geometry={geoms.p2BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
-                    {D("p2_bot_auto")}
+                    {D("p2_bot_auto", { tex: autoTexture, w: W, h: botH, sx: 141.6, sy: 241.8, sw: 60.6, sh: 48.35, px: W/2, py: botH })}
                 </mesh>
                 {geoms.windowFilmP2Bot && <mesh geometry={geoms.windowFilmP2Bot} position={[W/2, 0, 0]} material={mats.windowFilm} />}
             </group>
@@ -392,7 +414,7 @@ export default function AutoLockBox3DViewer({
                 
                 <group position={botRightPos} rotation={[botAngleRight, 0, 0]}>
                     <mesh geometry={geoms.p3BotGeom} position={[L/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
-                        {D("p3_bot_auto")}
+                        {D("p3_bot_auto", { tex: autoTexture, w: L, h: botH, sx: 202.2, sy: 241.8, sw: 120.6, sh: 48.35, px: L/2, py: botH })}
                     </mesh>
                     {geoms.windowFilmP3Bot && <mesh geometry={geoms.windowFilmP3Bot} position={[L/2, 0, 0]} material={mats.windowFilm} />}
                 </group>
@@ -414,7 +436,7 @@ export default function AutoLockBox3DViewer({
 
                     <group position={botBackPos} rotation={[botAngleBack, 0, 0]}>
                         <mesh geometry={geoms.p4BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
-                            {D("p4_bot_auto")}
+                            {D("p4_bot_auto", { tex: autoTexture, w: W, h: botH, sx: 322.8, sy: 241.8, sw: 60.6, sh: 48.35, px: W/2, py: botH })}
                         </mesh>
                         {geoms.windowFilmP4Bot && <mesh geometry={geoms.windowFilmP4Bot} position={[W/2, 0, 0]} material={mats.windowFilm} />}
                     </group>

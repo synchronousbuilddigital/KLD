@@ -13,7 +13,9 @@ const createDefaultState = () => ({
   isCustomMaterial: false,
   materialColor: "#fdfbf7",
   materialCategory: "white_paperboard",
-  generatorMethod: "dxf"
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
 });
 
 export const useBoxStore = create((set) => ({
@@ -168,10 +170,22 @@ export const useBoxStore = create((set) => ({
   sceneLayout: "single",
   setSceneLayout: (layout) => set({ sceneLayout: layout }),
 
-  packageColor: null,
-  setPackageColor: (color) => set({ packageColor: color }),
-  insideColor: null,
-  setInsideColor: (color) => set({ insideColor: color }),
+  setPackageColor: (color) => set((state) => {
+    const newSaved = { ...state.savedState };
+    newSaved[state.activeContext][state.boxModel] = {
+      ...newSaved[state.activeContext][state.boxModel],
+      packageColor: color
+    };
+    return { packageColor: color, savedState: newSaved };
+  }),
+  setInsideColor: (color) => set((state) => {
+    const newSaved = { ...state.savedState };
+    newSaved[state.activeContext][state.boxModel] = {
+      ...newSaved[state.activeContext][state.boxModel],
+      insideColor: color
+    };
+    return { insideColor: color, savedState: newSaved };
+  }),
 
   // Decals
   decalsByModel: { rte: [], te: [], auto_lock: [] },
