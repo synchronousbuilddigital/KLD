@@ -9,6 +9,16 @@ export interface UserProfile {
   aiCredits?: number;
 }
 
+const safeJson = async (res: Response) => {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch (e) {
+    if (!res.ok) throw new Error(`Server returned ${res.status}: ${res.statusText}. The backend might be offline.`);
+    return {};
+  }
+};
+
 export const authService = {
   // Send Email Signup OTP
   sendSignupOtp: async (email: string) => {
@@ -17,7 +27,7 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Failed to send verification code.');
     return data;
   },
@@ -29,7 +39,7 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Verification failed. Invalid code.');
     return data;
   },
@@ -42,7 +52,7 @@ export const authService = {
       credentials: 'include',
       body: JSON.stringify({ email, password, confirmPassword, fullName }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Registration failed');
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -62,7 +72,7 @@ export const authService = {
       credentials: 'include',
       body: JSON.stringify({ email, otp }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Verification failed');
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -82,7 +92,7 @@ export const authService = {
       credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Login failed');
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -102,7 +112,7 @@ export const authService = {
       credentials: 'include',
       body: JSON.stringify({ credential }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Google authentication failed');
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -140,7 +150,7 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Failed to send OTP.');
     return data;
   },
@@ -152,7 +162,7 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, newPassword }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Password reset failed.');
     return data;
   },

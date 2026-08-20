@@ -23,6 +23,10 @@ const savedDesignSchema = new mongoose.Schema(
       required: true,
       // e.g. 'box-mockups', 'pouch-bag-mockups', 'bottle-mockups'
     },
+    boxModel: {
+      type: String,
+      default: 'rte',
+    },
     variantId: {
       type: Number,
       required: true,
@@ -35,6 +39,18 @@ const savedDesignSchema = new mongoose.Schema(
       glueTab: { type: Number, default: null },
       tuck: { type: Number, default: null },
       flapH: { type: Number, default: null },
+    },
+    packageColor: {
+      type: String,
+      default: null,
+    },
+    insideColor: {
+      type: String,
+      default: null,
+    },
+    decals: {
+      type: Array,
+      default: [],
     },
     customColors: {
       cut: { type: String, default: '#FF0000' },   // Cut line color
@@ -59,7 +75,7 @@ const savedDesignSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 // Index for fast lookup by user

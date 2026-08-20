@@ -1,0 +1,175 @@
+/* RTE Box Container and Scene */
+.rte-scene {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+}
+
+.rte-box {
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.rte-face {
+    position: absolute;
+    transform-style: preserve-3d;
+    transition: transform 0.1s linear;
+    background-color: #CD9C5C;
+}
+
+.rte-texture-layer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.1), inset 0 0 2px rgba(255,255,255,0.2);
+    border: 1px solid rgba(0,0,0,0.15);
+}
+
+/* Base Panel (Back) */
+.rte-panel-back {
+    width: var(--w);
+    height: var(--h);
+    left: calc(var(--w) / -2);
+    top: calc(var(--h) / -2);
+    transform: translateZ(calc(var(--d) / -2));
+}
+
+/* Panel Left */
+.rte-panel-left {
+    width: var(--d);
+    height: var(--h);
+    left: 0;
+    top: 0;
+    transform-origin: right center;
+    transform: translateX(-100%) rotateY(var(--f-body-l));
+}
+
+/* Glue Flap */
+.rte-glue-flap {
+    width: 20px;
+    height: var(--h);
+    left: 0;
+    top: 0;
+    transform-origin: right center;
+    transform: translateX(-100%) rotateY(var(--f-body-g));
+    clip-path: polygon(100% 0, 100% 100%, 0 92%, 0 8%);
+}
+
+/* Panel Right */
+.rte-panel-right {
+    width: var(--d);
+    height: var(--h);
+    right: 0;
+    top: 0;
+    transform-origin: left center;
+    transform: translateX(100%) rotateY(var(--f-body-r));
+}
+
+/* Panel Front */
+.rte-panel-front {
+    width: var(--w);
+    height: var(--h);
+    right: 0;
+    top: 0;
+    transform-origin: left center;
+    transform: translateX(100%) rotateY(var(--f-body-f));
+}
+
+/* Flaps Base */
+.rte-flap {
+    background-color: transparent;
+}
+
+/* Top Tuck Flap (Attached to Back) */
+.rte-tuck-top {
+    width: var(--w);
+    height: var(--d);
+    top: 0; left: 0;
+    transform-origin: bottom center;
+    transform: translateY(-100%) rotateX(var(--f-tuck-top));
+}
+
+/* Top Tuck Lip */
+.rte-tuck-lip-top {
+    width: var(--w);
+    height: var(--lip);
+    top: 0; left: 0;
+    transform-origin: bottom center;
+    transform: translateY(-100%) rotateX(var(--f-tuck-top-lip));
+    border-radius: 5px 5px 0 0;
+}
+
+/* Bottom Tuck Flap (Attached to Front) */
+.rte-tuck-bot {
+    width: var(--w);
+    height: var(--d);
+    bottom: 0; left: 0;
+    transform-origin: top center;
+    transform: translateY(100%) rotateX(var(--f-tuck-bot));
+}
+
+/* Bottom Tuck Lip */
+.rte-tuck-lip-bot {
+    width: var(--w);
+    height: var(--lip);
+    bottom: 0; left: 0;
+    transform-origin: top center;
+    transform: translateY(100%) rotateX(var(--f-tuck-bot-lip));
+    border-radius: 0 0 5px 5px;
+}
+
+/* Dust Flaps (Attached to Left and Right) */
+.rte-dust-top-left, .rte-dust-top-right {
+    width: var(--d);
+    height: calc(var(--w) / 2);
+    top: 0; left: 0;
+    transform-origin: bottom center;
+    transform: translateY(-100%) rotateX(var(--f-dust-top));
+    clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+}
+
+.rte-dust-bot-left, .rte-dust-bot-right {
+    width: var(--d);
+    height: calc(var(--w) / 2);
+    bottom: 0; left: 0;
+    transform-origin: top center;
+    transform: translateY(100%) rotateX(var(--f-dust-bot));
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
+}
+
+
+/* Materials */
+.rte-box.kraft .rte-texture-layer {
+    background: #CD9C5C url('data:image/svg+xml;utf8,<svg opacity="0.1" xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.7"/></filter><rect width="100" height="100" filter="url(%23n)"/></svg>');
+}
+.rte-box.matte-white .rte-texture-layer { background: #F8F9FA; }
+.rte-box.slate-black .rte-texture-layer { background: #252830; }
+.rte-box.gold-foil .rte-texture-layer {
+    background: linear-gradient(135deg, #D4AF37 0%, #FFDF73 50%, #B8860B 100%);
+    box-shadow: inset 0 0 30px rgba(255,255,255,0.3);
+}
+
+/* Fake Shading */
+.rte-panel-back > .rte-texture-layer { filter: brightness(0.9); }
+.rte-panel-left > .rte-texture-layer { filter: brightness(0.85); }
+.rte-panel-right > .rte-texture-layer { filter: brightness(1.0); }
+.rte-panel-front > .rte-texture-layer { filter: brightness(1.05); }
+
+/* Custom */
+.rte-box.custom .rte-texture-layer {
+    background: var(--custom-bg);
+}
+
+/* Artwork */
+.rte-artwork-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(1px);
+}

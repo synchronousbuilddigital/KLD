@@ -311,13 +311,13 @@ function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigat
     const W_mm = project.dimensions?.W || 70;
     const H_mm = project.dimensions?.H || 200;
     const cat = (project.category || project.name || '').toLowerCase();
-    let model: "te" | "rte" | "auto_lock" | "cake" = "te";
+    let model: "te" | "rte" | "auto_lock" | "cosmetic" = "te";
     if (cat.includes('reverse') || project.variantId === 2) {
       model = "rte";
     } else if (cat.includes('auto lock') || project.variantId === 3) {
       model = "auto_lock";
-    } else if (cat.includes('cake')) {
-      model = "cake";
+    } else if (cat.includes('cosmetic')) {
+      model = "cosmetic";
     }
 
     try {

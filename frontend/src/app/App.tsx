@@ -16,12 +16,14 @@ import DielinesPage from './pages/DielinesPage';
 import AboutUsPage from './pages/AboutUsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import WorkspacePage from './pages/WorkspacePage';
-import RSCBoxPrototype, { SealState } from './pages/RSCBoxPrototype';
+import RTEBoxPrototype from './pages/RTEBoxPrototype';
 import { getRscGeometry } from '../geometry';
 import WorkshopPage from './pages/WorkshopPage';
 import SignInModal from './components/modals/SignInModal';
 import BoxStudioModal from './pages/BoxStudioModal';
 import { useBoxStore } from '../lib/useBoxStore';
+
+import { CustomDesignModal } from './pages/EditorModal';
 
 const slideUpVariant = {
   initial: { opacity: 0, y: 40 },
@@ -412,7 +414,7 @@ export default function App() {
   });
   const [stepIndex, setStepIndex] = useState(0);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cake' }>({
+  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' }>({
     isOpen: false,
     model: 'rte'
   });
@@ -928,52 +930,55 @@ export default function App() {
         <WorkspacePage 
           onNavigate={(v, extra) => navigateTo(v as any, extra)} 
           onBack={() => navigateTo('landing')} 
-          onOpenStudioWithBox={(box) => {
+          onOpenStudioWithBox={(box, mode = 'dieline') => {
             if (!box) return;
 
-            // Detect if this box is a Dieline Studio model (saved from BoxStudioModal or Dielines Page)
-            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cake' | null = box.boxModel || null;
+            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | null = box.boxModel || null;
 
             if (!boxModelKey && box.category) {
               const cat = box.category.toLowerCase();
-              if (cat.includes('reverse tuck') || cat.includes('rte')) boxModelKey = 'rte';
-              else if (cat.includes('straight tuck') || cat.includes('te')) boxModelKey = 'te';
-              else if (cat.includes('auto lock') || cat.includes('lock')) boxModelKey = 'auto_lock';
-              else if (cat.includes('cake')) boxModelKey = 'cake';
+              if (cat.includes('reverse') || cat.includes('rte')) boxModelKey = 'rte';
+              else if (cat.includes('straight') || cat.includes('te')) boxModelKey = 'te';
+              else if (cat.includes('auto') || cat.includes('lock')) boxModelKey = 'auto_lock';
+              else if (cat.includes('cosmetic')) boxModelKey = 'cosmetic';
             }
 
-            // If item is a Dieline Model (or has boxModel / type === 'DIELINE')
-            if (boxModelKey || box.type === 'DIELINE') {
-              const finalModel = boxModelKey || 'rte';
+            const finalModel = boxModelKey || 'rte';
 
-              // Sync dimensions to useBoxStore in inches
-              if (box.dimensions) {
-                const inL = (box.dimensions.L || 120) / 25.4;
-                const inW = (box.dimensions.W || 60) / 25.4;
-                const inH = (box.dimensions.H || 160) / 25.4;
-                useBoxStore.setState({ L: inL, W: inW, H: inH, boxModel: finalModel });
-              } else {
-                useBoxStore.setState({ boxModel: finalModel });
+            // Normalize dimensions (in mm) and convert to inches for useBoxStore
+            const dim = box.dimensions || {};
+            let rawL = dim.L ?? dim.length ?? dim.l ?? 150;
+            let rawW = dim.W ?? dim.width ?? dim.w ?? 70;
+            let rawH = dim.H ?? dim.height ?? dim.h ?? 200;
+
+            const mmL = rawL < 30 ? Math.round(rawL * 25.4) : Math.round(rawL);
+            const mmW = rawW < 30 ? Math.round(rawW * 25.4) : Math.round(rawW);
+            const mmH = rawH < 30 ? Math.round(rawH * 25.4) : Math.round(rawH);
+
+            const inL = mmL / 25.4;
+            const inW = mmW / 25.4;
+            const inH = mmH / 25.4;
+
+            useBoxStore.setState({ 
+              L: inL, 
+              W: inW, 
+              H: inH, 
+              boxModel: finalModel,
+              packageColor: box.packageColor || null,
+              insideColor: box.insideColor || null,
+              decalsByModel: {
+                ...useBoxStore.getState().decalsByModel,
+                [finalModel]: box.decals || []
               }
+            });
 
-              // Open BoxStudioModal directly for this exact saved dieline!
+            if (mode === 'mockup') {
+              // Open 3D Mockup Studio (Workshop) page!
+              navigateTo('workshop', { boxConfig: box });
+            } else {
+              // Open Vector Dieline Studio Modal!
               setActiveDielineBox({ isOpen: true, model: finalModel });
-              return;
             }
-
-            // Otherwise, for Interactive Design Lab 3D Studio prototypes:
-            if (box.dimensions) {
-              if (box.dimensions.L) setWidth(box.dimensions.L);
-              if (box.dimensions.W) setDepth(box.dimensions.W);
-              if (box.dimensions.H) setHeight(box.dimensions.H);
-            }
-            if (box.material) setMaterial(box.material);
-            if (box.artwork) setArtwork(box.artwork);
-            if (box.customColor) setCustomColor(box.customColor);
-            if (box.sealState) setSealState(box.sealState);
-            if (box.foldProgress !== undefined) setFoldProgress(box.foldProgress);
-
-            navigateTo('landing', { boxConfig: box });
           }} 
         />
         {activeDielineBox.isOpen && (
@@ -1114,15 +1119,20 @@ export default function App() {
                           <div className="bg-zinc-950/90 border border-zinc-800/80 rounded-xl p-3 h-44 overflow-hidden relative flex items-center justify-center">
                             {/* Dynamic SVG Vector 2D Dieline */}
                             {(() => {
-                              const totalW = depth * 2 + width * 2 + 40;
-                              const totalH = height + depth + 30;
-                              const startY = depth / 2 + 15;
-                              const flapH = depth / 2;
-                              const p1X = 35; // Glue tab end / Left start
-                              const p2X = p1X + depth; // Left end / Back start
-                              const p3X = p2X + width; // Back end / Right start
-                              const p4X = p3X + depth; // Right end / Front start
-                              const p5X = p4X + width; // Front end
+                              const lip = 15;
+                              const dustH = width / 2;
+                              const tuckH = depth;
+                              const glueW = 20;
+                              const totalW = depth * 2 + width * 2 + glueW + 10;
+                              const totalH = height + tuckH * 2 + lip * 2 + 10;
+                              const startY = tuckH + lip + 5;
+                              
+                              const p0X = 5; // Start of glue
+                              const p1X = p0X + glueW; // Start of Left
+                              const p2X = p1X + depth; // Start of Back
+                              const p3X = p2X + width; // Start of Right
+                              const p4X = p3X + depth; // Start of Front
+                              const p5X = p4X + width; // End of Front
 
                               return (
                                 <svg
@@ -1132,38 +1142,52 @@ export default function App() {
                                 >
                                   <g fill="none">
                                     {/* Panel Fills */}
+                                    <polygon points={`${p0X},${startY + 5} ${p1X},${startY} ${p1X},${startY + height} ${p0X},${startY + height - 5}`} fill="rgba(56, 189, 248, 0.03)" />
                                     <rect x={p1X} y={startY} width={depth} height={height} fill="rgba(56, 189, 248, 0.04)" />
                                     <rect x={p2X} y={startY} width={width} height={height} fill="rgba(56, 189, 248, 0.06)" />
                                     <rect x={p3X} y={startY} width={depth} height={height} fill="rgba(56, 189, 248, 0.04)" />
                                     <rect x={p4X} y={startY} width={width} height={height} fill="rgba(56, 189, 248, 0.06)" />
 
-                                    {/* Outer Cut Lines (Cyan) */}
-                                    <polygon points={`15,${startY + 8} ${p1X},${startY} ${p1X},${startY + height} 15,${startY + height - 8}`} stroke="#38bdf8" strokeWidth="1.5" fill="rgba(56, 189, 248, 0.03)" />
+                                    {/* Glue Flap Cut Lines (Cyan) */}
+                                    <polygon points={`${p0X},${startY + 5} ${p1X},${startY} ${p1X},${startY + height} ${p0X},${startY + height - 5}`} stroke="#38bdf8" strokeWidth="1.5" />
                                     
-                                    {/* Panels & Flaps Outline */}
-                                    <rect x={p1X} y={15} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
-                                    <rect x={p1X} y={startY + height} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    {/* Left Dust Flaps */}
+                                    <rect x={p1X} y={startY - dustH} width={depth} height={dustH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <rect x={p1X} y={startY + height} width={depth} height={dustH} stroke="#38bdf8" strokeWidth="1.5" />
 
-                                    <rect x={p2X} y={15} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
-                                    <rect x={p2X} y={startY + height} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    {/* Right Dust Flaps */}
+                                    <rect x={p3X} y={startY - dustH} width={depth} height={dustH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <rect x={p3X} y={startY + height} width={depth} height={dustH} stroke="#38bdf8" strokeWidth="1.5" />
 
-                                    <rect x={p3X} y={15} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
-                                    <rect x={p3X} y={startY + height} width={depth} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    {/* Top Tuck Flap (Back) & Lip */}
+                                    <rect x={p2X} y={startY - tuckH} width={width} height={tuckH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <path d={`M ${p2X} ${startY - tuckH} L ${p2X + 5} ${startY - tuckH - lip} L ${p2X + width - 5} ${startY - tuckH - lip} L ${p2X + width} ${startY - tuckH} Z`} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <line x1={p2X} y1={startY - tuckH} x2={p2X + width} y2={startY - tuckH} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
 
-                                    <rect x={p4X} y={15} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
-                                    <rect x={p4X} y={startY + height} width={width} height={flapH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    {/* Bottom Tuck Flap (Front) & Lip */}
+                                    <rect x={p4X} y={startY + height} width={width} height={tuckH} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <path d={`M ${p4X} ${startY + height + tuckH} L ${p4X + 5} ${startY + height + tuckH + lip} L ${p4X + width - 5} ${startY + height + tuckH + lip} L ${p4X + width} ${startY + height + tuckH} Z`} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <line x1={p4X} y1={startY + height + tuckH} x2={p4X + width} y2={startY + height + tuckH} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
 
-                                    {/* Main Body Side Borders */}
-                                    <line x1={p1X} y1={startY} x2={p1X} y2={startY + height} stroke="#38bdf8" strokeWidth="1.5" />
+                                    {/* Main Body Side Borders (Only exposed cuts) */}
                                     <line x1={p5X} y1={startY} x2={p5X} y2={startY + height} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <line x1={p2X} y1={startY} x2={p3X} y2={startY} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <line x1={p2X} y1={startY + height} x2={p3X} y2={startY + height} stroke="#38bdf8" strokeWidth="1.5" />
+                                    <line x1={p4X} y1={startY} x2={p5X} y2={startY} stroke="#38bdf8" strokeWidth="1.5" />
 
                                     {/* Crease / Fold Lines (Red Dashed) */}
+                                    <line x1={p1X} y1={startY} x2={p1X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
                                     <line x1={p2X} y1={startY} x2={p2X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
                                     <line x1={p3X} y1={startY} x2={p3X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
                                     <line x1={p4X} y1={startY} x2={p4X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
 
-                                    <line x1={p1X} y1={startY} x2={p5X} y2={startY} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
-                                    <line x1={p1X} y1={startY + height} x2={p5X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    <line x1={p1X} y1={startY} x2={p2X} y2={startY} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    <line x1={p1X} y1={startY + height} x2={p2X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+
+                                    <line x1={p3X} y1={startY} x2={p4X} y2={startY} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    <line x1={p3X} y1={startY + height} x2={p5X} y2={startY + height} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
+
+                                    <line x1={p4X} y1={startY} x2={p5X} y2={startY} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="4 3" />
 
                                     {/* Panel Labels */}
                                     <text x={p1X + depth/2} y={startY + height/2} fill="#94a3b8" fontSize="10" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">Side (L)</text>
@@ -1454,8 +1478,8 @@ export default function App() {
 
                   {/* 3D Box scene viewport (Enlarged box display) */}
                   <div className="w-full h-full flex-1 flex items-center justify-center absolute inset-0" style={{ perspective: 2000 }}>
-                    <div style={{ transform: 'scale(1.15)', transformOrigin: 'center center', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <RSCBoxPrototype
+                    <div style={{ transform: 'scale(0.85)', transformOrigin: 'center center', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <RTEBoxPrototype
                         width={width}
                         depth={depth}
                         height={height}
@@ -1463,7 +1487,6 @@ export default function App() {
                         material={material}
                         baseStyle={(materialStyles as Record<string, any>)[material]}
                         renderArtwork={renderArtwork}
-                        sealState={sealState}
                       />
                     </div>
                   </div>

@@ -11,13 +11,13 @@ import { exportSVG, exportDXF, exportPDF, generateDXFString } from "../../lib/ex
 import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
-import { generateCakeBoxDieline } from "../../lib/cakeBoxDielineGenerator";
+import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
 import { API_BASE_URL } from "../../config/api";
 
 interface BoxStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialModel?: "rte" | "te" | "auto_lock" | "cake";
+  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic";
   boxTitle?: string;
 }
 
@@ -191,7 +191,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     te: "Straight Tuck End Box",
     rte: "Reverse Tuck End Box",
     auto_lock: "Auto Lock Bottom Box",
-    cake: "Cake Box with Handle & Window"
+    cosmetic: "Cosmetic Box"
   };
 
   const currentTitle = modelLabels[store.boxModel] || boxTitle;
@@ -243,7 +243,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       let dielineData;
       if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
-      else if (store.boxModel === "cake") dielineData = generateCakeBoxDieline(params);
+      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
       else dielineData = generateRTEDielineDXF(params);
       exportDXF(dielineData, `${store.boxModel}_dieline.dxf`);
     } catch (err) {
@@ -264,7 +264,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       let dielineData;
       if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
-      else if (store.boxModel === "cake") dielineData = generateCakeBoxDieline(params);
+      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
       else dielineData = generateRTEDielineDXF(params);
       
       const dxfString = generateDXFString(dielineData);
@@ -336,6 +336,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       tabCategory: 'projects',
       variantId: 1,
       dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm },
+      packageColor: store.packageColor || null,
+      insideColor: store.insideColor || null,
+      decals: store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : [],
       isDraft: false,
       isFavorite: false
     };

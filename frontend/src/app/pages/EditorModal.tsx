@@ -3,11 +3,11 @@ import React, { useState, useRef, useMemo, useDeferredValue, useCallback, useEff
 import Box3DViewer from "../../components/Box3DViewer";
 import DielineSVG from "../../components/DielineSVG";
 import { useBoxStore } from "../../lib/useBoxStore";
+import { useEditorStore } from "../../lib/useEditorStore";
 import { generateRTEDieline } from "../../lib/rteDielineGenerator";
 import { packagingSymbols } from "../../lib/packagingSymbols";
 import { exportPDF } from "../../lib/exportUtils";
-
-// --- Simple SVG Icons ---
+import { mockupService } from "../../services/mockups";
 const IconUpload = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
 const IconLayers = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
 const IconSparkles = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"/><path d="M3 12h18"/><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>;
@@ -67,11 +67,18 @@ const allSocialMedia = [
 ];
 
 export default function EditorModal({ isOpen, onClose, contextType = "mockup" }: { isOpen: boolean; onClose: () => void; contextType?: string }) {
-  const store = useBoxStore();
+  const store = useEditorStore();
+  const globalStore = useBoxStore();
 
   useEffect(() => {
     if (isOpen) {
-      store.setContextAndModel(contextType, store.boxModel);
+      // Sync editor store with current global store state WITHOUT copying functions
+      // This ensures useEditorStore keeps its own setDecals and doesn't mutate globalStore
+      const stateData = JSON.parse(JSON.stringify(useBoxStore.getState()));
+      useEditorStore.setState(stateData);
+      
+      // Update context and model directly to avoid using potentially corrupted store functions
+      useEditorStore.setState({ activeContext: contextType, boxModel: globalStore.boxModel });
     }
   }, [isOpen, contextType]);
 
@@ -81,7 +88,22 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
   const [foldProgress, setFoldProgress] = useState(1);
   const [galleryImages, setGalleryImages] = useState([]);
   const decals = store.decalsByModel[store.boxModel] || [];
-  const setDecals = store.setDecals;
+  
+  // Define setDecals directly to avoid relying on potentially corrupted store functions from HMR
+  const setDecals = useCallback((newDecals) => {
+    useEditorStore.setState((state) => {
+      const currentModel = state.boxModel;
+      const currentDecals = state.decalsByModel[currentModel] || [];
+      const updatedDecals = typeof newDecals === "function" ? newDecals(currentDecals) : newDecals;
+      return {
+        decalsByModel: {
+          ...state.decalsByModel,
+          [currentModel]: updatedDecals
+        }
+      };
+    });
+  }, []);
+
   const [activeSurface, setActiveSurface] = useState("Outside");
   const t = themes[store.theme || 'light'];
 
@@ -105,27 +127,28 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
 
   // Export Modal State
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [exportFileType, setExportFileType] = useState('artwork');
   const [exportColorMode, setExportColorMode] = useState('CMYK');
   const [exportFormat, setExportFormat] = useState('PDF');
 
   const handleExport = async (fileType, colorMode, format) => {
+    // ... logic remains same ...
     const svgElement = document.querySelector('#export-preview-container svg');
     if (!svgElement) {
       alert('Could not find SVG to export');
       return;
     }
     
-    // We clone the SVG so we can manipulate it without affecting the live UI
     const clonedSvg = svgElement.cloneNode(true);
     
-    // If dieline only, remove the decals/artwork
     if (fileType === 'dieline') {
-      const decals = clonedSvg.querySelectorAll('.decal-group');
-      decals.forEach(d => d.remove());
+      const decalsGroup = clonedSvg.querySelectorAll('.decal-group');
+      decalsGroup.forEach(d => d.remove());
     }
 
-    // Apply the user's selected package color to the background
     const bgGroup = Array.from(clonedSvg.querySelectorAll('g')).find(g => g.getAttribute('fill') === 'url(#kraft-pattern)');
     if (bgGroup) {
       if (fileType === 'artwork' && store.packageColor && store.packageColor !== 'transparent') {
@@ -138,12 +161,69 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
     const ext = format === 'AI' ? 'ai' : 'pdf';
     const filename = `boxcraft_${fileType}_${colorMode}_${ext}.${ext}`;
     
-    // exportPDF generates a real PDF document using jsPDF & svg2pdf, saving with the chosen extension.
     await exportPDF(clonedSvg, filename, colorMode);
     
     setIsExportModalOpen(false);
   };
 
+  const saveDesignToWorkspace = async () => {
+    setIsSaving(true);
+    try {
+      const categoryName = 
+        store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
+        store.boxModel === 'te' ? 'Straight Tuck End Box' :
+        store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
+        store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
+
+      const dimL_mm = Math.round((store.L || 4.72) * 25.4);
+      const dimW_mm = Math.round((store.W || 2.36) * 25.4);
+      const dimH_mm = Math.round((store.H || 6.29) * 25.4);
+
+      await mockupService.saveDesign({
+        name: `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
+        type: "DIELINE",
+        category: categoryName,
+        boxModel: store.boxModel,
+        variantId: store.boxModel === "rte" ? 2 : 1,
+        dimensions: {
+          L: dimL_mm,
+          W: dimW_mm,
+          H: dimH_mm,
+          length: store.L,
+          width: store.W,
+          height: store.H,
+        },
+        packageColor: store.packageColor || null,
+        insideColor: store.insideColor || null,
+        decals: store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : [],
+        tabCategory: "projects",
+        isDraft: false,
+      });
+    } catch (err) {
+      console.error("Failed to save design to backend:", err);
+      // Optional: alert(err.message) but we don't want to block them if mongodb is down
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    // Sync useEditorStore data back to useBoxStore so changes appear in WorkshopPage
+    const editorData = JSON.parse(JSON.stringify(useEditorStore.getState()));
+    useBoxStore.setState(editorData);
+    
+    await saveDesignToWorkspace();
+    onClose();
+  };
+
+  const handleDiscardAndExit = () => {
+    // Just close. globalStore was never mutated, so changes are implicitly discarded
+    onClose();
+  };
+
+  const handleCloseClick = () => {
+    setIsExitModalOpen(true);
+  };
 
   const pushHistory = (newDecals) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -350,7 +430,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
 
       <div style={{ width: "280px", backgroundColor: t.bgPanel, borderRight: `2px solid ${t.border}`, display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "16px", display: "flex", alignItems: "center", borderBottom: `2px solid ${t.border}` }}>
-          <button onClick={onClose} style={{ border: "none", background: "none", cursor: "pointer", marginRight: "12px", color: t.textMuted }}>✕</button>
+          <button onClick={handleCloseClick} style={{ border: "none", background: "none", cursor: "pointer", marginRight: "12px", color: t.textMuted }}>✕</button>
           <span style={{ fontWeight: "400", fontSize: "18px", fontFamily: "Georgia, 'Times New Roman', serif" }}>{activeTab === "Elements" ? "Elements" : "Upload & Design"}</span>
         </div>
         
@@ -575,6 +655,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
                 setActiveDecalId={setActiveDecalId}
                 onDeleteDecal={handleDeleteDecal}
                 disableInteractions={activeTool === "hand"}
+                useStore={useEditorStore}
               />
             ), [store.L, store.W, store.H, store.T, store.materialType, activeColor, activeSurface, surfaceDecals, setDecals, commitHistory, activeDecalId, setActiveDecalId, handleDeleteDecal, activeTool])}
           </div>
@@ -610,8 +691,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
       {!isExpanded && (
       <div style={{ width: "320px", backgroundColor: t.bgPanel, borderLeft: `2px solid ${t.border}`, display: "flex", flexDirection: "column", padding: "16px", overflowY: "auto" }}>
         <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-          <button style={{ flex: 1, padding: "12px", backgroundColor: t.activeBg, color: t.textMain, border: `2px solid ${t.border}`, borderRadius: "14px 10px 12px 16px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px ${t.border}` }}>
-            Save
+          <button onClick={handleSaveAndExit} disabled={isSaving} style={{ flex: 1, padding: "12px", backgroundColor: t.activeBg, color: t.textMain, border: `2px solid ${t.border}`, borderRadius: "14px 10px 12px 16px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px ${t.border}` }}>
+            {isSaving ? "Saving..." : "Save"}
           </button>
           <button onClick={() => setIsExportModalOpen(true)} style={{ flex: 1, padding: "12px", backgroundColor: t.cyan, color: (store.theme === 'dark' ? '#3a2e26' : '#fff'), border: `2px solid ${t.border}`, borderRadius: "10px 14px 16px 12px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px ${t.border}` }}>
             Super Export
@@ -638,6 +719,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
             packageColor={activeColor}
             lightingPreset="studio"
             decals={deferredDecals}
+            useStore={useEditorStore}
           />
         </div>
         )}
@@ -706,6 +788,38 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
           >Inside</button>
         </div>
 
+        {/* Exit Confirmation Modal */}
+        {isExitModalOpen && (
+          <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100000 }}>
+            <div style={{ background: "#ffffff", padding: "32px", borderRadius: "12px", width: "420px", maxWidth: "90vw", boxShadow: "0 20px 40px rgba(0,0,0,0.1)", color: "#333", fontFamily: "'Inter', sans-serif" }}>
+              <h3 style={{ margin: "0 0 12px 0", fontSize: "18px", fontWeight: "700", color: "#222" }}>Save Changes Before Closing?</h3>
+              <p style={{ margin: "0 0 32px 0", fontSize: "14px", color: "#555", lineHeight: "1.5" }}>
+                You have unsaved changes. If you continue without saving, these changes will be lost.
+              </p>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-start" }}>
+                <button 
+                  onClick={handleSaveAndExit}
+                  disabled={isSaving}
+                  style={{ padding: "10px 24px", background: "#4f75f6", color: "#ffffff", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+                <button 
+                  onClick={() => setIsExitModalOpen(false)}
+                  style={{ padding: "10px 24px", background: "#ffffff", color: "#555", border: "1px solid #ccc", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDiscardAndExit}
+                  style={{ marginLeft: "auto", padding: "10px 24px", background: "#ffffff", color: "#e03e3e", border: "1px solid #e03e3e", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+                >
+                  Don't Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Package Color */}
         <div>
@@ -802,6 +916,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
                     activeSurface={activeSurface}
                     decals={exportFileType === 'dieline' ? [] : surfaceDecals}
                     disableInteractions={true}
+                    useStore={useEditorStore}
                   />
                 </div>
               </div>

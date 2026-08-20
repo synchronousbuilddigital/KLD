@@ -19,7 +19,7 @@ router.get('/saved', authenticate, async (req, res, next) => {
 // POST /api/mockups/saved — Save a new design
 router.post('/saved', authenticate, async (req, res, next) => {
   try {
-    const { name, type, category, variantId, dimensions, customColors, tabCategory, isFavorite, isDraft, tags } = req.body;
+    const { name, type, category, boxModel, variantId, dimensions, packageColor, insideColor, decals, customColors, tabCategory, isFavorite, isDraft, tags } = req.body;
 
     if (!name) {
       return sendError(res, 'name is required.', 400);
@@ -30,8 +30,12 @@ router.post('/saved', authenticate, async (req, res, next) => {
       name,
       type: type || 'DIELINE',
       category: category || 'General Box',
+      boxModel: boxModel || 'rte',
       variantId: variantId != null ? variantId : 1,
       dimensions: dimensions || {},
+      packageColor: packageColor || null,
+      insideColor: insideColor || null,
+      decals: decals || [],
       customColors: customColors || {},
       tabCategory: tabCategory || 'projects',
       isFavorite: isFavorite || false,

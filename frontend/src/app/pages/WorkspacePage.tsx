@@ -27,7 +27,7 @@ export interface WorkspaceItem {
 interface WorkspacePageProps {
   onBack?: () => void;
   onNavigate?: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace', extra?: any) => void;
-  onOpenStudioWithBox?: (boxConfig: any) => void;
+  onOpenStudioWithBox?: (boxConfig: any, mode?: 'dieline' | 'mockup') => void;
 }
 
 export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: WorkspacePageProps) {
@@ -86,17 +86,52 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
         });
         const data = await res.json();
         if (res.ok && data.success && Array.isArray(data.data?.designs)) {
-          mongoItems = data.data.designs.map((d: any) => ({
-            id: d._id,
-            name: d.name,
-            category: d.category || 'Custom Box',
-            tabCategory: d.tabCategory || 'projects',
-            dimensions: d.dimensions || { L: 150, W: 70, H: 200, glueTab: 15, tuck: 18, flapH: 35 },
-            updatedAt: d.updatedAt || new Date().toISOString(),
-            isFavorite: !!d.isFavorite,
-            isDraft: d.isDraft !== undefined ? d.isDraft : false,
-            tags: d.tags || []
-          }));
+          mongoItems = data.data.designs.map((d: any) => {
+            const dim = d.dimensions || {};
+            let rawL = dim.L ?? dim.length ?? dim.l ?? 150;
+            let rawW = dim.W ?? dim.width ?? dim.w ?? 70;
+            let rawH = dim.H ?? dim.height ?? dim.h ?? 200;
+
+            const L = rawL < 30 ? Math.round(rawL * 25.4) : Math.round(rawL);
+            const W = rawW < 30 ? Math.round(rawW * 25.4) : Math.round(rawW);
+            const H = rawH < 30 ? Math.round(rawH * 25.4) : Math.round(rawH);
+
+            let boxModel = d.boxModel || d.model;
+            if (!boxModel && d.category) {
+              const cat = d.category.toLowerCase();
+              if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
+              else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
+              else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
+              else if (cat.includes('cosmetic')) boxModel = 'cosmetic';
+            }
+            if (!boxModel) boxModel = 'rte';
+
+            let categoryName = d.category;
+            if (!categoryName || categoryName === 'BOX' || categoryName === 'Custom Box' || categoryName === 'box' || categoryName === 'DIELINE' || categoryName === 'MOCKUP') {
+              if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
+              else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
+              else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
+              else if (boxModel === 'cosmetic') categoryName = 'Cosmetic Box';
+              else categoryName = 'Custom Packaging Box';
+            }
+
+            return {
+              id: d._id,
+              name: d.name || `${categoryName} (${L}×${W}×${H}mm)`,
+              category: categoryName,
+              boxModel: boxModel,
+              type: d.type || 'DIELINE',
+              tabCategory: d.tabCategory || 'projects',
+              dimensions: { L: L || 150, W: W || 70, H: H || 200, glueTab: dim.glueTab || 15, tuck: dim.tuck || 18, flapH: dim.flapH || 35 },
+              packageColor: d.packageColor || null,
+              insideColor: d.insideColor || null,
+              decals: d.decals || [],
+              updatedAt: d.updatedAt || new Date().toISOString(),
+              isFavorite: !!d.isFavorite,
+              isDraft: d.isDraft !== undefined ? d.isDraft : false,
+              tags: d.tags || []
+            };
+          });
         }
       } catch (err) {
         console.log('MongoDB fetch error, using local workspace items:', err);
@@ -113,10 +148,46 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           const mockIds = new Set(['model-1', 'model-2', 'proj-1', 'proj-2', 'print-1', 'ai-1', 'active-session-draft']);
           localItems = parsed
             .filter(item => !mockIds.has(item.id))
-            .map(item => ({
-              ...item,
-              tabCategory: item.tabCategory || 'projects'
-            }));
+            .map(item => {
+              const dim = item.dimensions || {};
+              let rawL = dim.L ?? dim.length ?? dim.l ?? 150;
+              let rawW = dim.W ?? dim.width ?? dim.w ?? 70;
+              let rawH = dim.H ?? dim.height ?? dim.h ?? 200;
+
+              const L = rawL < 30 ? Math.round(rawL * 25.4) : Math.round(rawL);
+              const W = rawW < 30 ? Math.round(rawW * 25.4) : Math.round(rawW);
+              const H = rawH < 30 ? Math.round(rawH * 25.4) : Math.round(rawH);
+
+              let boxModel = item.boxModel || item.model;
+              if (!boxModel && item.category) {
+                const cat = item.category.toLowerCase();
+                if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
+                else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
+                else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
+                else if (cat.includes('cosmetic')) boxModel = 'cosmetic';
+              }
+              if (!boxModel) boxModel = 'rte';
+
+              let categoryName = item.category;
+              if (!categoryName || categoryName === 'BOX' || categoryName === 'Custom Box' || categoryName === 'box' || categoryName === 'DIELINE' || categoryName === 'MOCKUP') {
+                if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
+                else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
+                else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
+                else if (boxModel === 'cosmetic') categoryName = 'Cosmetic Box';
+                else categoryName = 'Custom Packaging Box';
+              }
+
+              return {
+                ...item,
+                category: categoryName,
+                boxModel: boxModel,
+                dimensions: { L: L || 150, W: W || 70, H: H || 200, glueTab: dim.glueTab || 15, tuck: dim.tuck || 18, flapH: dim.flapH || 35 },
+                packageColor: item.packageColor || null,
+                insideColor: item.insideColor || null,
+                decals: item.decals || [],
+                tabCategory: item.tabCategory || 'projects'
+              };
+            });
         }
       }
       localStorage.setItem('kld_workspace_items', JSON.stringify(localItems));
@@ -133,32 +204,6 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
     setItems(combined);
     setIsLoading(false);
-
-    // Auto-sync un-synced local items to MongoDB if logged in
-    if (token) {
-      const unSynced = localItems.filter(item => !mongoIds.has(item.id) && (!item.id || item.id.length !== 24));
-      for (const item of unSynced) {
-        try {
-          await fetch(`${API_BASE_URL}/mockups/saved`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              name: item.name,
-              type: item.type || 'DIELINE',
-              category: item.category || 'Custom Box',
-              dimensions: item.dimensions,
-              tabCategory: item.tabCategory || 'projects',
-              isFavorite: !!item.isFavorite
-            })
-          });
-        } catch (syncErr) {
-          console.error('Auto sync workspace item error:', syncErr);
-        }
-      }
-    }
   };
 
   useEffect(() => {
@@ -177,11 +222,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   // Save items state to state & local cache
   const updateItemsState = (newItems: WorkspaceItem[]) => {
     setItems(newItems);
-    try {
-      localStorage.setItem('kld_workspace_items', JSON.stringify(newItems));
-    } catch (e) {
-      console.log('Error caching workspace items:', e);
-    }
+    localStorage.setItem('kld_workspace_items', JSON.stringify(newItems));
   };
 
   // Navigation Helper
@@ -233,7 +274,6 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     if (confirm('Are you sure you want to delete this box item from your workspace?')) {
       const updated = items.filter((item) => item.id !== id);
       updateItemsState(updated);
-      window.dispatchEvent(new CustomEvent('project-saved'));
 
       // Persist deletion to MongoDB if authenticated and valid MongoDB ID
       const token = localStorage.getItem('token');
@@ -253,11 +293,11 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   };
 
   // Resume Editing in Studio
-  const handleResumeEditing = (item: WorkspaceItem) => {
+  const handleResumeEditing = (item: WorkspaceItem, mode: 'dieline' | 'mockup' = 'dieline') => {
     if (onOpenStudioWithBox) {
-      onOpenStudioWithBox(item);
+      onOpenStudioWithBox(item, mode);
     } else {
-      handleNav('landing', { boxConfig: item });
+      handleNav('landing', { boxConfig: item, mode });
     }
   };
 
@@ -733,78 +773,107 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 >
                   <div>
                     {/* Header Row: Category Badge & Favorite Star */}
-                    <div className="flex items-center justify-between mb-5">
-                      <span className="bg-zinc-100 text-zinc-700 text-[10px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
-                        {item.category}
-                      </span>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="bg-amber-50 text-amber-900 border border-amber-200/80 text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
+                          <Box className="w-3 h-3 text-amber-600" />
+                          {item.category}
+                        </span>
+                        <span className="bg-zinc-100 text-zinc-700 text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-tight">
+                          {item.type === 'MOCKUP' ? '🎨 3D Mockup' : '📐 Dieline Studio'}
+                        </span>
+                      </div>
 
                       <button
                         onClick={(e) => handleToggleFavorite(item.id, e)}
-                        className={`p-2 rounded-full transition-all ${item.isFavorite ? 'bg-amber-50 text-amber-500' : 'text-zinc-300 hover:text-amber-500 hover:bg-zinc-50'}`}
+                        className={`p-1.5 rounded-full transition-all ${item.isFavorite ? 'bg-amber-50 text-amber-500' : 'text-zinc-300 hover:text-amber-500 hover:bg-zinc-50'}`}
                         title={item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                       >
                         <Star className={`w-4.5 h-4.5 ${item.isFavorite ? 'fill-amber-400 text-amber-400' : ''}`} />
                       </button>
                     </div>
 
-                    {/* 3D Box Card Graphic */}
-                    <div 
-                      onClick={() => handleResumeEditing(item)}
-                      className="w-full h-44 bg-gradient-to-br from-zinc-50 to-zinc-100 rounded-2xl border border-zinc-100 flex items-center justify-center mb-6 group-hover:bg-amber-50/40 transition-colors relative cursor-pointer overflow-hidden"
-                    >
-                      <div className="w-18 h-18 rounded-2xl bg-white shadow-md flex items-center justify-center text-zinc-800 group-hover:scale-110 transition-transform p-4">
+                    {/* 3D Box Card Graphic with Dual Studio Overlay */}
+                    <div className="w-full h-44 bg-gradient-to-br from-zinc-50 via-amber-50/20 to-zinc-100 rounded-2xl border border-zinc-200/60 flex items-center justify-center mb-5 group-hover:border-amber-400/50 transition-colors relative overflow-hidden shadow-inner">
+                      <div className="w-18 h-18 rounded-2xl bg-white shadow-md border border-zinc-100 flex items-center justify-center text-zinc-800 group-hover:scale-110 transition-transform p-4">
                         <Box className="w-9 h-9 text-zinc-900" />
                       </div>
 
                       {item.isDraft && (
-                        <span className="absolute top-3.5 left-3.5 bg-amber-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                        <span className="absolute top-3 left-3 bg-amber-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm z-10">
                           Auto-Saved Draft
                         </span>
                       )}
 
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 bg-zinc-900 text-white text-[11px] font-bold px-3.5 py-2 rounded-xl shadow-lg transition-all transform translate-y-2 group-hover:translate-y-0 flex items-center gap-1.5">
-                          Open Studio <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
+                      {/* Dual Hover Overlay: Choose Studio Page */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2.5 p-4 z-20 backdrop-blur-[2px]">
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-white/90 mb-0.5">Choose Studio Mode</span>
+                        <div className="flex items-center gap-2 w-full max-w-[220px]">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                            className="flex-1 py-2 bg-white hover:bg-zinc-100 text-zinc-900 text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                          >
+                            📐 Dieline
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
+                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                          >
+                            🎨 3D Mockup
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Item Title */}
-                    <h3 
-                      onClick={() => handleResumeEditing(item)}
-                      className="font-extrabold text-zinc-900 text-lg mb-2.5 line-clamp-1 group-hover:text-amber-600 transition-colors cursor-pointer"
-                    >
-                      {item.name}
-                    </h3>
+                    {/* Item Title & Subtitle */}
+                    <div className="mb-3">
+                      <h3 
+                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                        className="font-extrabold text-zinc-900 text-lg mb-1 line-clamp-1 group-hover:text-amber-600 transition-colors cursor-pointer"
+                      >
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-zinc-500 font-medium line-clamp-1">
+                        Structural Packaging & 3D Model
+                      </p>
+                    </div>
 
                     {/* Dimensions Badge */}
-                    <div className="bg-zinc-50 border border-zinc-200/60 rounded-xl px-3.5 py-2.5 text-[11px] font-mono font-bold text-zinc-700 mb-5 flex items-center justify-between">
-                      <span>L: {item.dimensions.L}mm</span>
-                      <span>W: {item.dimensions.W}mm</span>
-                      <span>H: {item.dimensions.H}mm</span>
+                    <div className="bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-2.5 text-[11px] font-mono font-bold text-zinc-800 mb-5 flex items-center justify-between shadow-inner">
+                      <span className="flex items-center gap-1"><span className="text-zinc-400 font-sans text-[10px]">L:</span> {item.dimensions?.L || 150}mm</span>
+                      <span className="flex items-center gap-1"><span className="text-zinc-400 font-sans text-[10px]">W:</span> {item.dimensions?.W || 70}mm</span>
+                      <span className="flex items-center gap-1"><span className="text-zinc-400 font-sans text-[10px]">H:</span> {item.dimensions?.H || 200}mm</span>
                     </div>
                   </div>
 
                   {/* Footer Action Row */}
-                  <div className="pt-4 border-t border-zinc-100 flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-zinc-400 font-medium">
-                      Updated {new Date(item.updatedAt).toLocaleDateString()}
+                  <div className="pt-4 border-t border-zinc-100 flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-zinc-400 font-medium">
+                      {new Date(item.updatedAt).toLocaleDateString()}
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         onClick={(e) => handleDeleteItem(item.id, e)}
-                        className="p-2 text-zinc-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                        className="p-1.5 text-zinc-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
                         title="Delete model"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
 
                       <button
-                        onClick={() => handleResumeEditing(item)}
-                        className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                        title="Open Dieline Vector & DXF Studio"
+                        className="px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-extrabold rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95"
                       >
-                        Resume <ArrowRight className="w-3.5 h-3.5" />
+                        📐 Dieline
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
+                        title="Open 3D Interactive Mockup Studio"
+                        className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-extrabold rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
+                      >
+                        🎨 3D Mockup
                       </button>
                     </div>
                   </div>
@@ -819,16 +888,16 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 <div key={item.id} className="p-5 sm:p-6 flex items-center justify-between gap-5 hover:bg-zinc-50/80 transition-colors">
                   <div className="flex items-center gap-5 min-w-0">
                     <div 
-                      onClick={() => handleResumeEditing(item)}
-                      className="w-14 h-14 rounded-2xl bg-zinc-100 border border-zinc-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-zinc-200 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                      className="w-14 h-14 rounded-2xl bg-gradient-to-br from-zinc-50 to-zinc-100 border border-zinc-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors"
                     >
                       <Box className="w-7 h-7 text-zinc-900" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2.5 flex-wrap">
                         <h4 
-                          onClick={() => handleResumeEditing(item)}
-                          className="font-extrabold text-zinc-900 text-base truncate cursor-pointer hover:underline"
+                          onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                          className="font-extrabold text-zinc-900 text-base truncate cursor-pointer hover:text-amber-600"
                         >
                           {item.name}
                         </h4>
@@ -838,32 +907,41 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-zinc-500 font-mono mt-1 truncate">
-                        {item.category} • {item.dimensions.L}×{item.dimensions.W}×{item.dimensions.H} mm
+                      <div className="text-xs text-zinc-500 font-mono mt-1 truncate flex items-center gap-2">
+                        <span className="font-sans font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">{item.category}</span>
+                        <span>•</span>
+                        <span>{item.dimensions?.L || 150}×{item.dimensions?.W || 70}×{item.dimensions?.H || 200} mm</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3.5 shrink-0">
+                  <div className="flex items-center gap-2.5 shrink-0">
                     <button
                       onClick={(e) => handleToggleFavorite(item.id, e)}
-                      className={`p-2.5 rounded-xl transition-all ${item.isFavorite ? 'text-amber-500 bg-amber-50' : 'text-zinc-300 hover:text-amber-500'}`}
+                      className={`p-2 rounded-xl transition-all ${item.isFavorite ? 'text-amber-500 bg-amber-50' : 'text-zinc-300 hover:text-amber-500'}`}
                     >
                       <Star className={`w-5 h-5 ${item.isFavorite ? 'fill-amber-400' : ''}`} />
                     </button>
 
                     <button
                       onClick={(e) => handleDeleteItem(item.id, e)}
-                      className="p-2.5 text-zinc-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                      className="p-2 text-zinc-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
 
                     <button
-                      onClick={() => handleResumeEditing(item)}
-                      className="px-5 py-2.5 bg-zinc-900 text-white text-xs font-extrabold rounded-xl hover:bg-zinc-800 transition-all flex items-center gap-1.5 shadow-md"
+                      onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                      className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-extrabold rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95"
                     >
-                      Resume <ArrowRight className="w-4 h-4" />
+                      📐 Dieline
+                    </button>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
+                      className="px-4 py-2 bg-zinc-900 text-white text-xs font-extrabold rounded-xl hover:bg-zinc-800 transition-all flex items-center gap-1 shadow-md cursor-pointer active:scale-95"
+                    >
+                      🎨 3D Mockup
                     </button>
                   </div>
                 </div>

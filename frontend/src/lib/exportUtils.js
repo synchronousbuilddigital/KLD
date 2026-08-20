@@ -3,6 +3,44 @@
  * Generates and downloads production-ready CAD vector files directly from the browser.
  */
 
+function getSVGPhysicalBounds(svgElement) {
+  const lines = svgElement.querySelectorAll("line");
+  let bMinX = Infinity, bMinY = Infinity, bMaxX = -Infinity, bMaxY = -Infinity;
+  let foundAny = false;
+
+  lines.forEach(el => {
+    const x1 = parseFloat(el.getAttribute("x1"));
+    const y1 = parseFloat(el.getAttribute("y1"));
+    const x2 = parseFloat(el.getAttribute("x2"));
+    const y2 = parseFloat(el.getAttribute("y2"));
+    if (!isNaN(x1) && !isNaN(y1) && Math.abs(x1) < 100 && Math.abs(y1) < 100) {
+      bMinX = Math.min(bMinX, x1, x2);
+      bMaxX = Math.max(bMaxX, x1, x2);
+      bMinY = Math.min(bMinY, y1, y2);
+      bMaxY = Math.max(bMaxY, y1, y2);
+      foundAny = true;
+    }
+  });
+
+  if (foundAny && isFinite(bMinX) && isFinite(bMaxX) && bMaxX > bMinX) {
+    const pad = 1.0;
+    const minX = Math.floor((bMinX - pad) * 10) / 10;
+    const minY = Math.floor((bMinY - pad) * 10) / 10;
+    const maxX = Math.ceil((bMaxX + pad) * 10) / 10;
+    const maxY = Math.ceil((bMaxY + pad) * 10) / 10;
+    return { minX, minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  let width = 11, height = 8.5, minX = 0, minY = 0;
+  if (svgElement.viewBox && svgElement.viewBox.baseVal && svgElement.viewBox.baseVal.width > 0) {
+    minX = svgElement.viewBox.baseVal.x;
+    minY = svgElement.viewBox.baseVal.y;
+    width = svgElement.viewBox.baseVal.width;
+    height = svgElement.viewBox.baseVal.height;
+  }
+  return { minX, minY, width, height };
+}
+
 export function exportSVG(svgElement, filename = "dieline.svg") {
   if (!svgElement) {
     console.error("Export aborted: The target SVG element could not be found in the DOM.");
@@ -12,19 +50,39 @@ export function exportSVG(svgElement, filename = "dieline.svg") {
   // 1. Clone the live element so we don't disrupt the user's interactive panning/zooming view
   const svgClone = svgElement.cloneNode(true);
 
-  // 2. Enforce standard, absolute XML vector compliance namespaces
+  // 2. Normalize viewBox to exact physical bounds of the dieline artwork
+  const bounds = getSVGPhysicalBounds(svgClone);
+  svgClone.setAttribute("viewBox", `${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`);
+  svgClone.setAttribute("width", `${bounds.width}in`);
+  svgClone.setAttribute("height", `${bounds.height}in`);
+
+  // 3. Enforce standard, absolute XML vector compliance namespaces
   svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   svgClone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
 
-  // 3. Strip away any responsive scaling classes so it opens at a true 1:1 printable scale in Illustrator
+  // 4. Strip away any responsive scaling classes so it opens at a true 1:1 printable scale in Illustrator
   svgClone.removeAttribute("class");
   svgClone.style.background = "transparent"; 
 
-  // 4. Convert the live DOM node structural tree into a clean raw XML string stream
+  // Ensure all image elements explicitly set xlink:href for vector software compatibility
+  const images = svgClone.querySelectorAll("image");
+  images.forEach(img => {
+    const href = img.getAttribute("href") || img.getAttribute("xlink:href");
+    if (href) {
+      img.setAttribute("href", href);
+      img.setAttribute("xlink:href", href);
+    }
+  });
+
+  // Remove UI-only elements
+  const uiOnly = svgClone.querySelectorAll(".editor-measurements");
+  uiOnly.forEach(el => el.remove());
+
+  // 5. Convert the live DOM node structural tree into a clean raw XML string stream
   const XMLContentSerializer = new XMLSerializer();
   const rawXMLString = XMLContentSerializer.serializeToString(svgClone);
 
-  // 5. Wrap the string buffer inside an immutable binary blob configured for high-fidelity vector data
+  // 6. Wrap the string buffer inside an immutable binary blob configured for high-fidelity vector data
   const exportBlob = new Blob(
     [
       '<?xml version="1.0" encoding="utf-8"?>\n',
@@ -34,7 +92,7 @@ export function exportSVG(svgElement, filename = "dieline.svg") {
     { type: "image/svg+xml;charset=utf-8" }
   );
 
-  // 6. Trigger a clean, reliable browser-native link down-stream trigger
+  // 7. Trigger a clean, reliable browser-native link down-stream trigger
   const linkAnchor = document.createElement("a");
   const uniqueBlobObjectURL = URL.createObjectURL(exportBlob);
 
@@ -44,7 +102,7 @@ export function exportSVG(svgElement, filename = "dieline.svg") {
   document.body.appendChild(linkAnchor);
   linkAnchor.click();
   
-  // 7. Thoroughly scrub the garbage collector variables to keep RAM performance light and clean
+  // 8. Scrub the garbage collector variables
   document.body.removeChild(linkAnchor);
   URL.revokeObjectURL(uniqueBlobObjectURL);
 }
@@ -60,17 +118,9 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
     const { jsPDF } = await import("jspdf");
     await import("svg2pdf.js");
 
-    // Extract precise viewBox dimensions (these are in inches for our app)
-    let width = 11;
-    let height = 8.5;
-    
-    if (svgElement.viewBox && svgElement.viewBox.baseVal && svgElement.viewBox.baseVal.width > 0) {
-      width = svgElement.viewBox.baseVal.width;
-      height = svgElement.viewBox.baseVal.height;
-    } else {
-      width = parseFloat(svgElement.getAttribute("width")) || width;
-      height = parseFloat(svgElement.getAttribute("height")) || height;
-    }
+    // Extract precise physical dieline bounds
+    const bounds = getSVGPhysicalBounds(svgElement);
+    const { minX, minY, width, height } = bounds;
 
     // Initialize high-fidelity PDF document in INCHES
     const doc = new jsPDF({
@@ -83,11 +133,23 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
     const svgClone = svgElement.cloneNode(true);
     svgClone.removeAttribute("class");
     svgClone.style.background = "transparent";
+    svgClone.setAttribute("viewBox", `${minX} ${minY} ${width} ${height}`);
+    svgClone.setAttribute("width", `${width}in`);
+    svgClone.setAttribute("height", `${height}in`);
     
-    // 1. Remove unsupported elements that crash svg2pdf, as well as UI-only elements
-    // Note: 'image' is supported by svg2pdf if it uses data URLs or accessible links, so we don't remove it.
-    const unsupported = svgClone.querySelectorAll("defs, filter, pattern, foreignObject, .editor-measurements");
+    // 1. Remove unsupported elements that crash svg2pdf, as well as UI-only elements (Keep defs & clipPaths intact!)
+    const unsupported = svgClone.querySelectorAll("filter, pattern, foreignObject, .editor-measurements");
     unsupported.forEach(el => el.remove());
+
+    // Ensure all image elements explicitly carry xlink:href for svg2pdf and PDF parsers
+    const images = svgClone.querySelectorAll("image");
+    images.forEach(img => {
+      const href = img.getAttribute("href") || img.getAttribute("xlink:href");
+      if (href) {
+        img.setAttribute("href", href);
+        img.setAttribute("xlink:href", href);
+      }
+    });
     
     // 2. Remove comment nodes (React often inserts these and they crash svg2pdf)
     const iterator = document.createNodeIterator(svgClone, NodeFilter.SHOW_COMMENT, null, false);
@@ -96,7 +158,7 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
     while (currNode = iterator.nextNode()) comments.push(currNode);
     comments.forEach(c => c.parentNode.removeChild(c));
     
-    // 3. Remove attributes that reference deleted defs or crash the parser
+    // 3. Remove attributes that reference deleted defs (like filters/markers) but preserve clip-paths
     const allElements = svgClone.querySelectorAll("*");
     allElements.forEach(el => {
       el.removeAttribute("marker-start");
@@ -111,9 +173,9 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
       // Ensure stroke values are explicit for PDF conversion
       if (p.getAttribute("stroke") === "currentColor") p.setAttribute("stroke", "#000000");
       
-      // Remove url() fills since defs/patterns were deleted, otherwise svg2pdf defaults to black
+      // Remove url() fills for deleted patterns/kraft-pattern so svg2pdf doesn't default to black
       const fill = p.getAttribute("fill");
-      if (fill && fill.startsWith("url(")) {
+      if (fill && fill.startsWith("url(#kraft-pattern")) {
         p.setAttribute("fill", "none");
       }
     });

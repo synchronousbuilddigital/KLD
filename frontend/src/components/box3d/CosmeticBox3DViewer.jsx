@@ -32,7 +32,7 @@ import * as THREE          from "three";
 import SceneAnimator       from "./SceneAnimator";
 
 import { useBoxStore }           from "../../lib/useBoxStore";
-import { generateTEDielineDXF }  from "../../lib/teDielineGenerator";
+import { generateCosmeticBoxDieline }  from "../../lib/cosmeticBoxDielineGenerator";
 
 import {
   stageProgress,
@@ -112,6 +112,50 @@ function buildTEGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims) {
     p4Shape.holes.push(...p4Holes);
     windowFilmGeomP4 = new THREE.ShapeGeometry(p4Holes);
   }
+
+  // ── Panel 1 Platform Flaps (Top & Bottom) ──────────────────────────────────
+  const p1FlapW = L * 0.94;
+  const p1Sec1L = W * (11.5 / 35.6);
+  const p1Sec2L = W * (34.6 / 35.6);
+  const p1Sec3L = W * (11.5 / 35.6);
+
+  function createP1Sec1Shape() {
+    const s = new THREE.Shape();
+    s.moveTo(-p1FlapW / 2, 0);
+    s.lineTo(-p1FlapW / 2, p1Sec1L);
+    s.lineTo( p1FlapW / 2, p1Sec1L);
+    s.lineTo( p1FlapW / 2, 0);
+    s.closePath();
+    return s;
+  }
+
+  function createP1Sec2Shape() {
+    const s = new THREE.Shape();
+    s.moveTo(-p1FlapW / 2, 0);
+    s.lineTo(-p1FlapW / 2, p1Sec2L);
+    s.lineTo( p1FlapW / 2, p1Sec2L);
+    s.lineTo( p1FlapW / 2, 0);
+    s.closePath();
+    // Add hole
+    const holePath = new THREE.Path();
+    holePath.absellipse(0, p1Sec2L / 2, p1FlapW * 0.36, p1Sec2L * 0.4, 0, Math.PI * 2, true);
+    s.holes.push(holePath);
+    return s;
+  }
+
+  function createP1Sec3Shape() {
+    const s = new THREE.Shape();
+    s.moveTo(-p1FlapW / 2, 0);
+    s.lineTo(-p1FlapW / 2, p1Sec3L);
+    s.lineTo( p1FlapW / 2, p1Sec3L);
+    s.lineTo( p1FlapW / 2, 0);
+    s.closePath();
+    return s;
+  }
+
+  const p1Sec1Shape = createP1Sec1Shape();
+  const p1Sec2Shape = createP1Sec2Shape();
+  const p1Sec3Shape = createP1Sec3Shape();
 
   // ── Glue Flap ─────────────────────────────────────────────────────────────
   const glueFlapW = W * (16 / 60);
@@ -250,6 +294,13 @@ function buildTEGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims) {
     topDustP4Geom: new THREE.ExtrudeGeometry(topDustP4Shape, extrude),
     botDustP4Geom: new THREE.ExtrudeGeometry(botDustP4Shape, extrude),
     
+    topP1Sec1Geom: new THREE.ExtrudeGeometry(p1Sec1Shape, extrude),
+    topP1Sec2Geom: new THREE.ExtrudeGeometry(p1Sec2Shape, extrude),
+    topP1Sec3Geom: new THREE.ExtrudeGeometry(p1Sec3Shape, extrude),
+    botP1Sec1Geom: new THREE.ExtrudeGeometry(p1Sec1Shape, extrude),
+    botP1Sec2Geom: new THREE.ExtrudeGeometry(p1Sec2Shape, extrude),
+    botP1Sec3Geom: new THREE.ExtrudeGeometry(p1Sec3Shape, extrude),
+    
     windowFilmGeomP1, windowFilmGeomP2, windowFilmGeomP3, windowFilmGeomP4,
     windowFilmTopCover, windowFilmBotCover,
     windowFilmTopLip, windowFilmBotLip,
@@ -262,13 +313,13 @@ function buildTEGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims) {
     if (g instanceof THREE.ExtrudeGeometry) assignMaterialGroups(g, nT);
   });
 
-  return { ...geoms, coverDepth, lipDepth };
+  return { ...geoms, coverDepth, lipDepth, p1Sec1L, p1Sec2L, p1Sec3L };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TE BOX 3D VIEWER COMPONENT
+// COSMETIC BOX 3D VIEWER COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
-export default function TEBox3DViewer({
+export default function CosmeticBox3DViewer({
   L = 100,
   W = 50,
   H = 150,
@@ -295,27 +346,49 @@ export default function TEBox3DViewer({
   }
 
   const dieline = useMemo(() =>
-    generateTEDielineDXF({
-      L: manuL, W: manuW, H: manuH, T,
-      glueFlapWidth: store.glueFlapWidth,
-      bleed: store.bleed,
+    generateCosmeticBoxDieline({
+      L: manuL, W: manuW, H: manuH, T
     }),
-    [manuL, manuW, manuH, T, store.glueFlapWidth, store.bleed]
+    [manuL, manuW, manuH, T]
   );
   const dims = dieline.dimensions;
 
-  // ── 5-stage TE kinematics ─────────────────────────────────────────────────
+  // ── Cosmetic box 6-stage kinematics ───────────────────────────────────────
   // Stage 1 (0.00–0.20): Sleeve tube forms
   const tubeAngle  = stageProgress(progress, 0.00, 0.20) * (Math.PI / 2);
-  // Stage 2 (0.20–0.40): Bottom dust flaps
-  const bdAngle    = stageProgress(progress, 0.20, 0.40) * (Math.PI / 2);
-  // Stage 3 (0.40–0.60): Bottom tuck cover (P3) + lip
-  const btAngle    = stageProgress(progress, 0.40, 0.60) * (Math.PI / 2);
-  const btLipAngle = stageProgress(progress, 0.40, 0.60) * (105 * Math.PI / 180);
-  // Stage 4 (0.60–0.80): Top dust flaps
-  const tdAngle    = stageProgress(progress, 0.60, 0.80) * (Math.PI / 2);
-  // Stage 5 (0.80–1.00): Top tuck cover (P3) + lip
-  const ttAngle    = stageProgress(progress, 0.80, 1.00) * (Math.PI / 2);
+  
+  // Custom easing matching HTML css: cubic-bezier(0.4, 0, 0.2, 1)
+  const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
+  const smoothProgress = (p, start, end) => {
+    let t = Math.max(0, Math.min(1, (p - start) / (end - start)));
+    // Approximate cubic-bezier(0.4, 0.0, 0.2, 1) closely with a smoothed ease-out
+    // This gives a very natural "slide into place" motion.
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
+  
+  // Stage 2 (0.20–0.50): Panel 1 platforms (top & bottom) fold inwards
+  const maxFold1 = -176 * Math.PI / 180;
+  const maxFold2 = 86 * Math.PI / 180;
+  const maxFold3 = 90 * Math.PI / 180;
+  
+  // Sync the folding to prevent clipping and create a smooth "push in" effect
+  const platformFoldProgress = smoothProgress(progress, 0.20, 0.50);
+  const p1Fold1 = platformFoldProgress * maxFold1;
+  const p1Fold2 = platformFoldProgress * maxFold2;
+  const p1Fold3 = platformFoldProgress * maxFold3;
+
+  // Stage 3 (0.50–0.60): Bottom dust flaps
+  const bdAngle    = stageProgress(progress, 0.50, 0.60) * (Math.PI / 2);
+  
+  // Stage 4 (0.60–0.70): Bottom tuck cover (P3) + lip
+  const btAngle    = stageProgress(progress, 0.60, 0.70) * (Math.PI / 2);
+  const btLipAngle = stageProgress(progress, 0.60, 0.70) * (105 * Math.PI / 180);
+  
+  // Stage 5 (0.70–0.80): Top dust flaps
+  const tdAngle    = stageProgress(progress, 0.70, 0.80) * (Math.PI / 2);
+  
+  // Stage 6 (0.80–1.00): Top tuck cover (P3) + lip
+  const ttAngle    = stageProgress(progress, 0.80, 0.95) * (Math.PI / 2);
   const ttLipAngle = stageProgress(progress, 0.80, 1.00) * (105 * Math.PI / 180);
 
   // ── Geometry ──────────────────────────────────────────────────────────────
@@ -362,7 +435,7 @@ export default function TEBox3DViewer({
   const renderBoxInstance = (key, pos, rot) => (
     <group key={key} position={pos} rotation={rot}>
 
-      {/* ── PANEL 1 (FRONT, L × H) — TE: plain face, no tuck panel ── */}
+      {/* ── PANEL 1 (FRONT, L × H) — Cosmetic: has top/bottom platform flaps ── */}
       <group position={[0, 0, -nT]}>
         <mesh geometry={geoms.p1Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
           {D("p1")}
@@ -375,6 +448,30 @@ export default function TEBox3DViewer({
             />
           </mesh>
         )}
+
+        {/* TOP PLATFORM FLAP */}
+        <group position={[0, H / 2 - nT, -nT * 1.5]} rotation={[p1Fold1, 0, 0]}>
+          <mesh geometry={geoms.topP1Sec1Geom} material={flap}>{D("p1_top_sec1")}</mesh>
+          <group position={[0, geoms.p1Sec1L, 0]} rotation={[p1Fold2, 0, 0]}>
+            <mesh geometry={geoms.topP1Sec2Geom} material={flap}>{D("p1_top_sec2")}</mesh>
+            <group position={[0, geoms.p1Sec2L, 0]} rotation={[p1Fold3, 0, 0]}>
+              <mesh geometry={geoms.topP1Sec3Geom} material={flap}>{D("p1_top_sec3")}</mesh>
+            </group>
+          </group>
+        </group>
+
+        {/* BOTTOM PLATFORM FLAP */}
+        <group position={[0, -H / 2 + nT, -nT * 1.5]} rotation={[-p1Fold1, 0, 0]}>
+          <group rotation={[0, 0, Math.PI]}>
+            <mesh geometry={geoms.botP1Sec1Geom} material={flap}>{D("p1_bot_sec1")}</mesh>
+            <group position={[0, geoms.p1Sec1L, 0]} rotation={[p1Fold2, 0, 0]}>
+              <mesh geometry={geoms.botP1Sec2Geom} material={flap}>{D("p1_bot_sec2")}</mesh>
+              <group position={[0, geoms.p1Sec2L, 0]} rotation={[p1Fold3, 0, 0]}>
+                <mesh geometry={geoms.botP1Sec3Geom} material={flap}>{D("p1_bot_sec3")}</mesh>
+              </group>
+            </group>
+          </group>
+        </group>
       </group>
 
       {/* ── GLUE FLAP ── */}

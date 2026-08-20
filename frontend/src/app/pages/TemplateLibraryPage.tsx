@@ -26,7 +26,7 @@ export const TemplateDetailCard = ({
   onClick 
 }: { 
   title: string, 
-  type: 'straight' | 'reverse' | 'auto_lock' | 'cake', 
+  type: 'straight' | 'reverse' | 'auto_lock' | 'cosmetic', 
   href?: string, 
   onClick?: () => void 
 }) => {
@@ -82,7 +82,7 @@ export const TemplateDetailCard = ({
                 <path d="M25,65 l7,15 h8 v-15 M40,65 v15 h20 v-15 M60,65 l7,15 h8 v-15" stroke="#4F46E5" />
               </g>
             )}
-            {type === 'cake' && (
+            {type === 'cosmetic' && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M20,35 h60 M20,75 h60 M35,20 v55 M55,20 v55 M75,35 v40 M20,35 v40" stroke="#EF4444" strokeDasharray="1.5 1.5" />
                 <path d="M35,35 L45,15 h10 L65,35" stroke="#4F46E5" />
@@ -98,7 +98,7 @@ export const TemplateDetailCard = ({
         <div className="w-1/2 h-full flex items-center justify-center pl-2 relative">
           <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] drop-shadow-md transition-transform duration-300 group-hover/detail:-translate-y-1.5 group-hover/detail:scale-105">
             <ellipse cx="60" cy="88" rx="20" ry="4" fill="rgba(0,0,0,0.1)" />
-            {type === 'cake' ? (
+            {type === 'cosmetic' ? (
               <>
                 <path d="M35,35 L65,30 L65,18 L35,22 Z" fill="#D97706" />
                 <path d="M35,22 L50,10 L65,18 Z" fill="#F59E0B" />
@@ -146,7 +146,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
   const [expandedCategory, setExpandedCategory] = useState<string | null>('tuck_end');
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
-  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cake" | null>(null);
+  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | null>(null);
 
   React.useEffect(() => {
     document.body.style.zoom = '1';
@@ -188,7 +188,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
                       setExpandedCategory(expandedCategory === cat.id ? null : cat.id);
                       setSelectedBoxModel('rte');
                     } else if (cat.id === 'paper_bag' || cat.id === 'envelope') {
-                      setSelectedBoxModel('cake');
+                      setSelectedBoxModel('cosmetic');
                     } else if (cat.id === 'box_lid' || cat.id === 'rigid_box') {
                       setSelectedBoxModel('auto_lock');
                     } else {
@@ -218,7 +218,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
                         <button onClick={() => setSelectedBoxModel('te')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Straight Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('rte')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Reverse Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('auto_lock')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Auto Lock Bottom Box</button>
-                        <button onClick={() => setSelectedBoxModel('cake')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-indigo-600 font-semibold hover:bg-indigo-50">Cake Box with Handle & Window</button>
+                        <button onClick={() => setSelectedBoxModel('cosmetic')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-indigo-600 font-semibold hover:bg-indigo-50">Cosmetic Box</button>
                       </div>
                     </motion.div>
                   )}
@@ -246,7 +246,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
               <TemplateDetailCard title="Straight Tuck End Box" type="straight" onClick={() => setSelectedBoxModel('te')} />
               <TemplateDetailCard title="Reverse Tuck End Box" type="reverse" onClick={() => setSelectedBoxModel('rte')} />
               <TemplateDetailCard title="Auto Lock Bottom Box" type="auto_lock" onClick={() => setSelectedBoxModel('auto_lock')} />
-              <TemplateDetailCard title="Cake Box with Handle & Window" type="cake" onClick={() => setSelectedBoxModel('cake')} />
+              <TemplateDetailCard title="Cosmetic Box" type="cosmetic" onClick={() => setSelectedBoxModel('cosmetic')} />
             </div>
           </div>
 

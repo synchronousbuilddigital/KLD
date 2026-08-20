@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect, useDeferredValue } from "r
 import { generateRTEDieline } from "../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../lib/autoLockDielineGenerator";
-import { generateCakeBoxDieline } from "../lib/cakeBoxDielineGenerator";
+import { generateCosmeticBoxDieline } from "../lib/cosmeticBoxDielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
@@ -95,7 +95,11 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const containerRef = useRef(null);
   const svgRef = forwardedRef || props.innerRef || internalRef;
 
-  const { isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface, activeDecalId, setActiveDecalId, colorDieline = false } = props;
+  const { 
+    isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface, 
+    activeDecalId, setActiveDecalId, colorDieline = false, 
+    useStore = useBoxStore
+  } = props;
 
   const {
     L, W, H, T, sizeMode, glueFlapWidth, bleed,
@@ -103,7 +107,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     showOverallDims, showBasicDims, showBleedLine, showAnnotations,
     theme, generatorMethod, packageColor, boxModel, materialCategory,
     unit: storeUnit
-  } = useBoxStore();
+  } = useStore();
 
   const currentUnit = props.unit || storeUnit || "mm";
 
@@ -142,8 +146,8 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     if (boxModel === 'auto_lock') {
       return generateAutoLockDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
     }
-    if (boxModel === 'cake') {
-      return generateCakeBoxDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
+    if (boxModel === 'cosmetic') {
+      return generateCosmeticBoxDieline({ L: manuL, W: manuW, H: manuH, T });
     }
     return generateRTEDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, method: generatorMethod, windowDecals });
   }, [manuL, manuW, manuH, T, glueFlapWidth, bleed, generatorMethod, boxModel, windowDecals]);
@@ -620,7 +624,19 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
               })()}
               </>
             ) : (
-              <>
+              <g clipPath={`url(#clip-decal-${decal.id})`}>
+                <defs>
+                  <clipPath id={`clip-decal-${decal.id}`}>
+                    <rect
+                      x={-decal.width / 2}
+                      y={-decal.height / 2}
+                      width={decal.width}
+                      height={decal.height}
+                      rx={(decal.borderRadius || 0) / 72}
+                      ry={(decal.borderRadius || 0) / 72}
+                    />
+                  </clipPath>
+                </defs>
                 <rect
                   x={-decal.width / 2}
                   y={-decal.height / 2}
@@ -631,13 +647,14 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                 />
                 <image
                   href={decal.url}
+                  xlinkHref={decal.url}
                   x={-decal.width / 2}
                   y={-decal.height / 2}
                   width={decal.width}
                   height={decal.height}
                   preserveAspectRatio="xMidYMid slice"
                 />
-              </>
+              </g>
             )}
             {/* Selection Outline & Handles */}
             {activeDecalId === decal.id && (() => {

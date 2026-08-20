@@ -18,7 +18,7 @@ const createDefaultState = () => ({
   insideColor: null
 });
 
-export const useBoxStore = create((set) => ({
+export const useEditorStore = create((set) => ({
   // Default Dimensions & Unit
   unit: "in",
   setUnit: (u) => set({ unit: u }),

@@ -272,9 +272,10 @@ export default function RTEBox3DViewer({
   zoom = 1,
   activeAnimation = "none",
   colorOverride = null,
-  disableZoom = false
+  disableZoom = false,
+  useStore = useBoxStore
 }) {
-  const store = useBoxStore();
+  const store = useStore();
   const nT    = Math.max(0.015, Number(T) || 0.0197);
 
   // Match 2D SVG dims exactly

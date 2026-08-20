@@ -44,6 +44,66 @@ export default function WorkshopPage() {
   const [activeAnimation, setActiveAnimation] = useState("none");
   const [contextMenu, setContextMenu] = useState<any>(null);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleSaveToWorkspace = async () => {
+    const categoryName = 
+      store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
+      store.boxModel === 'te' ? 'Straight Tuck End Box' :
+      store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
+      store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
+
+    const dimL_mm = Math.round((store.L || 4.72) * 25.4);
+    const dimW_mm = Math.round((store.W || 2.36) * 25.4);
+    const dimH_mm = Math.round((store.H || 6.29) * 25.4);
+
+    const savedItem = {
+      id: 'saved-' + Date.now(),
+      name: `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
+      type: "DIELINE",
+      category: categoryName,
+      boxModel: store.boxModel,
+      variantId: store.boxModel === "rte" ? 2 : 1,
+      dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm, length: store.L, width: store.W, height: store.H },
+      packageColor: store.packageColor || null,
+      insideColor: store.insideColor || null,
+      decals: store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : [],
+      tabCategory: "projects",
+      isDraft: false,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Save to LocalStorage
+    try {
+      const stored = localStorage.getItem('kld_workspace_items');
+      const existing = stored ? JSON.parse(stored) : [];
+      const updated = [savedItem, ...(Array.isArray(existing) ? existing : [])];
+      localStorage.setItem('kld_workspace_items', JSON.stringify(updated));
+    } catch (err) {
+      console.log('Error saving local workspace item:', err);
+    }
+
+    // Save to API backend if authenticated
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetch('/api/mockups/saved', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(savedItem)
+        });
+      }
+    } catch (err) {
+      console.log('Backend save error:', err);
+    }
+
+    window.dispatchEvent(new CustomEvent('project-saved'));
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
+  };
   
   const themeKey = store.theme || 'light';
   const t = themes[themeKey] || themes.light;
@@ -94,6 +154,25 @@ export default function WorkshopPage() {
             <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}><IconCloud /></button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button 
+              onClick={handleSaveToWorkspace}
+              style={{ 
+                background: isSaved ? '#10b981' : '#18181b', 
+                color: '#ffffff', 
+                border: "none", 
+                padding: "8px 18px", 
+                borderRadius: "8px", 
+                fontSize: "13px", 
+                fontWeight: "700", 
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: `2px 3px 0px rgba(0,0,0,0.1)`
+              }}
+            >
+              {isSaved ? "✅ Saved to Workspace!" : "💾 Save to Workspace"}
+            </button>
             <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
               <span style={{ color: t.cyan }}>✦</span> 50 credits <span style={{ background: t.textMain, color: t.bgPanel, borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>+</span>
             </button>

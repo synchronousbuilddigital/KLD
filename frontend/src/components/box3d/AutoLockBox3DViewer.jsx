@@ -183,9 +183,10 @@ export default function AutoLockBox3DViewer({
   progress = 0,
   decals = [],
   colorOverride = null,
-  disableZoom = false
+  disableZoom = false,
+  useStore = useBoxStore
 }) {
-  const store = useBoxStore();
+  const store = useStore();
   const L = overrideL || store.L;
   const W = overrideW || store.W;
   const H = overrideH || store.H;

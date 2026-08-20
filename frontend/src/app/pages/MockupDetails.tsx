@@ -90,6 +90,12 @@ const autoDecals = [
   { id: 'a3', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#1f2937', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 35, width: 3, height: 3, rotation: 0 }
 ];
 
+const cosmeticDecals = [
+  // Minimal elegant text for cosmetic box
+  { id: 'c1', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'COSMETIC\nBOX', fontSize: 6, color: '#4a4a4a', x: 0, y: 0, width: 100, height: 100, rotation: 0, bold: true, textAlign: 'center' },
+  { id: 'c2', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rectangle', fillColor: '#d4af37', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 25, width: 10, height: 1, rotation: 0 }
+];
+
 const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVariant }: any) => {
   const isHovered = hoveredVariant?.id === variant.id;
   const setBoxModel = useBoxStore((state: any) => state.setBoxModel);
@@ -97,23 +103,38 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isTE = variant.name === 'Tuck End Box';
   const isRTE = variant.name === 'Reverse Tuck End Box';
   const isAuto = variant.name === 'Auto Lock Bottom Box';
-  const is3DBox = isTE || isRTE || isAuto;
-  const boxType = isTE ? 'te' : isRTE ? 'rte' : 'auto_lock';
+  const isCosmetic = variant.name === 'Cosmetic Box';
+  const is3DBox = isTE || isRTE || isAuto || isCosmetic;
+  const boxType = isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmetic ? 'cosmetic' : 'te';
 
-  const defaultColor = isRTE ? '#ffffff' : isTE ? '#e2e8f0' : '#e5e7eb';
+  const defaultColor = isRTE ? '#ffffff' : isTE ? '#e2e8f0' : isAuto ? '#e5e7eb' : '#fdf2f8'; // very light pink for cosmetic
   const [color, setColor] = useState(defaultColor);
 
   const handleClick = () => {
-    if (isRTE) {
-      setBoxModel('rte');
-      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
-    } else if (isTE) {
-      setBoxModel('te');
-      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
-    } else if (isAuto) {
-      setBoxModel('auto_lock');
-      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
-    }
+    // Reset to clean pristine default dimensions & EMPTY decals for fresh blank studio session
+    const cleanDefaultState = {
+      L: 4.7244,
+      W: 2.3622,
+      H: 6.2992,
+      T: 0.0197,
+      glueFlapWidth: 0.625,
+      bleed: 2 / 25.4,
+      sizeMode: "manufacture",
+      materialType: "paperboard",
+      materialName: "350g white paperboard(0.5mm)",
+      isCustomMaterial: false,
+      materialColor: "#fdfbf7",
+      materialCategory: "white_paperboard",
+      packageColor: null,
+      insideColor: null,
+      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [] }
+    };
+
+    const targetModel = isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmetic ? 'cosmetic' : 'rte';
+
+    useBoxStore.setState({ boxModel: targetModel, ...cleanDefaultState });
+
+    window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
   };
 
   return (
@@ -139,7 +160,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
               boxType={boxType}
               isHovered={isHovered}
               color={color}
-              decals={isRTE ? rteDecals : isTE ? teDecals : isAuto ? autoDecals : []}
+              decals={isRTE ? rteDecals : isTE ? teDecals : isAuto ? autoDecals : isCosmetic ? cosmeticDecals : []}
             />
           </div>
         ) : isHovered ? (
@@ -174,7 +195,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       </div>
       <div className="flex flex-col">
         <h4 className="text-[17px] font-medium pl-2 group-hover/detail:text-[var(--accent)] transition-colors" style={{ color: 'var(--ink)' }}>{variant.name}</h4>
-        <p className="text-[13px] pl-2 opacity-60 mt-1" style={{ color: 'var(--ink)' }}>{is3DBox ? (isRTE ? 'Flaps fold in opposite directions' : isTE ? 'Flaps fold in same direction' : 'Bottom flaps lock automatically') : variant.animation || 'Standard reveal'}</p>
+        <p className="text-[13px] pl-2 opacity-60 mt-1" style={{ color: 'var(--ink)' }}>{variant.animation || 'Standard reveal'}</p>
 
         {/* Color Swatches for 3D boxes */}
         {is3DBox && (

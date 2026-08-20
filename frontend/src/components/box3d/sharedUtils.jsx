@@ -533,6 +533,9 @@ export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims
   const { x1, x2, x3, x4, yTop, yBot } = dims;
   const nT = Math.max(0.015, Number(T) || 0.0197);
   const coverDepth = W - 2 * nT;
+  const sec1L = W * (11.5 / 35.6);
+  const sec2L = W * (34.6 / 35.6);
+  const sec3L = W * (11.5 / 35.6);
 
   if (decal.custom) {
     cx = decal.x;
@@ -566,6 +569,12 @@ export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims
   else if (panel === "p3_bot_auto") { scaleX = L/manuL; cx = (decal.x-x3)*scaleX - L/2; cy = -((decal.y-yBot)*scaleY); }
   else if (panel === "p4_bot_auto") { scaleX = W/manuW; cx = (decal.x-x4)*scaleX - W/2; cy = -((decal.y-yBot)*scaleY); }
   else if (panel === "p1_glue")     { scaleX = L/manuL; cx = (decal.x-x1)*scaleX;        cy = (yTop-decal.y)*scaleY + H/2; }
+  else if (panel === "p1_top_sec1") { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-decal.y)*scaleY; }
+  else if (panel === "p1_top_sec2") { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-sec1L-decal.y)*scaleY; }
+  else if (panel === "p1_top_sec3") { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-sec1L-sec2L-decal.y)*scaleY; }
+  else if (panel === "p1_bot_sec1") { scaleX = L/manuL; cx = -((decal.x-x1)*scaleX - L/2); cy = (decal.y-yBot)*scaleY; rotZ = Math.PI; }
+  else if (panel === "p1_bot_sec2") { scaleX = L/manuL; cx = -((decal.x-x1)*scaleX - L/2); cy = (decal.y-(yBot+sec1L))*scaleY; rotZ = Math.PI; }
+  else if (panel === "p1_bot_sec3") { scaleX = L/manuL; cx = -((decal.x-x1)*scaleX - L/2); cy = (decal.y-(yBot+sec1L+sec2L))*scaleY; rotZ = Math.PI; }
   
   return { cx, cy, rotZ, scaleX, scaleY_sign, scaleY };
 }
@@ -665,6 +674,9 @@ export function getOverlappingDecals(panel, decals, dims, W, T) {
   const coverDepth = W - 2 * nT;
   const lipDepth = W * (14.25 / 60);
   const dustH = W * (38 / 60);
+  const sec1L = W * (11.5 / 35.6);
+  const sec2L = W * (34.6 / 35.6);
+  const sec3L = W * (11.5 / 35.6);
 
   const ov = (d, px1, px2, py1, py2) => {
     const minX = d.x - d.width / 2, maxX = d.x + d.width / 2;
@@ -692,6 +704,14 @@ export function getOverlappingDecals(panel, decals, dims, W, T) {
     if (panel === "p3_bot_auto")  return ov(d, x3, x4, yBot, yBot + W * 0.75);
     if (panel === "p4_bot_auto")  return ov(d, x4, x5, yBot, yBot + W * 0.75);
     if (panel === "p1_glue")      return ov(d, x1 - W * (16 / 60), x1, yTop, yBot);
+
+    if (panel === "p1_top_sec1") return ov(d, x1, x2, yTop - sec1L, yTop);
+    if (panel === "p1_top_sec2") return ov(d, x1, x2, yTop - sec1L - sec2L, yTop - sec1L);
+    if (panel === "p1_top_sec3") return ov(d, x1, x2, yTop - sec1L - sec2L - sec3L, yTop - sec1L - sec2L);
+    if (panel === "p1_bot_sec1") return ov(d, x1, x2, yBot, yBot + sec1L);
+    if (panel === "p1_bot_sec2") return ov(d, x1, x2, yBot + sec1L, yBot + sec1L + sec2L);
+    if (panel === "p1_bot_sec3") return ov(d, x1, x2, yBot + sec1L + sec2L, yBot + sec1L + sec2L + sec3L);
+
     return false;
   });
 }

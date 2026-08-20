@@ -27,6 +27,7 @@ export const mockupCategories: MockupCategory[] = [
       { id: 1, name: 'Reverse Tuck End Box', animation: 'Flaps fold in opposite directions', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
       { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
       { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
+      { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
     ]
   },
   {

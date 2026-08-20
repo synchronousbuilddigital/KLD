@@ -28,7 +28,7 @@ const CATEGORY_ITEMS = [
   { id: 'te', label: 'Straight Tuck End (STE)', count: 1, icon: PackageCheck, color: 'text-blue-600' },
   { id: 'rte', label: 'Reverse Tuck End (RTE)', count: 1, icon: Layers, color: 'text-emerald-600' },
   { id: 'auto_lock', label: 'Auto Lock Bottom', count: 1, icon: Sparkles, color: 'text-amber-600' },
-  { id: 'cake', label: 'Cake & Handle Boxes', count: 1, icon: Scissors, color: 'text-rose-600' },
+  { id: 'cosmetic', label: 'Cosmetic Boxes', count: 1, icon: Scissors, color: 'text-rose-600' },
   { id: 'folding', label: 'Folding Box Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
   { id: 'tuck_end', label: 'Tuck End Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
   { id: 'paper_bag', label: 'Paper Bag Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
@@ -40,7 +40,7 @@ const CATEGORY_ITEMS = [
 ];
 
 export default function DielinesPage({ onNavigate }: DielinesPageProps) {
-  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cake" | null>(null);
+  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -59,22 +59,44 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
 
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
+
+    const cleanDefaultState = {
+      L: 4.7244,
+      W: 2.3622,
+      H: 6.2992,
+      T: 0.0197,
+      glueFlapWidth: 0.625,
+      bleed: 2 / 25.4,
+      sizeMode: "manufacture",
+      materialType: "paperboard",
+      materialName: "350g white paperboard(0.5mm)",
+      isCustomMaterial: false,
+      materialColor: "#fdfbf7",
+      materialCategory: "white_paperboard",
+      packageColor: null,
+      insideColor: null
+    };
+
+    let targetModel: 'rte' | 'te' | 'auto_lock' | 'cosmetic' = 'rte';
     if (category === 'tuck_end' || category === 'folding' || category === 'rte') {
-      setSelectedBoxModel('rte');
-    } else if (category === 'paper_bag' || category === 'envelope' || category === 'cake') {
-      setSelectedBoxModel('cake');
+      targetModel = 'rte';
+    } else if (category === 'paper_bag' || category === 'envelope' || category === 'cosmetic') {
+      targetModel = 'cosmetic';
     } else if (category === 'box_lid' || category === 'rigid_box' || category === 'auto_lock') {
-      setSelectedBoxModel('auto_lock');
+      targetModel = 'auto_lock';
     } else if (category === 'te') {
-      setSelectedBoxModel('te');
+      targetModel = 'te';
     }
+
+    useBoxStore.setState({ boxModel: targetModel, ...cleanDefaultState });
+    setSelectedBoxModel(targetModel);
   };
 
   const filteredCards = [
     { id: 'te', title: 'Straight Tuck End Box', type: 'straight', model: 'te', categories: ['all', 'te'] },
     { id: 'rte', title: 'Reverse Tuck End Box', type: 'reverse', model: 'rte', categories: ['all', 'rte', 'tuck_end', 'folding'] },
     { id: 'auto_lock', title: 'Auto Lock Bottom Box', type: 'auto_lock', model: 'auto_lock', categories: ['all', 'auto_lock', 'box_lid', 'rigid_box'] },
-    { id: 'cake', title: 'Cake Box with Handle & Window', type: 'cake', model: 'cake', categories: ['all', 'cake', 'paper_bag', 'envelope'] },
+    { id: 'cosmetic', title: 'Cosmetic Box', type: 'cosmetic', model: 'cosmetic', categories: ['all', 'cosmetic', 'paper_bag', 'envelope'] },
   ].filter(card => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
