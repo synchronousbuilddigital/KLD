@@ -51,7 +51,7 @@ const AnimatedBox3DViewer = ({ boxType, isHovered, color, decals }: any) => {
       disableZoom={true}
       colorOverride={color}
       progress={progress}
-      zoom={0.8}
+      zoom={0.65}
       overrideLayout="single"
       decals={decals}
     />
@@ -132,7 +132,12 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
     const targetModel = isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmetic ? 'cosmetic' : 'rte';
 
-    useBoxStore.setState({ boxModel: targetModel, ...cleanDefaultState });
+    useBoxStore.setState({ 
+      boxModel: targetModel, 
+      activeProjectId: null,
+      activeProjectName: null,
+      ...cleanDefaultState 
+    });
 
     window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
   };
@@ -146,7 +151,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       onClick={handleClick}
     >
       <div
-        className="relative rounded-[16px] h-[260px] p-6 flex flex-col items-center justify-center transition-all duration-300 group-hover/detail:-translate-y-1 overflow-hidden"
+        className="relative rounded-[16px] h-[300px] p-4 flex flex-col items-center justify-center transition-all duration-300 group-hover/detail:-translate-y-1 overflow-hidden"
         style={{
           background: 'var(--card-bg)',
           backdropFilter: 'blur(12px)',
@@ -193,13 +198,13 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
           )
         )}
       </div>
-      <div className="flex flex-col">
-        <h4 className="text-[17px] font-medium pl-2 group-hover/detail:text-[var(--accent)] transition-colors" style={{ color: 'var(--ink)' }}>{variant.name}</h4>
-        <p className="text-[13px] pl-2 opacity-60 mt-1" style={{ color: 'var(--ink)' }}>{variant.animation || 'Standard reveal'}</p>
+      <div className="flex flex-col items-center text-center">
+        <h4 className="text-[17px] font-bold group-hover/detail:text-[var(--accent)] transition-colors text-center" style={{ color: 'var(--ink)' }}>{variant.name}</h4>
+        <p className="text-[13px] opacity-60 mt-1 text-center" style={{ color: 'var(--ink)' }}>{variant.animation || 'Standard reveal'}</p>
 
         {/* Color Swatches for 3D boxes */}
         {is3DBox && (
-          <div className="flex gap-2 mt-3 pl-2" onClick={(e) => e.preventDefault()}>
+          <div className="flex gap-2 mt-3 justify-center" onClick={(e) => e.preventDefault()}>
             <button
               className={`w-6 h-6 rounded-full border-2 ${color === defaultColor ? 'border-blue-500' : 'border-zinc-200'} shadow-sm`}
               style={{ backgroundColor: defaultColor }}
@@ -247,7 +252,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
 
       <div className="flex flex-1 overflow-hidden relative z-10">
         {/* Sidebar Index */}
-        <aside className="w-[320px] shrink-0 border-r overflow-y-auto py-8 px-6" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-primary)' }}>
+        <aside className="w-[300px] shrink-0 border-r overflow-y-auto py-8 px-6" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-primary)' }}>
           <h2 className="text-sm font-bold uppercase tracking-wider mb-6 px-4" style={{ color: 'var(--ink)', opacity: 0.5 }}>Categories</h2>
           <nav className="flex flex-col gap-1">
             {mockupCategories.map((cat) => {
@@ -300,23 +305,24 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
           </nav>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-12 bg-transparent">
-          <div className="max-w-[1200px] mx-auto">
-            <h1 className="text-[40px] font-bold mb-4 tracking-tight" style={{ color: 'var(--ink)' }}>{activeCategory.name}</h1>
-            <p className="text-lg mb-12 max-w-2xl" style={{ color: 'var(--ink)', opacity: 0.7 }}>
+        {/* Main Content Pane - Centered Layout */}
+        <main className="flex-1 overflow-y-auto p-6 sm:p-12 bg-transparent flex flex-col items-center">
+          <div className="w-full max-w-[1200px] flex flex-col items-center">
+            <h1 className="text-[40px] font-bold mb-3 tracking-tight text-center" style={{ color: 'var(--ink)' }}>{activeCategory.name}</h1>
+            <p className="text-lg mb-10 max-w-2xl text-center" style={{ color: 'var(--ink)', opacity: 0.7 }}>
               Discover our wide range of packaging variants, designed to elevate your brand and experience.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
               {activeCategory.variants.map((variant) => (
-                <MockupCard
-                  key={variant.id}
-                  variant={variant}
-                  activeCategoryId={activeCategoryId}
-                  setHoveredVariant={setHoveredVariant}
-                  hoveredVariant={hoveredVariant}
-                />
+                <div key={variant.id} className="w-full max-w-[360px]">
+                  <MockupCard
+                    variant={variant}
+                    activeCategoryId={activeCategoryId}
+                    setHoveredVariant={setHoveredVariant}
+                    hoveredVariant={hoveredVariant}
+                  />
+                </div>
               ))}
             </div>
           </div>

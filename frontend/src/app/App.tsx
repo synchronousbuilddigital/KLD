@@ -476,6 +476,20 @@ export default function App() {
 
     if (extra && extra.boxConfig) {
       const box = extra.boxConfig;
+      // Set activeProjectId if this is an existing saved workspace item
+      const existingId = box.id || box._id;
+      if (existingId) {
+        useBoxStore.setState({
+          activeProjectId: existingId,
+          activeProjectName: box.name || 'Saved Project'
+        });
+      } else {
+        useBoxStore.setState({
+          activeProjectId: null,
+          activeProjectName: null
+        });
+      }
+
       if (box.dimensions) {
         if (box.dimensions.L) setWidth(box.dimensions.L);
         if (box.dimensions.W) setDepth(box.dimensions.W);
@@ -493,6 +507,12 @@ export default function App() {
           studioEl.scrollIntoView({ behavior: 'smooth' });
         }
       }, 150);
+    } else if (view === 'workshop' || view === 'landing' || view === 'mockups' || view === 'models') {
+      // Clear active project when navigating to catalog or starting fresh
+      useBoxStore.setState({
+        activeProjectId: null,
+        activeProjectName: null
+      });
     }
   };
 
@@ -959,7 +979,10 @@ export default function App() {
             const inW = mmW / 25.4;
             const inH = mmH / 25.4;
 
+            const existingId = box.id || box._id || null;
             useBoxStore.setState({ 
+              activeProjectId: existingId,
+              activeProjectName: existingId ? (box.name || 'Saved Project') : null,
               L: inL, 
               W: inW, 
               H: inH, 
@@ -994,7 +1017,7 @@ export default function App() {
 
 
   if (currentView === 'workshop') {
-    return <WorkshopPage />;
+    return <WorkshopPage onBack={() => setCurrentView('landing')} />;
   }
 
   return (

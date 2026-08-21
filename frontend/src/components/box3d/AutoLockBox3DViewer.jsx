@@ -449,7 +449,7 @@ export default function AutoLockBox3DViewer({
   );
 
   const boxCenterZ = 0; 
-  const camPos     = [L * 1.5, H * 1.2, W * 2.5];
+  const camPos     = disableZoom ? [L * 0.4, H * 0.25, Math.max(L, H) * 2.0] : [L * 1.5, H * 1.2, W * 2.5];
   const camTarget  = [0, 0, boxCenterZ];
 
   return (

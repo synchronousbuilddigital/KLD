@@ -26,10 +26,10 @@ const themes = {
     border: "rgba(255, 255, 255, 0.1)",
     textMain: "#ffffff",
     textMuted: "#a1a1aa",
-    cyan: "#10b981",
+    cyan: "#3b82f6",
     inputBg: "#27272a",
     gridColor: "rgba(255, 255, 255, 0.05)",
-    activeBg: "rgba(16, 185, 129, 0.1)"
+    activeBg: "rgba(59, 130, 246, 0.12)"
   },
   light: {
     bgApp: "#f4f4f5", // zinc-100
@@ -38,10 +38,10 @@ const themes = {
     border: "rgba(0, 0, 0, 0.1)",
     textMain: "#18181b", // zinc-900
     textMuted: "#71717a", // zinc-500
-    cyan: "#10b981", // emerald-500
+    cyan: "#2563eb", // blue-600
     inputBg: "#ffffff",
     gridColor: "rgba(0, 0, 0, 0.05)",
-    activeBg: "rgba(16, 185, 129, 0.1)"
+    activeBg: "rgba(37, 99, 235, 0.12)"
   }
 };
 

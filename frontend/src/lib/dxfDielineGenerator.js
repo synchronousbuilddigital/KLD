@@ -10,7 +10,7 @@ import ClipperLib from "clipper-lib";
  * Template coordinates (dxfTemplate) are in millimeters.
  * This generator converts template coordinates to inches and performs all mapping in inches.
  */
-export function generateRTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.625, bleed = 0.125, windowDecals }) {
+export function generateRTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.625, bleed = 0.125, windowDecals = [] }) {
   const nL = Number(L);
   const nW = Number(W);
   const nH = Number(H);

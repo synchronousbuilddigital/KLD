@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dieline Canvas &amp; Sheet Layout</title>
+<title>Dieline Studio — standalone</title>
+<!-- Single-file build: frontend + backend in one document, no server, no
+     install. Open it straight off disk. The webfonts below are the only
+     network request the page ever makes and it degrades to the system UI
+     font offline; everything else (DXF parsing, box maths, nesting, bleed,
+     artwork, 3D folding, print output, preset storage) runs in the page. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -30,7 +35,7 @@
     margin:0;
     background: radial-gradient(circle at 12% 8%, rgba(232,99,44,0.06), transparent 40%), var(--bg);
     color:var(--ink);
-    font-family:'Inter',sans-serif;
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     display:flex;
     flex-direction:column;
     min-height:100vh;
@@ -44,7 +49,7 @@
     background:var(--panel);
   }
   header h1{
-    font-family:'Space Grotesk',sans-serif;
+    font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     font-size:19px;
     font-weight:700;
     margin:0;
@@ -87,7 +92,7 @@
     overflow-y: auto;
   }
   .side h2{
-    font-family:'Space Grotesk',sans-serif;
+    font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     font-size:13px;
     text-transform:uppercase;
     letter-spacing:0.06em;
@@ -121,7 +126,6 @@
   }
   /* Locked bleed-size field: no spinner arrows, no typing, reads as fixed */
   input[type=number]#bleedSize:disabled{
-    appearance:textfield;
     -moz-appearance:textfield;
     color:var(--ink);
     opacity:1;
@@ -156,6 +160,12 @@
   input:checked + .slider{background:var(--orange);}
   input:checked + .slider:before{transform:translateX(16px);}
 
+  #unitBtnMM.unit-active, #unitBtnIN.unit-active{
+    background:var(--orange);
+    border-color:var(--orange);
+    color:#fff;
+  }
+
   .divider{height:1px; background:var(--line); margin:16px 0;}
 
   .legend{display:flex; flex-direction:column; gap:8px;}
@@ -181,7 +191,7 @@
     border-bottom:1px solid var(--line);
   }
   .panel-head h3{
-    font-family:'Space Grotesk',sans-serif;
+    font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
     font-size:14.5px;
     margin:0;
     font-weight:600;
@@ -230,7 +240,7 @@
     padding:10px 12px;
   }
   .stat .k{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
-  .stat .v{font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums;}
+  .stat .v{font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:19px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums;}
   .stat.green .v{color:var(--green);}
   .stat.amber .v{color:var(--amber);}
   .stat.red .v{color:var(--red);}
@@ -383,12 +393,152 @@
   .artwork-icon-btn.on{ color:var(--orange); border-color:var(--orange); }
   .artwork-hint{ font-size:11.5px; color:var(--ink-soft); margin:2px 0 8px; }
 </style>
+<style>
+  /* ---- Dieline Library feature additions ---- */
+  #libraryOverlay{
+    position:fixed; inset:0; background:rgba(35,31,28,0.55);
+    display:none; align-items:center; justify-content:center; z-index:1100;
+    padding:24px;
+  }
+  #libraryOverlay.active{ display:flex; }
+  .lib-modal{
+    background:var(--panel); border-radius:var(--radius); box-shadow:var(--shadow);
+    width:min(1180px, 100%); height:min(88vh, 900px);
+    display:flex; flex-direction:column; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .lib-head{
+    padding:16px 20px 12px; border-bottom:1px solid var(--line);
+    display:flex; flex-direction:column; gap:12px; flex:0 0 auto; background:var(--panel);
+  }
+  .lib-head-top{ display:flex; align-items:center; gap:12px; }
+  .lib-head-top h3{
+    font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:16px; margin:0; font-weight:700;
+  }
+  .lib-head-top .lib-sub{ font-size:11.5px; color:var(--ink-soft); }
+  .lib-close{
+    margin-left:auto; width:30px; height:30px; border-radius:8px;
+    border:1px solid var(--line); background:#fff; cursor:pointer;
+    font-size:16px; line-height:1; color:var(--ink-soft);
+  }
+  .lib-close:hover{ color:var(--ink); border-color:var(--kraft); }
+  .lib-search-row{ display:flex; gap:10px; align-items:center; }
+  #librarySearch{
+    flex:1; padding:11px 13px; font-size:13.5px; font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    border:1px solid var(--line); border-radius:10px; background:#fbfaf8; color:var(--ink);
+  }
+  #librarySearch:focus{ outline:none; border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-glow); }
+  .lib-count{ font-size:11.5px; color:var(--ink-soft); white-space:nowrap; }
+  .lib-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .lib-chip{
+    font-size:11.5px; padding:5px 11px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--line); background:#f1ede6; color:var(--ink-soft);
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  .lib-chip:hover{ color:var(--ink); border-color:var(--kraft); }
+  .lib-chip.on{ background:var(--orange); border-color:var(--orange); color:#fff; font-weight:600; }
+  .lib-body{ flex:1 1 auto; overflow-y:auto; padding:16px 20px 22px; background:var(--bg); }
+  .lib-section-title{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700;
+    color:var(--ink-soft); margin:4px 0 12px;
+  }
+  .lib-section-title.more{ margin-top:26px; padding-top:16px; border-top:1px solid var(--line); }
+  .lib-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); gap:12px;
+  }
+  .lib-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:11px;
+    padding:9px; cursor:pointer; text-align:left;
+    display:flex; flex-direction:column; gap:7px;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  .lib-card:hover{ border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-glow); transform:translateY(-1px); }
+  .lib-card:focus-visible{ outline:none; border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-glow); }
+  .lib-thumb{
+    background:#fff; border:1px solid var(--line); border-radius:8px;
+    height:112px; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .lib-thumb svg{ width:100%; height:100%; display:block; }
+  .lib-name{
+    font-size:12.5px; font-weight:600; color:var(--ink); line-height:1.3;
+  }
+  .lib-meta{ font-size:10.5px; color:var(--ink-soft); line-height:1.4; }
+  .lib-meta .lib-cat{ color:var(--kraft-dark); font-weight:600; }
+  .lib-empty{ font-size:13px; color:var(--ink-soft); padding:24px 4px; }
+  .lib-loaded-note{
+    font-size:11.5px; color:var(--green); background:#f2f8f2; border:1px solid #cfe6cf;
+    border-radius:9px; padding:8px 10px; margin-top:8px; line-height:1.45;
+  }
+  #librarySideSearch{
+    width:100%; padding:9px 11px; font-size:12.5px; font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    border:1px solid var(--line); border-radius:9px; background:#fbfaf8; color:var(--ink);
+  }
+  #librarySideSearch:focus{ outline:none; border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-glow); }
+</style>
+<style>
+  /* ---- 3D folding preview additions ---- */
+  #view3dWrap{ flex-direction:column; align-items:stretch; gap:0; }
+  #view3dCanvas{
+    width:100%; display:block; border-radius:10px; cursor:grab;
+    background:
+      radial-gradient(circle at 50% 32%, #ffffff 0%, #f4f1ea 55%, #e9e4da 100%);
+    border:1px solid var(--line);
+    touch-action:none;
+  }
+  #view3dCanvas.dragging{ cursor:grabbing; }
+  .v3d-controls{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-top:12px;
+  }
+  .v3d-btn{
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:12.5px; font-weight:600;
+    padding:8px 14px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+  }
+  .v3d-btn:hover{ border-color:var(--kraft); }
+  .v3d-btn.primary{ background:var(--orange); border-color:var(--orange); color:#fff; }
+  .v3d-btn.primary:hover{ filter:brightness(1.06); }
+  .v3d-btn:disabled{ opacity:.45; cursor:default; }
+  #v3dSlider{ flex:1; min-width:160px; accent-color:var(--orange); cursor:pointer; }
+  .v3d-pct{
+    font-size:12px; font-weight:600; color:var(--ink-soft);
+    min-width:74px; text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .v3d-check{
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--ink-soft); cursor:pointer; user-select:none;
+  }
+  .v3d-empty{
+    display:flex; align-items:center; justify-content:center;
+    height:260px; font-size:13px; color:var(--ink-soft); text-align:center; padding:0 24px;
+  }
+</style>
+<style>
+  /* ---- Presets (the old backend API, now in-page) ---- */
+  #presetName, #presetPick{
+    width:100%; padding:9px 11px; font-size:12.5px;
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    border:1px solid var(--line); border-radius:9px; background:#fbfaf8; color:var(--ink);
+  }
+  #presetName:focus, #presetPick:focus{
+    outline:none; border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-glow);
+  }
+  .preset-row{ display:flex; gap:8px; }
+  .preset-row .secondary-btn{ flex:1; margin-bottom:0; }
+  #presetNote{
+    font-size:11.5px; border-radius:9px; padding:8px 10px; margin-top:8px; line-height:1.45;
+    display:none;
+  }
+  #presetNote.ok{ display:block; color:var(--green); background:#f2f8f2; border:1px solid #cfe6cf; }
+  #presetNote.warn{ display:block; color:var(--red);  background:#fbeeec; border:1px solid #eecdc6; }
+</style>
 </head>
 <body>
 
 <header>
   <h1>Dieline Studio</h1>
-  <span class="tag">Recycle Rush &middot; DXF Import &middot; Smart Placement</span>
+  <span class="tag">DXF Import &middot; Smart Placement</span>
   <div class="dims">Dieline size &middot; <b id="dimsLabel">-</b></div>
 </header>
 
@@ -400,8 +550,38 @@
     </div>
 </div>
 
+<!-- Dieline Library browser. Additive: picking a template here is routed
+     through the very same handleFile() the DXF uploader uses, so a library
+     pick behaves identically to an imported .dxf file. -->
+<div id="libraryOverlay">
+  <div class="lib-modal" role="dialog" aria-label="Dieline library">
+    <div class="lib-head">
+      <div class="lib-head-top">
+        <h3>Dieline Library</h3>
+        <span class="lib-sub">Ready-made dielines &mdash; loads exactly like an imported DXF</span>
+        <button type="button" class="lib-close" id="libraryCloseBtn" aria-label="Close">&times;</button>
+      </div>
+      <div class="lib-search-row">
+        <input type="text" id="librarySearch" placeholder="Search a box &mdash; pizza box, mailer, tuck end, lipstick carton&hellip;" autocomplete="off">
+        <span class="lib-count" id="libraryCount"></span>
+      </div>
+      <div class="lib-chips" id="libraryChips"></div>
+    </div>
+    <div class="lib-body" id="libraryBody"></div>
+  </div>
+</div>
+
 <main>
   <aside class="side">
+    <div class="field" id="unitSwitchBox" style="background:#f8f6f2;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:16px;">
+      <label style="display:block;margin-bottom:8px;">Sheet &amp; Box Fields Unit</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="unitBtnMM" class="secondary-btn" style="flex:1;margin-bottom:0;">Millimeters</button>
+        <button type="button" id="unitBtnIN" class="secondary-btn" style="flex:1;margin-bottom:0;">Inches</button>
+      </div>
+      <p class="help-text" style="margin:8px 0 0;">Switches Sheet Width/Height and Box L/W/H (and the computed flat blank size) together. Everything else in the tool keeps working exactly as before.</p>
+    </div>
+
     <h2>Sheet Setup</h2>
 
     <div class="field">
@@ -500,6 +680,13 @@
     <h2>Box Dimensions</h2>
     
     <button class="secondary-btn" id="uploadDxfBtn">Upload DXF File</button>
+
+    <button class="secondary-btn" id="browseLibraryBtn">Browse Dieline Library</button>
+    <div class="field">
+      <input type="text" id="librarySideSearch" placeholder="Search: pizza box, mailer, tuck end&hellip;" autocomplete="off">
+      <p class="help-text" style="text-align:left;">Don&rsquo;t have a DXF? Search a ready-made dieline instead. Picking one loads it exactly like an imported file &mdash; same bleed, panels, artwork placement, nesting and Print Sheet.</p>
+      <div id="librarySideNote" class="lib-loaded-note" style="display:none;"></div>
+    </div>
 
     <!-- "Box style" only ever had the one "Imported DXF (original shape)"
          option (parametric box presets were removed earlier), so it never
@@ -707,6 +894,36 @@
     </div>
 
     <button type="button" id="exportColorDataBtn" class="secondary-btn">Export color data (JSON)</button>
+
+    <div class="divider"></div>
+
+    <h2>Presets</h2>
+    <div class="field">
+      <label for="presetName">Save current sheet &amp; box settings as</label>
+      <input type="text" id="presetName" placeholder="e.g. 720x1020 standard" autocomplete="off">
+    </div>
+    <div class="preset-row" style="margin-bottom:10px;">
+      <button type="button" id="presetSaveBtn" class="secondary-btn">Save</button>
+    </div>
+    <div class="field">
+      <label for="presetPick">Saved presets</label>
+      <select id="presetPick"><option value="">No presets saved yet</option></select>
+    </div>
+    <div class="preset-row" style="margin-bottom:10px;">
+      <button type="button" id="presetLoadBtn" class="secondary-btn">Load</button>
+      <button type="button" id="presetDeleteBtn" class="secondary-btn" style="color:var(--red);">Delete</button>
+    </div>
+    <div class="preset-row">
+      <button type="button" id="presetExportBtn" class="secondary-btn">Export all</button>
+      <button type="button" id="presetImportBtn" class="secondary-btn">Import</button>
+    </div>
+    <input type="file" id="presetImportFile" accept=".json,application/json" style="display:none">
+    <div id="presetNote"></div>
+    <p class="help-text" style="text-align:left;">
+      This is the old <code>/api/presets</code> backend, running in the page instead of on a server &mdash;
+      presets live in this browser rather than in <code>backend/data/</code>. Export writes the same JSON to a
+      file you can keep or move to another machine.
+    </p>
   </aside>
 
   <div class="content">
@@ -771,6 +988,32 @@
       </div>
       <div class="panel-body" id="dielineCanvasWrap">
         <canvas id="dielineCanvas"></canvas>
+      </div>
+    </section>
+
+    <section class="panel" id="view3dPanel">
+      <div class="panel-head">
+        <div>
+          <h3>3D Folding Preview</h3>
+          <div class="sub">Watch the flat blank fold up into the finished box, crease by crease</div>
+        </div>
+        <span class="badge" id="view3dBadge">&#8203;</span>
+      </div>
+      <div class="panel-body" id="view3dWrap">
+        <canvas id="view3dCanvas"></canvas>
+        <div class="v3d-controls">
+          <button type="button" id="v3dPlay" class="v3d-btn primary">&#9654; Fold it</button>
+          <input type="range" id="v3dSlider" min="0" max="100" value="0" aria-label="Fold amount">
+          <span class="v3d-pct" id="v3dPct">Flat</span>
+          <label class="v3d-check"><input type="checkbox" id="v3dArt" checked> Artwork</label>
+          <label class="v3d-check"><input type="checkbox" id="v3dSpin"> Auto-spin</label>
+          <button type="button" id="v3dReset" class="v3d-btn">Reset view</button>
+        </div>
+        <p class="help-text" style="text-align:left; margin:10px 2px 0;">
+          Drag to orbit &middot; scroll to zoom. Panels and creases are read from the cut and fold layers of whatever is
+          currently loaded &mdash; an uploaded DXF or a dieline picked from the library &mdash; so this updates itself
+          whenever the design changes.
+        </p>
       </div>
     </section>
 
@@ -2996,16 +3239,12 @@ function parseDXF(dxfText) {
 
     // Helper to push the finished line to the correct layer array
     function commitEntity() {
-        const rawPts = currentEntity === 'SPLINE'
+        const finalPts = currentEntity === 'SPLINE'
             ? (splineFitPts.length >= 2 ? splineFitPts : splineControlPts)
             : (currentEntity === 'ARC' ? arcToPoints(arcCenter[0], arcCenter[1], arcRadius, arcStart, arcEnd)
             : (currentEntity === 'CIRCLE' ? arcToPoints(arcCenter[0], arcCenter[1], arcRadius, 0, 360)
             : pts));
-            
-        if (rawPts.length > 0) {
-            // Flip Y axis back from DXF (Y-up) to SVG/Canvas (Y-down)
-            const finalPts = rawPts.map(([x, y]) => [x, -y]);
-            
+        if (finalPts.length > 0) {
             const layer = currentLayer.toLowerCase();
             if(layer.includes('fold') || layer.includes('crease') || layer.includes('score')) {
                 folds.push(finalPts);
@@ -3026,11 +3265,24 @@ function parseDXF(dxfText) {
 
         // '0' marks the start of a new entity or block
         if (code === '0') {
-            // Commit previous entity if we hit a new major geometry block or end marker
-            if (['LWPOLYLINE', 'LINE', 'POLYLINE', 'ARC', 'CIRCLE', 'SPLINE', 'SEQEND', 'ENDSEC', 'EOF'].includes(val)) {
+            // A '0' group code ALWAYS begins a new entity, so the one in
+            // progress has to be committed here whatever follows it. Only
+            // committing ahead of a short list of known geometry types meant
+            // any entity that happened to be followed by something else --
+            // ATTDEF, INSERT, ENDBLK, ATTRIB, TEXT, DIMENSION -- was silently
+            // dropped, taking a real cut or crease with it. Worse, its points
+            // stayed in the buffer and leaked into whichever entity committed
+            // next. Real exports interleave these constantly: one file here
+            // lost the single fold line that joined its last panel, purely
+            // because an ATTDEF happened to follow it.
+            //
+            // VERTEX is the one exception -- it is a sub-record of POLYLINE,
+            // not an entity of its own, so committing on it would chop every
+            // polyline into loose points.
+            if (val !== 'VERTEX') {
                 commitEntity();
             }
-            
+
             // Determine active entity type
             if (val === 'LWPOLYLINE' || val === 'POLYLINE') {
                 currentEntity = 'POLYLINE';
@@ -4603,54 +4855,2609 @@ refreshColorPanelUI();
 
 })();
 
-// --- Auto-load DXF from localStorage if present ---
-function checkAutoLoadDXF() {
-  const autoLoadDXF = localStorage.getItem("autoLoadDXF");
-  console.log("checkAutoLoadDXF triggered! Found data?", !!autoLoadDXF);
-  if (autoLoadDXF) {
-    setTimeout(() => {
-      console.log("Running parseDXF... type of parseDXF is:", typeof parseDXF);
-      if (typeof parseDXF === 'function') {
-        try {
-            const d = parseDXF(autoLoadDXF);
-            console.log("parseDXF result:", d);
-            if(d && d.cuts.length > 0) {
-                DIELINE = d;
-                dxfUploaded = true;
-                const t = transformDieline(DIELINE, 0, 0);
-                BASE_DIMS.width = t.width; BASE_DIMS.height = t.height;
-                BASE_LWH = { L: 300, W: 200, H: 150 };
-                document.getElementById('boxL').value = BASE_LWH.L;
-                document.getElementById('boxW').value = BASE_LWH.W;
-                document.getElementById('boxH').value = BASE_LWH.H;
-                document.getElementById('boxPreset').value = "custom";
-                document.getElementById('lwhFields').style.display = "grid";
-                
-                const uploadOverlay = document.getElementById('uploadOverlay');
-                if (uploadOverlay) {
-                    uploadOverlay.classList.remove('active');
-                }
-                if (typeof renderAll === 'function') {
-                    renderAll();
-                }
-                console.log("Auto-load complete, rendering.");
-            } else {
-                console.log("DXF parsed but no cuts found.");
-            }
-        } catch(e) {
-            console.error("Error parsing DXF from localStorage:", e);
+</script>
+
+<script>
+// Standalone mm <-> inches reference converter for the sidebar.
+// Deliberately isolated (own IDs, own closure) so it can't interfere
+// with any existing sheet/box/dieline logic elsewhere in this file.
+(function(){
+  const mmInput = document.getElementById('convMM');
+  const inInput = document.getElementById('convIN');
+  if(!mmInput || !inInput) return;
+  const MM_PER_IN = 25.4;
+  let updating = false;
+
+  function trimNum(n, decimals){
+    return parseFloat(n.toFixed(decimals)).toString();
+  }
+
+  mmInput.addEventListener('input', function(){
+    if(updating) return;
+    updating = true;
+    const mm = parseFloat(mmInput.value);
+    inInput.value = isNaN(mm) ? '' : trimNum(mm / MM_PER_IN, 4);
+    updating = false;
+  });
+
+  inInput.addEventListener('input', function(){
+    if(updating) return;
+    updating = true;
+    const inch = parseFloat(inInput.value);
+    mmInput.value = isNaN(inch) ? '' : trimNum(inch * MM_PER_IN, 3);
+    updating = false;
+  });
+})();
+</script>
+
+<script>
+// Sheet + Box unit switch (mm <-> inches).
+//
+// The rest of this file (canvas rendering, the nesting/packing engine,
+// DXF scaling, print output, etc.) reads sheetW/sheetH/boxL/boxWd/boxHt/
+// boxW/boxH directly and assumes millimeters everywhere. To avoid touching
+// any of that logic, those original inputs are kept exactly as-is (still
+// in mm, still wired to every existing listener) but are hidden, and a
+// visible "display" input is placed in front of each one. The display
+// input shows/accepts whichever unit is selected and, on every edit,
+// converts to mm and writes it into the real hidden input (then fires
+// input/change on it so all existing app logic reacts normally).
+(function(){
+  const MM_PER_IN = 25.4;
+  const FIELD_IDS = ['sheetW','sheetH','boxL','boxWd','boxHt','boxW','boxH'];
+  let currentUnit = 'mm';
+  const fields = {};
+
+  function round(n, decimals){
+    const f = Math.pow(10, decimals);
+    return Math.round(n * f) / f;
+  }
+  function mmToUnit(mm, unit){
+    return unit === 'mm' ? mm : mm / MM_PER_IN;
+  }
+  function unitToMm(v, unit){
+    return unit === 'mm' ? v : v * MM_PER_IN;
+  }
+  function fmt(mm, unit){
+    if(isNaN(mm)) return '';
+    return round(mmToUnit(mm, unit), unit === 'mm' ? 2 : 4).toString();
+  }
+  function relabel(text, unit){
+    // Swap the unit word inside existing label text, e.g.
+    // "Width (mm)" <-> "Width (in)", "Flat blank width (mm, computed)" <-> "... (in, computed)"
+    return text.replace(/\b(mm|in)\b/, unit);
+  }
+
+  function setupField(id){
+    const orig = document.getElementById(id);
+    if(!orig) return;
+    const label = document.querySelector('label[for="' + id + '"]');
+    const disp = document.createElement('input');
+    disp.type = 'number';
+    disp.id = id + '_disp';
+    disp.className = orig.className;
+    if(orig.min !== '') disp.min = '0';
+    disp.step = 'any';
+    if(orig.readOnly) disp.readOnly = true;
+    orig.parentNode.insertBefore(disp, orig.nextSibling);
+    orig.style.display = 'none';
+    orig.setAttribute('aria-hidden', 'true');
+    if(label){
+      label.htmlFor = disp.id;
+      label.dataset.baseText = label.textContent;
+    }
+
+    disp.value = fmt(parseFloat(orig.value), currentUnit);
+
+    if(!orig.readOnly){
+      disp.addEventListener('input', function(){
+        const v = parseFloat(disp.value);
+        orig.value = isNaN(v) ? '' : round(unitToMm(v, currentUnit), 2);
+        fields[id].lastOrigValue = orig.value;
+        orig.dispatchEvent(new Event('input', {bubbles:true}));
+        orig.dispatchEvent(new Event('change', {bubbles:true}));
+      });
+    }
+
+    fields[id] = { orig, disp, label, lastOrigValue: orig.value };
+  }
+
+  function refreshDisplay(id){
+    const f = fields[id];
+    if(!f) return;
+    if(document.activeElement !== f.disp){
+      f.disp.value = fmt(parseFloat(f.orig.value), currentUnit);
+    }
+    if(f.label && f.label.dataset.baseText){
+      f.label.textContent = relabel(f.label.dataset.baseText, currentUnit);
+    }
+  }
+
+  const PRESET_MM = { '720x1020':[720,1020], '635x965':[635,965], '700x1000':[700,1000], '1000x1400':[1000,1400] };
+  function updatePresetLabels(unit){
+    const sel = document.getElementById('preset');
+    if(!sel) return;
+    Array.prototype.forEach.call(sel.options, function(opt){
+      const dims = PRESET_MM[opt.value];
+      if(!dims) return; // leave "Custom..." untouched
+      const w = fmt(dims[0], unit);
+      const h = fmt(dims[1], unit);
+      opt.textContent = w + ' \u00d7 ' + h + ' ' + unit;
+    });
+  }
+
+  function setUnit(unit){
+    currentUnit = unit;
+    document.getElementById('unitBtnMM').classList.toggle('unit-active', unit === 'mm');
+    document.getElementById('unitBtnIN').classList.toggle('unit-active', unit === 'in');
+    FIELD_IDS.forEach(function(id){
+      const f = fields[id];
+      if(!f) return;
+      f.disp.value = fmt(parseFloat(f.orig.value), currentUnit);
+      if(f.label && f.label.dataset.baseText){
+        f.label.textContent = relabel(f.label.dataset.baseText, currentUnit);
+      }
+    });
+    updatePresetLabels(unit);
+  }
+
+  FIELD_IDS.forEach(setupField);
+  setUnit('mm');
+
+  document.getElementById('unitBtnMM').addEventListener('click', function(){ setUnit('mm'); });
+  document.getElementById('unitBtnIN').addEventListener('click', function(){ setUnit('in'); });
+
+  // The app changes these hidden mm fields programmatically in several
+  // places (sheet presets, "Turn sheet", "Reset to imported size", the
+  // sheet-size suggester, applying a checked box size, DXF import). Rather
+  // than hook every one of those call sites, just watch for value changes
+  // and keep the visible display fields in sync.
+  setInterval(function(){
+    FIELD_IDS.forEach(function(id){
+      const f = fields[id];
+      if(!f) return;
+      if(f.orig.value !== f.lastOrigValue){
+        f.lastOrigValue = f.orig.value;
+        refreshDisplay(id);
+      }
+    });
+  }, 200);
+})();
+</script>
+
+<script>
+// ============================================================
+// DIELINE LIBRARY (additive feature module)
+// ------------------------------------------------------------
+// A searchable catalog of ready-made box dielines, offered
+// alongside "Upload DXF File". Search "pizza box" (or "mailer",
+// "tuck end", "lipstick carton"...) and pick from the grid.
+//
+// The important part: a library pick is NOT a second, parallel
+// way of loading a dieline. Each template's geometry is
+// serialised to real DXF text and handed to the EXISTING
+// handleFile(), so from that point on a template and a genuinely
+// uploaded .dxf file travel the identical code path --
+// parseDXF() -> DIELINE -> BASE_DIMS -> bleed switched on and
+// locked at 2mm -> manual-arrangement reset -> autoFitAndRender().
+// That means bleed, panel detection, artwork mapping, nesting,
+// the advisor, colour/Pantone and Print Sheet all behave exactly
+// as they already do for an imported file, with no changes
+// anywhere outside this module.
+//
+// Templates emit CUT and FOLD layers only (no bleed layer), so
+// the app generates the bleed contour itself by offsetting the
+// cut loops -- the same path an authored DXF without a bleed
+// layer takes, and the one that follows the real box boundary.
+// ============================================================
+(function(){
+  'use strict';
+
+  // ---------------- low-level geometry helpers ----------------
+
+  function arcPts(cx, cy, r, a0, a1, n){
+    const out = [];
+    n = Math.max(2, n || 8);
+    for(let i=0;i<=n;i++){
+      const a = (a0 + (a1-a0)*(i/n)) * Math.PI/180;
+      out.push([cx + r*Math.cos(a), cy + r*Math.sin(a)]);
+    }
+    return out;
+  }
+
+  function circleLoop(cx, cy, r){
+    const p = arcPts(cx, cy, r, 0, 360, 20);
+    p.push(p[0].slice());
+    return p;
+  }
+
+  // A euro slot is one merged keyhole, not a circle laid over a slot: two
+  // overlapping loops cancel under even-odd filling, leaving a stranded
+  // island of board inside the hole.
+  function euroSlotLoop(cx, cy, r, len){
+    const hw = r*0.55;
+    const dy = Math.sqrt(Math.max(0, r*r - hw*hw));
+    const th = Math.atan2(dy, hw) * 180/Math.PI;
+    const p = [[cx-hw, cy+dy], [cx-hw, cy+len], [cx+hw, cy+len], [cx+hw, cy+dy]];
+    p.push.apply(p, arcPts(cx, cy, r, th, -180-th, 16));   // over the top, back to the start
+    p.push(p[0].slice());
+    return p;
+  }
+
+  function roundRectLoop(x, y, w, h, r){
+    r = Math.max(0, Math.min(r || 0, Math.min(w,h)/2));
+    if(r <= 0.01) return [[x,y],[x+w,y],[x+w,y+h],[x,y+h],[x,y]];
+    const p = [];
+    p.push.apply(p, arcPts(x+r,     y+r,     r, 180, 270, 6));
+    p.push.apply(p, arcPts(x+w-r,   y+r,     r, 270, 360, 6));
+    p.push.apply(p, arcPts(x+w-r,   y+h-r,   r, 0,   90,  6));
+    p.push.apply(p, arcPts(x+r,     y+h-r,   r, 90,  180, 6));
+    p.push(p[0].slice());
+    return p;
+  }
+
+  // Normalise a finished shape to the origin, drop consecutive
+  // duplicate points (flap profiles legitimately produce them where
+  // a zero-gap flap meets the panel edge) and report its flat size.
+  function finish(cuts, folds){
+    const all = [].concat.apply([], cuts).concat([].concat.apply([], folds));
+    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+    all.forEach(function(p){
+      if(p[0]<minX) minX=p[0]; if(p[0]>maxX) maxX=p[0];
+      if(p[1]<minY) minY=p[1]; if(p[1]>maxY) maxY=p[1];
+    });
+    function clean(poly){
+      const out = [];
+      poly.forEach(function(p){
+        const q = [p[0]-minX, p[1]-minY];
+        const last = out[out.length-1];
+        if(!last || Math.abs(last[0]-q[0])>1e-4 || Math.abs(last[1]-q[1])>1e-4) out.push(q);
+      });
+      return out;
+    }
+    return {
+      cuts:  cuts.map(clean).filter(function(p){ return p.length > 2; }),
+      folds: folds.map(clean).filter(function(p){ return p.length > 1; }),
+      width: maxX-minX,
+      height: maxY-minY
+    };
+  }
+
+  // ---------------- flap profiles ----------------
+  // sign = -1 for a top flap (extends toward smaller y), +1 for a bottom
+  // flap. Every profile is traced left -> right along the panel edge.
+
+  function flapDepth(f){ return (!f || f.type === 'none' || !(f.depth > 0)) ? 0 : f.depth; }
+
+  function flapProfile(f, x0, x1, baseY, sign){
+    const w = x1 - x0;
+    if(!flapDepth(f)) return [[x0,baseY],[x1,baseY]];
+    const d  = f.depth;
+    const eY = baseY + sign*d;
+    const g  = f.gap != null ? Math.min(f.gap, w*0.3) : 0;   // slot between neighbouring flaps
+    const a  = x0 + g, b = x1 - g;
+
+    switch(f.type){
+      case 'rect':
+        return [[x0,baseY],[a,baseY],[a,eY],[b,eY],[b,baseY],[x1,baseY]];
+
+      case 'round': {                                        // rect with a rounded nose
+        const r = Math.min(f.radius != null ? f.radius : Math.min(d,(b-a))*0.35, (b-a)/2, d*0.9);
+        const p = [[x0,baseY],[a,baseY],[a, eY - sign*r]];
+        p.push.apply(p, arcPts(a+r, eY - sign*r, r, 180, sign<0 ? 270 : 90, 5));
+        p.push([b-r, eY]);
+        p.push.apply(p, arcPts(b-r, eY - sign*r, r, sign<0 ? 270 : 90, sign<0 ? 360 : 0, 5));
+        p.push([b,baseY],[x1,baseY]);
+        return p;
+      }
+
+      case 'tuck': {                                         // trapezoid tuck panel
+        const i = Math.min(f.inset != null ? f.inset : Math.max(4, w*0.15), (b-a)*0.4);
+        return [[x0,baseY],[a,baseY],[a+i,eY],[b-i,eY],[b,baseY],[x1,baseY]];
+      }
+
+      case 'dust': {                                         // narrow chamfered dust flap
+        const c = Math.min(d*0.55, (b-a)*0.3);
+        return [[x0,baseY],[a,baseY],[a+c,eY],[b-c,eY],[b,baseY],[x1,baseY]];
+      }
+
+      case 'gable': {                                        // peaked gable top
+        const sh = f.shoulder != null ? f.shoulder : d*0.45;
+        return [[x0,baseY],[a,baseY],[a,baseY+sign*sh],[(a+b)/2,eY],[b,baseY+sign*sh],[b,baseY],[x1,baseY]];
+      }
+
+      case 'auto': {                                         // angled crash-lock flap
+        const s = Math.min(f.skew != null ? f.skew : w*0.35, (b-a)*0.7);
+        return f.mirror
+          ? [[x0,baseY],[a,baseY],[a+s,eY],[b,eY],[b,baseY],[x1,baseY]]
+          : [[x0,baseY],[a,baseY],[a,eY],[b-s,eY],[b,baseY],[x1,baseY]];
+      }
+
+      case 'lock': {                                         // flap with a snap-lock notch
+        const nw = Math.min(f.notchW || w*0.3, (b-a)*0.6);
+        const nd = Math.min(f.notchD || d*0.35, d*0.8);
+        const m  = (a+b)/2, nY = eY - sign*nd;
+        return [[x0,baseY],[a,baseY],[a,eY],[m-nw/2,eY],[m-nw/2,nY],[m+nw/2,nY],[m+nw/2,eY],[b,eY],[b,baseY],[x1,baseY]];
+      }
+
+      case 'tab': {                                          // narrow centred locking tab
+        const tw = Math.min(f.tabW || w*0.42, w*0.9);
+        const m = (x0+x1)/2, i = Math.min(tw*0.2, 6);
+        return [[x0,baseY],[m-tw/2,baseY],[m-tw/2+i,eY],[m+tw/2-i,eY],[m+tw/2,baseY],[x1,baseY]];
+      }
+
+      case 'curve': {                                        // pillow-box style curved end
+        const n = 14, p = [[x0,baseY],[a,baseY]];
+        for(let k=0;k<=n;k++){
+          const t = k/n;
+          p.push([a + (b-a)*t, baseY + sign*d*Math.sin(Math.PI*t)]);
+        }
+        p.push([b,baseY],[x1,baseY]);
+        return p;
+      }
+    }
+    return [[x0,baseY],[x1,baseY]];
+  }
+
+  // ---------------- shape builders ----------------
+
+  // Horizontal panel strip: the shape of every glued carton (tuck ends,
+  // RSC, seal end, sleeves, gable tops...). `extras` may be a function
+  // receiving the strip's geometry so an archetype can place windows,
+  // hand-holes or hang slots against real panel coordinates.
+  function strip(panels, bodyH, extras){
+    const xs = [0];
+    panels.forEach(function(p){ xs.push(xs[xs.length-1] + p.w); });
+    const totalW = xs[xs.length-1];
+    const topMax = Math.max.apply(null, [0].concat(panels.map(function(p){ return flapDepth(p.top); })));
+    const botMax = Math.max.apply(null, [0].concat(panels.map(function(p){ return flapDepth(p.bottom); })));
+    const topY = topMax, botY = topMax + bodyH;
+
+    let top = [], bot = [];
+    panels.forEach(function(p,i){ top = top.concat(flapProfile(p.top,    xs[i], xs[i+1], topY, -1)); });
+    panels.forEach(function(p,i){ bot = bot.concat(flapProfile(p.bottom, xs[i], xs[i+1], botY, +1)); });
+
+    // Glue tabs taper inward on their free vertical edge.
+    const lt = panels[0].taper || 0, rt = panels[panels.length-1].taper || 0;
+    if(lt){ top[0] = [top[0][0], topY+lt];                 bot[0] = [bot[0][0], botY-lt]; }
+    if(rt){ top[top.length-1] = [totalW, topY+rt];         bot[bot.length-1] = [totalW, botY-rt]; }
+
+    const outer = top.concat(bot.slice().reverse());
+    outer.push(outer[0].slice());
+
+    const folds = [];
+    for(let i=1;i<panels.length;i++) folds.push([[xs[i],topY],[xs[i],botY]]);
+    panels.forEach(function(p,i){
+      if(flapDepth(p.top))    folds.push([[xs[i],topY],[xs[i+1],topY]]);
+      if(flapDepth(p.bottom)) folds.push([[xs[i],botY],[xs[i+1],botY]]);
+    });
+
+    const ctx = { xs:xs, topY:topY, botY:botY, totalW:totalW, bodyH:bodyH };
+    const ex = typeof extras === 'function' ? (extras(ctx) || []) : (extras || []);
+    return finish([outer].concat(ex), folds);
+  }
+
+  // Vertical stack of rows of differing width: the shape of every
+  // tray-family die (mailers, pizza/cake boxes, rigid bases, envelopes).
+  // Rows wider than their neighbours become side walls or corner ears;
+  // per-row `vf` adds vertical fold lines, `foldTop`/`foldBot` override
+  // the span of a horizontal fold where an ear must not be creased.
+  function rowStack(rows, extras){
+    let y = 0;
+    const right = [], left = [], folds = [];
+    rows.forEach(function(r){
+      const t0 = r.x0Top != null ? r.x0Top : r.x0, t1 = r.x1Top != null ? r.x1Top : r.x1;
+      const b0 = r.x0Bot != null ? r.x0Bot : r.x0, b1 = r.x1Bot != null ? r.x1Bot : r.x1;
+      right.push([t1,y],[b1,y+r.h]);
+      left.push([t0,y],[b0,y+r.h]);
+      (r.vf || []).forEach(function(x){ folds.push([[x,y],[x,y+r.h]]); });
+      y += r.h;
+    });
+
+    // Where two rows sit against each other the material is only creased
+    // across `span`; anywhere else along that join -- a corner ear meeting
+    // the side wall it lies beside -- the two pieces are cut apart, not
+    // folded. Real trays and mailers carry a knife slit exactly there, and
+    // without it the ear and the wall stay one L-shaped piece that cannot
+    // fold, so emit the slit as a real die-cut slot.
+    const SLIT = 1.6;
+    const slits = [];
+    let yy = 0;
+    for(let i=0;i<rows.length-1;i++){
+      yy += rows[i].h;
+      const a = rows[i], b = rows[i+1];
+      const o0 = Math.max(a.x0Bot != null ? a.x0Bot : a.x0, b.x0Top != null ? b.x0Top : b.x0);
+      const o1 = Math.min(a.x1Bot != null ? a.x1Bot : a.x1, b.x1Top != null ? b.x1Top : b.x1);
+      const span = a.foldBot || b.foldTop || [o0, o1];
+      if(span[1] - span[0] > 0.5) folds.push([[span[0],yy],[span[1],yy]]);
+      if(o1 - o0 > 0.5){
+        if(span[0] - o0 > 0.5) slits.push(roundRectLoop(o0, yy-SLIT/2, span[0]-o0, SLIT, 0));
+        if(o1 - span[1] > 0.5) slits.push(roundRectLoop(span[1], yy-SLIT/2, o1-span[1], SLIT, 0));
+      }
+    }
+
+    const outer = right.concat(left.slice().reverse());
+    outer.push(outer[0].slice());
+    return finish([outer].concat(slits).concat(extras || []), folds);
+  }
+
+  // Strip whose panels are wider at the bottom than the top: scoops,
+  // pails and tapered buckets, where every panel fold runs on a slant.
+  function taperedStrip(bw, tw, H, o){
+    o = o || {};
+    const xb = [0], xt = [0];
+    bw.forEach(function(w){ xb.push(xb[xb.length-1]+w); });
+    tw.forEach(function(w){ xt.push(xt[xt.length-1]+w); });
+    const tb = xb[xb.length-1], tt = xt[xt.length-1];
+    const W = Math.max(tb, tt), ob = (W-tb)/2, ot = (W-tt)/2;
+    const bd = o.bottom || 0;
+    const topY = 0, botY = H;
+    const flapOn = o.flapPanels || bw.map(function(_,i){ return i < bw.length-1; });
+
+    const pts = [[ot,topY],[ot+tt,topY],[ob+tb,botY]];
+    for(let i=bw.length-1;i>=0;i--){
+      const x0 = ob+xb[i], x1 = ob+xb[i+1];
+      if(bd > 0 && flapOn[i]){
+        const ins = Math.min(bd*0.35, (x1-x0)*0.25);
+        pts.push([x1,botY],[x1-ins,botY+bd],[x0+ins,botY+bd],[x0,botY]);
+      } else {
+        pts.push([x1,botY],[x0,botY]);
+      }
+    }
+    pts.push([ot,topY]);
+
+    const folds = [];
+    for(let i=1;i<bw.length;i++) folds.push([[ot+xt[i],topY],[ob+xb[i],botY]]);
+    if(bd > 0) bw.forEach(function(_,i){
+      if(flapOn[i]) folds.push([[ob+xb[i],botY],[ob+xb[i+1],botY]]);
+    });
+
+    return finish([pts].concat(o.extras || []), folds);
+  }
+
+  // ---------------- exact outward offset (the bleed contour) ----------------
+  // The app can synthesise bleed itself, but it does so by rasterising ->
+  // dilating -> tracing, and that raster is deliberately coarsened for big
+  // dies to stay under a cell cap. When the trace then lands short of the
+  // real edge, the app's safety net appends a plain bounding RECTANGLE --
+  // which is why bleed stopped following the box border on shipping cartons
+  // and other large blanks and just boxed the whole die in.
+  //
+  // We generate these shapes, so we know them exactly. Emitting a real
+  // authored BLEED layer in the DXF sidesteps the approximation entirely:
+  // the app already prefers a file's own bleed layer over anything it
+  // derives, and a contour that is exactly `mm` outside every edge also
+  // clears the shortfall test, so the rectangle fallback never triggers.
+
+  function ptSegDist(p, a, b){
+    const vx = b[0]-a[0], vy = b[1]-a[1];
+    const wx = p[0]-a[0], wy = p[1]-a[1];
+    const L = vx*vx + vy*vy;
+    let t = L ? (wx*vx + wy*vy)/L : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    return Math.hypot(wx - t*vx, wy - t*vy);
+  }
+
+  function signedArea(p){
+    let a = 0;
+    for(let i=0, n=p.length; i<n; i++){ const q = p[(i+1)%n]; a += p[i][0]*q[1] - q[0]*p[i][1]; }
+    return a/2;
+  }
+
+  function openLoop(loop){                       // drop the repeated closing vertex
+    const p = loop.slice();
+    while(p.length > 1 &&
+          Math.abs(p[0][0]-p[p.length-1][0]) < 1e-7 &&
+          Math.abs(p[0][1]-p[p.length-1][1]) < 1e-7) p.pop();
+    return p;
+  }
+
+  // Subdividing before offsetting gives the validity filter below enough
+  // resolution to tell a genuine offset edge from one buried inside a slot.
+  function densify(p, maxLen){
+    const out = [];
+    for(let i=0;i<p.length;i++){
+      const a = p[i], b = p[(i+1)%p.length];
+      out.push(a);
+      const k = Math.floor(Math.hypot(b[0]-a[0], b[1]-a[1]) / maxLen);
+      for(let j=1;j<=k;j++){
+        const t = j/(k+1);
+        out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]);
+      }
+    }
+    return out;
+  }
+
+  // Uniform grid over the source edges so "how far is this point from the
+  // die?" stays O(1) instead of O(edges) for every one of a few thousand
+  // candidate points.
+  function edgeIndex(pts, cell){
+    const grid = Object.create(null);
+    for(let i=0;i<pts.length;i++){
+      const a = pts[i], b = pts[(i+1)%pts.length];
+      const cx0 = Math.floor(Math.min(a[0],b[0])/cell), cx1 = Math.floor(Math.max(a[0],b[0])/cell);
+      const cy0 = Math.floor(Math.min(a[1],b[1])/cell), cy1 = Math.floor(Math.max(a[1],b[1])/cell);
+      for(let cx=cx0;cx<=cx1;cx++) for(let cy=cy0;cy<=cy1;cy++){
+        const k = cx+','+cy;
+        (grid[k] || (grid[k] = [])).push(i);
+      }
+    }
+    return { grid:grid, cell:cell, pts:pts };
+  }
+
+  // Only ever asked "is it at least `limit` away?", so anything outside the
+  // searched radius can safely report Infinity.
+  function nearerThan(ix, p, limit){
+    const c = ix.cell, r = Math.ceil(limit/c) + 1;
+    const cx = Math.floor(p[0]/c), cy = Math.floor(p[1]/c);
+    const n = ix.pts.length;
+    let best = Infinity;
+    for(let i=cx-r;i<=cx+r;i++) for(let j=cy-r;j<=cy+r;j++){
+      const arr = ix.grid[i+','+j];
+      if(!arr) continue;
+      for(let k=0;k<arr.length;k++){
+        const si = arr[k];
+        const d = ptSegDist(p, ix.pts[si], ix.pts[(si+1)%n]);
+        if(d < best){ best = d; if(best < limit*0.5) return best; }
+      }
+    }
+    return best;
+  }
+
+  function lineX(p1, p2, p3, p4){
+    const d = (p2[0]-p1[0])*(p4[1]-p3[1]) - (p2[1]-p1[1])*(p4[0]-p3[0]);
+    if(Math.abs(d) < 1e-12) return null;
+    const t = ((p3[0]-p1[0])*(p4[1]-p3[1]) - (p3[1]-p1[1])*(p4[0]-p3[0])) / d;
+    return [p1[0] + t*(p2[0]-p1[0]), p1[1] + t*(p2[1]-p1[1])];
+  }
+
+  function simplifyPts(p, eps){
+    const out = [];
+    for(let i=0;i<p.length;i++){
+      const prev = out.length ? out[out.length-1] : p[(i-1+p.length)%p.length];
+      const next = p[(i+1)%p.length];
+      const cross = (p[i][0]-prev[0])*(next[1]-p[i][1]) - (p[i][1]-prev[1])*(next[0]-p[i][0]);
+      const near = Math.hypot(p[i][0]-prev[0], p[i][1]-prev[1]) < eps;
+      if(!near && Math.abs(cross) > eps) out.push(p[i]);
+    }
+    return out.length > 2 ? out : p;
+  }
+
+  // The bleed contour is the boundary of the die grown by `d` in every
+  // direction -- formally the shape's Minkowski sum with a disc of radius d.
+  // That boundary is always edge-parallel runs joined by arcs of radius d
+  // centred on each vertex, at CONVEX and REFLEX vertices alike; a mitre
+  // join is wrong on both (it puts a 90-degree inner corner 2.83mm out
+  // instead of 2.00, and overshoots without bound as the angle sharpens).
+  //
+  // Offsetting alone then leaves self-intersecting spikes wherever the die
+  // folds back on itself, so afterwards discard every raw point that landed
+  // closer to the die than `d` -- precisely the spikes, plus the stretches
+  // buried inside slots narrower than 2x bleed. Reconnecting what survives
+  // bridges such a slot across its mouth, which is what bleed does in
+  // reality: ink covers the gap, nothing is trimmed inside it.
+  function offsetLoopExact(loop, d){
+    const src = openLoop(loop);
+    if(src.length < 3 || !(d > 0)) return null;
+    const dense = densify(src, Math.max(d*0.5, 0.75));
+    const n = dense.length;
+    const outSign = signedArea(dense) > 0 ? 1 : -1;
+
+    function nrm(a, b){
+      const ex = b[0]-a[0], ey = b[1]-a[1], L = Math.hypot(ex,ey) || 1;
+      return outSign > 0 ? [ey/L, -ex/L] : [-ey/L, ex/L];
+    }
+
+    const raw = [];
+    for(let i=0;i<n;i++){
+      const prev = dense[(i-1+n)%n], cur = dense[i], next = dense[(i+1)%n];
+      const n1 = nrm(prev,cur), n2 = nrm(cur,next);
+      const A = [cur[0]+n1[0]*d, cur[1]+n1[1]*d];
+      const B = [cur[0]+n2[0]*d, cur[1]+n2[1]*d];
+      const cross = (cur[0]-prev[0])*(next[1]-cur[1]) - (cur[1]-prev[1])*(next[0]-cur[0]);
+      if(Math.abs(cross) < 1e-9){ raw.push(A); continue; }
+      raw.push(A);
+      // `cross` turns the same way as the winding at a convex vertex, so it
+      // shares the sign of the signed area that picked `outSign`.
+      const convex = outSign > 0 ? (cross > 0) : (cross < 0);
+      if(convex){
+        // Convex vertex: the boundary swings around the outside on an arc of
+        // radius d centred on the vertex.
+        let a0 = Math.atan2(n1[1], n1[0]);
+        let da = Math.atan2(n2[1], n2[0]) - a0;
+        while(da >  Math.PI) da -= 2*Math.PI;
+        while(da < -Math.PI) da += 2*Math.PI;
+        const steps = Math.max(1, Math.ceil(Math.abs(da)/(Math.PI/12)));
+        for(let s=1;s<steps;s++){
+          const a = a0 + da*(s/steps);
+          raw.push([cur[0]+Math.cos(a)*d, cur[1]+Math.sin(a)*d]);
+        }
+      } else {
+        // Reflex vertex: the two offset edges meet at their intersection, so
+        // a 90-degree inner corner correctly lands d*sqrt(2) from the vertex
+        // but still exactly d from the die. That holds only while the meeting
+        // point stays alongside both edges -- on a sharp enough notch it
+        // escapes past their ends and is farther than d from the die, which
+        // the two-sided filter below then rejects.
+        const ip = lineX(A, [A[0]+(cur[0]-prev[0]), A[1]+(cur[1]-prev[1])],
+                         B, [B[0]+(next[0]-cur[0]), B[1]+(next[1]-cur[1])]);
+        if(ip) raw.push(ip);
+      }
+      raw.push(B);
+    }
+
+    // The dilated boundary is, by definition, every point at distance exactly
+    // d from the die. Testing both sides of that in one pass throws away the
+    // two failure modes together: points nearer than d (spikes, and runs
+    // buried inside narrow slots) and points farther than d (reflex meeting
+    // points that escaped past the ends of the edges that produced them).
+    const ix = edgeIndex(dense, Math.max(d, 2));
+    const eps = Math.max(d*0.03, 0.03);
+    const kept = raw.filter(function(p){
+      const dist = nearerThan(ix, p, d);
+      return dist >= d - eps && dist <= d + eps;
+    });
+    if(kept.length < 3) return null;
+
+    const out = simplifyPts(kept, 1e-3);
+    out.push(out[0].slice());
+    return out;
+  }
+
+  // Bleed wraps the outer trim edge only. Internal die-cut features (vents,
+  // windows, hand-holes, lock slots) are never separately bled -- there is
+  // no outward trim happening at an interior hole -- which matches how the
+  // app treats them for authored files.
+  function bleedFor(g, mm){
+    if(!g || !g.cuts.length) return [];
+    const off = offsetLoopExact(g.cuts[0], mm);
+    return off ? [off] : [];
+  }
+
+  // ---------------- box archetypes ----------------
+  // Every archetype is parametric on the box's L x W x H in mm.
+
+  const GT = 26;                                    // glue tab width
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  const ARCH = {
+
+    // --- glued cartons & corrugated shippers (panel strips) ---
+
+    rsc: { label:'Regular Slotted Container', build:function(L,W,H){
+      const d = W/2, f = {type:'rect', depth:d, gap:1.5};
+      return strip([{w:W,top:f,bottom:f},{w:L,top:f,bottom:f},{w:W,top:f,bottom:f},{w:L,top:f,bottom:f},{w:GT,taper:4}], H);
+    }},
+
+    hsc: { label:'Half Slotted Container', build:function(L,W,H){
+      const f = {type:'rect', depth:W/2, gap:1.5};
+      return strip([{w:W,bottom:f},{w:L,bottom:f},{w:W,bottom:f},{w:L,bottom:f},{w:GT,taper:4}], H);
+    }},
+
+    fol: { label:'Full Overlap Slotted Carton', build:function(L,W,H){
+      const f = {type:'rect', depth:W*0.95, gap:1.5};
+      return strip([{w:W,top:f,bottom:f},{w:L,top:f,bottom:f},{w:W,top:f,bottom:f},{w:L,top:f,bottom:f},{w:GT,taper:4}], H);
+    }},
+
+    ste: { label:'Straight Tuck End Carton', build:function(L,W,H){
+      const tuck  = {type:'round', depth:W*0.92, gap:1.2, radius:Math.min(W*0.3,8)};
+      const dust  = {type:'dust',  depth:W*0.46, gap:1.2};
+      const close = {type:'rect',  depth:W*0.5,  gap:1.5};
+      return strip([
+        {w:L, top:tuck,  bottom:tuck},
+        {w:W, top:dust,  bottom:dust},
+        {w:L, top:close, bottom:close},
+        {w:W, top:dust,  bottom:dust},
+        {w:GT, taper:4}
+      ], H);
+    }},
+
+    rte: { label:'Reverse Tuck End Carton', build:function(L,W,H){
+      const tuck  = {type:'round', depth:W*0.92, gap:1.2, radius:Math.min(W*0.3,8)};
+      const dust  = {type:'dust',  depth:W*0.46, gap:1.2};
+      const close = {type:'rect',  depth:W*0.5,  gap:1.5};
+      return strip([
+        {w:L, top:tuck,  bottom:close},
+        {w:W, top:dust,  bottom:dust},
+        {w:L, top:close, bottom:tuck},
+        {w:W, top:dust,  bottom:dust},
+        {w:GT, taper:4}
+      ], H);
+    }},
+
+    sealEnd: { label:'Seal End Carton', build:function(L,W,H){
+      const big  = {type:'rect', depth:W*0.6,  gap:1.5};
+      const dust = {type:'dust', depth:W*0.5,  gap:1.2};
+      return strip([
+        {w:L, top:big,  bottom:big},
+        {w:W, top:dust, bottom:dust},
+        {w:L, top:big,  bottom:big},
+        {w:W, top:dust, bottom:dust},
+        {w:GT, taper:4}
+      ], H);
+    }},
+
+    autoBottom: { label:'Auto Bottom (Crash Lock) Carton', build:function(L,W,H){
+      const tuck = {type:'round', depth:W*0.92, gap:1.2, radius:Math.min(W*0.3,8)};
+      const dust = {type:'dust',  depth:W*0.46, gap:1.2};
+      const clsd = {type:'rect',  depth:W*0.5,  gap:1.5};
+      return strip([
+        {w:L, top:tuck,  bottom:{type:'auto', depth:W*0.62, gap:1.2, skew:L*0.3}},
+        {w:W, top:dust,  bottom:{type:'auto', depth:W*0.78, gap:1.2, skew:W*0.4, mirror:true}},
+        {w:L, top:clsd,  bottom:{type:'auto', depth:W*0.62, gap:1.2, skew:L*0.3}},
+        {w:W, top:dust,  bottom:{type:'auto', depth:W*0.78, gap:1.2, skew:W*0.4, mirror:true}},
+        {w:GT, taper:4}
+      ], H);
+    }},
+
+    snapLock: { label:'Snap Lock (1-2-3) Bottom Carton', build:function(L,W,H){
+      const tuck = {type:'round', depth:W*0.92, gap:1.2, radius:Math.min(W*0.3,8)};
+      const dust = {type:'dust',  depth:W*0.46, gap:1.2};
+      const clsd = {type:'rect',  depth:W*0.5,  gap:1.5};
+      const lock = {type:'lock',  depth:W*0.7,  gap:1.2};
+      return strip([
+        {w:L, top:tuck, bottom:lock},
+        {w:W, top:dust, bottom:{type:'tab', depth:W*0.55, tabW:W*0.5}},
+        {w:L, top:clsd, bottom:lock},
+        {w:W, top:dust, bottom:{type:'tab', depth:W*0.55, tabW:W*0.5}},
+        {w:GT, taper:4}
+      ], H);
+    }},
+
+    sleeve: { label:'Open-Ended Sleeve', build:function(L,W,H){
+      return strip([{w:L},{w:W},{w:L},{w:W},{w:GT, taper:4}], H);
+    }},
+
+    windowCarton: { label:'Window Carton', build:function(L,W,H){
+      const tuck = {type:'round', depth:W*0.92, gap:1.2, radius:Math.min(W*0.3,8)};
+      const dust = {type:'dust',  depth:W*0.46, gap:1.2};
+      const clsd = {type:'rect',  depth:W*0.5,  gap:1.5};
+      return strip([
+        {w:L, top:tuck, bottom:tuck},
+        {w:W, top:dust, bottom:dust},
+        {w:L, top:clsd, bottom:clsd},
+        {w:W, top:dust, bottom:dust},
+        {w:GT, taper:4}
+      ], H, function(ctx){
+        const mx = Math.max(8, L*0.16), my = Math.max(10, H*0.16);
+        return [roundRectLoop(ctx.xs[0]+mx, ctx.topY+my, L-2*mx, H-2*my, Math.min(L,H)*0.09)];
+      });
+    }},
+
+    hangTab: { label:'Hang Tab (Euro Slot) Carton', build:function(L,W,H){
+      const hdr  = {type:'round', depth:W*1.15, gap:1.2, radius:Math.min(W*0.35,9)};
+      const dust = {type:'dust',  depth:W*0.46, gap:1.2};
+      const clsd = {type:'rect',  depth:W*0.5,  gap:1.5};
+      const tuck = {type:'round', depth:W*0.92, gap:1.2, radius:Math.min(W*0.3,8)};
+      return strip([
+        {w:L, top:hdr,  bottom:tuck},
+        {w:W, top:dust, bottom:dust},
+        {w:L, top:clsd, bottom:clsd},
+        {w:W, top:dust, bottom:dust},
+        {w:GT, taper:4}
+      ], H, function(ctx){
+        const cx = L/2, r = clamp(L*0.06, 3, 6.5);
+        const cy = ctx.topY - W*0.62;
+        return [ euroSlotLoop(cx, cy, r, r*2.2) ];
+      });
+    }},
+
+    drawer: { label:'Drawer / Matchbox Sleeve', build:function(L,W,H){
+      return strip([{w:L},{w:W},{w:L},{w:W},{w:GT, taper:4}], H, function(ctx){
+        return [ circleLoop(L/2, ctx.topY + H/2, clamp(Math.min(L,H)*0.16, 5, 14)) ];
+      });
+    }},
+
+    hexCarton: { label:'Hexagonal Carton', build:function(L,W,H){
+      const s = (L+W)/2 * 0.62;
+      const tuck = {type:'tuck', depth:s*0.85, gap:1.2, inset:s*0.22};
+      const dust = {type:'dust', depth:s*0.45, gap:1.2};
+      return strip([
+        {w:s, top:tuck, bottom:tuck},
+        {w:s, top:dust, bottom:dust},
+        {w:s, top:tuck, bottom:tuck},
+        {w:s, top:dust, bottom:dust},
+        {w:s, top:tuck, bottom:tuck},
+        {w:s, top:dust, bottom:dust},
+        {w:GT*0.8, taper:3}
+      ], H);
+    }},
+
+    beveled: { label:'Beveled Edge Carton', build:function(L,W,H){
+      const b = Math.max(8, L*0.13);
+      const tuck = {type:'round', depth:W*0.85, gap:1.2, radius:Math.min(W*0.3,8)};
+      const bev  = {type:'dust',  depth:W*0.4,  gap:1.2};
+      const dust = {type:'dust',  depth:W*0.46, gap:1.2};
+      const clsd = {type:'rect',  depth:W*0.48, gap:1.5};
+      return strip([
+        {w:L, top:tuck, bottom:tuck},
+        {w:b, top:bev,  bottom:bev},
+        {w:W, top:dust, bottom:dust},
+        {w:b, top:bev,  bottom:bev},
+        {w:L, top:clsd, bottom:clsd},
+        {w:b, top:bev,  bottom:bev},
+        {w:W, top:dust, bottom:dust},
+        {w:b, top:bev,  bottom:bev},
+        {w:GT*0.8, taper:3}
+      ], H);
+    }},
+
+    gableTop: { label:'Gable Top Carton', build:function(L,W,H){
+      const gab  = {type:'gable', depth:W*1.05, gap:1.2};
+      const gtuck= {type:'tuck',  depth:W*0.8,  gap:1.2, inset:W*0.2};
+      const base = {type:'rect',  depth:W*0.55, gap:1.5};
+      const dust = {type:'dust',  depth:W*0.5,  gap:1.2};
+      return strip([
+        {w:L, top:gab,   bottom:base},
+        {w:W, top:gtuck, bottom:dust},
+        {w:L, top:gab,   bottom:base},
+        {w:W, top:gtuck, bottom:dust},
+        {w:GT, taper:4}
+      ], H, function(ctx){
+        const r = clamp(L*0.09, 4, 12);
+        return [ circleLoop(L/2, ctx.topY - W*0.72, r) ];
+      });
+    }},
+
+    pillow: { label:'Pillow Box', build:function(L,W,H){
+      const side = Math.max(18, W*0.62);
+      const cur  = {type:'curve', depth:side*0.7, gap:1};
+      return strip([
+        {w:L, top:cur, bottom:cur},
+        {w:side},
+        {w:L, top:cur, bottom:cur},
+        {w:side},
+        {w:GT*0.7, taper:3}
+      ], H);
+    }},
+
+    // --- tray-family dies (row stacks) ---
+
+    tray4: { label:'Four Corner Lock Tray', build:function(L,W,H){
+      const E = H*0.85, wall = [H, H+L];
+      return rowStack([
+        {h:H, x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},
+        {h:W, x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H, x0:H-E, x1:H+L+E, vf:wall}
+      ]);
+    }},
+
+    tray6: { label:'Six Corner Glued Tray', build:function(L,W,H){
+      const E = H*1.5, t = E*0.3, wall = [H, H+L];
+      return rowStack([
+        {h:H, x0Top:H-E+t, x1Top:H+L+E-t, x0Bot:H-E, x1Bot:H+L+E, vf:wall, foldBot:wall},
+        {h:W, x0:0, x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H, x0Top:H-E, x1Top:H+L+E, x0Bot:H-E+t, x1Bot:H+L+E-t, vf:wall}
+      ]);
+    }},
+
+    pizzaBox: { label:'One-Piece Pizza Box', build:function(L,W,H){
+      const E = H*0.8, ti = L*0.06, wall = [H, H+L], full = [0, L+2*H];
+      const ventR = clamp(H*0.18, 2.5, 6);
+      const rows = [
+        {h:H*0.7, x0Top:H+ti*2, x1Top:H+L-ti*2, x0Bot:H+ti, x1Bot:H+L-ti},   // lid lock flap
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},                  // lid front wall + ears
+        {h:W,     x0:0,   x1:L+2*H, vf:wall, foldBot:wall},                  // lid top panel
+        {h:H,     x0:H,   x1:H+L,   foldBot:wall},                           // back wall (hinge)
+        {h:W,     x0:0,   x1:L+2*H, vf:wall, foldBot:wall},                  // base panel
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall}                                 // front wall + ears
+      ];
+      const yBase = H*0.7 + H + W + H;                                       // top of base panel
+      const vents = [
+        circleLoop(H/2,       yBase + W*0.3, ventR),
+        circleLoop(H/2,       yBase + W*0.7, ventR),
+        circleLoop(H+L+H/2,   yBase + W*0.3, ventR),
+        circleLoop(H+L+H/2,   yBase + W*0.7, ventR)
+      ];
+      return rowStack(rows, vents);
+    }},
+
+    cakeBox: { label:'Hinged Lid Cake Box', build:function(L,W,H){
+      const E = H*0.55, ti = L*0.06, wall = [H, H+L];
+      const rows = [
+        {h:H*0.6, x0Top:H+ti*2, x1Top:H+L-ti*2, x0Bot:H+ti, x1Bot:H+L-ti},
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},
+        {h:W,     x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H,     x0:H,   x1:H+L,   foldBot:wall},
+        {h:W,     x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall}
+      ];
+      const yLid = H*0.6 + H;                                                // top of lid panel
+      const mx = L*0.2, my = W*0.2;
+      return rowStack(rows, [ roundRectLoop(H+mx, yLid+my, L-2*mx, W-2*my, Math.min(L,W)*0.1) ]);
+    }},
+
+    mailer: { label:'Roll End Tuck Top Mailer', build:function(L,W,H){
+      const E = H*0.75, ti = L*0.05, wall = [H, H+L];
+      return rowStack([
+        {h:H*0.7, x0Top:H+ti*2, x1Top:H+L-ti*2, x0Bot:H+ti, x1Bot:H+L-ti},   // front tuck flap
+        {h:W,     x0:H-E*0.8, x1:H+L+E*0.8, vf:wall, foldBot:wall},           // lid + side tabs
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},                   // back wall + ears
+        {h:W,     x0:0,   x1:L+2*H, vf:[H/2, H, H+L, H+L+H/2], foldBot:wall}, // base + roll-end folds
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},                   // front wall + ears
+        {h:H*0.5, x0Top:H+ti, x1Top:H+L-ti, x0Bot:H+ti*2, x1Bot:H+L-ti*2}     // dust lip
+      ]);
+    }},
+
+    retf: { label:'Roll End Front Tuck Mailer', build:function(L,W,H){
+      const E = H*0.75, ti = L*0.05, wall = [H, H+L];
+      return rowStack([
+        {h:H*0.6, x0Top:H+ti*2, x1Top:H+L-ti*2, x0Bot:H+ti, x1Bot:H+L-ti},
+        {h:W,     x0:H-E*0.8, x1:H+L+E*0.8, vf:wall, foldBot:wall},
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},
+        {h:W,     x0:0,   x1:L+2*H, vf:[H/2, H, H+L, H+L+H/2], foldBot:wall},
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall}
+      ]);
+    }},
+
+    bookWrap: { label:'Book Wrap Mailer', build:function(L,W,H){
+      const sw = H, wall = [sw, sw+L], ti = L*0.05;
+      return rowStack([
+        {h:H*0.7, x0Top:sw+ti*2, x1Top:sw+L-ti*2, x0Bot:sw+ti, x1Bot:sw+L-ti},
+        {h:W,     x0:sw, x1:sw+L},
+        {h:H,     x0:sw, x1:sw+L},
+        {h:W,     x0:0,  x1:L+2*sw, vf:wall, foldBot:wall},
+        {h:H,     x0:sw, x1:sw+L},
+        {h:W,     x0:sw, x1:sw+L}
+      ]);
+    }},
+
+    clamshell: { label:'Hinged Clamshell', build:function(L,W,H){
+      const E = H*0.8, ti = L*0.07, wall = [H, H+L];
+      return rowStack([
+        {h:H*0.4, x0Top:H+ti*2, x1Top:H+L-ti*2, x0Bot:H+ti, x1Bot:H+L-ti},
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},
+        {h:W,     x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H,     x0:H,   x1:H+L,   foldBot:wall},
+        {h:W,     x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H,     x0:H-E, x1:H+L+E, vf:wall}
+      ]);
+    }},
+
+    displayTray: { label:'Shelf Ready Display Tray', build:function(L,W,H){
+      const E = H*0.85, wall = [H, H+L], fh = H*0.45;
+      return rowStack([
+        {h:H,  x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},
+        {h:W,  x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:fh, x0:H-E, x1:H+L+E, vf:wall}
+      ], [ roundRectLoop(H+L*0.3, H+W*0.14, L*0.4, W*0.16, W*0.06) ]);
+    }},
+
+    rigidBase: { label:'Rigid Box Base (Wrapped)', build:function(L,W,H){
+      const E = H*0.95, t = E*0.35, wall = [H, H+L];
+      return rowStack([
+        {h:H, x0Top:H-E+t, x1Top:H+L+E-t, x0Bot:H-E, x1Bot:H+L+E, vf:wall, foldBot:wall},
+        {h:W, x0:0, x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H, x0Top:H-E, x1Top:H+L+E, x0Bot:H-E+t, x1Bot:H+L+E-t, vf:wall}
+      ]);
+    }},
+
+    rigidLid: { label:'Rigid Box Lid (Wrapped)', build:function(L,W,H){
+      const E = H*0.7, wall = [H, H+L];
+      return rowStack([
+        {h:H, x0:H-E, x1:H+L+E, vf:wall, foldBot:wall},
+        {h:W, x0:0,   x1:L+2*H, vf:wall, foldBot:wall},
+        {h:H, x0:H-E, x1:H+L+E, vf:wall}
+      ]);
+    }},
+
+    bookStyle: { label:'Book Style Magnetic Box', build:function(L,W,H){
+      const wall = [H, H+L], ti = L*0.05;
+      return rowStack([
+        {h:H*0.65, x0Top:H+ti*2, x1Top:H+L-ti*2, x0Bot:H+ti, x1Bot:H+L-ti},
+        {h:W,      x0:0, x1:L+2*H, vf:wall, foldBot:wall},                   // lid, with side walls
+        {h:H,      x0:H, x1:H+L,   foldBot:wall},                            // spine
+        {h:W,      x0:0, x1:L+2*H, vf:wall, foldBot:wall},                   // base, with side walls
+        {h:H,      x0:H, x1:H+L}                                             // front wall
+      ]);
+    }},
+
+    envelope: { label:'Document Mailer Envelope', build:function(L,W,H){
+      const sf = Math.max(14, L*0.13), ti = L*0.16, wall = [sf, sf+L];
+      return rowStack([
+        {h:W*0.42, x0Top:sf+ti, x1Top:sf+L-ti, x0Bot:sf, x1Bot:sf+L},
+        {h:W,      x0Top:0, x1Top:L+2*sf, x0Bot:sf*0.35, x1Bot:L+2*sf-sf*0.35, vf:wall, foldTop:wall, foldBot:wall},
+        {h:W*0.34, x0Top:sf, x1Top:sf+L, x0Bot:sf+ti*0.6, x1Bot:sf+L-ti*0.6}
+      ]);
+    }},
+
+    bottleCarrier: { label:'Bottle / Can Carrier', build:function(L,W,H){
+      const hw = W*0.45, half = W*0.5, wall = [hw, hw+L];
+      const rows = [
+        {h:H*0.42, x0:hw, x1:hw+L},
+        {h:half,   x0:0,  x1:L+2*hw, vf:wall, foldBot:wall},
+        {h:H,      x0:hw, x1:hw+L,   foldBot:wall},
+        {h:half,   x0:0,  x1:L+2*hw, vf:wall, foldBot:wall},
+        {h:H*0.42, x0:hw, x1:hw+L}
+      ];
+      const yHandle = H*0.42 + half;
+      return rowStack(rows, [
+        roundRectLoop(hw + L*0.34, yHandle + H*0.28, L*0.32, H*0.3, Math.min(L*0.32,H*0.3)*0.45)
+      ]);
+    }},
+
+    // --- tapered / formed shapes ---
+
+    fryScoop: { label:'Tapered Fry Scoop', build:function(L,W,H){
+      const k = 1.55;
+      return taperedStrip(
+        [W, L, W, L, GT*0.6],
+        [W*k, L*k, W*k, L*k, GT*0.6],
+        H, { bottom: W*0.5 }
+      );
+    }},
+
+    takeoutPail: { label:'Takeout Pail / Noodle Box', build:function(L,W,H){
+      const k = 1.3, xs = [0];
+      [W*k, L*k, W*k, L*k, GT*0.6].forEach(function(w){ xs.push(xs[xs.length-1]+w); });
+      const r = clamp(Math.min(L,W)*0.07, 2, 4.5);
+      return taperedStrip(
+        [W, L, W, L, GT*0.6],
+        [W*k, L*k, W*k, L*k, GT*0.6],
+        H,
+        { bottom: W*0.55,
+          extras: [ circleLoop((xs[1]+xs[2])/2, H*0.09, r),
+                    circleLoop((xs[3]+xs[4])/2, H*0.09, r) ] }
+      );
+    }}
+  };
+
+  // ---------------- catalog ----------------
+  // [archetype, name, category, search tags, L, W, H]  (mm)
+
+  const CATALOG_ROWS = [
+    // Food service
+    ['pizzaBox','Pizza Box 8" Personal','Food Service','pizza slice takeaway delivery corrugated food',205,205,38],
+    ['pizzaBox','Pizza Box 10"','Food Service','pizza slice takeaway delivery corrugated food',255,255,42],
+    ['pizzaBox','Pizza Box 12"','Food Service','pizza slice takeaway delivery corrugated food',305,305,45],
+    ['pizzaBox','Pizza Box 14"','Food Service','pizza slice takeaway delivery corrugated food',355,355,45],
+    ['pizzaBox','Pizza Box 16"','Food Service','pizza slice takeaway delivery corrugated food',405,405,48],
+    ['pizzaBox','Pizza Box 18" XL','Food Service','pizza slice takeaway delivery corrugated food',455,455,50],
+    ['pizzaBox','Pizza Slice Wedge Box','Food Service','pizza slice takeaway delivery food',185,150,42],
+    ['pizzaBox','Calzone Box','Food Service','pizza calzone takeaway food italian',230,180,55],
+    ['cakeBox','Cake Box 8"','Food Service','cake bakery dessert patisserie food window',205,205,105],
+    ['cakeBox','Cake Box 10"','Food Service','cake bakery dessert patisserie food window',255,255,120],
+    ['cakeBox','Cake Box 12"','Food Service','cake bakery dessert patisserie food window',305,305,130],
+    ['cakeBox','Cupcake Box 6 Cavity','Food Service','cupcake cake bakery dessert muffin food',240,160,90],
+    ['cakeBox','Bakery Pastry Box','Food Service','pastry bakery dessert croissant donut food',220,140,80],
+    ['cakeBox','Donut Box 12 Count','Food Service','donut doughnut bakery dessert food',360,250,65],
+    ['clamshell','Burger Clamshell','Food Service','burger hamburger clamshell takeaway fast food',120,120,75],
+    ['clamshell','Sandwich Clamshell','Food Service','sandwich clamshell takeaway lunch food',160,110,70],
+    ['clamshell','Wrap & Roll Clamshell','Food Service','wrap burrito clamshell takeaway food',200,90,65],
+    ['fryScoop','French Fry Scoop Regular','Food Service','fries chips scoop fast food takeaway',95,55,120],
+    ['fryScoop','French Fry Scoop Large','Food Service','fries chips scoop fast food takeaway',115,65,140],
+    ['fryScoop','Popcorn Scoop','Food Service','popcorn cinema snack scoop food',120,80,150],
+    ['takeoutPail','Chinese Takeout Pail 16oz','Food Service','takeout pail noodle chinese asian food',95,75,105],
+    ['takeoutPail','Noodle Box 26oz','Food Service','noodle takeout pail asian ramen food',105,85,120],
+    ['tray4','Sushi Tray','Food Service','sushi tray sashimi asian food',220,120,35],
+    ['tray6','Nacho / Chip Tray','Food Service','nacho chips snack tray food',170,120,45],
+    ['tray4','Salad Bowl Tray','Food Service','salad bowl tray lunch food fresh',180,180,60],
+    ['autoBottom','Chicken Bucket Carton','Food Service','chicken bucket fried fast food',150,120,170],
+    ['sleeve','Sandwich Wrap Sleeve','Food Service','sandwich sleeve wrap lunch food',140,70,50],
+    ['mailer','Meal Kit Mailer','Food Service','meal kit food delivery subscription mailer',320,240,90],
+    ['gableTop','Gable Take-Out Box','Food Service','gable takeaway handle food lunch',130,110,150],
+
+    // Shipping & mailers
+    ['rsc','Shipping Carton Small','Shipping & Mailers','shipping carton rsc corrugated ecommerce parcel',200,150,100],
+    ['rsc','Shipping Carton Medium','Shipping & Mailers','shipping carton rsc corrugated ecommerce parcel',300,220,160],
+    ['rsc','Shipping Carton Large','Shipping & Mailers','shipping carton rsc corrugated ecommerce parcel',450,350,250],
+    ['rsc','Shipping Carton XL','Shipping & Mailers','shipping carton rsc corrugated ecommerce parcel',600,400,400],
+    ['rsc','E-Commerce Cube Carton','Shipping & Mailers','cube shipping carton rsc ecommerce parcel',250,250,250],
+    ['rsc','Book Shipping Carton','Shipping & Mailers','book shipping carton rsc media parcel',250,180,60],
+    ['hsc','Half Slotted Container','Shipping & Mailers','hsc shipping carton corrugated open top',350,250,200],
+    ['fol','Full Overlap Carton','Shipping & Mailers','fol full overlap shipping carton heavy duty',400,300,200],
+    ['mailer','Mailer Box Small','Shipping & Mailers','mailer shipping ecommerce subscription roll end',200,150,60],
+    ['mailer','Mailer Box Medium','Shipping & Mailers','mailer shipping ecommerce subscription roll end',300,220,80],
+    ['mailer','Mailer Box Large','Shipping & Mailers','mailer shipping ecommerce subscription roll end',400,300,100],
+    ['mailer','Subscription Box Mailer','Shipping & Mailers','subscription mailer ecommerce monthly box',260,200,70],
+    ['retf','Roll End Front Tuck Mailer','Shipping & Mailers','retf roll end mailer shipping tuck',280,200,80],
+    ['bookWrap','Book Wrap Mailer','Shipping & Mailers','book wrap mailer media shipping adjustable',300,220,60],
+    ['bookWrap','Multi-Depth Wrap Mailer','Shipping & Mailers','wrap mailer multi depth shipping',250,180,45],
+    ['envelope','Document Mailer Envelope','Shipping & Mailers','envelope document mailer flat postal',324,229,10],
+    ['envelope','Rigid Photo Mailer','Shipping & Mailers','envelope photo rigid mailer flat postal',250,200,8],
+
+    // Retail cartons
+    ['ste','Straight Tuck End Carton Small','Retail Cartons','tuck end straight carton folding retail ste',80,40,140],
+    ['ste','Straight Tuck End Carton Medium','Retail Cartons','tuck end straight carton folding retail ste',110,60,180],
+    ['ste','Straight Tuck End Carton Large','Retail Cartons','tuck end straight carton folding retail ste',150,80,240],
+    ['rte','Reverse Tuck End Carton','Retail Cartons','tuck end reverse carton folding retail rte',90,45,150],
+    ['rte','Reverse Tuck End Tall','Retail Cartons','tuck end reverse carton folding retail rte tall',70,70,220],
+    ['sealEnd','Seal End Carton','Retail Cartons','seal end carton glued folding retail',120,60,200],
+    ['autoBottom','Auto Bottom Carton','Retail Cartons','auto bottom crash lock carton folding retail',100,70,220],
+    ['snapLock','Snap Lock Bottom Carton','Retail Cartons','snap lock 123 bottom carton folding retail',95,65,200],
+    ['sleeve','Retail Sleeve','Retail Cartons','sleeve open ended wrap retail band',150,90,40],
+    ['sleeve','Slim Product Sleeve','Retail Cartons','sleeve slim open ended retail band',200,60,25],
+    ['windowCarton','Window Carton Front','Retail Cartons','window carton pvc display retail folding',120,60,180],
+    ['windowCarton','Toy Window Carton','Retail Cartons','toy window carton display retail kids',240,80,300],
+    ['hangTab','Hang Tab Blister Carton','Retail Cartons','hang tab euro slot blister peg retail',100,35,180],
+    ['drawer','Drawer / Matchbox Sleeve','Retail Cartons','drawer matchbox slider sleeve retail',90,60,30],
+    ['drawer','Slider Gift Box','Retail Cartons','slider drawer gift box retail',160,110,45],
+    ['hexCarton','Hexagonal Carton','Retail Cartons','hexagon hexagonal carton six sided retail',60,60,180],
+    ['beveled','Beveled Edge Carton','Retail Cartons','bevel beveled edge carton retail premium',100,60,160],
+    ['pillow','Pillow Box Small','Retail Cartons','pillow box curved gift retail favour',110,70,25],
+    ['pillow','Pillow Box Large','Retail Cartons','pillow box curved gift retail favour',180,110,35],
+    ['displayTray','Shelf Ready Display Carton','Retail Cartons','shelf ready display srp retail tray counter',300,200,120],
+    ['displayTray','Counter Display Unit','Retail Cartons','counter display cdu retail pos tray',220,150,180],
+    ['tray4','Product Tray','Retail Cartons','tray product insert retail lock corner',200,140,50],
+    ['ste','Tissue / Napkin Carton','Retail Cartons','tissue napkin carton household retail',220,110,70],
+
+    // Cosmetics & beauty
+    ['ste','Lipstick Carton','Cosmetics & Beauty','lipstick cosmetic beauty makeup carton small',25,25,95],
+    ['rte','Mascara Carton','Cosmetics & Beauty','mascara cosmetic beauty makeup carton',30,30,120],
+    ['ste','Serum Bottle Carton','Cosmetics & Beauty','serum dropper skincare beauty cosmetic carton',40,40,110],
+    ['rte','Cream Jar Carton','Cosmetics & Beauty','cream jar skincare beauty cosmetic carton',65,65,70],
+    ['ste','Perfume Carton','Cosmetics & Beauty','perfume fragrance beauty cosmetic carton luxury',55,55,120],
+    ['rigidLid','Perfume Rigid Lid','Cosmetics & Beauty','perfume fragrance rigid lid luxury beauty',90,90,130],
+    ['rigidBase','Perfume Rigid Base','Cosmetics & Beauty','perfume fragrance rigid base luxury beauty',88,88,128],
+    ['sleeve','Soap Sleeve','Cosmetics & Beauty','soap sleeve band beauty wrap',90,60,30],
+    ['autoBottom','Soap Bar Carton','Cosmetics & Beauty','soap bar carton beauty auto bottom',95,65,35],
+    ['windowCarton','Skincare Window Carton','Cosmetics & Beauty','skincare window carton beauty cosmetic display',60,60,140],
+    ['drawer','Palette Drawer Box','Cosmetics & Beauty','palette eyeshadow drawer makeup beauty',150,110,25],
+    ['ste','Nail Polish Carton','Cosmetics & Beauty','nail polish varnish cosmetic beauty carton',32,32,80],
+    ['rte','Hair Serum Carton','Cosmetics & Beauty','hair serum oil beauty cosmetic carton',38,38,130],
+    ['tray4','Cosmetic Insert Tray','Cosmetics & Beauty','cosmetic insert tray beauty gift set',180,120,25],
+
+    // Pharma & health
+    ['ste','Medicine Blister Carton','Pharma & Health','medicine pharma blister tablet carton medical',90,25,110],
+    ['rte','Tablet Strip Carton','Pharma & Health','tablet strip pharma medicine carton medical',75,20,95],
+    ['ste','Syrup Bottle Carton','Pharma & Health','syrup bottle pharma medicine carton medical',50,50,140],
+    ['rte','Vial Carton','Pharma & Health','vial ampoule pharma medicine carton medical',30,30,60],
+    ['ste','Ampoule Carton','Pharma & Health','ampoule vial pharma medicine carton medical',70,35,45],
+    ['sealEnd','Supplement Bottle Carton','Pharma & Health','supplement vitamin bottle pharma health carton',60,60,120],
+    ['ste','Ointment Tube Carton','Pharma & Health','ointment tube cream pharma medicine carton',45,25,140],
+    ['windowCarton','Thermometer Window Pack','Pharma & Health','thermometer window pharma medical device pack',40,25,180],
+    ['autoBottom','Pharmacy Dispensing Carton','Pharma & Health','pharmacy dispensing pharma medicine auto bottom',100,60,150],
+    ['hangTab','First Aid Hang Pack','Pharma & Health','first aid hang tab peg pharma health',110,40,160],
+
+    // Rigid & luxury
+    ['rigidBase','Two-Piece Rigid Base','Rigid & Luxury','rigid setup base two piece luxury gift',200,150,60],
+    ['rigidLid','Two-Piece Rigid Lid','Rigid & Luxury','rigid setup lid two piece luxury gift',204,154,40],
+    ['bookStyle','Book Style Magnetic Box','Rigid & Luxury','book style magnetic rigid luxury gift closure',250,180,50],
+    ['bookStyle','Book Style Jewellery Box','Rigid & Luxury','book style jewellery rigid luxury gift',120,90,40],
+    ['drawer','Rigid Drawer Box','Rigid & Luxury','rigid drawer slider luxury gift box',180,120,45],
+    ['rigidBase','Watch Box Base','Rigid & Luxury','watch rigid base luxury gift jewellery',110,110,70],
+    ['rigidLid','Watch Box Lid','Rigid & Luxury','watch rigid lid luxury gift jewellery',114,114,45],
+    ['tray4','Luxury Insert Tray','Rigid & Luxury','insert tray luxury rigid gift set',190,140,20],
+    ['bookStyle','Wine Presentation Case','Rigid & Luxury','wine presentation book style luxury gift',360,120,110],
+    ['rigidBase','Chocolate Rigid Base','Rigid & Luxury','chocolate confectionery rigid base luxury gift',240,160,35],
+
+    // Beverage
+    ['bottleCarrier','6-Pack Bottle Carrier','Beverage','bottle carrier six pack beer beverage handle',250,170,200],
+    ['bottleCarrier','4-Pack Can Carrier','Beverage','can carrier four pack beer beverage handle',210,110,130],
+    ['fol','Can Multipack Wrap','Beverage','can multipack wrap beverage beer soda',270,140,125],
+    ['gableTop','Milk Gable Carton','Beverage','milk gable carton beverage dairy juice',70,70,200],
+    ['gableTop','Juice Gable Carton','Beverage','juice gable carton beverage drink',70,70,190],
+    ['ste','Wine Bottle Carton','Beverage','wine bottle carton beverage gift alcohol',90,90,340],
+    ['rsc','Wine Shipper 12 Bottle','Beverage','wine shipper carton beverage bottle shipping',400,300,340],
+    ['sleeve','Can Sleeve Wrap','Beverage','can sleeve wrap beverage band label',220,66,30],
+    ['tray6','Beer Bottle Tray','Beverage','beer bottle tray beverage crate six corner',260,180,60],
+
+    // Electronics
+    ['ste','Phone Carton','Electronics','phone mobile smartphone electronics carton',165,80,25],
+    ['rigidBase','Phone Rigid Base','Electronics','phone mobile rigid base electronics premium',166,82,20],
+    ['rigidLid','Phone Rigid Lid','Electronics','phone mobile rigid lid electronics premium',170,86,18],
+    ['rte','Earbuds Carton','Electronics','earbuds headphones audio electronics carton',70,55,30],
+    ['windowCarton','Cable Window Pack','Electronics','cable charger window pack electronics retail',120,90,25],
+    ['hangTab','Charger Hang Pack','Electronics','charger adapter hang tab peg electronics',100,60,35],
+    ['sleeve','Device Sleeve','Electronics','device sleeve wrap electronics band',170,90,20],
+    ['tray4','Accessory Insert Tray','Electronics','accessory insert tray electronics',160,80,18],
+    ['rsc','Laptop Shipping Carton','Electronics','laptop notebook shipping carton electronics rsc',420,300,60],
+    ['autoBottom','Power Bank Carton','Electronics','power bank battery electronics auto bottom carton',100,70,30]
+  ];
+
+  const TEMPLATES = CATALOG_ROWS.map(function(r, i){
+    return {
+      id: 'lib' + i,
+      arch: r[0],
+      archName: (ARCH[r[0]] && ARCH[r[0]].label) || r[0],
+      name: r[1],
+      cat:  r[2],
+      tags: r[3],
+      L: r[4], W: r[5], H: r[6]
+    };
+  }).filter(function(t){ return !!ARCH[t.arch]; });
+
+  const CATEGORIES = TEMPLATES.reduce(function(acc, t){
+    if(acc.indexOf(t.cat) === -1) acc.push(t.cat);
+    return acc;
+  }, []);
+
+  // Geometry is only built when a card is actually drawn or picked.
+  const geomCache = {};
+  function geomFor(t){
+    if(!geomCache[t.id]){
+      try { geomCache[t.id] = ARCH[t.arch].build(t.L, t.W, t.H); }
+      catch(err){ geomCache[t.id] = null; }
+    }
+    return geomCache[t.id];
+  }
+
+  // ---------------- DXF bridge ----------------
+  // Serialise a template to DXF text and feed it to the app's own
+  // handleFile(), so a pick is indistinguishable from a real upload.
+
+  function num(n){ return (Math.round(n*1000)/1000).toFixed(3); }
+
+  // handleFile() switches bleed on and locks it at 2mm for every import, so
+  // the authored contour is generated to match that exact distance.
+  const IMPORT_BLEED_MM = 2;
+
+  function toDXF(g, bleeds){
+    const out = ['0','SECTION','2','ENTITIES'];
+    function emit(poly, layer){
+      out.push('0','LWPOLYLINE','8',layer);
+      poly.forEach(function(p){ out.push('10', num(p[0]), '20', num(p[1])); });
+    }
+    (g.cuts  || []).forEach(function(p){ emit(p, 'CUT'); });
+    (g.folds || []).forEach(function(p){ emit(p, 'FOLD'); });
+    (bleeds  || []).forEach(function(p){ emit(p, 'BLEED'); });
+    out.push('0','ENDSEC','0','EOF');
+    return out.join('\n');
+  }
+
+  function loadTemplate(t){
+    const g = geomFor(t);
+    if(!g || !g.cuts.length){ alert('Could not build that dieline.'); return; }
+
+    const blob = new Blob([toDXF(g, bleedFor(g, IMPORT_BLEED_MM))], { type: 'text/plain' });
+    if(typeof handleFile !== 'function'){ alert('Dieline loader unavailable.'); return; }
+    handleFile(blob);                                  // identical path to a real .dxf upload
+
+    closeLibrary();
+    const note = document.getElementById('librarySideNote');
+    if(note){
+      note.style.display = '';
+      note.innerHTML = '<b>' + escapeHtml(t.name) + '</b> loaded &mdash; ' +
+        Math.round(g.width) + ' &times; ' + Math.round(g.height) + ' mm flat. ' +
+        'Bleed is on and locked at 2 mm, exactly as it would be for an imported DXF.';
+    }
+    const side = document.getElementById('librarySideSearch');
+    if(side) side.value = '';
+  }
+
+  // ---------------- search ----------------
+
+  function norm(s){ return String(s || '').toLowerCase(); }
+
+  function scoreTemplate(t, tokens){
+    let s = 0;
+    const name = norm(t.name), tags = ' ' + norm(t.tags) + ' ', cat = norm(t.cat), arch = norm(t.archName);
+    tokens.forEach(function(tk){
+      let hit = 0;
+      if(name.indexOf(tk) !== -1) hit += 12;
+      if(tags.indexOf(' ' + tk + ' ') !== -1) hit += 9;
+      else if(tags.indexOf(tk) !== -1) hit += 5;
+      if(cat.indexOf(tk) !== -1)  hit += 4;
+      if(arch.indexOf(tk) !== -1) hit += 4;
+      if(!hit && tk.length > 3){
+        const stem = tk.replace(/(ies|es|s)$/, '');
+        if(stem.length > 2 && (name.indexOf(stem) !== -1 || tags.indexOf(stem) !== -1 || arch.indexOf(stem) !== -1)) hit += 3;
+      }
+      s += hit;
+    });
+    return s;
+  }
+
+  // Always hands back the whole library, split into direct matches and
+  // everything else ranked by how related it is to the best match -- so a
+  // search for "pizza box" leads with pizza boxes and still leaves ~100
+  // usable dielines underneath instead of a near-empty grid.
+  function searchLibrary(query, category){
+    const pool = category ? TEMPLATES.filter(function(t){ return t.cat === category; }) : TEMPLATES.slice();
+    const tokens = norm(query).split(/\s+/).filter(Boolean);
+    if(!tokens.length) return { matches: pool, similar: [] };
+
+    const scored = [];
+    const rest = [];
+    pool.forEach(function(t){
+      const s = scoreTemplate(t, tokens);
+      if(s > 0) scored.push({ t: t, s: s }); else rest.push(t);
+    });
+    scored.sort(function(a,b){ return b.s - a.s || a.t.name.localeCompare(b.t.name); });
+
+    const top = scored.length ? scored[0].t : null;
+    if(top){
+      rest.sort(function(a,b){
+        const ra = (a.cat === top.cat ? 2 : 0) + (a.arch === top.arch ? 3 : 0);
+        const rb = (b.cat === top.cat ? 2 : 0) + (b.arch === top.arch ? 3 : 0);
+        return rb - ra || a.name.localeCompare(b.name);
+      });
+    }
+    return { matches: scored.map(function(x){ return x.t; }), similar: rest };
+  }
+
+  // ---------------- rendering ----------------
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function thumbSVG(g, w, h){
+    if(!g || !g.width || !g.height) return '';
+    const pad = 7;
+    const s = Math.min((w - pad*2) / g.width, (h - pad*2) / g.height);
+    const ox = (w - g.width*s)/2, oy = (h - g.height*s)/2;
+    function path(poly){
+      return poly.map(function(p, i){
+        return (i ? 'L' : 'M') + num(ox + p[0]*s) + ' ' + num(oy + p[1]*s);
+      }).join(' ');
+    }
+    const cuts  = (g.cuts  || []).map(path).join(' ');
+    const folds = (g.folds || []).map(path).join(' ');
+    const sw = Math.max(0.6, Math.min(1.1, 90/Math.max(g.width, g.height)));
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="' + folds + '" fill="none" stroke="#3b6ea5" stroke-width="' + (sw*0.8) + '" stroke-dasharray="2.6 2" stroke-linejoin="round"/>' +
+      '<path d="' + cuts  + '" fill="none" stroke="#231f1c" stroke-width="' + sw + '" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '</svg>';
+  }
+
+  // Thumbnails are drawn only once a card scrolls into view -- building
+  // and stringifying 100+ dielines up front is wasted work when the grid
+  // shows a dozen at a time.
+  let thumbObserver = null;
+  function observeThumb(el){
+    if(!('IntersectionObserver' in window)){ paintThumb(el); return; }
+    if(!thumbObserver){
+      thumbObserver = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting){ paintThumb(en.target); thumbObserver.unobserve(en.target); }
+        });
+      }, { root: document.getElementById('libraryBody'), rootMargin: '250px' });
+    }
+    thumbObserver.observe(el);
+  }
+  function paintThumb(el){
+    if(el.dataset.painted) return;
+    const t = TEMPLATES.filter(function(x){ return x.id === el.dataset.tid; })[0];
+    if(!t) return;
+    el.innerHTML = thumbSVG(geomFor(t), 168, 112);
+    el.dataset.painted = '1';
+  }
+
+  function cardHTML(t){
+    return '<button type="button" class="lib-card" data-tid="' + t.id + '">' +
+      '<span class="lib-thumb" data-tid="' + t.id + '"></span>' +
+      '<span class="lib-name">' + escapeHtml(t.name) + '</span>' +
+      '<span class="lib-meta"><span class="lib-cat">' + escapeHtml(t.cat) + '</span> &middot; ' +
+        t.L + ' &times; ' + t.W + ' &times; ' + t.H + ' mm<br>' + escapeHtml(t.archName) + '</span>' +
+      '</button>';
+  }
+
+  let activeCategory = '';
+
+  function renderLibrary(){
+    const body  = document.getElementById('libraryBody');
+    const count = document.getElementById('libraryCount');
+    const q = document.getElementById('librarySearch').value.trim();
+    const res = searchLibrary(q, activeCategory);
+
+    let html = '';
+    if(!res.matches.length && !res.similar.length){
+      html = '<p class="lib-empty">No dielines here yet &mdash; clear the category filter or try another word.</p>';
+    } else {
+      if(res.matches.length){
+        html += '<div class="lib-section-title">' + (q ? 'Matches for &ldquo;' + escapeHtml(q) + '&rdquo;' : (activeCategory || 'All dielines')) + '</div>';
+        html += '<div class="lib-grid">' + res.matches.map(cardHTML).join('') + '</div>';
+      }
+      if(res.similar.length){
+        html += '<div class="lib-section-title more">' + (res.matches.length ? 'Similar dielines you can also use' : 'Browse the full library') + '</div>';
+        html += '<div class="lib-grid">' + res.similar.map(cardHTML).join('') + '</div>';
+      }
+    }
+    body.innerHTML = html;
+    body.scrollTop = 0;
+
+    count.innerHTML = q
+      ? res.matches.length + ' match' + (res.matches.length === 1 ? '' : 'es') + ' &middot; ' + (res.matches.length + res.similar.length) + ' dielines'
+      : (res.matches.length + res.similar.length) + ' dielines';
+
+    Array.prototype.forEach.call(body.querySelectorAll('.lib-thumb'), observeThumb);
+  }
+
+  function renderChips(){
+    const box = document.getElementById('libraryChips');
+    box.innerHTML = ['<button type="button" class="lib-chip' + (activeCategory ? '' : ' on') + '" data-cat="">All</button>']
+      .concat(CATEGORIES.map(function(c){
+        return '<button type="button" class="lib-chip' + (activeCategory === c ? ' on' : '') + '" data-cat="' + escapeHtml(c) + '">' + escapeHtml(c) + '</button>';
+      })).join('');
+  }
+
+  // ---------------- open / close ----------------
+
+  const overlay = document.getElementById('libraryOverlay');
+
+  function openLibrary(query){
+    if(query != null) document.getElementById('librarySearch').value = query;
+    overlay.classList.add('active');
+    renderChips();
+    renderLibrary();
+    const s = document.getElementById('librarySearch');
+    s.focus();
+    s.setSelectionRange(s.value.length, s.value.length);
+  }
+  function closeLibrary(){ overlay.classList.remove('active'); }
+
+  // ---------------- wiring ----------------
+
+  document.getElementById('browseLibraryBtn').addEventListener('click', function(){ openLibrary(); });
+  document.getElementById('libraryCloseBtn').addEventListener('click', closeLibrary);
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) closeLibrary(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && overlay.classList.contains('active')) closeLibrary();
+  });
+
+  let searchTimer = null;
+  document.getElementById('librarySearch').addEventListener('input', function(){
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(renderLibrary, 120);
+  });
+
+  document.getElementById('libraryChips').addEventListener('click', function(e){
+    const chip = e.target.closest ? e.target.closest('.lib-chip') : null;
+    if(!chip) return;
+    activeCategory = chip.dataset.cat || '';
+    renderChips();
+    renderLibrary();
+  });
+
+  document.getElementById('libraryBody').addEventListener('click', function(e){
+    const card = e.target.closest ? e.target.closest('.lib-card') : null;
+    if(!card) return;
+    const t = TEMPLATES.filter(function(x){ return x.id === card.dataset.tid; })[0];
+    if(t) loadTemplate(t);
+  });
+
+  // Sidebar quick-search: typing a few characters expands into the full
+  // browser carrying the query, Pacdora-style.
+  const sideSearch = document.getElementById('librarySideSearch');
+  let sideTimer = null;
+  sideSearch.addEventListener('input', function(){
+    clearTimeout(sideTimer);
+    const v = sideSearch.value.trim();
+    if(v.length < 3) return;
+    sideTimer = setTimeout(function(){
+      if(!overlay.classList.contains('active')) openLibrary(v);
+    }, 350);
+  });
+  sideSearch.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); clearTimeout(sideTimer); openLibrary(sideSearch.value.trim()); }
+  });
+})();
+</script>
+
+<script>
+// ============================================================
+// 3D FOLDING PREVIEW (additive feature module)
+// ------------------------------------------------------------
+// Folds whatever dieline is currently loaded -- an uploaded DXF or a
+// library pick, no difference -- from flat blank to finished box, and
+// draws it in 3D with a scrubbable fold slider.
+//
+// It reads window.BASE_VARIANT.drawLayers, which the app already
+// refreshes on every render in both auto and manual layout modes, so
+// nothing outside this module needs to notify it: a short poll on a
+// cheap signature picks up a new design by itself.
+//
+// Three steps:
+//   1. PANELS  - the fold lines cut the blank into faces. Found by
+//      rasterising the cut outline, painting the creases in as walls
+//      and flood-filling what is left, which copes with the angled and
+//      curved flap edges (and the small end gaps) real DXF exports have
+//      and that a rectangular grid split cannot represent.
+//   2. HINGES  - sampling either side of each crease says which two
+//      panels it joins, giving a graph; a spanning tree from the
+//      largest panel makes every other panel a child of one crease.
+//   3. FOLD    - a panel's transform is its parent's composed with a
+//      rotation about its own crease, so folding the tree by the same
+//      angle wraps a strip of panels into a closed box. Rendering is a
+//      plain painter's-algorithm pass on canvas 2D -- no 3D library,
+//      keeping the page self-contained as it already is.
+// ============================================================
+(function(){
+  'use strict';
+
+  const cvs = document.getElementById('view3dCanvas');
+  if(!cvs) return;
+  const ctx = cvs.getContext('2d');
+  const badge   = document.getElementById('view3dBadge');
+  const slider  = document.getElementById('v3dSlider');
+  const playBtn = document.getElementById('v3dPlay');
+  const pctEl   = document.getElementById('v3dPct');
+  const spinEl  = document.getElementById('v3dSpin');
+  const resetEl = document.getElementById('v3dReset');
+
+  const FOLD_ANGLE = Math.PI/2;         // creases close to a right angle: a box
+
+  // ---------------- small matrix / rigid-transform helpers ----------------
+  // A transform is { R: 3x3 row-major, t: vec3 }, applied as R*p + t.
+
+  const IDENT = { R:[1,0,0, 0,1,0, 0,0,1], t:[0,0,0] };
+
+  function mul3(a, b){
+    const o = new Array(9);
+    for(let i=0;i<3;i++) for(let j=0;j<3;j++)
+      o[i*3+j] = a[i*3]*b[j] + a[i*3+1]*b[3+j] + a[i*3+2]*b[6+j];
+    return o;
+  }
+  function apply3(m, v){
+    return [ m[0]*v[0]+m[1]*v[1]+m[2]*v[2],
+             m[3]*v[0]+m[4]*v[1]+m[5]*v[2],
+             m[6]*v[0]+m[7]*v[1]+m[8]*v[2] ];
+  }
+  function applyT(T, p){
+    const r = apply3(T.R, p);
+    return [r[0]+T.t[0], r[1]+T.t[1], r[2]+T.t[2]];
+  }
+  function compose(parent, local){          // parent AFTER local
+    return { R: mul3(parent.R, local.R), t: (function(){
+      const r = apply3(parent.R, local.t);
+      return [r[0]+parent.t[0], r[1]+parent.t[1], r[2]+parent.t[2]];
+    })() };
+  }
+  function rotAxis(k, th){                  // Rodrigues, k unit
+    const c = Math.cos(th), s = Math.sin(th), t = 1-c;
+    const x = k[0], y = k[1], z = k[2];
+    return [ t*x*x+c,   t*x*y-s*z, t*x*z+s*y,
+             t*x*y+s*z, t*y*y+c,   t*y*z-s*x,
+             t*x*z-s*y, t*y*z+s*x, t*z*z+c ];
+  }
+  // Rotation of `th` about the line through A along unit d.
+  function hingeT(A, d, th){
+    const R = rotAxis(d, th);
+    const RA = apply3(R, A);
+    return { R:R, t:[A[0]-RA[0], A[1]-RA[1], A[2]-RA[2]] };
+  }
+
+  // ---------------- 2D helpers ----------------
+
+  function segDist(p, a, b){
+    const vx = b[0]-a[0], vy = b[1]-a[1], wx = p[0]-a[0], wy = p[1]-a[1];
+    const L = vx*vx + vy*vy;
+    let t = L ? (wx*vx + wy*vy)/L : 0;
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    return Math.hypot(wx - t*vx, wy - t*vy);
+  }
+  function polyArea(p){
+    let a = 0;
+    for(let i=0,n=p.length;i<n;i++){ const q = p[(i+1)%n]; a += p[i][0]*q[1] - q[0]*p[i][1]; }
+    return Math.abs(a/2);
+  }
+  function centroidOf(p){
+    let x=0, y=0;
+    p.forEach(function(q){ x+=q[0]; y+=q[1]; });
+    return [x/p.length, y/p.length];
+  }
+  // Ramer-Douglas-Peucker: a traced grid boundary is a staircase, and
+  // simplifyCollinear only flattens the axis-aligned runs -- the diagonal
+  // and curved stretches need real simplification or a panel arrives with
+  // thousands of 1-cell steps.
+  function rdp(pts, eps){
+    if(pts.length < 3) return pts.slice();
+    const a = pts[0], b = pts[pts.length-1];
+    let maxD = -1, idx = 0;
+    for(let i=1;i<pts.length-1;i++){
+      const d = segDist(pts[i], a, b);
+      if(d > maxD){ maxD = d; idx = i; }
+    }
+    if(maxD <= eps) return [a, b];
+    return rdp(pts.slice(0, idx+1), eps).slice(0,-1).concat(rdp(pts.slice(idx), eps));
+  }
+  function rdpClosed(loop, eps){
+    if(loop.length < 4) return loop.slice();
+    const p0 = loop[0];
+    let far = 1, fd = -1;
+    for(let i=1;i<loop.length;i++){
+      const d = Math.hypot(loop[i][0]-p0[0], loop[i][1]-p0[1]);
+      if(d > fd){ fd = d; far = i; }
+    }
+    const s1 = rdp(loop.slice(0, far+1), eps);
+    const s2 = rdp(loop.slice(far).concat([loop[0]]), eps);
+    return s1.slice(0,-1).concat(s2.slice(0,-1));
+  }
+
+  // ---------------- step 1: split the blank into panels ----------------
+
+  function buildPanels(cuts, folds, W, H){
+    // A real DXF almost never carries its outline as one closed polyline: CAD
+    // exports it as dozens of individual LINE entities, so drawLayers.cuts
+    // arrives as bare two-point segments. Scanline-filling those directly
+    // treats every segment as its own closed loop and yields nothing usable,
+    // which is why an uploaded file produced no panels while a library
+    // dieline (already one closed loop) worked. Stitch first, using the same
+    // routine the bleed and collision code relies on -- it also bridges the
+    // small corner-fillet gaps DXF export tends to leave, and drops slivers.
+    let shape = [];
+    try { shape = allClosedLoops(cuts, 0.15) || []; } catch(e){ shape = []; }
+    if(!shape.length){
+      try {
+        const outer = pickOuterLoop(cuts);
+        if(outer && outer.loop && isLoopClosed(outer.loop, 0.15)) shape = [outer.loop];
+      } catch(e){ /* fall through to the bounding rectangle */ }
+    }
+    if(!shape.length){
+      const flat = [];
+      cuts.forEach(function(l){ l.forEach(function(p){ flat.push(p); }); });
+      if(!flat.length) return null;
+      try { shape = [boundingRectLoop(flat)]; } catch(e){ return null; }
+    }
+
+    const TARGET = 260000;
+    const res = Math.max(0.55, Math.sqrt((W*H)/TARGET));
+    const ox = -2*res, oy = -2*res;
+    const cols = Math.ceil((W + 4*res)/res), rows = Math.ceil((H + 4*res)/res);
+    const N = cols*rows;
+    if(!(N > 0) || N > 4000000) return null;
+
+    // interior of the die, holes excluded (even-odd across every cut loop)
+    const inside = new Uint8Array(N);
+    for(let r=0;r<rows;r++){
+      const y = oy + (r+0.5)*res;
+      const xs = [];
+      for(let li=0;li<shape.length;li++){
+        const loop = shape[li];
+        for(let i=0;i<loop.length;i++){
+          const a = loop[i], b = loop[(i+1)%loop.length];
+          if((a[1] > y) !== (b[1] > y)) xs.push(a[0] + (y-a[1])/(b[1]-a[1])*(b[0]-a[0]));
         }
       }
-      localStorage.removeItem("autoLoadDXF");
-    }, 100);
-  }
-}
+      if(xs.length < 2) continue;
+      xs.sort(function(p,q){ return p-q; });
+      for(let k=0;k+1<xs.length;k+=2){
+        let c0 = Math.ceil((xs[k]-ox)/res - 0.5), c1 = Math.floor((xs[k+1]-ox)/res - 0.5);
+        if(c0 < 0) c0 = 0;
+        if(c1 > cols-1) c1 = cols-1;
+        for(let c=c0;c<=c1;c++) inside[r*cols+c] = 1;
+      }
+    }
 
-if (document.readyState === 'loading') {
+    // creases become walls. Extending each crease a little past its ends
+    // seals the hairline gap DXF exports often leave where a fold meets a
+    // cut, which would otherwise let two panels leak into one.
+    const wall = new Uint8Array(N);
+    const EXT = Math.max(1.5, res*2);
+    let creaseCount = 0;
+    function paintWall(a, b, ext){
+      const dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx,dy);
+      if(L < 1e-6) return false;
+      const ux = dx/L, uy = dy/L;
+      const sx = a[0]-ux*ext, sy = a[1]-uy*ext;
+      const ex = b[0]+ux*ext, ey = b[1]+uy*ext;
+      const steps = Math.ceil((L + 2*ext)/(res*0.3));
+      for(let s=0;s<=steps;s++){
+        const t = s/steps;
+        const c = Math.floor((sx + (ex-sx)*t - ox)/res);
+        const r = Math.floor((sy + (ey-sy)*t - oy)/res);
+        if(c>=0 && r>=0 && c<cols && r<rows) wall[r*cols+c] = 1;
+      }
+      return true;
+    }
+    // Every cut edge is a separator as well. The outer profile is one
+    // already, but internal die-cuts -- slits between an ear and its
+    // neighbouring wall, windows, hand-holes -- are only a couple of
+    // millimetres across, and painting them in guarantees they split the
+    // panels either side no matter how coarse the raster had to be.
+    for(let ci=0;ci<cuts.length;ci++){
+      const loop = cuts[ci];
+      for(let i=0;i<loop.length;i++) paintWall(loop[i], loop[(i+1)%loop.length], 0);
+    }
+    for(let fi=0;fi<folds.length;fi++){
+      const poly = folds[fi];
+      for(let i=0;i<poly.length-1;i++){
+        const a = poly[i], b = poly[i+1];
+        if(paintWall(a, b, EXT)) creaseCount++;
+      }
+    }
+
+    // flood fill (4-connected, so a one-cell wall cannot leak diagonally)
+    const label = new Int32Array(N);
+    let next = 0;
+    const areas = [0];
+    const stack = [];
+    for(let i=0;i<N;i++){
+      if(!inside[i] || wall[i] || label[i]) continue;
+      next++; areas[next] = 0;
+      label[i] = next; stack.push(i);
+      while(stack.length){
+        const p = stack.pop();
+        areas[next]++;
+        const c = p % cols, r = (p - c)/cols;
+        if(c > 0        && inside[p-1]    && !wall[p-1]    && !label[p-1])    { label[p-1] = next;    stack.push(p-1); }
+        if(c < cols-1   && inside[p+1]    && !wall[p+1]    && !label[p+1])    { label[p+1] = next;    stack.push(p+1); }
+        if(r > 0        && inside[p-cols] && !wall[p-cols] && !label[p-cols]) { label[p-cols] = next; stack.push(p-cols); }
+        if(r < rows-1   && inside[p+cols] && !wall[p+cols] && !label[p+cols]) { label[p+cols] = next; stack.push(p+cols); }
+      }
+    }
+    if(next === 0) return null;
+
+    // drop slivers (crease-width offcuts), then grow the survivors back
+    // over the wall cells so neighbouring panels meet exactly on the crease
+    const cellMM2 = res*res;
+    const keep = new Int32Array(next+1);
+    let kept = 0;
+    for(let L2=1;L2<=next;L2++) if(areas[L2]*cellMM2 >= 20) keep[L2] = ++kept;
+    if(kept === 0) return null;
+    for(let i=0;i<N;i++) label[i] = label[i] ? keep[label[i]] : 0;
+
+    const queue = [];
+    for(let i=0;i<N;i++) if(label[i]) queue.push(i);
+    for(let qi=0; qi<queue.length; qi++){
+      const p = queue[qi], lb = label[p];
+      const c = p % cols, r = (p - c)/cols;
+      if(c > 0      && inside[p-1]    && !label[p-1])    { label[p-1] = lb;    queue.push(p-1); }
+      if(c < cols-1 && inside[p+1]    && !label[p+1])    { label[p+1] = lb;    queue.push(p+1); }
+      if(r > 0      && inside[p-cols] && !label[p-cols]) { label[p-cols] = lb; queue.push(p-cols); }
+      if(r < rows-1 && inside[p+cols] && !label[p+cols]) { label[p+cols] = lb; queue.push(p+cols); }
+    }
+
+    // trace each panel back out to a polygon
+    const panels = [];
+    const mask = new Uint8Array(N);
+    for(let lb=1; lb<=kept; lb++){
+      mask.fill(0);
+      for(let i=0;i<N;i++) if(label[i] === lb) mask[i] = 1;
+      let loops;
+      try { loops = traceGridBoundary(mask, cols, rows, res, ox, oy); }
+      catch(e){ loops = null; }
+      if(!loops || !loops.length) continue;
+      let best = null, bestA = -1;
+      loops.forEach(function(l){ const a = polyArea(l); if(a > bestA){ bestA = a; best = l; } });
+      if(!best || best.length < 3) continue;
+      let poly = rdpClosed(best, res*0.9);
+      if(poly.length < 3) continue;
+      let bx0=Infinity, by0=Infinity, bx1=-Infinity, by1=-Infinity;
+      poly.forEach(function(q){
+        if(q[0]<bx0) bx0=q[0]; if(q[0]>bx1) bx1=q[0];
+        if(q[1]<by0) by0=q[1]; if(q[1]>by1) by1=q[1];
+      });
+      panels.push({ label:lb, poly:poly, area:polyArea(poly), centroid:centroidOf(poly),
+                    bb:{ minX:bx0, minY:by0, maxX:bx1, maxY:by1 } });
+    }
+    if(!panels.length) return null;
+    return { panels:panels, label:label, cols:cols, rows:rows, res:res, ox:ox, oy:oy, creases:creaseCount };
+  }
+
+  // ---------------- step 2: which crease joins which two panels ----------------
+
+  function buildHinges(model, folds){
+    const { label, cols, rows, res, ox, oy } = model;
+    const idxOf = {};
+    model.panels.forEach(function(p,i){ idxOf[p.label] = i; });
+    function labelAt(x, y){
+      const c = Math.floor((x-ox)/res), r = Math.floor((y-oy)/res);
+      if(c<0||r<0||c>=cols||r>=rows) return 0;
+      return label[r*cols+c];
+    }
+
+    const pairs = {};
+    const probe = Math.max(res*2.5, 1.5);
+    for(let fi=0;fi<folds.length;fi++){
+      const poly = folds[fi];
+      for(let i=0;i<poly.length-1;i++){
+        const a = poly[i], b = poly[i+1];
+        const dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx,dy);
+        if(L < 1e-6) continue;
+        const nx = -dy/L, ny = dx/L;               // crease normal
+        const steps = Math.max(3, Math.ceil(L/2));
+        const tally = {};
+        for(let s=0;s<=steps;s++){
+          const t = s/steps;
+          const px = a[0] + dx*t, py = a[1] + dy*t;
+          const l1 = labelAt(px + nx*probe, py + ny*probe);
+          const l2 = labelAt(px - nx*probe, py - ny*probe);
+          if(!l1 || !l2 || l1 === l2) continue;
+          const k = Math.min(l1,l2) + ':' + Math.max(l1,l2);
+          tally[k] = (tally[k]||0) + 1;
+        }
+        let bestK = null, bestN = 0;
+        for(const k in tally) if(tally[k] > bestN){ bestN = tally[k]; bestK = k; }
+        if(!bestK || bestN < 2) continue;         // crease does not separate two panels
+        const rec = pairs[bestK] || (pairs[bestK] = { key:bestK, segs:[], len:0 });
+        rec.segs.push([a, b, L]);
+        rec.len += L;
+      }
+    }
+
+    const hinges = [];
+    for(const k in pairs){
+      const rec = pairs[k];
+      const parts = k.split(':');
+      const ia = idxOf[+parts[0]], ib = idxOf[+parts[1]];
+      if(ia == null || ib == null) continue;
+      // the longest contributing run defines the axis; collinear runs of the
+      // same crease all share it, so this is stable
+      let axis = rec.segs[0];
+      rec.segs.forEach(function(s){ if(s[2] > axis[2]) axis = s; });
+      hinges.push({ a:ia, b:ib, p0:axis[0], p1:axis[1], len:rec.len });
+    }
+    return hinges;
+  }
+
+  // ---------------- step 3: spanning tree + fold transforms ----------------
+
+  // A spanning FOREST, not a single tree. One dieline routinely holds several
+  // separate pieces -- a box plus its lid, a tray plus an insert, several
+  // one-ups on the same sheet -- and creases never join them. Rooting one
+  // tree folds whichever piece happened to contain that root and leaves every
+  // other piece lying flat, which on a real multi-piece DXF is most of the
+  // model. So find the connected pieces first and root each one on its own
+  // largest panel.
+  function buildTree(panels, hinges){
+    const adj = panels.map(function(){ return []; });
+    hinges.forEach(function(h, i){
+      adj[h.a].push({ to:h.b, h:i });
+      adj[h.b].push({ to:h.a, h:i });
+    });
+
+    const comp = panels.map(function(){ return -1; });
+    let nc = 0;
+    for(let i=0;i<panels.length;i++){
+      if(comp[i] >= 0) continue;
+      const st = [i];
+      comp[i] = nc;
+      while(st.length){
+        const u = st.pop();
+        adj[u].forEach(function(e){ if(comp[e.to] < 0){ comp[e.to] = nc; st.push(e.to); } });
+      }
+      nc++;
+    }
+    const rootOf = [];
+    panels.forEach(function(p, i){
+      const c = comp[i];
+      if(rootOf[c] == null || p.area > panels[rootOf[c]].area) rootOf[c] = i;
+    });
+
+    const parent = panels.map(function(){ return -1; });
+    const via    = panels.map(function(){ return -1; });
+    const seen   = panels.map(function(){ return false; });
+    const order  = [];
+    const roots  = [];
+    for(let c=0;c<nc;c++){
+      const root = rootOf[c];
+      if(root == null || seen[root]) continue;
+      roots.push(root);
+      seen[root] = true;
+      const start = order.length;
+      order.push(root);
+      for(let qi=start; qi<order.length; qi++){
+        const u = order[qi];
+        adj[u].forEach(function(e){
+          if(seen[e.to]) return;
+          seen[e.to] = true; parent[e.to] = u; via[e.to] = e.h;
+          order.push(e.to);
+        });
+      }
+    }
+    return { roots:roots, root:roots[0], parent:parent, via:via,
+             order:order, adj:adj, seen:seen, comp:comp, pieces:nc };
+  }
+
+  // Flat sheet lies in z=0. Dieline y runs downward, so it is negated to keep
+  // the 3D view the same way up as the 2D canvas.
+  function toWorld(p){ return [p[0], -p[1], 0]; }
+
+  function foldTransforms(M, t){
+    const { panels, hinges, tree } = M;
+    const T = panels.map(function(){ return IDENT; });
+    const ang = FOLD_ANGLE * t;
+    tree.order.forEach(function(i){
+      const par = tree.parent[i];
+      if(par < 0){ T[i] = IDENT; return; }
+      const h = hinges[tree.via[i]];
+      const A = toWorld(h.p0), B = toWorld(h.p1);
+      let d = [B[0]-A[0], B[1]-A[1], 0];
+      const L = Math.hypot(d[0], d[1]) || 1;
+      d = [d[0]/L, d[1]/L, 0];
+      // Swing every panel the SAME way so the blank closes into a box, and
+      // specifically downward, away from the printed face. A blank is laid
+      // out print side up and folds away from it, which puts the artwork on
+      // the outside of the finished box; folding upward builds the identical
+      // shape but wraps the print to the inside, where it is never seen.
+      const c = toWorld(panels[i].centroid);
+      const v = [c[0]-A[0], c[1]-A[1], 0];
+      if(d[0]*v[1] - d[1]*v[0] > 0) d = [-d[0], -d[1], 0];
+      T[i] = compose(T[par], hingeT(A, d, ang));
+    });
+    return T;
+  }
+
+  // ---------------- model state ----------------
+
+  let MODEL = null, SIG = '', ASIG = '', FOLD = 0, ANIM = null, showArt = true;
+  // `zoom` is the framing multiplier the wheel drives; `dist` and `target` are
+  // recomputed each frame from what is actually on screen, so the box keeps a
+  // sensible size as it shrinks from a wide flat blank into a compact box.
+  const CAM = { yaw:-0.62, pitch:0.98, zoom:3.6, dist:1, target:[0,0,0] };
+  const ZOOM_DEFAULT = 3.6;   // leaves a margin around the bounding sphere
+
+  function layers(){
+    const bv = window.BASE_VARIANT;
+    if(!bv || !bv.drawLayers) return null;
+    // Two points is a legitimate cut: a DXF built from LINE entities is
+    // nothing but two-point segments. Requiring three here threw the whole
+    // outline away before it ever reached the stitcher.
+    const cuts  = (bv.drawLayers.cuts  || []).filter(function(l){ return l && l.length >= 2; });
+    const folds = (bv.drawLayers.folds || []).filter(function(l){ return l && l.length >= 2; });
+    if(!cuts.length) return null;
+    return { cuts:cuts, folds:folds, W:bv.widthMM||0, H:bv.heightMM||0 };
+  }
+  function signature(){
+    const L = layers();
+    if(!L) return 'none';
+    return L.W.toFixed(2)+'_'+L.H.toFixed(2)+'_'+L.cuts.length+'_'+L.folds.length+'_'+
+           (L.cuts[0] ? L.cuts[0].length : 0);
+  }
+
+  function rebuild(){
+    const L = layers();
+    if(!L){ MODEL = null; return; }
+    const base = buildPanels(L.cuts, L.folds, L.W, L.H);
+    if(!base){ MODEL = null; return; }
+    const hinges = buildHinges(base, L.folds);
+    const tree = buildTree(base.panels, hinges);
+    MODEL = { panels:base.panels, hinges:hinges, tree:tree, W:L.W, H:L.H };
+
+    // Lone panels no crease reaches are worth calling out; separate pieces
+    // are normal, so they are reported as pieces rather than as failures.
+    const sizes = {};
+    tree.comp.forEach(function(c){ sizes[c] = (sizes[c]||0) + 1; });
+    const lone = Object.keys(sizes).filter(function(c){ return sizes[c] === 1; }).length;
+    badge.textContent = MODEL.panels.length + ' panel' + (MODEL.panels.length===1?'':'s') +
+      ' · ' + hinges.length + ' crease' + (hinges.length===1?'':'s') +
+      (tree.pieces > 1 ? ' · ' + tree.pieces + ' pieces' : '') +
+      (lone ? ' · ' + lone + ' loose' : '');
+  }
+
+  // ---------------- camera + draw ----------------
+
+  const VIEW = { w:800, h:400, dpr:1 };
+
+  function resize(){
+    const host = cvs.parentElement;
+    const w = Math.max(240, host.clientWidth);
+    const h = Math.max(280, Math.min(470, Math.round(w*0.52)));
+    const dpr = window.devicePixelRatio || 1;
+    cvs.style.height = h + 'px';
+    cvs.width  = Math.round(w*dpr);
+    cvs.height = Math.round(h*dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    VIEW.w = w; VIEW.h = h; VIEW.dpr = dpr;   // texture mapping sets its own
+  }                                           // transform and must re-apply it
+
+  function project(p){
+    const dx = p[0]-CAM.target[0], dy = p[1]-CAM.target[1], dz = p[2]-CAM.target[2];
+    const cy = Math.cos(CAM.yaw), sy = Math.sin(CAM.yaw);
+    const rx =  dx*cy + dy*sy;
+    const ry = -dx*sy + dy*cy;
+    const cp = Math.cos(CAM.pitch), sp = Math.sin(CAM.pitch);
+    const depth = ry*cp - dz*sp + CAM.dist;
+    const up    = ry*sp + dz*cp;
+    const f = VIEW.h * 1.35;
+    const d = depth < 1 ? 1 : depth;
+    return { x: VIEW.w/2 + f*rx/d, y: VIEW.h/2 - f*up/d, depth: depth };
+  }
+
+  const LIGHT = (function(){
+    const v = [0.35, -0.55, 0.76], L = Math.hypot(v[0],v[1],v[2]);
+    return [v[0]/L, v[1]/L, v[2]/L];
+  })();
+
+  // ---------------- artwork as a texture ----------------
+  // The 2D canvas paints artwork through window.drawArtworkLayer. Calling the
+  // very same function into an offscreen sheet in dieline millimetre space
+  // gives a texture whose coordinates ARE each panel's own flat coordinates,
+  // so a panel needs no per-artwork bookkeeping: it just samples the sheet
+  // over its own footprint, and whatever the 2D view shows is what wraps onto
+  // the folded box -- including the panel clipping the artwork tool applies.
+  let sheet = null, sheetScale = 1, sheetAny = false;
+  let cov = null, covCols = 0, covRows = 0, covCell = 24;
+
+  function buildSheet(W, H){
+    if(typeof window.drawArtworkLayer !== 'function' || !(W > 0) || !(H > 0)){ sheetAny = false; return; }
+    const s = Math.max(1, Math.min(1500 / Math.max(W, H), 4));
+    const cw = Math.max(1, Math.round(W*s)), chh = Math.max(1, Math.round(H*s));
+    if(!sheet) sheet = document.createElement('canvas');
+    if(sheet.width !== cw || sheet.height !== chh){ sheet.width = cw; sheet.height = chh; }
+    const sc = sheet.getContext('2d');
+    sc.setTransform(1,0,0,1,0,0);
+    sc.clearRect(0,0,cw,chh);
+    try { window.drawArtworkLayer(sc, 0, 0, s, { showHandles:false }); }
+    catch(e){ sheetAny = false; return; }
+    sheetScale = s;
+
+    // Coarse map of where the sheet actually has ink, so panels with no
+    // artwork on them skip the texturing work entirely (the common case).
+    covCols = Math.ceil(cw/covCell); covRows = Math.ceil(chh/covCell);
+    cov = new Uint8Array(covCols*covRows);
+    sheetAny = false;
+    let data;
+    try { data = sc.getImageData(0,0,cw,chh).data; } catch(e){ sheetAny = true; cov = null; return; }
+    for(let y=0;y<chh;y+=2){
+      const row = y*cw;
+      for(let x=0;x<cw;x+=2){
+        if(data[(row+x)*4+3] > 8){
+          cov[((y/covCell)|0)*covCols + ((x/covCell)|0)] = 1;
+          sheetAny = true;
+        }
+      }
+    }
+  }
+
+  function panelHasArt(bb){
+    if(!sheetAny) return false;
+    if(!cov) return true;
+    const c0 = Math.max(0, ((bb.minX*sheetScale)/covCell)|0);
+    const c1 = Math.min(covCols-1, ((bb.maxX*sheetScale)/covCell)|0);
+    const r0 = Math.max(0, ((bb.minY*sheetScale)/covCell)|0);
+    const r1 = Math.min(covRows-1, ((bb.maxY*sheetScale)/covCell)|0);
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++) if(cov[r*covCols+c]) return true;
+    return false;
+  }
+
+  // Where the camera actually sits, so a panel can be asked whether we are
+  // looking at its printed face or the bare inside of the board.
+  function cameraPos(){
+    const cy = Math.cos(CAM.yaw), sy = Math.sin(CAM.yaw);
+    const cp = Math.cos(CAM.pitch), sp = Math.sin(CAM.pitch);
+    const d = [-sy*cp, cy*cp, -sp];
+    return [CAM.target[0]-d[0]*CAM.dist, CAM.target[1]-d[1]*CAM.dist, CAM.target[2]-d[2]*CAM.dist];
+  }
+
+  // Canvas 2D can only do affine transforms, but the map from a flat panel to
+  // the screen under perspective is projective. Splitting the panel into a
+  // grid and mapping each little triangle affinely approximates it closely
+  // enough that the error stays under a pixel at this focal length.
+  const SUBDIV = 3;
+
+  function mapTriangle(p0, p1, p2){
+    const x0 = p0.fx*sheetScale, y0 = p0.fy*sheetScale;
+    const x1 = p1.fx*sheetScale, y1 = p1.fy*sheetScale;
+    const x2 = p2.fx*sheetScale, y2 = p2.fy*sheetScale;
+    const den = (x1-x0)*(y2-y0) - (x2-x0)*(y1-y0);
+    if(Math.abs(den) < 1e-9) return;
+    const u0 = p0.s.x, v0 = p0.s.y, u1 = p1.s.x, v1 = p1.s.y, u2 = p2.s.x, v2 = p2.s.y;
+    const a = ((u1-u0)*(y2-y0) - (u2-u0)*(y1-y0))/den;
+    const c = ((u2-u0)*(x1-x0) - (u1-u0)*(x2-x0))/den;
+    const e = u0 - a*x0 - c*y0;
+    const b = ((v1-v0)*(y2-y0) - (v2-v0)*(y1-y0))/den;
+    const d = ((v2-v0)*(x1-x0) - (v1-v0)*(x2-x0))/den;
+    const f = v0 - b*x0 - d*y0;
+
+    // Nudge each triangle out from its own centre before clipping: clipping
+    // neighbours on exactly the shared edge leaves antialiased hairlines.
+    const mx = (u0+u1+u2)/3, my = (v0+v1+v2)/3, G = 0.35;
+    function out(u,v){ const dx=u-mx, dy=v-my, L=Math.hypot(dx,dy)||1; return [u+dx/L*G, v+dy/L*G]; }
+    const q0 = out(u0,v0), q1 = out(u1,v1), q2 = out(u2,v2);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(q0[0],q0[1]); ctx.lineTo(q1[0],q1[1]); ctx.lineTo(q2[0],q2[1]);
+    ctx.closePath();
+    ctx.clip();
+    const k = VIEW.dpr;
+    ctx.setTransform(k*a, k*b, k*c, k*d, k*e, k*f);
+    try { ctx.drawImage(sheet, 0, 0); } catch(err){}
+    ctx.restore();
+  }
+
+  function textureFace(T, panel, proj){
+    const bb = panel.bb;
+    const N = SUBDIV;
+    ctx.save();
+    ctx.beginPath();
+    proj.forEach(function(s,k){ if(k) ctx.lineTo(s.x,s.y); else ctx.moveTo(s.x,s.y); });
+    ctx.closePath();
+    ctx.clip();
+    const gx = (bb.maxX-bb.minX)/N, gy = (bb.maxY-bb.minY)/N;
+    const P = [];
+    for(let j=0;j<=N;j++){
+      P[j] = [];
+      for(let i=0;i<=N;i++){
+        const fx = bb.minX + gx*i, fy = bb.minY + gy*j;
+        P[j][i] = { fx:fx, fy:fy, s: project(applyT(T, toWorld([fx,fy]))) };
+      }
+    }
+    for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+      mapTriangle(P[j][i], P[j][i+1], P[j+1][i+1]);
+      mapTriangle(P[j][i], P[j+1][i+1], P[j+1][i]);
+    }
+    ctx.restore();
+  }
+
+  function shade(hex, k){
+    const n = parseInt(hex.slice(1), 16);
+    const r = Math.round(Math.min(255, ((n>>16)&255)*k));
+    const g = Math.round(Math.min(255, ((n>>8)&255)*k));
+    const b = Math.round(Math.min(255, (n&255)*k));
+    return 'rgb('+r+','+g+','+b+')';
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, VIEW.w, VIEW.h);
+    if(!MODEL){
+      ctx.fillStyle = '#6b645c';
+      ctx.font = "13px Inter, sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText('Load a dieline to see it fold.', VIEW.w/2, VIEW.h/2);
+      ctx.textAlign = 'start';
+      return;
+    }
+
+    const T = foldTransforms(MODEL, FOLD);
+    const worlds = MODEL.panels.map(function(p, i){
+      return p.poly.map(function(q){ return applyT(T[i], toWorld(q)); });
+    });
+
+    // Re-frame on the current pose. A blank is far wider flat than folded, so
+    // fixing the camera on the flat footprint would leave the finished box a
+    // speck in the middle of the panel.
+    const lo = [Infinity,Infinity,Infinity], hi = [-Infinity,-Infinity,-Infinity];
+    worlds.forEach(function(w){ w.forEach(function(p){
+      for(let k=0;k<3;k++){ if(p[k]<lo[k]) lo[k]=p[k]; if(p[k]>hi[k]) hi[k]=p[k]; }
+    }); });
+    if(!isFinite(lo[0])) return;
+    CAM.target = [(lo[0]+hi[0])/2, (lo[1]+hi[1])/2, (lo[2]+hi[2])/2];
+    const radius = Math.max(15, Math.hypot(hi[0]-lo[0], hi[1]-lo[1], hi[2]-lo[2])/2);
+    CAM.dist = radius * CAM.zoom;
+
+    const eye = cameraPos();
+    const faces = worlds.map(function(world, i){
+      const proj = world.map(project);
+      let depth = 0, cx = 0, cy = 0, cz = 0;
+      proj.forEach(function(s){ depth += s.depth; });
+      world.forEach(function(w){ cx += w[0]; cy += w[1]; cz += w[2]; });
+      const m = world.length;
+      const n = apply3(T[i].R, [0,0,1]);
+      // Positive means the printed side of the board is turned toward us, so
+      // this is the face the artwork belongs on.
+      const facing = n[0]*(eye[0]-cx/m) + n[1]*(eye[1]-cy/m) + n[2]*(eye[2]-cz/m);
+      return { proj:proj, world:world, depth:depth/proj.length, n:n,
+               facing:facing, panel:MODEL.panels[i], T:T[i] };
+    });
+
+    // ground contact shading, drawn first so panels sit on top
+    const minZ = lo[2];
+    ctx.save();
+    faces.forEach(function(f){
+      ctx.beginPath();
+      f.world.forEach(function(w, k){
+        const s = project([w[0], w[1], minZ - 0.4]);
+        if(k) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(35,31,28,0.055)';
+      ctx.fill();
+    });
+    ctx.restore();
+
+    faces.sort(function(a,b){ return b.depth - a.depth; });   // painter's algorithm
+
+    faces.forEach(function(f){
+      const lit = Math.abs(f.n[0]*LIGHT[0] + f.n[1]*LIGHT[1] + f.n[2]*LIGHT[2]);
+      const k = 0.72 + 0.28*lit;
+      // A sheet has no thickness, so which side we are looking at decides the
+      // colour: printed face outward, plainer board inward.
+      const printed = f.facing > 0;
+      const base = printed ? '#e3cfae' : '#c8b391';
+      ctx.beginPath();
+      f.proj.forEach(function(s, k2){ if(k2) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); });
+      ctx.closePath();
+      ctx.fillStyle = shade(base, k);
+      ctx.fill();
+
+      // Artwork rides on the printed side only -- looking at the inside of a
+      // panel should show bare board, exactly as it would in reality.
+      if(showArt && printed && sheetAny && f.panel && panelHasArt(f.panel.bb)){
+        textureFace(f.T, f.panel, f.proj);
+        // re-apply this face's shading over the texture so the artwork is lit
+        // with the panel rather than sitting on top of it looking flat
+        if(k < 0.999){
+          ctx.beginPath();
+          f.proj.forEach(function(s, k2){ if(k2) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); });
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(35,31,28,' + ((1-k)*0.75).toFixed(3) + ')';
+          ctx.fill();
+        }
+      }
+
+      ctx.beginPath();
+      f.proj.forEach(function(s, k2){ if(k2) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); });
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(80,62,40,0.55)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+  }
+
+  // ---------------- interaction ----------------
+
+  let dragging = false, lastX = 0, lastY = 0;
+  cvs.addEventListener('pointerdown', function(e){
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    cvs.classList.add('dragging');
+    cvs.setPointerCapture(e.pointerId);
+  });
+  cvs.addEventListener('pointermove', function(e){
+    if(!dragging) return;
+    CAM.yaw   += (e.clientX - lastX) * 0.008;
+    CAM.pitch += (e.clientY - lastY) * 0.008;
+    CAM.pitch = Math.max(-1.45, Math.min(1.45, CAM.pitch));
+    lastX = e.clientX; lastY = e.clientY;
+    draw();
+  });
+  function endDrag(e){
+    if(!dragging) return;
+    dragging = false; cvs.classList.remove('dragging');
+    try { cvs.releasePointerCapture(e.pointerId); } catch(err){}
+  }
+  cvs.addEventListener('pointerup', endDrag);
+  cvs.addEventListener('pointercancel', endDrag);
+  cvs.addEventListener('wheel', function(e){
+    e.preventDefault();
+    CAM.zoom *= (e.deltaY > 0 ? 1.12 : 1/1.12);
+    CAM.zoom = Math.max(1.25, Math.min(8, CAM.zoom));
+    draw();
+  }, { passive:false });
+
+  function setFold(v, fromSlider){
+    FOLD = Math.max(0, Math.min(1, v));
+    if(!fromSlider) slider.value = Math.round(FOLD*100);
+    pctEl.textContent = FOLD <= 0.001 ? 'Flat' : (FOLD >= 0.999 ? 'Folded' : Math.round(FOLD*100) + '%');
+    draw();
+  }
+
+  slider.addEventListener('input', function(){
+    stopAnim();
+    setFold(slider.value/100, true);
+  });
+
+  function stopAnim(){
+    if(ANIM){ cancelAnimationFrame(ANIM); ANIM = null; }
+    playBtn.innerHTML = '&#9654; Fold it';
+  }
+  function playFold(){
+    const from = FOLD >= 0.999 ? 0 : FOLD;
+    const to = 1;
+    const dur = 2200 * (to - from);
+    const t0 = performance.now();
+    playBtn.innerHTML = '&#10073;&#10073; Pause';
+    function step(now){
+      const raw = Math.min(1, (now - t0)/Math.max(120, dur));
+      const e = raw < 0.5 ? 2*raw*raw : 1 - Math.pow(-2*raw+2, 2)/2;   // ease in-out
+      setFold(from + (to-from)*e);
+      if(raw < 1){ ANIM = requestAnimationFrame(step); }
+      else { ANIM = null; playBtn.innerHTML = '&#9654; Fold it'; }
+    }
+    ANIM = requestAnimationFrame(step);
+  }
+  playBtn.addEventListener('click', function(){
+    if(ANIM) stopAnim(); else playFold();
+  });
+
+  const artEl = document.getElementById('v3dArt');
+  if(artEl){
+    showArt = artEl.checked;
+    artEl.addEventListener('change', function(){ showArt = artEl.checked; draw(); });
+  }
+
+  resetEl.addEventListener('click', function(){
+    CAM.yaw = -0.62; CAM.pitch = 0.98; CAM.zoom = ZOOM_DEFAULT;
+    draw();
+  });
+
+  let spinRAF = null;
+  spinEl.addEventListener('change', function(){
+    if(spinEl.checked){
+      let last = performance.now();
+      (function spin(now){
+        CAM.yaw += (now-last)*0.0004; last = now;
+        draw();
+        spinRAF = spinEl.checked ? requestAnimationFrame(spin) : null;
+      })(last);
+    } else if(spinRAF){ cancelAnimationFrame(spinRAF); spinRAF = null; }
+  });
+
+  // ---------------- keep in step with the loaded dieline ----------------
+
+  // Artwork edits do not change the dieline, so they need their own cheap
+  // fingerprint or the 3D view would keep showing a stale texture.
+  function artSig(){
+    const list = document.getElementById('artworkList');
+    let s = list ? list.children.length + '|' + (list.textContent||'').replace(/\s+/g,'').slice(0,180) : '0';
+    ['artX','artY','artW','artH','artRotation','artOpacity','artPanel','artVisible','artLocked']
+      .forEach(function(id){
+        const e = document.getElementById(id);
+        if(e) s += '|' + (e.type === 'checkbox' ? (e.checked ? '1' : '0') : e.value);
+      });
+    return s;
+  }
+
+  function refresh(force){
+    const sig = signature(), asig = artSig();
+    if(!force && sig === SIG && asig === ASIG) return;
+    const modelChanged = force || sig !== SIG;
+    SIG = sig; ASIG = asig;
+    if(modelChanged) rebuild();
+    const L = layers();
+    if(L) buildSheet(L.W, L.H); else sheetAny = false;
+    draw();
+  }
+
+  window.addEventListener('resize', function(){ resize(); draw(); });
+  resize();
+  refresh(true);
+  setFold(0);
+  // BASE_VARIANT is replaced wholesale on every render; a cheap signature
+  // poll picks that up without any of the render paths needing to know
+  // this panel exists.
+  setInterval(function(){ refresh(false); }, 500);
+})();
+</script>
+
+<script>
+// ============================================================
+// PRESETS — the backend, folded into the page
+// ------------------------------------------------------------
+// backend/server.js did exactly two things: serve this document, and
+// expose a small preset API. Opening the file directly replaces the
+// first, and this module replaces the second, keeping the same four
+// operations and the same on-disk JSON shape:
+//
+//   GET    /api/presets        ->  list()
+//   POST   /api/presets/:name  ->  save(name, body)
+//   GET    /api/presets/:name  ->  load(name)
+//   DELETE /api/presets/:name  ->  remove(name)
+//
+// Storage moves from JSON files in backend/data/ to this browser's
+// localStorage, so presets follow the browser rather than the folder.
+// Export writes the identical JSON out to a real file, which is the
+// bridge back to backend/data/ (or to another machine) if it is ever
+// wanted. safeName() is kept byte-for-byte so names behave the same.
+// ============================================================
+(function(){
+  'use strict';
+
+  const KEY = 'dielineStudio.presets.v1';
+
+  // Fields a preset captures: the sheet and box settings, matching what
+  // the server-side version stored.
+  const FIELDS = [
+    'preset','sheetW','sheetH','margin','gutter',
+    'boxL','boxWd','boxHt','boxW','boxH',
+    'bleedSize','colorMode','outputProfile'
+  ];
+  const FLAGS = ['allowRotate','bleedEnabled'];
+
+  const nameEl   = document.getElementById('presetName');
+  const pickEl   = document.getElementById('presetPick');
+  const noteEl   = document.getElementById('presetNote');
+  const fileEl   = document.getElementById('presetImportFile');
+
+  function safeName(name){                       // identical to server.js
+    return String(name || '').replace(/[^a-z0-9_\-]/gi, '_').slice(0, 80);
+  }
+
+  function note(msg, warn){
+    noteEl.className = warn ? 'warn' : 'ok';
+    noteEl.innerHTML = msg;
+    clearTimeout(note._t);
+    note._t = setTimeout(function(){ noteEl.className = ''; noteEl.innerHTML = ''; }, 5000);
+  }
+
+  // localStorage is unavailable on file:// in some browsers and in private
+  // windows, so fall back to memory rather than breaking the panel. Presets
+  // then last for the session only, and Export is the way to keep them.
+  let memory = null;
+  function readAll(){
+    if(memory) return memory;
+    try {
+      const raw = window.localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch(e){
+      memory = {};
+      return memory;
+    }
+  }
+  function writeAll(obj){
+    if(memory){ memory = obj; return true; }
+    try { window.localStorage.setItem(KEY, JSON.stringify(obj)); return true; }
+    catch(e){ memory = obj; return false; }
+  }
+
+  // ---- the four operations ----
+  function list(){ return Object.keys(readAll()).sort(); }
+  function save(name, body){
+    const n = safeName(name);
+    if(!n) return { error:'Invalid preset name' };
+    const all = readAll();
+    all[n] = body;
+    const durable = writeAll(all);
+    return { status:'saved', name:n, durable:durable };
+  }
+  function load(name){
+    const all = readAll(), n = safeName(name);
+    return Object.prototype.hasOwnProperty.call(all, n) ? all[n] : null;
+  }
+  function remove(name){
+    const all = readAll(), n = safeName(name);
+    delete all[n];
+    writeAll(all);
+    return { status:'deleted', name:n };
+  }
+
+  // ---- reading / writing the actual form ----
+  function capture(){
+    const out = { savedAt: new Date().toISOString(), fields:{}, flags:{} };
+    FIELDS.forEach(function(id){
+      const el = document.getElementById(id);
+      if(el) out.fields[id] = el.value;
+    });
+    FLAGS.forEach(function(id){
+      const el = document.getElementById(id);
+      if(el) out.flags[id] = !!el.checked;
+    });
+    return out;
+  }
+  function restore(data){
+    if(!data || !data.fields) return false;
+    FIELDS.forEach(function(id){
+      const el = document.getElementById(id);
+      if(el && data.fields[id] != null) el.value = data.fields[id];
+    });
+    FLAGS.forEach(function(id){
+      const el = document.getElementById(id);
+      if(!el || data.flags[id] == null) return;
+      el.checked = !!data.flags[id];
+      // let the app's own listener run, so dependent UI (the bleed size
+      // field, the orientation help text) updates the way it normally does
+      el.dispatchEvent(new Event('change', { bubbles:true }));
+    });
+    if(typeof autoFitAndRender === 'function') autoFitAndRender();
+    else if(typeof renderAll === 'function') renderAll();
+    return true;
+  }
+
+  function refreshList(selected){
+    const names = list();
+    pickEl.innerHTML = names.length
+      ? names.map(function(n){ return '<option value="'+n+'">'+n+'</option>'; }).join('')
+      : '<option value="">No presets saved yet</option>';
+    if(selected && names.indexOf(selected) !== -1) pickEl.value = selected;
+  }
+
+  // ---- wiring ----
+  document.getElementById('presetSaveBtn').addEventListener('click', function(){
+    const raw = nameEl.value.trim();
+    if(!raw){ note('Give the preset a name first.', true); nameEl.focus(); return; }
+    const res = save(raw, capture());
+    if(res.error){ note(res.error, true); return; }
+    refreshList(res.name);
+    nameEl.value = '';
+    note(res.durable
+      ? 'Saved <b>' + res.name + '</b>.'
+      : 'Saved <b>' + res.name + '</b> for this session only &mdash; this browser is blocking local storage, so use <b>Export all</b> to keep it.', !res.durable);
+  });
+
+  document.getElementById('presetLoadBtn').addEventListener('click', function(){
+    const n = pickEl.value;
+    if(!n){ note('No preset selected.', true); return; }
+    const data = load(n);
+    if(!data){ note('Preset not found.', true); return; }
+    restore(data);
+    note('Loaded <b>' + n + '</b>.');
+  });
+
+  document.getElementById('presetDeleteBtn').addEventListener('click', function(){
+    const n = pickEl.value;
+    if(!n){ note('No preset selected.', true); return; }
+    remove(n);
+    refreshList();
+    note('Deleted <b>' + n + '</b>.');
+  });
+
+  document.getElementById('presetExportBtn').addEventListener('click', function(){
+    const all = readAll();
+    if(!Object.keys(all).length){ note('Nothing to export yet.', true); return; }
+    const blob = new Blob([JSON.stringify(all, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dieline-presets.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    note('Exported ' + Object.keys(all).length + ' preset(s).');
+  });
+
+  document.getElementById('presetImportBtn').addEventListener('click', function(){ fileEl.click(); });
+  fileEl.addEventListener('change', function(e){
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      let incoming;
+      try { incoming = JSON.parse(ev.target.result); }
+      catch(err){ note('That file is not valid preset JSON.', true); return; }
+      if(!incoming || typeof incoming !== 'object' || Array.isArray(incoming)){
+        note('That file is not valid preset JSON.', true); return;
+      }
+      const all = readAll();
+      let n = 0;
+      Object.keys(incoming).forEach(function(k){
+        const key = safeName(k);
+        if(key){ all[key] = incoming[k]; n++; }
+      });
+      writeAll(all);
+      refreshList();
+      note('Imported ' + n + ' preset(s).');
+    };
+    reader.readAsText(f);
+    fileEl.value = '';
+  });
+
+  refreshList();
+
+  function checkAutoLoadDXF() {
+    try {
+      const autoLoadDXF = localStorage.getItem("autoLoadDXF");
+      const autoLoadParamsRaw = localStorage.getItem("autoLoadParams");
+      console.log("checkAutoLoadDXF in Dieline Studio! Found data?", !!autoLoadDXF);
+      if (autoLoadDXF) {
+        const d = parseDXF(autoLoadDXF);
+        if (d && d.cuts && d.cuts.length > 0) {
+          DIELINE = d;
+          dxfUploaded = true;
+          const t = transformDieline(DIELINE, 0, 0);
+          BASE_DIMS.width = t.width;
+          BASE_DIMS.height = t.height;
+          
+          let L_mm = 120, W_mm = 60, H_mm = 160;
+          if (autoLoadParamsRaw) {
+            try {
+              const p = JSON.parse(autoLoadParamsRaw);
+              if (p.L_mm) L_mm = p.L_mm;
+              if (p.W_mm) W_mm = p.W_mm;
+              if (p.H_mm) H_mm = p.H_mm;
+            } catch(e) {}
+          }
+          BASE_LWH = { L: L_mm, W: W_mm, H: H_mm };
+          
+          const boxL = document.getElementById('boxL');
+          const boxWd = document.getElementById('boxWd');
+          const boxHt = document.getElementById('boxHt');
+          const boxW = document.getElementById('boxW');
+          const boxH = document.getElementById('boxH');
+          const bleedEnabled = document.getElementById('bleedEnabled');
+          const bleedSize = document.getElementById('bleedSize');
+          
+          if (boxL) boxL.value = BASE_LWH.L;
+          if (boxWd) boxWd.value = BASE_LWH.W;
+          if (boxHt) boxHt.value = BASE_LWH.H;
+          if (boxW) boxW.value = Math.round(t.width * 10) / 10;
+          if (boxH) boxH.value = Math.round(t.height * 10) / 10;
+          if (bleedEnabled) bleedEnabled.checked = true;
+          if (bleedSize) {
+            bleedSize.value = 2;
+            bleedSize.disabled = true;
+          }
+          manualPlacements = [];
+          manualFullVariants = null;
+          manualPlacementsInitialized = false;
+          if (typeof autoFitAndRender === 'function') autoFitAndRender();
+        }
+        localStorage.removeItem("autoLoadDXF");
+        localStorage.removeItem("autoLoadParams");
+      }
+    } catch(err) {
+      console.error("Auto load DXF error:", err);
+    }
+  }
+
   window.addEventListener('DOMContentLoaded', checkAutoLoadDXF);
-} else {
-  checkAutoLoadDXF();
-}
+  setTimeout(checkAutoLoadDXF, 400);
+})();
 </script>
 </body>
 </html>

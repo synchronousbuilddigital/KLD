@@ -25,9 +25,13 @@ export const useBoxStore = create((set) => ({
   
   ...createDefaultState(),
 
-  // Box Model & Context
+  // Box Model, Active Project & Context
   boxModel: "rte",
   activeContext: "mockup",
+  activeProjectId: null,
+  activeProjectName: null,
+  setActiveProject: (id, name) => set({ activeProjectId: id, activeProjectName: name }),
+  clearActiveProject: () => set({ activeProjectId: null, activeProjectName: null }),
   
   savedState: {
     dieline: {

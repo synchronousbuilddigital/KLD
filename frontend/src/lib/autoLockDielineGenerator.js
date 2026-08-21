@@ -1,6 +1,6 @@
 import { rawAutoLockPaths } from './autoLockDielineRaw';
 
-export function generateAutoLockDieline({ L, W, H, glueFlapWidth = 16.0, windowDecals }) {
+export function generateAutoLockDieline({ L, W, H, glueFlapWidth = 16.0, windowDecals = [] }) {
   const nL = Number(L);
   const nW = Number(W);
   const nH = Number(H);

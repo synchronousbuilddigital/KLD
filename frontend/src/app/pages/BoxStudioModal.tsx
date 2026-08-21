@@ -238,7 +238,8 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         H: store.H,
         T: store.T,
         glueFlapWidth: store.glueFlapWidth,
-        bleed: store.bleed
+        bleed: store.bleed,
+        windowDecals: store.windowDecals || []
       };
       let dielineData;
       if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
@@ -259,7 +260,8 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         H: store.H,
         T: store.T,
         glueFlapWidth: store.glueFlapWidth,
-        bleed: store.bleed
+        bleed: store.bleed,
+        windowDecals: store.windowDecals || []
       };
       let dielineData;
       if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
@@ -271,6 +273,12 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       
       // Store in localStorage so dieline-tool.html can pick it up automatically
       localStorage.setItem("autoLoadDXF", dxfString);
+      localStorage.setItem("autoLoadParams", JSON.stringify({
+        L_mm: Math.round((store.L || 4.7244) * 25.4),
+        W_mm: Math.round((store.W || 2.3622) * 25.4),
+        H_mm: Math.round((store.H || 6.2992) * 25.4),
+        boxModel: store.boxModel
+      }));
       window.open('/dieline-tool.html', '_blank');
     } catch (err) {
       console.error("Print Error:", err);

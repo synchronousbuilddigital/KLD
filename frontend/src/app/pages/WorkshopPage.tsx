@@ -3,6 +3,13 @@ import Box3DViewer from "../../components/Box3DViewer";
 import { useBoxStore } from "../../lib/useBoxStore";
 import BoxStudioModal from "./BoxStudioModal";
 import EditorModal from "./EditorModal";
+import { API_BASE_URL } from "../../config/api";
+import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
+import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
+import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
+import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
+import { generateDXFString } from "../../lib/exportUtils";
+import { Printer } from "lucide-react";
 
 const themes: Record<string, any> = {
   dark: {
@@ -12,10 +19,10 @@ const themes: Record<string, any> = {
     border: "rgba(255, 255, 255, 0.1)",
     textMain: "#ffffff",
     textMuted: "#a1a1aa",
-    cyan: "#10b981", // emerald-500
+    cyan: "#3b82f6", // blue-500
     inputBg: "#27272a",
     gridColor: "rgba(255, 255, 255, 0.05)",
-    activeBg: "rgba(16, 185, 129, 0.1)"
+    activeBg: "rgba(59, 130, 246, 0.12)"
   },
   light: {
     bgApp: "#f4f4f5", // zinc-100
@@ -24,17 +31,17 @@ const themes: Record<string, any> = {
     border: "rgba(0, 0, 0, 0.1)",
     textMain: "#18181b", // zinc-900
     textMuted: "#71717a", // zinc-500
-    cyan: "#10b981", // emerald-500
+    cyan: "#2563eb", // blue-600
     inputBg: "#ffffff",
-    gridColor: "rgba(169, 179, 150, 0.15)",
-    activeBg: "rgba(16, 185, 129, 0.1)"
+    gridColor: "rgba(37, 99, 235, 0.08)",
+    activeBg: "rgba(37, 99, 235, 0.12)"
   }
 };
 
 const IconNav = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18" /></svg>;
 const IconCloud = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42-1.89-1.78-3.5-3.5-3.5a5.5 5.5 0 0 0-5.38 4.41c-2 .19-3.62 1.63-3.62 3.59A3.5 3.5 0 0 0 7 19Z" /></svg>;
 
-export default function WorkshopPage() {
+export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const store = useBoxStore((state: any) => state);
   const [foldProgress, setFoldProgress] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -45,40 +52,86 @@ export default function WorkshopPage() {
   const [contextMenu, setContextMenu] = useState<any>(null);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isSavingAndExiting, setIsSavingAndExiting] = useState(false);
+
+  const executeNavigation = () => {
+    if (onBack) {
+      onBack();
+    } else if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    setIsSavingAndExiting(true);
+    try {
+      await handleSaveToWorkspace();
+    } catch (err) {
+      console.error("Error saving workspace:", err);
+    }
+    setIsSavingAndExiting(false);
+    setShowExitConfirm(false);
+    executeNavigation();
+  };
+
+  const handleDiscardAndExit = () => {
+    setShowExitConfirm(false);
+    executeNavigation();
+  };
 
   const handleSaveToWorkspace = async () => {
+    const currentModel = store.boxModel || 'rte';
     const categoryName = 
-      store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
-      store.boxModel === 'te' ? 'Straight Tuck End Box' :
-      store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
-      store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
+      currentModel === 'rte' ? 'Reverse Tuck End Box' :
+      currentModel === 'te' ? 'Straight Tuck End Box' :
+      currentModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
+      currentModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 
     const dimL_mm = Math.round((store.L || 4.72) * 25.4);
     const dimW_mm = Math.round((store.W || 2.36) * 25.4);
     const dimH_mm = Math.round((store.H || 6.29) * 25.4);
 
+    const isExistingProject = !!store.activeProjectId;
+    const targetId = store.activeProjectId || ('saved-' + Date.now());
+    const targetName = store.activeProjectName || `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`;
+
     const savedItem = {
-      id: 'saved-' + Date.now(),
-      name: `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
+      id: targetId,
+      _id: targetId,
+      name: targetName,
       type: "DIELINE",
       category: categoryName,
-      boxModel: store.boxModel,
-      variantId: store.boxModel === "rte" ? 2 : 1,
-      dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm, length: store.L, width: store.W, height: store.H },
+      boxModel: currentModel,
+      variantId: currentModel === "rte" ? 2 : 1,
+      dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm, length: store.L, width: store.W, height: store.H, glueTab: 15, tuck: 18, flapH: 35 },
       packageColor: store.packageColor || null,
       insideColor: store.insideColor || null,
-      decals: store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : [],
+      decals: store.decalsByModel ? store.decalsByModel[currentModel] || [] : [],
       tabCategory: "projects",
       isDraft: false,
       updatedAt: new Date().toISOString()
     };
 
-    // Save to LocalStorage
+    // Save to LocalStorage immediately in-place (updating existing item if matching ID found)
     try {
       const stored = localStorage.getItem('kld_workspace_items');
       const existing = stored ? JSON.parse(stored) : [];
-      const updated = [savedItem, ...(Array.isArray(existing) ? existing : [])];
-      localStorage.setItem('kld_workspace_items', JSON.stringify(updated));
+      let updatedList: any[] = [];
+      if (Array.isArray(existing)) {
+        const index = existing.findIndex((i: any) => i.id === targetId || i._id === targetId);
+        if (index >= 0) {
+          updatedList = [...existing];
+          updatedList[index] = savedItem;
+        } else {
+          updatedList = [savedItem, ...existing];
+        }
+      } else {
+        updatedList = [savedItem];
+      }
+      localStorage.setItem('kld_workspace_items', JSON.stringify(updatedList));
     } catch (err) {
       console.log('Error saving local workspace item:', err);
     }
@@ -87,22 +140,95 @@ export default function WorkshopPage() {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await fetch('/api/mockups/saved', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(savedItem)
-        });
+        if (isExistingProject && targetId.length === 24) {
+          // Update existing saved mockup project in MongoDB
+          await fetch(`${API_BASE_URL}/mockups/saved/${targetId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: targetName,
+              dimensions: savedItem.dimensions,
+              packageColor: savedItem.packageColor,
+              insideColor: savedItem.insideColor,
+              decals: savedItem.decals
+            })
+          });
+        } else {
+          // Create new saved mockup project in MongoDB
+          const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(savedItem)
+          });
+          const data = await res.json();
+          if (res.ok && data.success && data.data?.design?._id) {
+            const mongoId = data.data.design._id;
+            savedItem.id = mongoId;
+            savedItem._id = mongoId;
+            if (store.setActiveProject) {
+              store.setActiveProject(mongoId, targetName);
+            }
+            const stored = localStorage.getItem('kld_workspace_items');
+            if (stored) {
+              const existing = JSON.parse(stored);
+              if (Array.isArray(existing)) {
+                const updatedList = existing.map((i: any) => (i.id === targetId || i._id === targetId) ? savedItem : i);
+                localStorage.setItem('kld_workspace_items', JSON.stringify(updatedList));
+              }
+            }
+          }
+        }
       }
     } catch (err) {
       console.log('Backend save error:', err);
     }
 
-    window.dispatchEvent(new CustomEvent('project-saved'));
+    // Set activeProjectId for any subsequent saves in this session
+    if (store.setActiveProject) {
+      store.setActiveProject(savedItem.id, targetName);
+    }
+
+    window.dispatchEvent(new CustomEvent('project-saved', { detail: savedItem }));
     setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setTimeout(() => setIsSaved(false), 3500);
+  };
+
+  const handlePrint = () => {
+    try {
+      const params = {
+        L: store.L,
+        W: store.W,
+        H: store.H,
+        T: store.T,
+        glueFlapWidth: store.glueFlapWidth,
+        bleed: store.bleed,
+        windowDecals: store.windowDecals || []
+      };
+      let dielineData;
+      if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
+      else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
+      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
+      else dielineData = generateRTEDielineDXF(params);
+      
+      const dxfString = generateDXFString(dielineData);
+      
+      localStorage.setItem("autoLoadDXF", dxfString);
+      localStorage.setItem("autoLoadParams", JSON.stringify({
+        L_mm: Math.round((store.L || 4.7244) * 25.4),
+        W_mm: Math.round((store.W || 2.3622) * 25.4),
+        H_mm: Math.round((store.H || 6.2992) * 25.4),
+        boxModel: store.boxModel
+      }));
+      window.open('/dieline-tool.html', '_blank');
+    } catch (err) {
+      console.error("Print Error:", err);
+    }
   };
   
   const themeKey = store.theme || 'light';
@@ -113,11 +239,11 @@ export default function WorkshopPage() {
     let lastTime = performance.now();
     
     if (isPlaying) {
-      const animate = (time: number) => {
-        const delta = time - lastTime;
-        lastTime = time;
+      const animate = (currentTime: number) => {
+        const delta = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
         setFoldProgress((prev: number) => {
-          let next = prev + 0.0005 * delta * playDirection;
+          let next = prev + delta * playDirection * 0.4;
           if (next >= 1) {
             next = 1;
             setPlayDirection(-1);
@@ -146,32 +272,128 @@ export default function WorkshopPage() {
 
         {/* --- TOP NAV --- */}
         <div style={{ height: "64px", background: t.bgPanel, borderBottom: `2px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", color: t.textMain }}>
-              <span style={{ fontWeight: "400", fontSize: "20px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Mockup Generator</span>
-            </div>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}><IconNav /></button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}><IconCloud /></button>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            {/* Creative Back Button */}
             <button 
-              onClick={handleSaveToWorkspace}
+              onClick={() => setShowExitConfirm(true)}
+              title="Return to Studio Home"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 16px",
+                borderRadius: "12px",
+                background: store.theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(37, 99, 235, 0.08)',
+                border: `1.5px solid ${t.cyan}44`,
+                color: t.cyan,
+                fontSize: "13px",
+                fontWeight: "700",
+                cursor: "pointer",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxShadow: `0 2px 8px rgba(37, 99, 235, 0.12)`
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = t.cyan;
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.transform = 'translateX(-3px)';
+                e.currentTarget.style.boxShadow = `0 4px 14px rgba(37, 99, 235, 0.35)`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = store.theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(37, 99, 235, 0.08)';
+                e.currentTarget.style.color = t.cyan;
+                e.currentTarget.style.transform = 'translateX(0px)';
+                e.currentTarget.style.boxShadow = `0 2px 8px rgba(37, 99, 235, 0.12)`;
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              <span>Back</span>
+            </button>
+
+            {/* Vertical Divider */}
+            <div style={{ width: "1px", height: "24px", background: t.border }} />
+
+            {/* Styled Brand Logo Text KLD & Active Project Indicator */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", userSelect: "none" }}>
+              <span style={{ 
+                fontWeight: "900", 
+                fontSize: "24px", 
+                fontFamily: "'Plus Jakarta Sans', 'Outfit', 'Inter', -apple-system, sans-serif",
+                letterSpacing: "-0.5px",
+                background: store.theme === 'dark' 
+                  ? 'linear-gradient(135deg, #ffffff 0%, #93c5fd 60%, #3b82f6 100%)' 
+                  : 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                KLD
+              </span>
+              <span style={{ 
+                fontSize: "10px", 
+                fontWeight: "800", 
+                letterSpacing: "1.2px", 
+                color: t.cyan, 
+                textTransform: "uppercase",
+                background: t.activeBg,
+                padding: "2px 7px",
+                borderRadius: "6px",
+                border: `1px solid ${t.cyan}33`
+              }}>
+                MOCKUP
+              </span>
+
+              {/* Editing Project Name Badge */}
+              {store.activeProjectId && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: store.theme === 'dark' ? 'rgba(37, 99, 235, 0.2)' : '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  color: '#1d4ed8',
+                  padding: '3px 10px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  fontWeight: '800',
+                  marginLeft: '4px'
+                }}>
+                  <span>✏️ Editing:</span>
+                  <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {store.activeProjectName || 'Existing Project'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, marginLeft: "4px" }} title="Menu"><IconNav /></button>
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }} title="Cloud Storage"><IconCloud /></button>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+
+            <button 
+              onClick={handlePrint}
+              title="Open in Print & Dieline Imposition Studio"
               style={{ 
-                background: isSaved ? '#10b981' : '#18181b', 
-                color: '#ffffff', 
+                background: "#2563eb", 
+                color: "#ffffff", 
                 border: "none", 
-                padding: "8px 18px", 
-                borderRadius: "8px", 
+                padding: "8px 16px", 
+                borderRadius: "10px", 
                 fontSize: "13px", 
                 fontWeight: "700", 
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                boxShadow: `2px 3px 0px rgba(0,0,0,0.1)`
+                boxShadow: `0 4px 14px rgba(37, 99, 235, 0.35)`,
+                transition: "all 0.2s ease"
               }}
             >
-              {isSaved ? "✅ Saved to Workspace!" : "💾 Save to Workspace"}
+              <Printer style={{ width: "15px", height: "15px" }} />
+              <span>Print</span>
             </button>
             <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
               <span style={{ color: t.cyan }}>✦</span> 50 credits <span style={{ background: t.textMain, color: t.bgPanel, borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>+</span>
@@ -185,7 +407,7 @@ export default function WorkshopPage() {
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
               }
             </button>
-            <button style={{ background: t.cyan, color: store.theme === 'dark' ? '#3a2e26' : '#fff', border: "none", padding: "8px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.15)` }}>
+            <button style={{ background: t.cyan, color: '#fff', border: "none", padding: "8px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `0 4px 12px rgba(37, 99, 235, 0.3)` }}>
               Super export
             </button>
           </div>
@@ -243,7 +465,7 @@ export default function WorkshopPage() {
                   <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>GRAPHICS & ASSETS</div>
                   <button 
                     onClick={() => setIsStudioOpen(true)}
-                    style={{ width: "100%", background: t.cyan, color: '#fff', border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: "600", fontSize: "14px", cursor: "pointer", boxShadow: `0 4px 12px rgba(16, 185, 129, 0.3)`, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    style={{ width: "100%", background: t.cyan, color: '#fff', border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: "600", fontSize: "14px", cursor: "pointer", boxShadow: `0 4px 12px rgba(37, 99, 235, 0.3)`, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                     Design Editor
@@ -505,6 +727,153 @@ export default function WorkshopPage() {
         </div>
       </div>
       {isStudioOpen && <EditorModal isOpen={isStudioOpen} onClose={() => setIsStudioOpen(false)} />}
+
+      {/* --- SAVE / DISCARD EXIT CONFIRMATION MODAL --- */}
+      {showExitConfirm && (
+        <div 
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px"
+          }}
+          onClick={() => setShowExitConfirm(false)}
+        >
+          <div 
+            style={{
+              width: "100%",
+              maxWidth: "440px",
+              background: store.theme === 'dark' ? '#18181b' : '#ffffff',
+              border: `1.5px solid ${t.border}`,
+              borderRadius: "24px",
+              padding: "28px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              color: t.textMain,
+              animation: "modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Icon + Title */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
+              <div style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "16px",
+                background: "rgba(37, 99, 235, 0.12)",
+                color: t.cyan,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                border: `1px solid ${t.cyan}33`
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+              </div>
+
+              <div>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: t.textMain, lineHeight: 1.3 }}>
+                  Save changes before leaving?
+                </h3>
+                <p style={{ margin: "6px 0 0 0", fontSize: "13px", color: t.textMuted, lineHeight: 1.5 }}>
+                  You have active 3D mockup design edits in your workspace. Would you like to save your project or discard changes?
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+              <button
+                onClick={handleSaveAndExit}
+                disabled={isSavingAndExiting}
+                style={{
+                  width: "100%",
+                  padding: "12px 20px",
+                  borderRadius: "12px",
+                  background: t.cyan,
+                  color: "#ffffff",
+                  border: "none",
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  cursor: isSavingAndExiting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)",
+                  transition: "all 0.15s ease",
+                  opacity: isSavingAndExiting ? 0.8 : 1
+                }}
+              >
+                {isSavingAndExiting ? (
+                  <span>Saving box to workspace...</span>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span>{store.activeProjectId ? "Save Changes to Workspace & Exit" : "Save Box to Workspace & Exit"}</span>
+                  </>
+                )}
+              </button>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <button
+                  onClick={handleDiscardAndExit}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: "12px",
+                    background: "rgba(239, 68, 68, 0.08)",
+                    color: "#ef4444",
+                    border: "1.5px solid rgba(239, 68, 68, 0.25)",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#ef4444";
+                    e.currentTarget.style.color = "#ffffff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)";
+                    e.currentTarget.style.color = "#ef4444";
+                  }}
+                >
+                  Discard Changes
+                </button>
+
+                <button
+                  onClick={() => setShowExitConfirm(false)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: "12px",
+                    background: t.inputBg,
+                    color: t.textMain,
+                    border: `1.5px solid ${t.border}`,
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

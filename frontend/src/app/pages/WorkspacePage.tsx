@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Header from '../components/layout/Header';
 import { API_BASE_URL } from '../../config/api';
+import { useBoxStore } from '../../lib/useBoxStore';
 import '../../styles/new-home.css';
 import './UserProfilePage.css';
 
@@ -30,6 +31,208 @@ interface WorkspacePageProps {
   onOpenStudioWithBox?: (boxConfig: any, mode?: 'dieline' | 'mockup') => void;
 }
 
+// 3D Isometric Box Card Preview Component with Real Artwork Image Render
+const BoxCardPreview: React.FC<{ item: WorkspaceItem; onResume: (item: WorkspaceItem, mode: 'dieline' | 'mockup') => void }> = ({ item, onResume }) => {
+  const boxColor = item.packageColor || '#ffffff';
+  const insideColor = item.insideColor || '#f4f4f5';
+  const decalsList = Array.isArray(item.decals) ? item.decals : [];
+  const hasDecals = decalsList.length > 0;
+
+  // Extract Image Decals and Text Decals
+  const imageDecals = decalsList.filter((d: any) => d && (d.url || d.src || d.image || d.type === 'image' || d.type === 'upload'));
+  const textDecals = decalsList.filter((d: any) => d && (d.content || d.text || d.type === 'text'));
+
+  // Get primary uploaded artwork image URL
+  const firstImageObj = imageDecals[0] || decalsList.find((d: any) => d && typeof d === 'object' && (d.url || d.src || d.image));
+  const artworkUrl = firstImageObj ? (firstImageObj.url || firstImageObj.src || firstImageObj.image) : null;
+
+  // Calculate box dimensions for isometric rendering
+  const rawL = item.dimensions?.L || 120;
+  const rawW = item.dimensions?.W || 60;
+  const rawH = item.dimensions?.H || 160;
+
+  // Scale isometric dimensions proportionally
+  const maxDim = Math.max(rawL, rawW, rawH, 1);
+  const scaleL = Math.min(Math.max((rawL / maxDim) * 44, 22), 48);
+  const scaleW = Math.min(Math.max((rawW / maxDim) * 32, 16), 38);
+  const scaleH = Math.min(Math.max((rawH / maxDim) * 52, 28), 62);
+
+  const cx = 90;
+  const cy = 92;
+
+  // Points for 3D Isometric Projection
+  const pTopLeft = [cx - scaleL, cy - scaleH / 2];
+  const pTopRight = [cx, cy - scaleH / 2 + scaleW * 0.38];
+  const pBotRight = [cx, cy + scaleH / 2 + scaleW * 0.38];
+  const pBotLeft = [cx - scaleL, cy + scaleH / 2];
+
+  const pTopFarRight = [cx + scaleW * 0.85, cy - scaleH / 2 - scaleL * 0.18];
+  const pBotFarRight = [cx + scaleW * 0.85, cy + scaleH / 2 - scaleL * 0.18];
+
+  const pTopBack = [cx - scaleL + scaleW * 0.85, cy - scaleH / 2 - scaleL * 0.18];
+
+  const isDarkColor = boxColor === '#18181b' || boxColor === '#09090b' || boxColor === '#27272a' || boxColor === '#000000';
+  const strokeColor = isDarkColor ? 'rgba(255, 255, 255, 0.5)' : 'rgba(24, 24, 27, 0.3)';
+
+  return (
+    <div className="w-full h-44 bg-gradient-to-br from-zinc-50 via-zinc-100/70 to-amber-50/20 rounded-2xl border border-zinc-200/80 flex items-center justify-center mb-5 group-hover:border-amber-400/60 transition-all relative overflow-hidden shadow-inner group/preview">
+      {/* Background Radial Grid */}
+      <div 
+        className="absolute inset-0 opacity-15 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(#71717a 1px, transparent 1px)',
+          backgroundSize: '14px 14px'
+        }}
+      />
+
+      {/* 3D Isometric SVG Rendering of actual customized box */}
+      <svg width="180" height="148" viewBox="0 0 180 148" className="drop-shadow-md group-hover/preview:scale-108 transition-transform duration-300">
+        <defs>
+          <clipPath id={`frontClip-${item.id}`}>
+            <polygon points={`${pTopLeft[0]},${pTopLeft[1]} ${pTopRight[0]},${pTopRight[1]} ${pBotRight[0]},${pBotRight[1]} ${pBotLeft[0]},${pBotLeft[1]}`} />
+          </clipPath>
+        </defs>
+
+        {/* Soft Drop Shadow beneath box */}
+        <ellipse 
+          cx={cx + scaleW * 0.2} 
+          cy={cy + scaleH / 2 + 10} 
+          rx={scaleL * 0.85 + scaleW * 0.4} 
+          ry="9" 
+          fill="rgba(0,0,0,0.12)" 
+          filter="blur(3px)" 
+        />
+
+        {/* Top Face */}
+        <polygon 
+          points={`${pTopLeft[0]},${pTopLeft[1]} ${pTopBack[0]},${pTopBack[1]} ${pTopFarRight[0]},${pTopFarRight[1]} ${pTopRight[0]},${pTopRight[1]}`}
+          fill={insideColor || boxColor}
+          fillOpacity="0.85"
+          stroke={strokeColor}
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+
+        {/* Right Side Face */}
+        <polygon 
+          points={`${pTopRight[0]},${pTopRight[1]} ${pTopFarRight[0]},${pTopFarRight[1]} ${pBotFarRight[0]},${pBotFarRight[1]} ${pBotRight[0]},${pBotRight[1]}`}
+          fill={boxColor}
+          fillOpacity="0.75"
+          stroke={strokeColor}
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+
+        {/* Front Face Background */}
+        <polygon 
+          points={`${pTopLeft[0]},${pTopLeft[1]} ${pTopRight[0]},${pTopRight[1]} ${pBotRight[0]},${pBotRight[1]} ${pBotLeft[0]},${pBotLeft[1]}`}
+          fill={boxColor}
+          stroke={strokeColor}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+
+        {/* Render Actual Image Artwork mapped onto Front Face */}
+        {artworkUrl ? (
+          <image 
+            href={artworkUrl}
+            x={pTopLeft[0]}
+            y={pTopLeft[1]}
+            width={scaleL}
+            height={scaleH}
+            preserveAspectRatio="xMidYMid meet"
+            clipPath={`url(#frontClip-${item.id})`}
+            opacity="0.92"
+          />
+        ) : null}
+
+        {/* Render Text Decals directly on Front Face */}
+        {textDecals.map((tDecal: any, idx: number) => (
+          <text
+            key={tDecal.id || idx}
+            x={cx - scaleL * 0.45}
+            y={cy + (idx * 12) - (textDecals.length * 4)}
+            fill={tDecal.color || (isDarkColor ? '#ffffff' : '#18181b')}
+            fontSize="10"
+            fontWeight="900"
+            fontFamily="sans-serif"
+            textAnchor="middle"
+            clipPath={`url(#frontClip-${item.id})`}
+          >
+            {tDecal.content || tDecal.text}
+          </text>
+        ))}
+
+        {/* Structural Dieline Crease Lines Overlay */}
+        <line 
+          x1={pTopLeft[0]} y1={pTopLeft[1]} 
+          x2={pBotRight[0]} y2={pTopRight[1]} 
+          stroke={strokeColor} 
+          strokeWidth="1" 
+          strokeDasharray="2 2" 
+          opacity="0.3"
+        />
+      </svg>
+
+      {/* Top Left Package Color & Art Badges */}
+      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+        {item.packageColor && (
+          <span 
+            className="w-4 h-4 rounded-full border border-black/25 shadow-xs flex items-center justify-center shrink-0" 
+            style={{ backgroundColor: item.packageColor }}
+            title={`Package Color: ${item.packageColor}`}
+          />
+        )}
+        {hasDecals && (
+          <span className="bg-blue-600/90 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
+            ✨ {decalsList.length} Art
+          </span>
+        )}
+      </div>
+
+      {/* Actual Uploaded Artwork Image Thumbnails Strip */}
+      {imageDecals.length > 0 && (
+        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 z-10 bg-white/95 backdrop-blur-xs p-1 rounded-xl border border-zinc-200/90 shadow-md">
+          {imageDecals.slice(0, 3).map((decal: any, idx: number) => {
+            const url = decal.url || decal.src || decal.image;
+            if (!url) return null;
+            return (
+              <div key={idx} className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 flex items-center justify-center shadow-2xs">
+                <img src={url} alt={`artwork-${idx}`} className="w-full h-full object-contain" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {item.isDraft && (
+        <span className="absolute top-2.5 right-2.5 bg-amber-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs z-10">
+          Draft
+        </span>
+      )}
+
+      {/* Dual Hover Overlay: Choose Studio Mode */}
+      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2.5 p-4 z-20 backdrop-blur-[2px]">
+        <span className="text-[10px] uppercase tracking-wider font-extrabold text-white/95 mb-0.5">Open Studio Mode</span>
+        <div className="flex items-center gap-2 w-full max-w-[220px]">
+          <button
+            onClick={(e) => { e.stopPropagation(); onResume(item, 'dieline'); }}
+            className="flex-1 py-2 bg-white hover:bg-zinc-100 text-zinc-900 text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+          >
+            📐 Dieline
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onResume(item, 'mockup'); }}
+            className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+          >
+            🎨 3D Mockup
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: WorkspacePageProps) {
   // Sidebar active tab state: 'recent' | 'projects' | 'prints' | 'ai' | 'favorites'
   const [sidebarTab, setSidebarTab] = useState<'recent' | 'projects' | 'prints' | 'ai' | 'favorites'>('recent');
@@ -42,6 +245,68 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token'));
+
+  // Inline Rename State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
+
+  const handleStartRename = (item: WorkspaceItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(item.id);
+    setEditingName(item.name);
+  };
+
+  const handleSaveRename = async (itemId: string, e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const trimmed = editingName.trim();
+    if (!trimmed) {
+      setEditingId(null);
+      return;
+    }
+
+    const now = new Date().toISOString();
+
+    // 1. Update React state
+    setItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, name: trimmed, updatedAt: now } : i))
+    );
+    setEditingId(null);
+
+    // 2. Update localStorage
+    try {
+      const stored = localStorage.getItem('kld_workspace_items');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const updated = parsed.map((i: any) =>
+            (i.id === itemId || i._id === itemId) ? { ...i, name: trimmed, updatedAt: now } : i
+          );
+          localStorage.setItem('kld_workspace_items', JSON.stringify(updated));
+        }
+      }
+    } catch (err) {
+      console.error('Error updating name in localStorage:', err);
+    }
+
+    // 3. Update MongoDB backend if token exists
+    const token = localStorage.getItem('token');
+    if (token && itemId.length === 24) {
+      try {
+        await fetch(`${API_BASE_URL}/mockups/saved/${itemId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: trimmed })
+        });
+      } catch (err) {
+        console.error('Error updating name in backend:', err);
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('project-saved'));
+  };
 
   useEffect(() => {
     const handleAuth = () => {
@@ -294,6 +559,33 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
   // Resume Editing in Studio
   const handleResumeEditing = (item: WorkspaceItem, mode: 'dieline' | 'mockup' = 'dieline') => {
+    try {
+      const storeState = useBoxStore.getState();
+      const model = (item.boxModel || 'rte') as any;
+      const dimL = item.dimensions?.length || (item.dimensions?.L ? item.dimensions.L / 25.4 : 4.72);
+      const dimW = item.dimensions?.width || (item.dimensions?.W ? item.dimensions.W / 25.4 : 2.36);
+      const dimH = item.dimensions?.height || (item.dimensions?.H ? item.dimensions.H / 25.4 : 6.29);
+      
+      const currentDecalsByModel = storeState.decalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [] };
+
+      useBoxStore.setState({
+        activeProjectId: item.id || item._id,
+        activeProjectName: item.name,
+        boxModel: model,
+        L: dimL,
+        W: dimW,
+        H: dimH,
+        packageColor: item.packageColor || null,
+        insideColor: item.insideColor || null,
+        decalsByModel: {
+          ...currentDecalsByModel,
+          [model]: item.decals || []
+        }
+      });
+    } catch (e) {
+      console.error('Error setting box store state for active project:', e);
+    }
+
     if (onOpenStudioWithBox) {
       onOpenStudioWithBox(item, mode);
     } else {
@@ -760,7 +1052,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
           ) : viewMode === 'grid' ? (
             
-            /* GRID VIEW */
+            /* GRID VIEW WITH 3D BOX PREVIEWS & INLINE RENAME */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredItems.map((item) => (
                 <motion.div
@@ -793,46 +1085,57 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                       </button>
                     </div>
 
-                    {/* 3D Box Card Graphic with Dual Studio Overlay */}
-                    <div className="w-full h-44 bg-gradient-to-br from-zinc-50 via-amber-50/20 to-zinc-100 rounded-2xl border border-zinc-200/60 flex items-center justify-center mb-5 group-hover:border-amber-400/50 transition-colors relative overflow-hidden shadow-inner">
-                      <div className="w-18 h-18 rounded-2xl bg-white shadow-md border border-zinc-100 flex items-center justify-center text-zinc-800 group-hover:scale-110 transition-transform p-4">
-                        <Box className="w-9 h-9 text-zinc-900" />
-                      </div>
+                    {/* 3D Isometric Box Preview Graphic */}
+                    <BoxCardPreview item={item} onResume={handleResumeEditing} />
 
-                      {item.isDraft && (
-                        <span className="absolute top-3 left-3 bg-amber-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm z-10">
-                          Auto-Saved Draft
-                        </span>
-                      )}
-
-                      {/* Dual Hover Overlay: Choose Studio Page */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2.5 p-4 z-20 backdrop-blur-[2px]">
-                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-white/90 mb-0.5">Choose Studio Mode</span>
-                        <div className="flex items-center gap-2 w-full max-w-[220px]">
+                    {/* Item Title & Inline Rename Form */}
+                    <div className="mb-3">
+                      {editingId === item.id ? (
+                        <div className="flex items-center gap-1.5 mb-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveRename(item.id, e);
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                            autoFocus
+                            className="w-full px-2.5 py-1 bg-zinc-50 border-2 border-amber-500 rounded-lg text-sm font-extrabold text-zinc-900 outline-none shadow-sm"
+                          />
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
-                            className="flex-1 py-2 bg-white hover:bg-zinc-100 text-zinc-900 text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                            onClick={(e) => handleSaveRename(item.id, e)}
+                            className="p-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-lg font-bold transition-colors shrink-0"
+                            title="Save name"
                           >
-                            📐 Dieline
+                            <Check className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
-                            className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+                            onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
+                            className="p-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg transition-colors shrink-0"
+                            title="Cancel"
                           >
-                            🎨 3D Mockup
+                            <X className="w-4 h-4" />
                           </button>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Item Title & Subtitle */}
-                    <div className="mb-3">
-                      <h3 
-                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
-                        className="font-extrabold text-zinc-900 text-lg mb-1 line-clamp-1 group-hover:text-amber-600 transition-colors cursor-pointer"
-                      >
-                        {item.name}
-                      </h3>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 group/title mb-1">
+                          <h3 
+                            onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                            className="font-extrabold text-zinc-900 text-lg line-clamp-1 group-hover:text-amber-600 transition-colors cursor-pointer flex-1"
+                            title={item.name}
+                          >
+                            {item.name}
+                          </h3>
+                          <button
+                            onClick={(e) => handleStartRename(item, e)}
+                            className="opacity-0 group-hover/title:opacity-100 p-1 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-all shrink-0"
+                            title="Rename Box"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <p className="text-xs text-zinc-500 font-medium line-clamp-1">
                         Structural Packaging & 3D Model
                       </p>
@@ -882,25 +1185,65 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
             </div>
           ) : (
             
-            /* LIST VIEW */
+            /* LIST VIEW WITH INLINE RENAME */
             <div className="bg-white rounded-3xl border border-zinc-200/80 shadow-sm overflow-hidden divide-y divide-zinc-100">
               {filteredItems.map((item) => (
                 <div key={item.id} className="p-5 sm:p-6 flex items-center justify-between gap-5 hover:bg-zinc-50/80 transition-colors">
                   <div className="flex items-center gap-5 min-w-0">
                     <div 
                       onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
-                      className="w-14 h-14 rounded-2xl bg-gradient-to-br from-zinc-50 to-zinc-100 border border-zinc-200 flex items-center justify-center shrink-0 cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors"
+                      className="w-14 h-14 rounded-2xl border border-zinc-200 flex items-center justify-center shrink-0 cursor-pointer hover:border-amber-400 transition-colors shadow-xs"
+                      style={{ backgroundColor: item.packageColor || '#f4f4f5' }}
                     >
-                      <Box className="w-7 h-7 text-zinc-900" />
+                      <Box className={`w-7 h-7 ${item.packageColor === '#18181b' ? 'text-white' : 'text-zinc-900'}`} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2.5 flex-wrap">
-                        <h4 
-                          onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
-                          className="font-extrabold text-zinc-900 text-base truncate cursor-pointer hover:text-amber-600"
-                        >
-                          {item.name}
-                        </h4>
+                        {editingId === item.id ? (
+                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveRename(item.id, e);
+                                if (e.key === 'Escape') setEditingId(null);
+                              }}
+                              autoFocus
+                              className="px-2.5 py-1 bg-zinc-50 border-2 border-amber-500 rounded-lg text-sm font-extrabold text-zinc-900 outline-none shadow-sm min-w-[220px]"
+                            />
+                            <button
+                              onClick={(e) => handleSaveRename(item.id, e)}
+                              className="p-1.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-lg font-bold transition-colors shrink-0"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
+                              className="p-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg transition-colors shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 group/listtitle">
+                            <h4 
+                              onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                              className="font-extrabold text-zinc-900 text-base truncate cursor-pointer hover:text-amber-600"
+                              title={item.name}
+                            >
+                              {item.name}
+                            </h4>
+                            <button
+                              onClick={(e) => handleStartRename(item, e)}
+                              className="opacity-0 group-hover/listtitle:opacity-100 p-1 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-md transition-all shrink-0"
+                              title="Rename Box"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+
                         {item.isDraft && (
                           <span className="bg-amber-100 text-amber-800 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
                             Draft

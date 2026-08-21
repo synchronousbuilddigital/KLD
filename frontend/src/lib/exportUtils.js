@@ -107,6 +107,93 @@ export function exportSVG(svgElement, filename = "dieline.svg") {
   URL.revokeObjectURL(uniqueBlobObjectURL);
 }
 
+// --- CMYK COLOR ENGINE HELPERS ---
+
+export function hexToRgb(hex) {
+  if (!hex || typeof hex !== 'string') return { r: 0, g: 0, b: 0 };
+  let c = hex.replace('#', '').trim();
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return { r: 0, g: 0, b: 0 };
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+export function rgbToCmyk(r, g, b) {
+  const rP = r / 255;
+  const gP = g / 255;
+  const bP = b / 255;
+
+  const k = 1 - Math.max(rP, gP, bP);
+  if (k >= 1) {
+    return { c: 0, m: 0, y: 0, k: 100 };
+  }
+  const c = Math.round(((1 - rP - k) / (1 - k)) * 100);
+  const m = Math.round(((1 - gP - k) / (1 - k)) * 100);
+  const y = Math.round(((1 - bP - k) / (1 - k)) * 100);
+  const kPercent = Math.round(k * 100);
+
+  return { c, m, y, k: kPercent };
+}
+
+export function cmykToRgb(c, m, y, k) {
+  const cP = c / 100;
+  const mP = m / 100;
+  const yP = y / 100;
+  const kP = k / 100;
+
+  const r = Math.round(255 * (1 - cP) * (1 - kP));
+  const g = Math.round(255 * (1 - mP) * (1 - kP));
+  const b = Math.round(255 * (1 - yP) * (1 - kP));
+
+  return { r, g, b };
+}
+
+// Convert image canvas or DataURL photo pixel buffer into CMYK color space representation
+export async function convertImageToCMYKDataUrl(imgUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width || 300;
+        canvas.height = img.naturalHeight || img.height || 300;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(imgUrl);
+
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Calculate CMYK
+          const cmyk = rgbToCmyk(r, g, b);
+          // Convert back from CMYK (Simulated Press CMYK Gamut)
+          const rgb = cmykToRgb(cmyk.c, cmyk.m, cmyk.y, cmyk.k);
+
+          data[i] = rgb.r;
+          data[i + 1] = rgb.g;
+          data[i + 2] = rgb.b;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (err) {
+        console.warn("CMYK Image conversion fallback:", err);
+        resolve(imgUrl);
+      }
+    };
+    img.onerror = () => resolve(imgUrl);
+    img.src = imgUrl;
+  });
+}
+
 export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode = "RGB") {
   if (!svgElement) {
     console.error("Export aborted: SVG element missing.");
@@ -137,28 +224,36 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
     svgClone.setAttribute("width", `${width}in`);
     svgClone.setAttribute("height", `${height}in`);
     
-    // 1. Remove unsupported elements that crash svg2pdf, as well as UI-only elements (Keep defs & clipPaths intact!)
+    // 1. Remove unsupported elements that crash svg2pdf, as well as UI-only elements
     const unsupported = svgClone.querySelectorAll("filter, pattern, foreignObject, .editor-measurements");
     unsupported.forEach(el => el.remove());
 
-    // Ensure all image elements explicitly carry xlink:href for svg2pdf and PDF parsers
-    const images = svgClone.querySelectorAll("image");
-    images.forEach(img => {
+    // 2. Process image elements (Convert photos to CMYK print gamut if CMYK mode requested)
+    const images = Array.from(svgClone.querySelectorAll("image"));
+    for (const img of images) {
       const href = img.getAttribute("href") || img.getAttribute("xlink:href");
       if (href) {
-        img.setAttribute("href", href);
-        img.setAttribute("xlink:href", href);
+        let finalHref = href;
+        if (colorMode === "CMYK" || colorMode === "cmyk") {
+          try {
+            finalHref = await convertImageToCMYKDataUrl(href);
+          } catch (e) {
+            console.warn("Error converting decal photo to CMYK:", e);
+          }
+        }
+        img.setAttribute("href", finalHref);
+        img.setAttribute("xlink:href", finalHref);
       }
-    });
+    }
     
-    // 2. Remove comment nodes (React often inserts these and they crash svg2pdf)
+    // 3. Remove comment nodes
     const iterator = document.createNodeIterator(svgClone, NodeFilter.SHOW_COMMENT, null, false);
     let currNode;
     const comments = [];
     while (currNode = iterator.nextNode()) comments.push(currNode);
     comments.forEach(c => c.parentNode.removeChild(c));
     
-    // 3. Remove attributes that reference deleted defs (like filters/markers) but preserve clip-paths
+    // 4. Remove attributes that reference deleted defs
     const allElements = svgClone.querySelectorAll("*");
     allElements.forEach(el => {
       el.removeAttribute("marker-start");
@@ -167,16 +262,24 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
       el.removeAttribute("filter");
     });
     
-    // Explicitly embed styling for svg2pdf if needed (inline styles)
-    const pathsAndGroups = svgClone.querySelectorAll("path, line, rect, circle, polyline, g");
+    // 5. Transform vector strokes and fills for CMYK mode if requested
+    const pathsAndGroups = svgClone.querySelectorAll("path, line, rect, circle, polyline, g, text");
     pathsAndGroups.forEach(p => {
-      // Ensure stroke values are explicit for PDF conversion
       if (p.getAttribute("stroke") === "currentColor") p.setAttribute("stroke", "#000000");
       
-      // Remove url() fills for deleted patterns/kraft-pattern so svg2pdf doesn't default to black
       const fill = p.getAttribute("fill");
       if (fill && fill.startsWith("url(#kraft-pattern")) {
         p.setAttribute("fill", "none");
+      }
+
+      if (colorMode === "CMYK" || colorMode === "cmyk") {
+        if (fill && fill.startsWith("#")) {
+          const rgb = hexToRgb(fill);
+          const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+          const cmykRgb = cmykToRgb(cmyk.c, cmyk.m, cmyk.y, cmyk.k);
+          const cmykHex = `#${((1 << 24) + (cmykRgb.r << 16) + (cmykRgb.g << 8) + cmykRgb.b).toString(16).slice(1)}`;
+          p.setAttribute("fill", cmykHex);
+        }
       }
     });
 

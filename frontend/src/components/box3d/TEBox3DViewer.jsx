@@ -477,7 +477,7 @@ export default function TEBox3DViewer({
   );
 
   // ── Camera ────────────────────────────────────────────────────────────────
-  const camPos = [L * 1.15, H * 0.55, W * 3.2];
+  const camPos = disableZoom ? [L * 0.4, H * 0.25, Math.max(L, H) * 2.0] : [L * 1.15, H * 0.55, W * 3.2];
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
