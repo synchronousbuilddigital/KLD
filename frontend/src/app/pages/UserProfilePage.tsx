@@ -2,9 +2,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   User, Shield, ShieldCheck, Key, CreditCard, Package, Download, 
-  Sparkles, LogOut, ArrowLeft, CheckCircle2, Trash2, Eye, EyeOff, Save, Lock, X, LayoutDashboard, ExternalLink, Search, Copy, Filter
+  Sparkles, LogOut, ArrowLeft, CheckCircle2, Trash2, Eye, EyeOff, Save, Lock, X, LayoutDashboard, ExternalLink, Search, Copy, Filter, Upload, Camera
 } from 'lucide-react';
 import { authService, UserProfile } from '../../services/auth';
+import { uploadService } from '../../services/upload';
+import { exportService, ExportItem } from '../../services/exportService';
 import { API_BASE_URL } from '../../config/api';
 import './UserProfilePage.css';
 
@@ -40,8 +42,57 @@ function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigat
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
   
+  const [exportHistory, setExportHistory] = useState<ExportItem[]>([]);
+  const [isLoadingExports, setIsLoadingExports] = useState(false);
+
+  const fetchExportHistory = async () => {
+    setIsLoadingExports(true);
+    try {
+      const res = await exportService.getExportHistory();
+      if (res.success && Array.isArray(res.data?.exports)) {
+        setExportHistory(res.data.exports);
+      }
+    } catch (err) {
+      console.error('Error loading export history:', err);
+    } finally {
+      setIsLoadingExports(false);
+    }
+  };
+
+  const handleDeleteExport = async (exportId: string) => {
+    if (!confirm('Are you sure you want to delete this export record from history?')) return;
+    setExportHistory(prev => prev.filter(e => e._id !== exportId));
+    try {
+      await exportService.deleteExportRecord(exportId);
+    } catch (err) {
+      console.error('Delete export error:', err);
+    }
+  };
+  
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    setStatusMsg(null);
+
+    try {
+      const res = await uploadService.uploadAvatar(file);
+      if (res.success && res.data?.url) {
+        setUser(prev => prev ? { ...prev, avatarUrl: res.data.url } : null);
+        setStatusMsg({ type: 'success', text: 'Profile picture updated successfully!' });
+        fetchProfileFromBackend();
+      }
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message || 'Avatar upload failed.' });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     // Reset body zoom and width overrides set by App hero scaling
@@ -76,6 +127,12 @@ function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigat
       document.body.style.width = '';
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'exports') {
+      fetchExportHistory();
+    }
+  }, [activeTab]);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -472,6 +529,57 @@ function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigat
               <h2 className="panel-card-title">
                 <User className="w-4 h-4 text-zinc-900" /> Account Information
               </h2>
+
+              {/* Avatar Upload Container */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #E5E7EB' }}>
+                <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', border: '3px solid #C89A63', background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', flexShrink: 0 }}>
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.fullName || 'User Avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '2rem', fontWeight: 800, color: '#C89A63' }}>
+                      {(fullName || user?.email || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#111827', margin: '0 0 4px 0' }}>Profile Photo</h3>
+                  <p style={{ fontSize: '0.8rem', color: '#6B7280', margin: '0 0 10px 0' }}>Upload a JPG, PNG, or WEBP image</p>
+                  
+                  <label 
+                    htmlFor="avatar-upload-input"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 16px',
+                      borderRadius: '10px',
+                      background: '#111827',
+                      color: '#ffffff',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: isUploadingAvatar ? 'wait' : 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      opacity: isUploadingAvatar ? 0.7 : 1
+                    }}
+                  >
+                    {isUploadingAvatar ? (
+                      <><span>Uploading photo...</span></>
+                    ) : (
+                      <><Upload className="w-4 h-4 text-amber-400" /> Upload New Photo</>
+                    )}
+                  </label>
+                  <input 
+                    type="file" 
+                    id="avatar-upload-input"
+                    accept="image/*" 
+                    onChange={handleAvatarFileChange} 
+                    disabled={isUploadingAvatar}
+                    style={{ display: 'none' }} 
+                  />
+                </div>
+              </div>
+
               <form onSubmit={handleUpdateProfile}>
                 <div className="clean-form-grid">
                   <div className="clean-field-group">
@@ -778,15 +886,120 @@ function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigat
         {/* SECTION 4: EXPORT HISTORY */}
         {activeTab === 'exports' && (
           <div className="clean-panel-card">
-            <h2 className="panel-card-title">
-              <Download className="w-4 h-4 text-zinc-900" /> Export Downloads Log
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h2 className="panel-card-title" style={{ margin: 0 }}>
+                <Download className="w-4 h-4 text-zinc-900" /> Export Downloads Log ({exportHistory.length})
+              </h2>
 
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6B7280' }}>
-              <Download className="w-10 h-10 mx-auto mb-3 opacity-30 text-zinc-400" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '0 0 4px 0' }}>No Export Logs Found</h3>
-              <p style={{ fontSize: '0.85rem', margin: 0 }}>Rendered SVG, PDF, and 2K/8K images will appear here for direct download.</p>
+              <button 
+                onClick={fetchExportHistory}
+                disabled={isLoadingExports}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #E5E7EB',
+                  background: '#FFFFFF',
+                  color: '#374151',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                {isLoadingExports ? 'Loading...' : '🔄 Refresh History'}
+              </button>
             </div>
+
+            {isLoadingExports ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>
+                Loading past export logs...
+              </div>
+            ) : exportHistory.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6B7280' }}>
+                <Download className="w-10 h-10 mx-auto mb-3 opacity-30 text-zinc-400" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111827', margin: '0 0 4px 0' }}>No Export Logs Found</h3>
+                <p style={{ fontSize: '0.85rem', margin: 0 }}>Exported PDF blueprints, DXF CAD files, and 2K/8K images will appear here.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="projects-table">
+                  <thead>
+                    <tr>
+                      <th>FILE / FORMAT</th>
+                      <th>TYPE</th>
+                      <th>RESOLUTION</th>
+                      <th>DATE EXPORTED</th>
+                      <th>STATUS</th>
+                      <th style={{ textAlign: 'right' }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exportHistory.map((item) => (
+                      <tr key={item._id}>
+                        <td>
+                          <div className="project-title-cell">
+                            <div className="project-icon-box">
+                              <Download className="w-4 h-4 text-indigo-600" />
+                            </div>
+                            <div>
+                              <div className="project-name">{item.fileName || item.design?.name || 'Packaging Export'}</div>
+                              <div className="project-subtext">{item.design?.category || 'Custom Blueprint'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            background: item.format === 'PDF' ? '#FEF3C7' : item.format === 'DXF' ? '#E0E7FF' : item.format === 'PNG' ? '#ECFDF5' : '#F3F4F6',
+                            color: item.format === 'PDF' ? '#92400E' : item.format === 'DXF' ? '#3730A3' : item.format === 'PNG' ? '#065F46' : '#1F2937',
+                            fontSize: '0.75rem',
+                            fontWeight: 800
+                          }}>
+                            {item.format}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: 600 }}>
+                          {item.resolution || 'Vector'}
+                        </td>
+                        <td style={{ fontSize: '0.82rem', color: '#6B7280' }}>
+                          {item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Recent'}
+                        </td>
+                        <td>
+                          <span className={`status-pill ${item.status === 'DONE' ? 'status-active' : 'status-inactive'}`}>
+                            {item.status === 'DONE' ? 'Ready' : item.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            {item.fileUrl && (
+                              <a 
+                                href={item.fileUrl} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="action-btn-primary" 
+                                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Download className="w-3.5 h-3.5" /> Download
+                              </a>
+                            )}
+                            <button 
+                              className="action-btn-danger" 
+                              onClick={() => handleDeleteExport(item._id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </main>

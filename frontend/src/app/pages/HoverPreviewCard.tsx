@@ -22,7 +22,7 @@ export interface TargetRect {
 }
 
 interface Props {
-  item: { label: string; img: string };
+  item: { label: string; img: string; group?: string; boxModelKey?: string };
   targetRect?: TargetRect | null;
   posX?: number;
   posY?: number;
@@ -45,15 +45,15 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
 
   useEffect(() => {
     if (!item) return;
-    
+
     // Non-box items use 'rotate' instead of 'flat' for their 3rd state
-    const sequence: string[] = isBox 
+    const sequence: string[] = isBox
       ? ['closed', 'open', 'flat', 'open']
       : ['closed', 'open', 'rotate', 'open'];
-      
+
     let currentIndex = 0;
     setAnimState('closed' as any);
-    
+
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % sequence.length;
       setAnimState(sequence[currentIndex] as any);
@@ -89,23 +89,23 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
   let pointerLeft = itemCenterX - left;
   pointerLeft = Math.max(28, Math.min(CARD_W - 28, pointerLeft));
 
-  const positionStyle: React.CSSProperties = positionMode === 'below' 
+  const positionStyle: React.CSSProperties = positionMode === 'below'
     ? {
-        position: 'fixed',
-        left: `${left}px`,
-        top: `${Math.min(window.innerHeight - CARD_H - 12, rect.bottom + 14)}px`,
-        width: `${CARD_W}px`,
-        height: `${CARD_H}px`,
-        zIndex: 9999,
-      }
+      position: 'fixed',
+      left: `${left}px`,
+      top: `${Math.min(window.innerHeight - CARD_H - 12, rect.bottom + 14)}px`,
+      width: `${CARD_W}px`,
+      height: `${CARD_H}px`,
+      zIndex: 9999,
+    }
     : {
-        position: 'fixed',
-        left: `${left}px`,
-        bottom: `${window.innerHeight - rect.top + 14}px`,
-        width: `${CARD_W}px`,
-        height: `${CARD_H}px`,
-        zIndex: 9999,
-      };
+      position: 'fixed',
+      left: `${left}px`,
+      bottom: `${window.innerHeight - rect.top + 14}px`,
+      width: `${CARD_W}px`,
+      height: `${CARD_H}px`,
+      zIndex: 9999,
+    };
 
   const card = (
     <div
@@ -115,8 +115,8 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
       onMouseLeave={onMouseLeave}
     >
       {/* Pointer triangle - points to item (up if below, down if above) */}
-      <div 
-        className={`hover-preview-card__pointer hover-preview-card__pointer--${positionMode}`} 
+      <div
+        className={`hover-preview-card__pointer hover-preview-card__pointer--${positionMode}`}
         style={{ left: `${pointerLeft}px` }}
       />
 
@@ -131,42 +131,49 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
       {/* 3D Viewport */}
       <div className="hover-preview-card__viewport">
         {(() => {
-          if (item.label === 'Pizza Box') {
+          const lbl = (item.label || '').toLowerCase();
+          const grp = (item.group || '').toLowerCase();
+          const key = (item.boxModelKey || '').toLowerCase();
+
+          if (lbl.includes('pizza') || key === 'pizza') {
             return <div style={{ transform: 'scale(0.5)' }}><PizzaBox3D animState={animState} /></div>;
           }
-          if (item.label === 'Supplement') {
+          if (lbl.includes('supplement')) {
             return <div style={{ transform: 'scale(0.75)' }}><Bottle3D /></div>;
           }
-          if (item.label === 'Bottle' || item.label === 'Water Bottle') {
+          if (lbl.includes('water bottle')) {
             return <div style={{ transform: 'scale(0.75)' }}><WaterBottle3D /></div>;
           }
-          if (item.label === 'Can') {
+          if (lbl.includes('bottle') || grp === 'bottles') {
+            return <div style={{ transform: 'scale(0.75)' }}><Bottle3D /></div>;
+          }
+          if (lbl.includes('can')) {
             return <div style={{ transform: 'scale(0.8)' }}><Can3D /></div>;
           }
-          if (item.label === 'Tube') {
+          if (lbl.includes('tube')) {
             return <div style={{ transform: 'scale(0.8)' }}><Tube3D /></div>;
           }
-          if (item.label === 'Cup') {
+          if (lbl.includes('cup')) {
             return <div style={{ transform: 'scale(0.85)' }}><Cup3D /></div>;
           }
-          if (item.label === 'Tuck End') {
-            return <div style={{ transform: 'scale(0.8)' }}><TuckBox3D /></div>;
-          }
-          if (item.label === 'Gift Box') {
+          if (lbl.includes('gift')) {
             return <div style={{ transform: 'scale(0.8)' }}><GiftBox3D /></div>;
           }
-          if (item.label === 'Paper Bag') {
+          if (lbl.includes('bag') || lbl.includes('paper')) {
             return <div style={{ transform: 'scale(0.8)' }}><PaperBag3D /></div>;
           }
-          if (item.label === 'Pouch') {
+          if (lbl.includes('pouch') || grp === 'pouches') {
             return <div style={{ transform: 'scale(0.85)' }}><Pouch3D /></div>;
+          }
+          if (lbl.includes('tuck') || lbl.includes('box') || grp === 'boxes' || key === 'rte' || key === 'te' || key === 'auto_lock' || key === 'cosmetic') {
+            return <div style={{ transform: 'scale(0.8)' }}><TuckBox3D /></div>;
           }
           if (isBox) {
             return <div style={{ transform: 'scale(0.5)' }}><Box3D boxState={animState} type={item.label} /></div>;
           }
           return (
             <div className="hover-preview-card__float-container">
-              <div 
+              <div
                 className="hover-preview-card__float-img"
                 style={{ backgroundImage: `url(${item.img})` }}
               />
@@ -180,13 +187,12 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
         {['closed', 'open', '3', 'open'].map((_, i) => (
           <div
             key={i}
-            className={`hover-preview-card__dot ${
-              (animState === 'closed' && i === 0) ||
-              (animState === 'open' && i === 1) ||
-              ((animState === 'flat' || animState === 'rotate') && i === 2) ||
-              (animState === 'open' && i === 3)
+            className={`hover-preview-card__dot ${(animState === 'closed' && i === 0) ||
+                (animState === 'open' && i === 1) ||
+                ((animState === 'flat' || animState === 'rotate') && i === 2) ||
+                (animState === 'open' && i === 3)
                 ? 'hover-preview-card__dot--active' : ''
-            }`}
+              }`}
           />
         ))}
       </div>

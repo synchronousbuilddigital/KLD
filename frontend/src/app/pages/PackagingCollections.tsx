@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { ArrowRight, Search, CheckCircle2, Sparkles } from 'lucide-react';
 import './PackagingCollections.css';
 
+import { catalogService } from '../../services/catalog';
+
 interface CategoryItem {
   id: string;
   title: string;
@@ -14,7 +16,7 @@ interface CategoryItem {
   isFeatured?: boolean;
 }
 
-const categories: CategoryItem[] = [
+const defaultCategories: CategoryItem[] = [
   {
     id: "box-mockups",
     title: "Box Mockups",
@@ -120,14 +122,6 @@ const categories: CategoryItem[] = [
   },
 ];
 
-const filterTabs = [
-  { id: 'all', label: 'All Models', count: 12 },
-  { id: 'boxes', label: 'Boxes', count: 4 },
-  { id: 'bottles', label: 'Bottles & Cans', count: 4 },
-  { id: 'pouches', label: 'Pouches & Bags', count: 2 },
-  { id: 'containers', label: 'Containers & Food', count: 3 },
-];
-
 const shortcutTags = [
   { label: '#Boxes', value: 'boxes' },
   { label: '#Bottles', value: 'bottles' },
@@ -146,8 +140,60 @@ export default function PackagingCollections({
   showExploreButton = true,
   isModelsPage = false
 }: PackagingCollectionsProps) {
+  const [categoriesList, setCategoriesList] = React.useState<CategoryItem[]>(defaultCategories);
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  React.useEffect(() => {
+    let isMounted = true;
+    catalogService.getPublicCatalog().then((items) => {
+      if (isMounted && items && items.length > 0) {
+        const mapped: CategoryItem[] = items.map((item) => ({
+          id: item.itemId || item._id || '',
+          title: item.title,
+          subtitle: item.subtitle,
+          img: item.img,
+          group: item.group,
+          badge: item.badge,
+          tag: item.tag,
+          isFeatured: item.isFeatured,
+        }));
+        setCategoriesList(mapped);
+      }
+    });
+
+    const handleCatalogUpdate = () => {
+      catalogService.getPublicCatalog().then((items) => {
+        if (isMounted && items && items.length > 0) {
+          const mapped: CategoryItem[] = items.map((item) => ({
+            id: item.itemId || item._id || '',
+            title: item.title,
+            subtitle: item.subtitle,
+            img: item.img,
+            group: item.group,
+            badge: item.badge,
+            tag: item.tag,
+            isFeatured: item.isFeatured,
+          }));
+          setCategoriesList(mapped);
+        }
+      });
+    };
+
+    window.addEventListener('catalog-updated', handleCatalogUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('catalog-updated', handleCatalogUpdate);
+    };
+  }, []);
+
+  const filterTabs = React.useMemo(() => [
+    { id: 'all', label: 'All Models', count: categoriesList.length },
+    { id: 'boxes', label: 'Boxes', count: categoriesList.filter(c => c.group === 'boxes').length },
+    { id: 'bottles', label: 'Bottles & Cans', count: categoriesList.filter(c => c.group === 'bottles').length },
+    { id: 'pouches', label: 'Pouches & Bags', count: categoriesList.filter(c => c.group === 'pouches').length },
+    { id: 'containers', label: 'Containers & Food', count: categoriesList.filter(c => c.group === 'containers').length },
+  ], [categoriesList]);
 
   const handleExploreClick = () => {
     window.dispatchEvent(new CustomEvent('navigate', { detail: 'models' }));
@@ -158,7 +204,7 @@ export default function PackagingCollections({
     setSearchQuery('');
   };
 
-  const filteredCategories = categories.filter((cat) => {
+  const filteredCategories = categoriesList.filter((cat) => {
     const matchesTab = activeTab === 'all' || cat.group === activeTab;
     const matchesSearch = searchQuery.trim() === '' ||
       cat.title.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||

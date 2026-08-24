@@ -13,6 +13,7 @@ import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
 import { API_BASE_URL } from "../../config/api";
+import { exportService } from "../../services/exportService";
 
 interface BoxStudioModalProps {
   isOpen: boolean;
@@ -230,7 +231,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   const displayH = unit === "in" ? store.H.toFixed(4) : (store.H * 25.4).toFixed(2);
 
   // Export handlers
-  const handleExportDXF = () => {
+  const handleExportDXF = async () => {
     try {
       const params = {
         L: store.L,
@@ -246,7 +247,17 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
       else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
       else dielineData = generateRTEDielineDXF(params);
-      exportDXF(dielineData, `${store.boxModel}_dieline.dxf`);
+      
+      const fileName = `${store.boxModel}_dieline.dxf`;
+      exportDXF(dielineData, fileName);
+
+      try {
+        await exportService.logExport({
+          format: 'DXF',
+          resolution: 'CAD Vector',
+          fileName
+        });
+      } catch (e) {}
     } catch (err) {
       console.error("DXF Export Error:", err);
     }
@@ -288,8 +299,16 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   const handleExportPDF = async () => {
     try {
       const svgElement = document.querySelector("#dieline-svg-wrapper svg") as SVGSVGElement | null;
+      const fileName = `${store.boxModel}_dieline.pdf`;
       if (svgElement) {
-        await exportPDF(svgElement, `${store.boxModel}_dieline.pdf`, "CMYK");
+        await exportPDF(svgElement, fileName, "CMYK");
+        try {
+          await exportService.logExport({
+            format: 'PDF',
+            resolution: 'Vector CMYK',
+            fileName
+          });
+        } catch (e) {}
       } else {
         handleExportDXF();
       }
@@ -299,23 +318,39 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     }
   };
 
-  const handleExportAI = () => {
+  const handleExportAI = async () => {
     try {
       const svgElement = document.querySelector("#dieline-svg-wrapper svg") as SVGSVGElement | null;
+      const fileName = `${store.boxModel}_dieline.ai`;
       if (svgElement) {
         // AI can natively open SVG files and editing is perfectly preserved
-        exportSVG(svgElement, `${store.boxModel}_dieline.ai`);
+        exportSVG(svgElement, fileName);
+        try {
+          await exportService.logExport({
+            format: 'SVG',
+            resolution: 'Adobe Vector',
+            fileName
+          });
+        } catch (e) {}
       }
     } catch (err) {
       console.error("AI Export Error:", err);
     }
   };
 
-  const handleExportSVG = () => {
+  const handleExportSVG = async () => {
     try {
       const svgElement = document.querySelector("#dieline-svg-wrapper svg") as SVGSVGElement | null;
+      const fileName = `${store.boxModel}_dieline.svg`;
       if (svgElement) {
-        exportSVG(svgElement, `${store.boxModel}_dieline.svg`);
+        exportSVG(svgElement, fileName);
+        try {
+          await exportService.logExport({
+            format: 'SVG',
+            resolution: 'Scalable Vector',
+            fileName
+          });
+        } catch (e) {}
       }
     } catch (err) {
       console.error("SVG Export Error:", err);
