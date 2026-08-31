@@ -370,17 +370,26 @@ function createTextTextureURL(decal) {
   
   const canvas = document.createElement("canvas");
   const aspect = (decal.height || 1) / (decal.width || 1);
+  // Force Power-Of-Two (POT) dimensions to guarantee mipmapping on all WebGL implementations
   canvas.width = 2048;
-  canvas.height = 2048 * aspect;
+  canvas.height = 2048;
   const ctx = canvas.getContext("2d");
   
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
+  // Scale the context so the drawing is vertically stretched.
+  // When projected onto the Decal (which scales by [width, height]), it will un-squash perfectly.
+  ctx.scale(1, 1 / aspect);
+  
+  const effectiveHeight = 2048 * aspect;
+  
   const fontWeight = decal.bold ? "bold" : "normal";
   const fontStyle = decal.italic ? "italic" : "normal";
-  const fontSize = (decal.fontSize ?? 0.8) / (decal.height || 1) * canvas.height;
+  const fontSize = (decal.fontSize ?? 0.8) / (decal.height || 1) * effectiveHeight;
   
-  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${decal.fontFamily || "Inter"}`;
+  // Use a high-quality default font
+  const fontFamily = decal.fontFamily ? `${decal.fontFamily}, sans-serif` : "Inter, sans-serif";
+  ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
   ctx.fillStyle = decal.color || "#000000";
   ctx.textAlign = decal.textAlign || "center";
   ctx.textBaseline = "middle";
@@ -413,7 +422,7 @@ function createTextTextureURL(decal) {
   
   const lineH = fontSize * 1.2;
   const totalTextHeight = (finalLines.length - 1) * lineH;
-  let startY = (canvas.height / 2) - (totalTextHeight / 2);
+  let startY = (effectiveHeight / 2) - (totalTextHeight / 2);
   
   finalLines.forEach((line) => {
       ctx.fillText(line, x, startY);
@@ -427,32 +436,30 @@ function createShapeTextureURL(decal) {
   if (typeof window === "undefined") return "";
 
   if (decal.shapeType === 'custom-svg' && decal.svgString) {
-    // Inject width/height to avoid blurry rasters in Three.js and apply the color
-    // Must remove existing width/height to avoid duplicate attributes in XML parser
     let cleanSvg = decal.svgString.replace(/fill="currentColor"/g, `fill="${decal.fillColor}"`);
-    // Remove existing width="xyz" and height="xyz" from the main <svg> tag
     cleanSvg = cleanSvg.replace(/(<svg[^>]*?)\s+width="[^"]*"/, '$1');
     cleanSvg = cleanSvg.replace(/(<svg[^>]*?)\s+height="[^"]*"/, '$1');
-    cleanSvg = cleanSvg.replace(/<svg/, `<svg width="1024" height="1024"`);
-    // Safe base64 encoding for SVG string
+    cleanSvg = cleanSvg.replace(/<svg/, `<svg width="2048" height="2048"`);
     const base64 = btoa(unescape(encodeURIComponent(cleanSvg)));
     return `data:image/svg+xml;base64,${base64}`;
   }
 
   const canvas = document.createElement("canvas");
   const aspect = (decal.height || 1) / (decal.width || 1);
-  canvas.width = 1024;
-  canvas.height = Math.round(1024 * aspect);
+  canvas.width = 2048;
+  canvas.height = 2048;
   const ctx = canvas.getContext("2d");
   
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(1, 1 / aspect);
   
+  const effectiveHeight = 2048 * aspect;
   const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
+  const cy = effectiveHeight / 2;
   
   const strokeW_in = (decal.strokeWidth || 0) / 72;
   const maxDim = Math.max(decal.width || 1, decal.height || 1);
-  const sw = (strokeW_in / maxDim) * Math.max(canvas.width, canvas.height);
+  const sw = (strokeW_in / maxDim) * Math.max(canvas.width, effectiveHeight);
   
   ctx.fillStyle = decal.fillColor || "transparent";
   ctx.strokeStyle = decal.strokeColor || "transparent";
@@ -462,7 +469,7 @@ function createShapeTextureURL(decal) {
   const tlx = sw / 2;
   const tly = sw / 2;
   const rw = canvas.width - sw;
-  const rh = canvas.height - sw;
+  const rh = effectiveHeight - sw;
 
   if (decal.borderStyle === 'dashed') {
     ctx.setLineDash([Math.max(10, sw*2), Math.max(10, sw*2)]);
@@ -527,10 +534,18 @@ function createShapeTextureURL(decal) {
   return canvas.toDataURL("image/png");
 }
 
-export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims, T) {
+export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH, dims, T) {
   let cx = 0, cy = 0, rotZ = 0, scaleX = 1, scaleY_sign = 1;
   let scaleY = H / manuH;
-  const { x1, x2, x3, x4, yTop, yBot } = dims;
+
+  // Normalize human-readable panel names to Three.js mesh panel keys
+  let panel = panelInput;
+  if (panelInput === "Front") panel = "p1";
+  else if (panelInput === "Back") panel = "p3";
+  else if (panelInput === "Right") panel = "p2";
+  else if (panelInput === "Left") panel = "p4";
+
+  const { x1, x2, x3, x4, x5, yTop, yBot } = dims;
   const nT = Math.max(0.015, Number(T) || 0.0197);
   const coverDepth = W - 2 * nT;
   const sec1L = W * (11.5 / 35.6);
@@ -550,10 +565,10 @@ export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims
     scaleY = W / manuW;
   }
 
-  if      (panel === "p1")          { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-decal.y)*scaleY + H/2; }
-  else if (panel === "p2")          { scaleX = W/manuW; cx = (decal.x-x2)*scaleX;        cy = (yTop-decal.y)*scaleY + H/2; }
-  else if (panel === "p3")          { scaleX = L/manuL; cx = (decal.x-x3)*scaleX - L/2; cy = (yTop-decal.y)*scaleY + H/2; }
-  else if (panel === "p4")          { scaleX = W/manuW; cx = (decal.x-x4)*scaleX;        cy = (yTop-decal.y)*scaleY + H/2; }
+  if      (panel === "p1")          { scaleX = L/manuL; cx = (decal.x - (x1 + x2)/2)*scaleX; cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
+  else if (panel === "p2")          { scaleX = W/manuW; cx = (decal.x - x2)*scaleX;          cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
+  else if (panel === "p3")          { scaleX = L/manuL; cx = (decal.x - (x3 + x4)/2)*scaleX; cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
+  else if (panel === "p4")          { scaleX = W/manuW; cx = (decal.x - x4)*scaleX;          cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
   else if (panel === "p1_top_cover"){ scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-decal.y)*scaleY; }
   else if (panel === "p1_top_lip")  { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-coverDepth-decal.y)*scaleY; }
   else if (panel === "p3_top_cover"){ scaleX = L/manuL; cx = (decal.x-x3)*scaleX - L/2; cy = (yTop-decal.y)*scaleY; }
@@ -580,18 +595,34 @@ export function mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims
 }
 
 export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims, panel, T, isFlatGeometry = false, clipMask }) {
+  // Strict panel matching: skip rendering if decal belongs to a different panel
+  let normDecalPanel = decal.panel;
+  if (normDecalPanel === "Front") normDecalPanel = "p1";
+  else if (normDecalPanel === "Back") normDecalPanel = "p3";
+  else if (normDecalPanel === "Right") normDecalPanel = "p2";
+  else if (normDecalPanel === "Left") normDecalPanel = "p4";
+
+  if (normDecalPanel && normDecalPanel !== panel) {
+    return null;
+  }
+
   const { cx, cy, rotZ, scaleX, scaleY_sign, scaleY } = mapDecalToPanel(decal, panel, L, W, H, manuL, manuW, manuH, dims, T);
 
-  const decalW = Math.max(0.001, decal.width  * scaleX);
-  const decalH = Math.max(0.001, decal.height * scaleY) * scaleY_sign;
+  const rawW = decal.width || (panel === "p2" || panel === "p4" || panel === "Right" || panel === "Left" ? W : L);
+  const rawH = decal.height || H;
+
+  const decalW = Math.max(0.001, rawW * (decal.scale || 1));
+  const decalH = Math.max(0.001, rawH * (decal.scale || 1)) * scaleY_sign;
 
   const isText  = decal.type === "text";
   const isShape = decal.type === "shape";
   const textureUrl = useMemo(() => {
     if (isText) return createTextTextureURL(decal);
     if (isShape) return createShapeTextureURL(decal);
-    return decal.url;
+    // Use a 1x1 transparent pixel as a fallback to prevent useTexture from crashing on undefined
+    return decal.url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
   }, [decal]);
+
   const texture = useTexture(textureUrl);
 
   React.useEffect(() => {
@@ -610,14 +641,14 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   if (isInside) { rotY = Math.PI; finalDecalW = -decalW; }
 
   const nT = Math.max(0.015, Number(T) || 0.0197);
-  const depth = nT * 1.5; // Restrict projection depth so it only intersects one surface
+  const depth = nT * 0.1; // Restrict projection depth so it only intersects the very surface
   const zPos  = isFlatGeometry ? (isInside ? -nT : 0) : (isInside ? 0 : nT);
 
   return (
     <Decal position={[cx, cy, zPos]} rotation={[0, rotY, rotZ]} scale={[finalDecalW, decalH, depth]} renderOrder={index + 1}>
       <meshStandardMaterial
         map={texture} transparent depthTest depthWrite={false}
-        alphaTest={0.01} roughness={0.4} metalness={0.1}
+        roughness={0.4} metalness={0.1}
         polygonOffset polygonOffsetFactor={-(index + 1)} 
         side={THREE.FrontSide}
         onBeforeCompile={(shader) => {

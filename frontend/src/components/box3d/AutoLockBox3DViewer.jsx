@@ -454,7 +454,7 @@ export default function AutoLockBox3DViewer({
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <Canvas camera={{ position: camPos, fov: 40, zoom }} gl={{ preserveDrawingBuffer: true, antialias: true }} shadows>
+      <Canvas camera={{ position: camPos, fov: 40, zoom }} gl={{ preserveDrawingBuffer: true, antialias: true }} shadows dpr={[1, 2]}>
         <Environment preset="city" />
         <LightingPreset preset={lightingPreset} />
         <ContactShadows position={[0, -H/2 - 0.02, 0]} opacity={0.5} scale={Math.max(L, W) * 4} blur={2.5} far={4} />

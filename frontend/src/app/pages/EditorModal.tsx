@@ -4,6 +4,7 @@ import Box3DViewer from "../../components/Box3DViewer";
 import DielineSVG from "../../components/DielineSVG";
 import { useBoxStore } from "../../lib/useBoxStore";
 import { useEditorStore } from "../../lib/useEditorStore";
+import AiPackagingAssistant from "../components/AiPackagingAssistant";
 import { generateRTEDieline } from "../../lib/rteDielineGenerator";
 import { packagingSymbols } from "../../lib/packagingSymbols";
 import { exportPDF } from "../../lib/exportUtils";
@@ -66,7 +67,7 @@ const allSocialMedia = [
   { name: 'Facebook', svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22.675 0h-21.35C.597 0 0 .597 0 1.325v21.351C0 23.403.597 24 1.325 24H12.82v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116c.73 0 1.323-.597 1.323-1.325V1.325C24 .597 23.403 0 22.675 0z"/></svg>' }
 ];
 
-export default function EditorModal({ isOpen, onClose, contextType = "mockup" }: { isOpen: boolean; onClose: () => void; contextType?: string }) {
+export default function EditorModal({ isOpen, onClose, contextType = "mockup", isAiMode = false }: { isOpen: boolean; onClose: () => void; contextType?: string; isAiMode?: boolean }) {
   const store = useEditorStore();
   const globalStore = useBoxStore();
 
@@ -75,6 +76,9 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
       // Sync editor store with current global store state WITHOUT copying functions
       // This ensures useEditorStore keeps its own setDecals and doesn't mutate globalStore
       const stateData = JSON.parse(JSON.stringify(useBoxStore.getState()));
+      if (isAiMode) {
+        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [] };
+      }
       useEditorStore.setState(stateData);
       
       // Update context and model directly to avoid using potentially corrupted store functions
@@ -210,9 +214,14 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
   const handleSaveAndExit = async () => {
     // Sync useEditorStore data back to useBoxStore so changes appear in WorkshopPage
     const editorData = JSON.parse(JSON.stringify(useEditorStore.getState()));
-    useBoxStore.setState(editorData);
     
-    await saveDesignToWorkspace();
+    if (isAiMode) {
+      useBoxStore.setState({ aiDecalsByModel: editorData.decalsByModel });
+    } else {
+      useBoxStore.setState(editorData);
+      await saveDesignToWorkspace();
+    }
+    
     onClose();
   };
 
@@ -298,13 +307,16 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
     { type: "color", value: "#146814" },
   ];
 
+  const defaultCenterX = (store.L * 2 + store.W * 2) / 2 + 0.625;
+  const defaultCenterY = store.H / 2 + store.W + 0.625;
+
   const handleAddDecal = (url) => {
     const newDecals = [...decals, { 
       id: Date.now().toString(), 
       type: 'image',
       url, 
-      x: 0, 
-      y: 0, 
+      x: defaultCenterX, 
+      y: defaultCenterY, 
       width: 5, 
       height: 5,
       surface: activeSurface 
@@ -323,8 +335,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
       bold: false,
       italic: false,
       textAlign: 'center',
-      x: 0, 
-      y: 0, 
+      x: defaultCenterX, 
+      y: defaultCenterY, 
       width: 5, 
       height: 2, 
       surface: activeSurface 
@@ -337,8 +349,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
       id: Date.now().toString(), 
       type: 'shape',
       shapeType: shapeType,
-      x: 0, 
-      y: 0, 
+      x: defaultCenterX, 
+      y: defaultCenterY, 
       width: 5, 
       height: 5, 
       strokeColor: '#000000',
@@ -353,8 +365,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
       id: Date.now().toString(), 
       type: 'shape',
       shapeType: shapeType,
-      x: 0, 
-      y: 0, 
+      x: defaultCenterX, 
+      y: defaultCenterY, 
       width: 5, 
       height: 5, 
       strokeColor: store.trimColor || '#0055ff', // Blue cutline
@@ -373,8 +385,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
       shapeType: 'custom-svg',
       svgString: svgString,
       fillColor: '#000000',
-      x: 0, 
-      y: 0, 
+      x: defaultCenterX, 
+      y: defaultCenterY, 
       width: 5, 
       height: 5, 
       surface: activeSurface 
@@ -625,6 +637,10 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup" }:
               </div>
             </div>
             )
+          ) : activeTab === "AI Creation" ? (
+            <div style={{ position: "relative", width: "100%", height: "100%" }}>
+              <AiPackagingAssistant useStore={useEditorStore} isOpen={true} onClose={() => setActiveTab("Elements")} />
+            </div>
           ) : (
             <div style={{ textAlign: "center", color: t.textMuted, fontSize: "13px", marginTop: "20px" }}>Coming soon...</div>
           )}

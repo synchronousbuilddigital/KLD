@@ -50,6 +50,7 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
   };
 
   const navItems = [
+    { id: 'aistudio', label: '✦ AI Studio', path: '/ai-studio' },
     { id: 'models', label: '3D Models', path: '/3d-models' },
     { id: 'dielines', label: 'Dielines', path: '/dielines' },
     { id: 'pricing', label: 'Pricing', path: '/pricing' },

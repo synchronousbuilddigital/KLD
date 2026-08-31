@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, Bookmark, Check } from 'lucide-react';
+import { ChevronRight, Bookmark, Check, Star, Box, Rotate3d } from 'lucide-react';
 import '../../styles/new-home.css';
 import { mockupCategories, MockupVariant } from '../data/mockupData';
 import { useBoxStore } from '../../lib/useBoxStore';
@@ -51,49 +51,54 @@ const AnimatedBox3DViewer = ({ boxType, isHovered, color, decals }: any) => {
       disableZoom={true}
       colorOverride={color}
       progress={progress}
-      zoom={0.65}
+      zoom={0.78}
       overrideLayout="single"
       decals={decals}
+      lightingPreset="studio"
+      L={50} W={30} H={80}
+      overrideL={50} overrideW={30} overrideH={80}
     />
   );
 };
 
 const rteDecals = [
-  // Huge blue background covering the whole front
-  { id: 'r_bg', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rectangle', fillColor: '#2B35AF', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 0, width: 100, height: 150, rotation: 0 },
-  // Rotated black background at top
-  { id: 'r0', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rectangle', fillColor: '#11131A', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 40, width: 110, height: 100, rotation: -0.15 },
-  // Text
-  { id: 'r1', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'SOFTWARE', fontSize: 7.5, color: '#ffffff', x: 0, y: 35, width: 100, height: 100, rotation: 0, bold: true },
-  { id: 'r2', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'EDITION', fontSize: 7.5, color: '#ffffff', x: 0, y: 20, width: 100, height: 100, rotation: 0, bold: true },
-  { id: 'r3', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'Professional License', fontSize: 2.5, color: '#6366f1', x: 0, y: 5, width: 100, height: 100, rotation: 0, bold: false },
-  // Cyan circle (centered at x:0)
-  { id: 'r4', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: 'transparent', strokeColor: '#06b6d4', strokeWidth: 50, x: 0, y: -25, width: 20, height: 20, rotation: 0 },
-  { id: 'r5', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#06b6d4', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: -25, width: 6, height: 6, rotation: 0 }
+  { id: 'logo', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD', fontSize: 3.5, color: '#111827', x: 3, y: 30, width: 38, height: 8, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'badge', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#f3f4f6', strokeColor: '#d1d5db', strokeWidth: 1, x: 15, y: 28, width: 12, height: 12, rotation: 0 },
+  { id: 'badge_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD\nPRO', fontSize: 2, color: '#374151', x: 15, y: 28, width: 12, height: 12, rotation: 0, bold: true, textAlign: 'center', fontFamily: 'sans-serif' },
+  { id: 'pill', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rounded-rectangle', borderRadius: 100, fillColor: '#06b6d4', strokeColor: 'transparent', strokeWidth: 0, x: -7, y: 10, width: 18, height: 4.5, rotation: 0 },
+  { id: 'pill_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'HIGH QUALITY', fontSize: 1.5, color: '#ffffff', x: -7, y: 10, width: 18, height: 4.5, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'center' },
+  { id: 'title', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'REVERSE TUCK\nEND BOXES\nMOCKUP', fontSize: 4, color: '#111827', x: 3, y: -5, width: 38, height: 20, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'desc', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'Customize design your 3D\nmockup online. Render the\n3D scene to view the effect.', fontSize: 1.4, color: '#6b7280', x: 3, y: -25, width: 38, height: 12, rotation: 0, bold: false, fontFamily: 'sans-serif', textAlign: 'left' }
 ];
 
 const teDecals = [
-  // Gold arch (shifted far down so the bottom rounded corners are entirely clipped by the panel geometry)
-  { id: 't1', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rounded-rectangle', borderRadius: 2160, fillColor: 'transparent', strokeColor: '#d4af37', strokeWidth: 100, x: 0, y: -30, width: 60, height: 160, rotation: 0 },
-  // Text inside arch
-  { id: 't2', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'TUCK END\nBOX', fontSize: 5, color: '#333333', x: 0, y: 15, width: 100, height: 100, rotation: 0, bold: true, textAlign: 'center' },
-  // Small gold dash
-  { id: 't4', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rectangle', fillColor: '#d4af37', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 32, width: 6, height: 1.5, rotation: 0 }
+  { id: 'logo', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD', fontSize: 3.5, color: '#111827', x: 3, y: 30, width: 38, height: 8, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'badge', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#f3f4f6', strokeColor: '#d1d5db', strokeWidth: 1, x: 15, y: 28, width: 12, height: 12, rotation: 0 },
+  { id: 'badge_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD\nPRO', fontSize: 2, color: '#374151', x: 15, y: 28, width: 12, height: 12, rotation: 0, bold: true, textAlign: 'center', fontFamily: 'sans-serif' },
+  { id: 'pill', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rounded-rectangle', borderRadius: 100, fillColor: '#06b6d4', strokeColor: 'transparent', strokeWidth: 0, x: -7, y: 10, width: 18, height: 4.5, rotation: 0 },
+  { id: 'pill_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'HIGH QUALITY', fontSize: 1.5, color: '#ffffff', x: -7, y: 10, width: 18, height: 4.5, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'center' },
+  { id: 'title', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'TUCK END\nBOXES\nMOCKUP', fontSize: 4, color: '#111827', x: 3, y: -5, width: 38, height: 20, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'desc', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'Customize design your 3D\nmockup online. Render the\n3D scene to view the effect.', fontSize: 1.4, color: '#6b7280', x: 3, y: -25, width: 38, height: 12, rotation: 0, bold: false, fontFamily: 'sans-serif', textAlign: 'left' }
 ];
 
 const autoDecals = [
-  // A minimalist frame
-  { id: 'a1', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rectangle', fillColor: 'transparent', strokeColor: '#1f2937', strokeWidth: 40, x: 0, y: 0, width: 80, height: 140, rotation: 0 },
-  // Text inside
-  { id: 'a2', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'AUTO LOCK\nBOTTOM BOX', fontSize: 5.5, color: '#1f2937', x: 0, y: 5, width: 100, height: 100, rotation: 0, bold: true, textAlign: 'center' },
-  // Accent dot
-  { id: 'a3', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#1f2937', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 35, width: 3, height: 3, rotation: 0 }
+  { id: 'logo', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD', fontSize: 3.5, color: '#111827', x: 3, y: 30, width: 38, height: 8, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'badge', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#f3f4f6', strokeColor: '#d1d5db', strokeWidth: 1, x: 15, y: 28, width: 12, height: 12, rotation: 0 },
+  { id: 'badge_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD\nPRO', fontSize: 2, color: '#374151', x: 15, y: 28, width: 12, height: 12, rotation: 0, bold: true, textAlign: 'center', fontFamily: 'sans-serif' },
+  { id: 'pill', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rounded-rectangle', borderRadius: 100, fillColor: '#06b6d4', strokeColor: 'transparent', strokeWidth: 0, x: -7, y: 10, width: 18, height: 4.5, rotation: 0 },
+  { id: 'pill_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'HIGH QUALITY', fontSize: 1.5, color: '#ffffff', x: -7, y: 10, width: 18, height: 4.5, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'center' },
+  { id: 'title', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'AUTO LOCK\nBOTTOM BOXES\nMOCKUP', fontSize: 4, color: '#111827', x: 3, y: -5, width: 38, height: 20, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'desc', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'Customize design your 3D\nmockup online. Render the\n3D scene to view the effect.', fontSize: 1.4, color: '#6b7280', x: 3, y: -25, width: 38, height: 12, rotation: 0, bold: false, fontFamily: 'sans-serif', textAlign: 'left' }
 ];
 
 const cosmeticDecals = [
-  // Minimal elegant text for cosmetic box
-  { id: 'c1', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'COSMETIC\nBOX', fontSize: 6, color: '#4a4a4a', x: 0, y: 0, width: 100, height: 100, rotation: 0, bold: true, textAlign: 'center' },
-  { id: 'c2', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rectangle', fillColor: '#d4af37', strokeColor: 'transparent', strokeWidth: 0, x: 0, y: 25, width: 10, height: 1, rotation: 0 }
+  { id: 'logo', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD', fontSize: 3.5, color: '#111827', x: 3, y: 30, width: 38, height: 8, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'badge', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'circle', fillColor: '#f3f4f6', strokeColor: '#d1d5db', strokeWidth: 1, x: 15, y: 28, width: 12, height: 12, rotation: 0 },
+  { id: 'badge_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'KLD\nPRO', fontSize: 2, color: '#374151', x: 15, y: 28, width: 12, height: 12, rotation: 0, bold: true, textAlign: 'center', fontFamily: 'sans-serif' },
+  { id: 'pill', custom: true, panel: 'p1', type: 'shape', surface: 'Outside', shapeType: 'rounded-rectangle', borderRadius: 100, fillColor: '#06b6d4', strokeColor: 'transparent', strokeWidth: 0, x: -7, y: 10, width: 18, height: 4.5, rotation: 0 },
+  { id: 'pill_txt', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'HIGH QUALITY', fontSize: 1.5, color: '#ffffff', x: -7, y: 10, width: 18, height: 4.5, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'center' },
+  { id: 'title', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'COSMETIC\nBOXES\nMOCKUP', fontSize: 4, color: '#111827', x: 3, y: -5, width: 38, height: 20, rotation: 0, bold: true, fontFamily: 'sans-serif', textAlign: 'left' },
+  { id: 'desc', custom: true, panel: 'p1', type: 'text', surface: 'Outside', content: 'Customize design your 3D\nmockup online. Render the\n3D scene to view the effect.', fontSize: 1.4, color: '#6b7280', x: 3, y: -25, width: 38, height: 12, rotation: 0, bold: false, fontFamily: 'sans-serif', textAlign: 'left' }
 ];
 
 const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVariant }: any) => {
@@ -144,79 +149,113 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
   return (
     <div
-      className="flex flex-col gap-3 group/detail cursor-pointer"
+      className="flex flex-col group/detail cursor-pointer transition-all duration-300"
       style={{ textDecoration: 'none' }}
       onMouseEnter={() => setHoveredVariant(variant)}
       onMouseLeave={() => setHoveredVariant(null)}
       onClick={handleClick}
     >
       <div
-        className="relative rounded-[16px] h-[300px] p-4 flex flex-col items-center justify-center transition-all duration-300 group-hover/detail:-translate-y-1 overflow-hidden"
-        style={{
+        className={`relative rounded-[16px] p-4 pb-6 flex flex-col items-center justify-center transition-all duration-300 group-hover/detail:-translate-y-2 ${isHovered ? 'border-2 border-black bg-white shadow-[6px_6px_0px_#000]' : ''}`}
+        style={!isHovered ? {
           background: 'var(--card-bg)',
           backdropFilter: 'blur(12px)',
           border: '1px solid var(--card-border)',
           boxShadow: 'var(--shadow-rest)'
-        }}
+        } : {}}
       >
-        {is3DBox ? (
-          <div className="absolute inset-0 z-0 flex items-center justify-center">
-            <AnimatedBox3DViewer
-              boxType={boxType}
-              isHovered={isHovered}
-              color={color}
-              decals={isRTE ? rteDecals : isTE ? teDecals : isAuto ? autoDecals : isCosmetic ? cosmeticDecals : []}
-            />
+        {/* Hover UI Overlay */}
+        <div className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-300 p-4 flex flex-col justify-between ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+          {/* Top Icons */}
+          <div className="flex justify-between items-start w-full">
+            <div className="flex gap-2 text-zinc-500">
+              <Rotate3d className="w-6 h-6 stroke-[1.5]" />
+              <Star className="w-6 h-6 stroke-[1.5]" />
+            </div>
+            {/* Top Right Thumbnail */}
+            <div className="w-12 h-12 bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden flex items-center justify-center p-1">
+               {variant.imageUrl ? (
+                 <img src={variant.imageUrl} alt="thumbnail" className="w-full h-full object-contain" />
+               ) : (
+                 <Box className="w-6 h-6 text-zinc-300" />
+               )}
+            </div>
           </div>
-        ) : isHovered ? (
-          <div className="w-full h-full flex items-center justify-center transform scale-110">
-            {activeCategoryId === 'box-mockups' && (
-              <>
-                {variant.name === 'Magnetic Rigid Box' && <MagneticRigidBoxAnimation isHovered={true} />}
-                {variant.name === 'Drawer Sleeve Box' && <DrawerSleeveBoxAnimation isHovered={true} />}
-                {variant.name === 'Double Door Box' && <DoubleDoorBoxAnimation isHovered={true} />}
-                {variant.name === 'Telescope Box' && <TelescopeBoxAnimation isHovered={true} />}
-                {!['Magnetic Rigid Box', 'Drawer Sleeve Box', 'Double Door Box', 'Telescope Box'].includes(variant.name) && <HoverBoxAnimation isHovered={true} />}
-              </>
-            )}
-            {activeCategoryId === 'pouch-bag-mockups' && <HoverPouchAnimation isHovered={true} />}
-            {activeCategoryId === 'bottle-mockups' && <HoverBottleAnimation isHovered={true} />}
-            {activeCategoryId === 'can-mockups' && <HoverCanAnimation isHovered={true} />}
-            {activeCategoryId === 'tube-mockups' && <HoverTubeAnimation isHovered={true} />}
+          
+          {/* Bottom Buttons (Moved slightly up to avoid text) */}
+          <div className="absolute bottom-28 left-0 right-0 flex justify-center gap-3 w-full">
+            <button className="pointer-events-auto px-6 py-2.5 bg-white text-zinc-900 font-medium rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow text-[15px]">
+              Custom
+            </button>
+            <button className="pointer-events-auto px-6 py-2.5 bg-white text-zinc-900 font-medium rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow text-[15px]">
+              3D design
+            </button>
           </div>
-        ) : (
-          variant.imageUrl ? (
-            <motion.img
-              src={variant.imageUrl}
-              alt={variant.name}
-              className="w-full h-full object-contain drop-shadow-md mix-blend-multiply"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
-          ) : (
-            <div className="w-16 h-16 bg-black/5 rounded-xl"></div>
-          )
-        )}
-      </div>
-      <div className="flex flex-col items-center text-center">
-        <h4 className="text-[17px] font-bold group-hover/detail:text-[var(--accent)] transition-colors text-center" style={{ color: 'var(--ink)' }}>{variant.name}</h4>
-        <p className="text-[13px] opacity-60 mt-1 text-center" style={{ color: 'var(--ink)' }}>{variant.animation || 'Standard reveal'}</p>
+        </div>
 
-        {/* Color Swatches for 3D boxes */}
-        {is3DBox && (
-          <div className="flex gap-2 mt-3 justify-center" onClick={(e) => e.preventDefault()}>
-            <button
-              className={`w-6 h-6 rounded-full border-2 ${color === defaultColor ? 'border-blue-500' : 'border-zinc-200'} shadow-sm`}
-              style={{ backgroundColor: defaultColor }}
-              onClick={(e) => { e.stopPropagation(); setColor(defaultColor); }}
-            />
-            <button
-              className={`w-6 h-6 rounded-full border-2 ${color === '#c19a6b' ? 'border-blue-500' : 'border-zinc-200'} shadow-sm`}
-              style={{ backgroundColor: '#c19a6b' }}
-              onClick={(e) => { e.stopPropagation(); setColor('#c19a6b'); }}
-            />
-          </div>
-        )}
+        {/* 3D Box / Image Container */}
+        <div className="w-full h-[260px] relative flex items-center justify-center overflow-hidden rounded-lg mb-4">
+          {is3DBox ? (
+            <div className="absolute inset-0 z-0 flex items-center justify-center">
+              <AnimatedBox3DViewer
+                boxType={boxType}
+                isHovered={isHovered}
+                color={color}
+                decals={isRTE ? rteDecals : isTE ? teDecals : isAuto ? autoDecals : isCosmetic ? cosmeticDecals : []}
+              />
+            </div>
+          ) : isHovered ? (
+            <div className="w-full h-full flex items-center justify-center transform scale-110">
+              {activeCategoryId === 'box-mockups' && (
+                <>
+                  {variant.name === 'Magnetic Rigid Box' && <MagneticRigidBoxAnimation isHovered={true} />}
+                  {variant.name === 'Drawer Sleeve Box' && <DrawerSleeveBoxAnimation isHovered={true} />}
+                  {variant.name === 'Double Door Box' && <DoubleDoorBoxAnimation isHovered={true} />}
+                  {variant.name === 'Telescope Box' && <TelescopeBoxAnimation isHovered={true} />}
+                  {!['Magnetic Rigid Box', 'Drawer Sleeve Box', 'Double Door Box', 'Telescope Box'].includes(variant.name) && <HoverBoxAnimation isHovered={true} />}
+                </>
+              )}
+              {activeCategoryId === 'pouch-bag-mockups' && <HoverPouchAnimation isHovered={true} />}
+              {activeCategoryId === 'bottle-mockups' && <HoverBottleAnimation isHovered={true} />}
+              {activeCategoryId === 'can-mockups' && <HoverCanAnimation isHovered={true} />}
+              {activeCategoryId === 'tube-mockups' && <HoverTubeAnimation isHovered={true} />}
+            </div>
+          ) : (
+            variant.imageUrl ? (
+              <motion.img
+                src={variant.imageUrl}
+                alt={variant.name}
+                className="w-full h-full object-contain drop-shadow-md mix-blend-multiply"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+            ) : (
+              <div className="w-16 h-16 bg-black/5 rounded-xl"></div>
+            )
+          )}
+        </div>
+
+        {/* Text and Swatches */}
+        <div className="flex flex-col items-center text-center relative z-10">
+          <h4 className={`text-[17px] font-bold transition-colors text-center ${isHovered ? 'text-black' : ''}`} style={!isHovered ? { color: 'var(--ink)' } : {}}>{variant.name}</h4>
+          <p className={`text-[13px] mt-1 text-center ${isHovered ? 'text-zinc-600 opacity-100' : 'opacity-60'}`} style={!isHovered ? { color: 'var(--ink)' } : {}}>{variant.animation || 'Standard reveal'}</p>
+
+          {/* Color Swatches for 3D boxes */}
+          {is3DBox && (
+            <div className="flex gap-2 mt-4 justify-center" onClick={(e) => e.preventDefault()}>
+              <button
+                className={`w-6 h-6 rounded-full border-2 ${color === defaultColor ? 'border-blue-500' : 'border-zinc-200'} shadow-sm`}
+                style={{ backgroundColor: defaultColor }}
+                onClick={(e) => { e.stopPropagation(); setColor(defaultColor); }}
+              />
+              <button
+                className={`w-6 h-6 rounded-full border-2 ${color === '#c19a6b' ? 'border-blue-500' : 'border-zinc-200'} shadow-sm`}
+                style={{ backgroundColor: '#c19a6b' }}
+                onClick={(e) => { e.stopPropagation(); setColor('#c19a6b'); }}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

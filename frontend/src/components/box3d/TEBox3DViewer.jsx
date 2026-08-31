@@ -485,6 +485,7 @@ export default function TEBox3DViewer({
         camera={{ position: camPos, fov: 38, zoom }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         shadows
+        dpr={[1, 2]}
       >
         <Environment preset="city" />
         <LightingPreset preset={lightingPreset} />

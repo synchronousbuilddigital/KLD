@@ -19,6 +19,7 @@ import WorkspacePage from './pages/WorkspacePage';
 import RTEBoxPrototype from './pages/RTEBoxPrototype';
 import { getRscGeometry } from '../geometry';
 import WorkshopPage from './pages/WorkshopPage';
+import AiStudioPage from './pages/AiStudioPage';
 import SignInModal from './components/modals/SignInModal';
 import BoxStudioModal from './pages/BoxStudioModal';
 import { useBoxStore } from '../lib/useBoxStore';
@@ -1015,6 +1016,15 @@ export default function App() {
     );
   }
 
+
+  if (currentView === 'aistudio' || currentView === 'ai-studio') {
+    return (
+      <AiStudioPage 
+        onBack={() => setCurrentView('landing')} 
+        onNavigateToWorkshop={() => setCurrentView('workshop')}
+      />
+    );
+  }
 
   if (currentView === 'workshop') {
     return <WorkshopPage onBack={() => setCurrentView('landing')} />;

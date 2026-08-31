@@ -111,6 +111,18 @@ export const useEditorStore = create((set) => ({
     };
   }),
 
+  setDecals: (newDecals) => set((state) => {
+    const currentModel = state.boxModel;
+    const currentDecals = state.decalsByModel ? (state.decalsByModel[currentModel] || []) : [];
+    const updatedDecals = typeof newDecals === "function" ? newDecals(currentDecals) : newDecals;
+    return {
+      decalsByModel: {
+        ...(state.decalsByModel || {}),
+        [currentModel]: updatedDecals
+      }
+    };
+  }),
+
   setMaterialType: (type, defaultT) => set((state) => {
     const newSaved = { ...state.savedState };
     newSaved[state.activeContext][state.boxModel] = {

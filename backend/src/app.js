@@ -9,6 +9,7 @@ const userRoutes = require('./modules/users/users.routes');
 const mockupRoutes = require('./modules/mockups/mockups.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
 const plansRoutes = require('./modules/plans/plans.routes');
+const aiRoutes = require('./modules/ai/ai.routes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/mockups', mockupRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/plans', plansRoutes);
+app.use('/api/ai', aiRoutes);
 
 /* ─── 404 HANDLER ───────────────────────────────────────────────── */
 app.use((req, res) => {

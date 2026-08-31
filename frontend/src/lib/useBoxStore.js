@@ -193,6 +193,7 @@ export const useBoxStore = create((set) => ({
 
   // Decals
   decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [] },
+  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];
@@ -200,6 +201,17 @@ export const useBoxStore = create((set) => ({
     return {
       decalsByModel: {
         ...state.decalsByModel,
+        [currentModel]: newDecals
+      }
+    };
+  }),
+  setAiDecals: (decalsOrUpdater) => set((state) => {
+    const currentModel = state.boxModel;
+    const currentDecals = state.aiDecalsByModel[currentModel] || [];
+    const newDecals = typeof decalsOrUpdater === "function" ? decalsOrUpdater(currentDecals) : decalsOrUpdater;
+    return {
+      aiDecalsByModel: {
+        ...state.aiDecalsByModel,
         [currentModel]: newDecals
       }
     };

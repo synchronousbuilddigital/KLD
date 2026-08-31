@@ -9,7 +9,8 @@ import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
 import { generateDXFString } from "../../lib/exportUtils";
-import { Printer } from "lucide-react";
+import { Printer, Sparkles } from "lucide-react";
+import AiPackagingAssistant from "../components/AiPackagingAssistant";
 
 const themes: Record<string, any> = {
   dark: {
@@ -54,6 +55,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const [isSaved, setIsSaved] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSavingAndExiting, setIsSavingAndExiting] = useState(false);
+  const [isAiOpen, setIsAiOpen] = useState(false);
 
   const executeNavigation = () => {
     if (onBack) {
@@ -395,6 +397,29 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               <Printer style={{ width: "15px", height: "15px" }} />
               <span>Print</span>
             </button>
+
+            <button
+              onClick={() => setIsAiOpen(!isAiOpen)}
+              title="Open Pacdora AI Packaging Assistant"
+              style={{
+                background: isAiOpen ? "linear-gradient(135deg, #2563eb, #7c3aed)" : t.inputBg,
+                color: isAiOpen ? "#ffffff" : t.textMain,
+                border: `1.5px solid ${isAiOpen ? '#7c3aed' : t.border}`,
+                padding: "8px 16px",
+                borderRadius: "10px",
+                fontSize: "13px",
+                fontWeight: "700",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: isAiOpen ? "0 4px 14px rgba(124, 58, 237, 0.35)" : "2px 3px 0px rgba(58,46,38,0.05)",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <Sparkles style={{ width: "15px", height: "15px", color: isAiOpen ? "#ffffff" : "#2563eb" }} />
+              <span>AI Assistant</span>
+            </button>
             <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
               <span style={{ color: t.cyan }}>✦</span> 50 credits <span style={{ background: t.textMain, color: t.bgPanel, borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>+</span>
             </button>
@@ -705,23 +730,18 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
             </div>
           </div>
 
-          {/* --- RIGHT TOOLBAR --- */}
-          <div style={{ width: "64px", background: "transparent", position: "absolute", right: "24px", top: "24px", zIndex: 10, display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div style={{ background: t.bgPanel, border: `2px solid ${t.border}`, borderRadius: "12px", padding: "8px", display: "flex", flexDirection: "column", gap: "12px", alignItems: "center", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
-              <button style={{ width: "32px", height: "32px", borderRadius: "8px", background: t.activeBg, color: t.cyan, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>
-              </button>
-              <button style={{ width: "32px", height: "32px", borderRadius: "8px", background: "transparent", color: t.textMuted, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 11V6a2 2 0 0 0-4 0v4M14 10V4a2 2 0 0 0-4 0v6M10 10.5V5a2 2 0 0 0-4 0v9M6 14v1a6 6 0 0 0 6 6h1a6 6 0 0 0 6-6V9a2 2 0 0 0-4 0v2" /></svg>
-              </button>
-              <div style={{ width: "24px", height: "2px", background: t.border }} />
-              <button style={{ width: "32px", height: "32px", borderRadius: "8px", background: "transparent", color: t.textMuted, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l5 5M3 10l5-5" /></svg>
-              </button>
-              <button style={{ width: "32px", height: "32px", borderRadius: "8px", background: "transparent", color: t.textMuted, opacity: 0.5, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10h-10a5 5 0 0 0-5 5v2M21 10l-5 5M21 10l-5-5" /></svg>
-              </button>
-            </div>
+          {/* --- RIGHT AI PACKAGING DESIGN DRAWER --- */}
+          <div 
+            style={{ 
+              width: isAiOpen ? "380px" : "0px", 
+              transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)", 
+              height: "100%", 
+              zIndex: 15, 
+              flexShrink: 0,
+              overflow: "hidden"
+            }}
+          >
+            <AiPackagingAssistant onClose={() => setIsAiOpen(false)} isOpen={isAiOpen} />
           </div>
 
         </div>
