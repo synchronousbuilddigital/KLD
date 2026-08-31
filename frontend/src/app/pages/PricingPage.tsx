@@ -5,7 +5,6 @@ import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import '../../styles/new-home.css';
 
 import Header from '../components/layout/Header';
-import ElasticFooter from '../components/layout/ElasticFooter';
 
 import { API_BASE_URL } from '../../config/api';
 
@@ -209,7 +208,7 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
 
       <main 
         className="flex-1 flex flex-col items-center px-6 relative z-10" 
-        style={{ paddingTop: (planConfig.promotion && planConfig.promotion.active && !planConfig.promotion.isExpired) ? '30px' : '40px', paddingBottom: '60px' }}
+        style={{ paddingTop: (planConfig.promotion && planConfig.promotion.active && !planConfig.promotion.isExpired) ? '30px' : '110px', paddingBottom: '60px' }}
       >
 
         <div className="mb-12 flex items-center justify-center">
@@ -447,8 +446,6 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
           </div>
         )}
       </AnimatePresence>
-
-      <ElasticFooter onNavigate={handleNav} />
     </div>
   );
 }

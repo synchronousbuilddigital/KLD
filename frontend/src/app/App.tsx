@@ -23,6 +23,7 @@ import AiStudioPage from './pages/AiStudioPage';
 import SignInModal from './components/modals/SignInModal';
 import BoxStudioModal from './pages/BoxStudioModal';
 import { useBoxStore } from '../lib/useBoxStore';
+import { uploadService } from '../services/upload';
 
 import { CustomDesignModal } from './pages/EditorModal';
 
@@ -1425,9 +1426,17 @@ export default function App() {
                                 type="file"
                                 id="logo-uploader"
                                 accept="image/*"
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                   const file = e.target.files?.[0];
-                                  if (file) {
+                                  if (!file) return;
+                                  try {
+                                    const res = await uploadService.uploadLogo(file);
+                                    if (res.success && res.data?.url) {
+                                      setCustomLogoUrl(res.data.url);
+                                      setArtwork('custom');
+                                    }
+                                  } catch (err) {
+                                    console.warn("Cloudinary upload fallback to FileReader:", err);
                                     const reader = new FileReader();
                                     reader.onload = (event) => {
                                       if (event.target && event.target.result) {

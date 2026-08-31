@@ -169,7 +169,7 @@ export default function SignInModal({ onClose }: { onClose: () => void }) {
 
     try {
       const res = await authService.forgotPassword(email);
-      setInfoMsg(res.message || 'OTP sent to your email! Enter the 6-digit code below to set a new password.');
+      setInfoMsg(res.message || `A 6-digit password reset code has been sent to ${email}. Check your email inbox!`);
       setMode('resetPassword');
     } catch (err: any) {
       setError(err.message || 'Failed to process request.');

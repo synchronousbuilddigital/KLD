@@ -6,6 +6,8 @@ import {
   TrendingUp, DollarSign, ChevronDown, ChevronUp, Folder, Tag, Gift, Plus, Calendar, Percent, Lightbulb, Clock
 } from 'lucide-react';
 import { authService, UserProfile } from '../../services/auth';
+import { catalogService, CatalogItemData } from '../../services/catalog';
+import { uploadService } from '../../services/upload';
 import { API_BASE_URL } from '../../config/api';
 import './AdminDashboardPage.css';
 
@@ -100,6 +102,279 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [projectSearch, setProjectSearch] = useState('');
   const [projectViewMode, setProjectViewMode] = useState<'grouped' | 'list'>('grouped');
   const [expandedUsers, setExpandedUsers] = useState<Record<string, boolean>>({});
+
+  // 3D Models Catalog Management state
+  const [catalogList, setCatalogList] = useState<CatalogItemData[]>([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogGroupFilter, setCatalogGroupFilter] = useState<string>('all');
+  
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemData | null>(null);
+  const [catalogFormTitle, setCatalogFormTitle] = useState('');
+  const [catalogFormSubtitle, setCatalogFormSubtitle] = useState('');
+  const [catalogFormImg, setCatalogFormImg] = useState('');
+  const [catalogFormGroup, setCatalogFormGroup] = useState<'boxes' | 'bottles' | 'pouches' | 'containers'>('boxes');
+  const [catalogFormBadge, setCatalogFormBadge] = useState('');
+  const [catalogFormTag, setCatalogFormTag] = useState('');
+  const [catalogFormIsFeatured, setCatalogFormIsFeatured] = useState(false);
+  const [catalogFormShowInMarquee, setCatalogFormShowInMarquee] = useState(true);
+  const [catalogFormActive, setCatalogFormActive] = useState(true);
+  const [catalogFormOrder, setCatalogFormOrder] = useState(1);
+  const [catalogFormBoxModelKey, setCatalogFormBoxModelKey] = useState('rte');
+  const [isUploadingCatalogImg, setIsUploadingCatalogImg] = useState(false);
+  const [isSavingCatalogItem, setIsSavingCatalogItem] = useState(false);
+
+  // Sub-models / Variants management state
+  const [selectedCategoryForVariants, setSelectedCategoryForVariants] = useState<CatalogItemData | null>(null);
+  const [isVariantsModalOpen, setIsVariantsModalOpen] = useState(false);
+  const [editingVariant, setEditingVariant] = useState<any | null>(null);
+  const [variantFormName, setVariantFormName] = useState('');
+  const [variantFormAnimation, setVariantFormAnimation] = useState('');
+  const [variantFormImageUrl, setVariantFormImageUrl] = useState('');
+  const [variantFormDescription, setVariantFormDescription] = useState('');
+  const [variantFormDimensions, setVariantFormDimensions] = useState('');
+  const [variantFormMaterial, setVariantFormMaterial] = useState('');
+  const [isUploadingVariantImg, setIsUploadingVariantImg] = useState(false);
+  const [isSavingVariant, setIsSavingVariant] = useState(false);
+
+  const handleOpenVariantsModal = (item: CatalogItemData) => {
+    setSelectedCategoryForVariants(item);
+    setEditingVariant(null);
+    setVariantFormName('');
+    setVariantFormAnimation('');
+    setVariantFormImageUrl(item.img || '/mockups/generated_box.png');
+    setVariantFormDescription('');
+    setVariantFormDimensions('');
+    setVariantFormMaterial('');
+    setIsVariantsModalOpen(true);
+  };
+
+  const handleStartEditVariant = (variant: any) => {
+    setEditingVariant(variant);
+    setVariantFormName(variant.name || '');
+    setVariantFormAnimation(variant.animation || '');
+    setVariantFormImageUrl(variant.imageUrl || selectedCategoryForVariants?.img || '/mockups/generated_box.png');
+    setVariantFormDescription(variant.description || '');
+    setVariantFormDimensions(variant.dimensions || '');
+    setVariantFormMaterial(variant.material || '');
+  };
+
+  const handleResetVariantForm = () => {
+    setEditingVariant(null);
+    setVariantFormName('');
+    setVariantFormAnimation('');
+    setVariantFormImageUrl(selectedCategoryForVariants?.img || '/mockups/generated_box.png');
+    setVariantFormDescription('');
+    setVariantFormDimensions('');
+    setVariantFormMaterial('');
+  };
+
+  const handleSaveVariant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCategoryForVariants?._id || !variantFormName.trim()) {
+      alert('Sub-model name is required.');
+      return;
+    }
+
+    try {
+      setIsSavingVariant(true);
+      const payload = {
+        name: variantFormName,
+        animation: variantFormAnimation,
+        imageUrl: variantFormImageUrl,
+        description: variantFormDescription,
+        dimensions: variantFormDimensions,
+        material: variantFormMaterial,
+      };
+
+      let updatedCategory: CatalogItemData;
+      if (editingVariant && (editingVariant._id || editingVariant.id)) {
+        const vId = editingVariant._id || editingVariant.id;
+        updatedCategory = await catalogService.updateVariant(selectedCategoryForVariants._id, vId, payload);
+        setStatusMsg({ type: 'success', text: `Sub-model "${variantFormName}" updated!` });
+      } else {
+        updatedCategory = await catalogService.addVariant(selectedCategoryForVariants._id, payload);
+        setStatusMsg({ type: 'success', text: `Sub-model "${variantFormName}" added!` });
+      }
+
+      setSelectedCategoryForVariants(updatedCategory);
+      handleResetVariantForm();
+      window.dispatchEvent(new Event('catalog-updated'));
+      fetchAdminCatalog();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save sub-model.');
+    } finally {
+      setIsSavingVariant(false);
+    }
+  };
+
+  const handleDeleteVariant = async (variant: any) => {
+    if (!selectedCategoryForVariants?._id) return;
+    const vId = variant._id || variant.id;
+    if (!confirm(`Delete sub-model "${variant.name}"?`)) return;
+
+    try {
+      const updatedCategory = await catalogService.deleteVariant(selectedCategoryForVariants._id, vId);
+      setSelectedCategoryForVariants(updatedCategory);
+      setStatusMsg({ type: 'success', text: `Sub-model "${variant.name}" deleted.` });
+      window.dispatchEvent(new Event('catalog-updated'));
+      fetchAdminCatalog();
+    } catch (err: any) {
+      alert('Failed to delete sub-model.');
+    }
+  };
+
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingVariantImg(true);
+      const res = await uploadService.uploadLogo(file);
+      if (res.success && res.data?.url) {
+        setVariantFormImageUrl(res.data.url);
+      }
+    } catch (err) {
+      alert('Failed to upload image. Enter URL directly.');
+    } finally {
+      setIsUploadingVariantImg(false);
+    }
+  };
+
+  const fetchAdminCatalog = async () => {
+    try {
+      setIsLoadingCatalog(true);
+      const data = await catalogService.getAdminCatalog();
+      setCatalogList(data);
+    } catch (e) {
+      console.error('Error fetching admin catalog:', e);
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  };
+
+  const handleOpenCreateCatalogModal = () => {
+    setEditingCatalogItem(null);
+    setCatalogFormTitle('');
+    setCatalogFormSubtitle('');
+    setCatalogFormImg('/images/box.png');
+    setCatalogFormGroup('boxes');
+    setCatalogFormBadge('');
+    setCatalogFormTag('3D Studio');
+    setCatalogFormIsFeatured(false);
+    setCatalogFormShowInMarquee(true);
+    setCatalogFormActive(true);
+    setCatalogFormOrder(catalogList.length + 1);
+    setCatalogFormBoxModelKey('rte');
+    setIsCatalogModalOpen(true);
+  };
+
+  const handleOpenEditCatalogModal = (item: CatalogItemData) => {
+    setEditingCatalogItem(item);
+    setCatalogFormTitle(item.title || '');
+    setCatalogFormSubtitle(item.subtitle || '');
+    setCatalogFormImg(item.img || '');
+    setCatalogFormGroup(item.group || 'boxes');
+    setCatalogFormBadge(item.badge || '');
+    setCatalogFormTag(item.tag || '');
+    setCatalogFormIsFeatured(Boolean(item.isFeatured));
+    setCatalogFormShowInMarquee(item.showInMarquee !== false);
+    setCatalogFormActive(item.active !== false);
+    setCatalogFormOrder(item.order || 1);
+    setCatalogFormBoxModelKey(item.boxModelKey || 'rte');
+    setIsCatalogModalOpen(true);
+  };
+
+  const handleSaveCatalogItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catalogFormTitle.trim() || !catalogFormImg.trim()) {
+      alert('Title and Image are required for catalog products.');
+      return;
+    }
+
+    try {
+      setIsSavingCatalogItem(true);
+      const payload: Partial<CatalogItemData> = {
+        title: catalogFormTitle,
+        subtitle: catalogFormSubtitle,
+        img: catalogFormImg,
+        group: catalogFormGroup,
+        badge: catalogFormBadge,
+        tag: catalogFormTag,
+        isFeatured: catalogFormIsFeatured,
+        showInMarquee: catalogFormShowInMarquee,
+        active: catalogFormActive,
+        order: Number(catalogFormOrder),
+        boxModelKey: catalogFormBoxModelKey,
+      };
+
+      if (editingCatalogItem && editingCatalogItem._id) {
+        await catalogService.updateCatalogItem(editingCatalogItem._id, payload);
+        setStatusMsg({ type: 'success', text: `Catalog product "${catalogFormTitle}" updated!` });
+      } else {
+        await catalogService.createCatalogItem(payload);
+        setStatusMsg({ type: 'success', text: `New 3D model product "${catalogFormTitle}" created!` });
+      }
+
+      setIsCatalogModalOpen(false);
+      window.dispatchEvent(new Event('catalog-updated'));
+      fetchAdminCatalog();
+    } catch (err: any) {
+      alert(err.message || 'Failed to save catalog product.');
+    } finally {
+      setIsSavingCatalogItem(false);
+    }
+  };
+
+  const handleToggleCatalogActive = async (item: CatalogItemData) => {
+    if (!item._id) return;
+    try {
+      await catalogService.updateCatalogItem(item._id, { active: !item.active });
+      window.dispatchEvent(new Event('catalog-updated'));
+      fetchAdminCatalog();
+    } catch (e) {
+      console.error('Error toggling catalog status', e);
+    }
+  };
+
+  const handleToggleCatalogMarquee = async (item: CatalogItemData) => {
+    if (!item._id) return;
+    try {
+      await catalogService.updateCatalogItem(item._id, { showInMarquee: !(item.showInMarquee !== false) });
+      window.dispatchEvent(new Event('catalog-updated'));
+      fetchAdminCatalog();
+    } catch (e) {
+      console.error('Error toggling marquee loop status', e);
+    }
+  };
+
+  const handleDeleteCatalogItem = async (item: CatalogItemData) => {
+    if (!item._id || !confirm(`Admin Action: Permanently delete 3D model product "${item.title}"?`)) return;
+    try {
+      await catalogService.deleteCatalogItem(item._id);
+      setStatusMsg({ type: 'success', text: `Product "${item.title}" deleted.` });
+      window.dispatchEvent(new Event('catalog-updated'));
+      fetchAdminCatalog();
+    } catch (e) {
+      alert('Error deleting catalog product.');
+    }
+  };
+
+  const handleCatalogImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingCatalogImg(true);
+      const res = await uploadService.uploadLogo(file);
+      if (res.success && res.data?.url) {
+        setCatalogFormImg(res.data.url);
+      }
+    } catch (err) {
+      alert('Failed to upload image. Fallback to image URL input.');
+    } finally {
+      setIsUploadingCatalogImg(false);
+    }
+  };
 
   const toggleUserExpand = (emailKey: string) => {
     setExpandedUsers(prev => ({ ...prev, [emailKey]: !prev[emailKey] }));
@@ -464,6 +739,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     if (activeTab === 'membership') {
       fetchPlanConfig();
       fetchCoupons();
+    } else if (activeTab === 'cms') {
+      fetchAdminCatalog();
     }
   }, [activeTab]);
 
@@ -1107,93 +1384,217 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
             </div>
           )}
 
-          {/* TAB 4: TEMPLATE & MODEL CMS */}
+          {/* TAB 4: TEMPLATE & 3D MODELS CATALOG CMS */}
           {activeTab === 'cms' && (
             <div className="admin-tab-content">
-              <h2 className="admin-page-title">Template & Dieline CMS</h2>
-              <div className="admin-panel-card">
-                <h3 className="panel-title">Active 3D Packaging Models & Studio Generators</h3>
-                <div className="admin-list" style={{ gap: '16px' }}>
-
-                  {/* Template 1 */}
-                  <div className="admin-list-row" style={{ padding: '16px 20px', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '1.05rem', color: '#18181b' }}>Tuck End Box</strong>
-                        <span className="role-pill ADMIN">ACTIVE</span>
-                        <span style={{ fontSize: '0.75rem', color: '#71717a', fontWeight: 600 }}>Variant ID: 1</span>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '4px' }}>
-                        Standard straight tuck packaging box with 3D canvas folding logic and dieline blueprint export.
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        className="open-studio-btn"
-                        style={{ padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700 }}
-                        onClick={() => {
-                          window.dispatchEvent(new CustomEvent('open-box-studio', { detail: { model: 'te', L: 150, W: 70, H: 200 } }));
-                        }}
-                        title="Open and Inspect 3D Canvas Model"
-                      >
-                        <ExternalLink className="w-4 h-4" /> Open / Inspect 3D Model
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Template 2 */}
-                  <div className="admin-list-row" style={{ padding: '16px 20px', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '1.05rem', color: '#18181b' }}>Reverse Tuck End Box</strong>
-                        <span className="role-pill ADMIN">ACTIVE</span>
-                        <span style={{ fontSize: '0.75rem', color: '#71717a', fontWeight: 600 }}>Variant ID: 2</span>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '4px' }}>
-                        Reverse tuck dieline layout with opposite opening flaps and automatic 3D folding animation.
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        className="open-studio-btn"
-                        style={{ padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700 }}
-                        onClick={() => {
-                          window.dispatchEvent(new CustomEvent('open-box-studio', { detail: { model: 'rte', L: 150, W: 70, H: 200 } }));
-                        }}
-                        title="Open and Inspect 3D Canvas Model"
-                      >
-                        <ExternalLink className="w-4 h-4" /> Open / Inspect 3D Model
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Template 3 */}
-                  <div className="admin-list-row" style={{ padding: '16px 20px', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '1.05rem', color: '#18181b' }}>Auto Lock Bottom Box</strong>
-                        <span className="role-pill ADMIN">ACTIVE</span>
-                        <span style={{ fontSize: '0.75rem', color: '#71717a', fontWeight: 600 }}>Variant ID: 3</span>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: '#6B7280', marginTop: '4px' }}>
-                        Heavy-duty crash lock bottom packaging template with automated interlocking base dieline logic.
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button
-                        className="open-studio-btn"
-                        style={{ padding: '8px 14px', fontSize: '0.82rem', fontWeight: 700 }}
-                        onClick={() => {
-                          window.dispatchEvent(new CustomEvent('open-box-studio', { detail: { model: 'auto_lock', L: 150, W: 70, H: 200 } }));
-                        }}
-                        title="Open and Inspect 3D Canvas Model"
-                      >
-                        <ExternalLink className="w-4 h-4" /> Open / Inspect 3D Model
-                      </button>
-                    </div>
-                  </div>
-
+              <div className="admin-header-row" style={{ flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                <div>
+                  <h2 className="admin-page-title" style={{ marginBottom: '4px' }}>3D Models Catalog & Template CMS</h2>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#6B7280' }}>
+                    Add, edit, remove, and manage all packaging product models displayed on the public 3D Catalog page.
+                  </p>
                 </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
+                  <button
+                    onClick={handleOpenCreateCatalogModal}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '10px 18px',
+                      borderRadius: '10px',
+                      fontWeight: 800,
+                      fontSize: '0.88rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 12px rgba(16,185,129,0.25)',
+                    }}
+                  >
+                    <Plus className="w-4 h-4" /> Add New 3D Product
+                  </button>
+                </div>
+              </div>
+
+              {/* FILTER & SEARCH CONTROLS */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px', background: '#ffffff', padding: '16px', borderRadius: '14px', border: '1px solid #e4e4e7' }}>
+                <div className="admin-search-bar" style={{ flex: 1, minWidth: '260px' }}>
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search models by title or subtitle..."
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                  />
+                  {catalogSearch && (
+                    <button onClick={() => setCatalogSearch('')} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', padding: '0 4px' }}>✕</button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
+                  {[
+                    { id: 'all', label: 'All Products' },
+                    { id: 'boxes', label: 'Boxes' },
+                    { id: 'bottles', label: 'Bottles & Cans' },
+                    { id: 'pouches', label: 'Pouches & Bags' },
+                    { id: 'containers', label: 'Containers & Food' },
+                  ].map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => setCatalogGroupFilter(g.id)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        border: '1px solid',
+                        borderColor: catalogGroupFilter === g.id ? '#18181b' : '#e4e4e7',
+                        background: catalogGroupFilter === g.id ? '#18181b' : '#ffffff',
+                        color: catalogGroupFilter === g.id ? '#ffffff' : '#71717a',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* CATALOG ITEMS TABLE / LIST */}
+              <div className="admin-table-container">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>PRODUCT THUMBNAIL</th>
+                      <th>TITLE & SUBTITLE</th>
+                      <th>CATEGORY GROUP</th>
+                      <th>SUB-MODELS</th>
+                      <th>BADGE / TAG</th>
+                      <th>3D GENERATOR</th>
+                      <th>STATUS</th>
+                      <th>HERO LOOP BAR</th>
+                      <th>ORDER</th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoadingCatalog ? (
+                      <tr><td colSpan={9} style={{ textAlign: 'center', padding: '30px' }}>Loading 3D Model Catalog...</td></tr>
+                    ) : catalogList.length === 0 ? (
+                      <tr><td colSpan={9} style={{ textAlign: 'center', padding: '30px' }}>No catalog products found.</td></tr>
+                    ) : (
+                      catalogList
+                        .filter((item) => {
+                          const matchesGroup = catalogGroupFilter === 'all' || item.group === catalogGroupFilter;
+                          const matchesQuery = !catalogSearch.trim() ||
+                            item.title.toLowerCase().includes(catalogSearch.toLowerCase().trim()) ||
+                            item.subtitle.toLowerCase().includes(catalogSearch.toLowerCase().trim());
+                          return matchesGroup && matchesQuery;
+                        })
+                        .map((item) => (
+                          <tr key={item._id || item.itemId}>
+                            <td>
+                              <div style={{ width: '54px', height: '54px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e4e4e7', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <img src={item.img} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#18181b' }}>{item.title}</div>
+                              <div style={{ fontSize: '0.78rem', color: '#71717a', marginTop: '2px' }}>{item.subtitle}</div>
+                            </td>
+                            <td>
+                              <span className="badge-pill" style={{ textTransform: 'uppercase', fontWeight: 700 }}>{item.group}</span>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => handleOpenVariantsModal(item)}
+                                style={{
+                                  padding: '5px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 800,
+                                  border: '1px solid #d4d4d8',
+                                  background: '#f4f4f5',
+                                  color: '#18181b',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  transition: 'all 0.15s',
+                                }}
+                                title="Click to view and edit inner sub-models (bottles, cans, bags, etc.)"
+                              >
+                                <Package className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Sub-Models ({item.variants?.length || 0})</span>
+                              </button>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                {item.badge && <span style={{ fontSize: '0.7rem', background: '#fef3c7', color: '#b45309', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>{item.badge}</span>}
+                                {item.tag && <span style={{ fontSize: '0.7rem', background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>{item.tag}</span>}
+                              </div>
+                            </td>
+                            <td>
+                              <span style={{ fontSize: '0.8rem', fontFamily: 'monospace', fontWeight: 700, background: '#f4f4f5', padding: '3px 8px', borderRadius: '6px' }}>
+                                {item.boxModelKey || 'rte'}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                onClick={() => handleToggleCatalogActive(item)}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '20px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 800,
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  background: item.active !== false ? '#d1fae5' : '#fee2e2',
+                                  color: item.active !== false ? '#065f46' : '#991b1b',
+                                }}
+                              >
+                                {item.active !== false ? '● ACTIVE' : '○ HIDDEN'}
+                              </button>
+                            </td>
+                            <td>
+                                <button
+                                  onClick={() => handleToggleCatalogMarquee(item)}
+                                  style={{
+                                    padding: '4px 10px',
+                                    borderRadius: '20px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    background: item.showInMarquee !== false ? '#e0f2fe' : '#f3f4f6',
+                                    color: item.showInMarquee !== false ? '#0369a1' : '#6b7280',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                  title="Click to toggle whether this product appears in the homepage bottom loop bar"
+                                >
+                                  {item.showInMarquee !== false ? '⚡ IN LOOP BAR' : '○ EXCLUDED'}
+                                </button>
+                            </td>
+                            <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>#{item.order || 0}</td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button className="edit-btn" onClick={() => handleOpenEditCatalogModal(item)}>
+                                  <Edit3 className="w-3.5 h-3.5" /> Edit
+                                </button>
+                                <button className="delete-btn" onClick={() => handleDeleteCatalogItem(item)}>
+                                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -1810,6 +2211,478 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
           )}
         </main>
       </div>
+
+      {/* MODAL / DIALOG FOR ADD / EDIT 3D MODEL PRODUCT */}
+      {isCatalogModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '580px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              margin: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e4e4e7', paddingBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Package className="w-5 h-5" />
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#18181b' }}>
+                  {editingCatalogItem ? 'Edit 3D Model Product' : 'Add New 3D Model Product'}
+                </h3>
+              </div>
+              <button onClick={() => setIsCatalogModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', color: '#71717a', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <form onSubmit={handleSaveCatalogItem} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>PRODUCT TITLE *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cosmetic Bottle Mockups"
+                  value={catalogFormTitle}
+                  onChange={(e) => setCatalogFormTitle(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>SUBTITLE / DESCRIPTION</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Glass & PET Dropper Bottles"
+                  value={catalogFormSubtitle}
+                  onChange={(e) => setCatalogFormSubtitle(e.target.value)}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>CATEGORY GROUP</label>
+                  <select
+                    value={catalogFormGroup}
+                    onChange={(e) => setCatalogFormGroup(e.target.value as any)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', outline: 'none', background: '#ffffff' }}
+                  >
+                    <option value="boxes">Boxes</option>
+                    <option value="bottles">Bottles & Cans</option>
+                    <option value="pouches">Pouches & Bags</option>
+                    <option value="containers">Containers & Food</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>3D STUDIO GENERATOR</label>
+                  <select
+                    value={catalogFormBoxModelKey}
+                    onChange={(e) => setCatalogFormBoxModelKey(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', outline: 'none', background: '#ffffff' }}
+                  >
+                    <option value="rte">Reverse Tuck Box (RTE)</option>
+                    <option value="te">Straight Tuck Box (TE)</option>
+                    <option value="auto_lock">Auto Lock Bottom Box</option>
+                    <option value="cosmetic">Cosmetic / Beauty Box</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>PRODUCT THUMBNAIL IMAGE *</label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <div style={{ width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #e4e4e7', background: '#fafafa', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {catalogFormImg ? (
+                      <img src={catalogFormImg} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                    ) : (
+                      <span style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>No img</span>
+                    )}
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Image URL (e.g. /images/box.png or Cloudinary link)"
+                      value={catalogFormImg}
+                      onChange={(e) => setCatalogFormImg(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                    />
+
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#f4f4f5',
+                        color: '#18181b',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: '1px solid #e4e4e7',
+                        width: 'fit-content',
+                      }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> {isUploadingCatalogImg ? 'Uploading...' : 'Upload Image File'}
+                      <input type="file" accept="image/*" onChange={handleCatalogImageFileUpload} style={{ display: 'none' }} disabled={isUploadingCatalogImg} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>PROMOTIONAL BADGE</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 🔥 MOST POPULAR"
+                    value={catalogFormBadge}
+                    onChange={(e) => setCatalogFormBadge(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>FEATURE TAG</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 3D Visualizer"
+                    value={catalogFormTag}
+                    onChange={(e) => setCatalogFormTag(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa', padding: '14px 16px', borderRadius: '12px', border: '1px solid #f4f4f5' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>DISPLAY ORDER POSITION</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={catalogFormOrder}
+                    onChange={(e) => setCatalogFormOrder(Number(e.target.value))}
+                    style={{ width: '90px', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none', fontWeight: 800 }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      id="catalog-active-check"
+                      checked={catalogFormActive}
+                      onChange={(e) => setCatalogFormActive(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="catalog-active-check" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#18181b', cursor: 'pointer' }}>
+                      Visible in Catalog
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      id="catalog-marquee-check"
+                      checked={catalogFormShowInMarquee}
+                      onChange={(e) => setCatalogFormShowInMarquee(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="catalog-marquee-check" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369a1', cursor: 'pointer' }}>
+                      Show in Hero Loop Bar
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsCatalogModalOpen(false)}
+                  style={{ padding: '10px 18px', borderRadius: '10px', background: '#f4f4f5', color: '#18181b', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingCatalogItem}
+                  style={{ padding: '10px 22px', borderRadius: '10px', background: '#10b981', color: '#ffffff', border: 'none', fontWeight: 800, cursor: 'pointer' }}
+                >
+                  {isSavingCatalogItem ? 'Saving...' : 'Save Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL / DIALOG FOR MANAGING SUB-MODELS / VARIANTS */}
+      {isVariantsModalOpen && selectedCategoryForVariants && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '850px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+              margin: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e4e4e7', paddingBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a' }}>
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#18181b' }}>
+                    Sub-Models inside "{selectedCategoryForVariants.title}"
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#71717a', marginTop: '2px' }}>
+                    Manage sub-items (bottles, bags, boxes, containers) displayed when clicking on this category.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsVariantsModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', color: '#71717a', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#18181b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Existing Sub-Models ({selectedCategoryForVariants.variants?.length || 0})
+                </h4>
+                <button
+                  onClick={handleResetVariantForm}
+                  style={{ fontSize: '0.78rem', background: '#f4f4f5', color: '#18181b', border: '1px solid #e4e4e7', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  + Add New Sub-Model
+                </button>
+              </div>
+
+              {(!selectedCategoryForVariants.variants || selectedCategoryForVariants.variants.length === 0) ? (
+                <div style={{ padding: '24px', textAlign: 'center', background: '#fafafa', borderRadius: '14px', border: '1px dashed #e4e4e7', color: '#71717a', fontSize: '0.88rem' }}>
+                  No sub-models defined yet for this category. Fill out the form below to add the first sub-model!
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {selectedCategoryForVariants.variants.map((v, idx) => (
+                    <div
+                      key={v._id || v.id || idx}
+                      style={{
+                        background: editingVariant && (editingVariant._id === v._id || editingVariant.id === v.id) ? '#eff6ff' : '#ffffff',
+                        border: editingVariant && (editingVariant._id === v._id || editingVariant.id === v.id) ? '2px solid #3b82f6' : '1px solid #e4e4e7',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        display: 'flex',
+                        gap: '10px',
+                        alignItems: 'center',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', background: '#fafafa', border: '1px solid #e4e4e7', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src={v.imageUrl || selectedCategoryForVariants.img} alt={v.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                      </div>
+
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#18181b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {v.name}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: '#71717a', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {v.animation || 'Standard sub-model'}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <button
+                          onClick={() => handleStartEditVariant(v)}
+                          style={{ background: '#f4f4f5', border: 'none', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', color: '#18181b' }}
+                          title="Edit sub-model"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVariant(v)}
+                          style={{ background: '#fee2e2', border: 'none', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', color: '#991b1b' }}
+                          title="Delete sub-model"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: '#fafafa', border: '1px solid #e4e4e7', borderRadius: '16px', padding: '20px' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#18181b', margin: 0, marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>{editingVariant ? `Edit Sub-Model: "${editingVariant.name}"` : 'Add New Sub-Model'}</span>
+                {editingVariant && (
+                  <button onClick={handleResetVariantForm} style={{ fontSize: '0.75rem', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                    Switch to Add New
+                  </button>
+                )}
+              </h4>
+
+              <form onSubmit={handleSaveVariant} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>SUB-MODEL NAME *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Cosmetic Serum Bottle"
+                      value={variantFormName}
+                      onChange={(e) => setVariantFormName(e.target.value)}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>ANIMATION / FEATURE DESCRIPTION</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Pipette extracts liquid"
+                      value={variantFormAnimation}
+                      onChange={(e) => setVariantFormAnimation(e.target.value)}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>SUB-MODEL THUMBNAIL IMAGE</label>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div style={{ width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e4e4e7', background: '#ffffff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img src={variantFormImageUrl || selectedCategoryForVariants.img} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Image URL (e.g. /images/bottle.png or Cloudinary URL)"
+                      value={variantFormImageUrl}
+                      onChange={(e) => setVariantFormImageUrl(e.target.value)}
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                    />
+
+                    <label
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: '#ffffff',
+                        color: '#18181b',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: '1px solid #e4e4e7',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> {isUploadingVariantImg ? 'Uploading...' : 'Upload Image'}
+                      <input type="file" accept="image/*" onChange={handleVariantImageUpload} style={{ display: 'none' }} disabled={isUploadingVariantImg} />
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>DIMENSIONS (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 50ml / 30 x 120 mm"
+                      value={variantFormDimensions}
+                      onChange={(e) => setVariantFormDimensions(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>MATERIAL (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Amber Glass & Rubber"
+                      value={variantFormMaterial}
+                      onChange={(e) => setVariantFormMaterial(e.target.value)}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsVariantsModalOpen(false)}
+                    style={{ padding: '8px 16px', borderRadius: '8px', background: '#ffffff', color: '#18181b', border: '1px solid #d4d4d8', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingVariant}
+                    style={{ padding: '8px 20px', borderRadius: '8px', background: '#10b981', color: '#ffffff', border: 'none', fontWeight: 800, cursor: 'pointer', fontSize: '0.85rem' }}
+                  >
+                    {isSavingVariant ? 'Saving...' : editingVariant ? 'Update Sub-Model' : 'Add Sub-Model'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

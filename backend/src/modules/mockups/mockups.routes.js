@@ -2,7 +2,24 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../../middleware/authenticate');
 const SavedDesign = require('../../models/SavedDesign');
+const { deleteFromCloudinary } = require('../../config/cloudinary');
 const { sendSuccess, sendCreated, sendError } = require('../../utils/response');
+
+// Helper to extract Cloudinary public ID from URL or object
+const extractCloudinaryPublicId = (item) => {
+  if (!item) return null;
+  if (typeof item === 'object' && item.publicId) return item.publicId;
+  const urlStr = typeof item === 'string' ? item : item.url || item.imageSrc || item.src;
+  if (urlStr && typeof urlStr === 'string' && urlStr.includes('cloudinary.com')) {
+    const parts = urlStr.split('/upload/');
+    if (parts.length > 1) {
+      const pathAfterUpload = parts[1].replace(/^v\d+\//, ''); // remove version prefix v123456/
+      const dotIndex = pathAfterUpload.lastIndexOf('.');
+      return dotIndex !== -1 ? pathAfterUpload.substring(0, dotIndex) : pathAfterUpload;
+    }
+  }
+  return null;
+};
 
 // GET /api/mockups/saved — Get all saved designs for the current user
 router.get('/saved', authenticate, async (req, res, next) => {
@@ -71,7 +88,7 @@ router.put('/saved/:id', authenticate, async (req, res, next) => {
   }
 });
 
-// DELETE /api/mockups/saved/:id — Delete a saved design
+// DELETE /api/mockups/saved/:id — Delete a saved design and clean up Cloudinary assets
 router.delete('/saved/:id', authenticate, async (req, res, next) => {
   try {
     const design = await SavedDesign.findOneAndDelete({
@@ -79,7 +96,31 @@ router.delete('/saved/:id', authenticate, async (req, res, next) => {
       user: req.user.id,
     });
     if (!design) return sendError(res, 'Design not found.', 404);
-    return sendSuccess(res, {}, 'Design deleted.');
+
+    // Asynchronously clean up associated Cloudinary image assets
+    try {
+      const publicIds = new Set();
+      if (design.thumbnailUrl) {
+        const pid = extractCloudinaryPublicId(design.thumbnailUrl);
+        if (pid) publicIds.add(pid);
+      }
+      if (Array.isArray(design.decals)) {
+        design.decals.forEach((decal) => {
+          const pid = extractCloudinaryPublicId(decal);
+          if (pid) publicIds.add(pid);
+        });
+      }
+
+      for (const pid of publicIds) {
+        deleteFromCloudinary(pid).catch((err) => {
+          console.warn(`⚠️ Cloudinary asset deletion notice for [${pid}]:`, err.message);
+        });
+      }
+    } catch (cleanupErr) {
+      console.warn('⚠️ Non-blocking Cloudinary cleanup notice:', cleanupErr.message);
+    }
+
+    return sendSuccess(res, {}, 'Design and associated cloud assets deleted.');
   } catch (err) {
     next(err);
   }

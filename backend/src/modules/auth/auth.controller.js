@@ -246,7 +246,7 @@ const forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return sendError(res, 'No account found with this email address.', 444 ? 404 : 404);
+      return sendError(res, 'No account found with this email address.', 404);
     }
 
     // Generate 6-digit OTP for password reset
@@ -256,9 +256,10 @@ const forgotPassword = async (req, res, next) => {
     user.passwordResetOtp = { code: otp, expiresAt };
     await user.save({ validateBeforeSave: false });
 
-    console.log(`🔑 FORGOT PASSWORD OTP for ${email}: ${otp}`);
+    // Send 6-digit OTP via Email
+    await sendOTPEmail(email, otp, 'reset');
 
-    return sendSuccess(res, { otp }, `A 6-digit OTP (${otp}) has been generated for password reset.`);
+    return sendSuccess(res, { email }, 'A 6-digit password reset code has been sent to your email address.');
   } catch (err) {
     next(err);
   }

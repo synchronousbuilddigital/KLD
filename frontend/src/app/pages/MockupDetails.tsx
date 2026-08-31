@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, Bookmark, Check, Star, Box, Rotate3d } from 'lucide-react';
 import '../../styles/new-home.css';
-import { mockupCategories, MockupVariant } from '../data/mockupData';
+import { mockupCategories, MockupCategory, MockupVariant } from '../data/mockupData';
+import { catalogService } from '../../services/catalog';
 import { useBoxStore } from '../../lib/useBoxStore';
 import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import Header from '../components/layout/Header';
@@ -263,6 +264,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
 
 export default function MockupDetails({ initialCategoryId, onBack }: MockupDetailsProps) {
+  const [categories, setCategories] = useState<MockupCategory[]>(mockupCategories);
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(initialCategoryId);
   const [hoveredVariant, setHoveredVariant] = useState<MockupVariant | null>(null);
@@ -272,7 +274,39 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    let isMounted = true;
+    const fetchCatalogCategories = () => {
+      catalogService.getPublicCatalog().then((items) => {
+        if (isMounted && items && items.length > 0) {
+          const mapped: MockupCategory[] = items.map((item) => ({
+            id: item.itemId || item._id || '',
+            name: item.title,
+            variants: item.variants && item.variants.length > 0
+              ? item.variants
+              : [
+                  { id: 1, name: item.title, animation: item.subtitle, imageUrl: item.img }
+                ],
+          }));
+          setCategories(mapped);
+        }
+      });
+    };
+
+    fetchCatalogCategories();
+    window.addEventListener('catalog-updated', fetchCatalogCategories);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('catalog-updated', fetchCatalogCategories);
+    };
   }, []);
+
+  useEffect(() => {
+    if (initialCategoryId) {
+      setActiveCategoryId(initialCategoryId);
+      setExpandedCategoryId(initialCategoryId);
+    }
+  }, [initialCategoryId]);
 
   useEffect(() => {
     const handleAuthChange = () => {
@@ -282,7 +316,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
     return () => window.removeEventListener('auth-change', handleAuthChange);
   }, []);
 
-  const activeCategory = mockupCategories.find(c => c.id === activeCategoryId) || mockupCategories[0];
+  const activeCategory = categories.find(c => c.id === activeCategoryId) || categories.find(c => c.id === initialCategoryId) || mockupCategories.find(c => c.id === activeCategoryId) || mockupCategories[0];
 
   return (
     <div className="new-home-landing min-h-screen font-sans flex flex-col relative z-0">
@@ -294,7 +328,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
         <aside className="w-[300px] shrink-0 border-r overflow-y-auto py-8 px-6" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-primary)' }}>
           <h2 className="text-sm font-bold uppercase tracking-wider mb-6 px-4" style={{ color: 'var(--ink)', opacity: 0.5 }}>Categories</h2>
           <nav className="flex flex-col gap-1">
-            {mockupCategories.map((cat) => {
+            {categories.map((cat) => {
               const isActive = cat.id === activeCategoryId;
               const isExpanded = cat.id === expandedCategoryId;
               return (
