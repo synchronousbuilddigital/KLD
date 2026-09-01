@@ -1,3 +1,6 @@
+const logger = require('../utils/logger');
+const { captureException } = require('../utils/sentry');
+
 /**
  * Global error handler middleware.
  * Must be the last middleware registered in app.js.
@@ -31,8 +34,11 @@ const errorHandler = (err, req, res, next) => {
     statusCode = 400;
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    console.error('❌ Error:', err);
+  // Report 500 server errors to Sentry & Pino logger
+  if (statusCode >= 500) {
+    captureException(err, { url: req.originalUrl, method: req.method, ip: req.ip });
+  } else {
+    logger.warn({ url: req.originalUrl, method: req.method, statusCode, message }, 'Client Request Error');
   }
 
   res.status(statusCode).json({

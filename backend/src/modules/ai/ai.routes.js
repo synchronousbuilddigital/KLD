@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const authenticate = require('../../middleware/authenticate');
 const aiController = require('./ai.controller');
+
+// All AI endpoints require user authentication to protect Gemini & HuggingFace API quotas
+router.use(authenticate);
 
 // POST /api/ai/chat
 router.post('/chat', aiController.chat);

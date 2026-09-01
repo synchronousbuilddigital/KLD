@@ -2,11 +2,11 @@ const jwt = require('jsonwebtoken');
 
 /**
  * generateAccessToken
- * Long-lived access token (30 days) sent in response body.
+ * Short-lived access token (1 hour) sent in response body / cookie.
  */
 const generateAccessToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_ACCESS_SECRET, {
-    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '30d',
+    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '1h',
   });
 };
 
@@ -39,7 +39,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'strict' : 'lax',
       maxAge: 60 * 60 * 1000, // 1 hour
     });
   }
@@ -48,7 +48,7 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'lax',
+      sameSite: isProd ? 'strict' : 'lax',
       maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
     });
   }

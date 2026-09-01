@@ -57,7 +57,6 @@ export const authService = {
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
       if (data.data.accessToken) localStorage.setItem('token', data.data.accessToken);
-      if (data.data.refreshToken) localStorage.setItem('refreshToken', data.data.refreshToken);
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
     }
@@ -77,7 +76,6 @@ export const authService = {
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
       if (data.data.accessToken) localStorage.setItem('token', data.data.accessToken);
-      if (data.data.refreshToken) localStorage.setItem('refreshToken', data.data.refreshToken);
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
     }
@@ -97,7 +95,6 @@ export const authService = {
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
       if (data.data.accessToken) localStorage.setItem('token', data.data.accessToken);
-      if (data.data.refreshToken) localStorage.setItem('refreshToken', data.data.refreshToken);
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
     }
@@ -117,7 +114,6 @@ export const authService = {
     if (data.data?.user) {
       localStorage.setItem('user', JSON.stringify(data.data.user));
       if (data.data.accessToken) localStorage.setItem('token', data.data.accessToken);
-      if (data.data.refreshToken) localStorage.setItem('refreshToken', data.data.refreshToken);
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
     }

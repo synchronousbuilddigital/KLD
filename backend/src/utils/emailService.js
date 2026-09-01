@@ -42,14 +42,22 @@ const sendOTPEmail = async (toEmail, otpCode, type = 'signup') => {
     ? 'Use the following 6-digit verification code to complete your Keyline Design account sign up:' 
     : 'Use the following 6-digit code to reset your Keyline Design account password:';
 
-  console.log(`\n==================================================`);
-  console.log(`✉️  EMAIL OTP SENT TO [${toEmail}]: ${otpCode} (${type})`);
-  console.log(`==================================================\n`);
+  const isDevWithoutSmtp = process.env.NODE_ENV !== 'production' && !process.env.SMTP_PASS;
+
+  if (isDevWithoutSmtp) {
+    console.log(`\n==================================================`);
+    console.log(`✉️  DEV MODE OTP FOR [${toEmail}]: ${otpCode} (${type})`);
+    console.log(`==================================================\n`);
+  } else {
+    console.log(`✉️  Sending ${type} email OTP to [${toEmail}]...`);
+  }
 
   try {
     const transporter = createTransporter();
     if (!transporter) {
-      console.log('ℹ️ SMTP_PASS not set yet. OTP logged above for development test.');
+      if (!isDevWithoutSmtp) {
+        console.log('ℹ️ SMTP_PASS not set. Simulated OTP email dispatch.');
+      }
       return { success: true, simulated: true };
     }
 

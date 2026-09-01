@@ -44,6 +44,7 @@ export async function sendAiChatMessage(prompt: string, context: any): Promise<A
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ prompt, context }),
     });
 
@@ -71,6 +72,7 @@ export async function sendAiChatMessageV2(prompt: string, context: any): Promise
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ prompt, context }),
     });
 

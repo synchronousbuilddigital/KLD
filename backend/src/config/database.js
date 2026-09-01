@@ -26,8 +26,15 @@ const seedDefaultAdmin = async () => {
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    const isProd = process.env.NODE_ENV === 'production';
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      maxPoolSize: process.env.MONGO_MAX_POOL_SIZE ? parseInt(process.env.MONGO_MAX_POOL_SIZE) : 50,
+      minPoolSize: 5,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      autoIndex: !isProd, // Disable auto-indexing in production to save RAM and CPU
+    });
+    console.log(`✅ MongoDB Connected: ${conn.connection.host} [Pool Size: 50, autoIndex: ${!isProd}]`);
 
     // Seed default admin account once if missing
     await seedDefaultAdmin();

@@ -53,7 +53,7 @@ interface AdminProjectItem {
 }
 
 function AdminDashboardPage({ onBack }: { onBack: () => void }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'projects' | 'cms' | 'membership' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'projects' | 'cms' | 'membership'>('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
@@ -807,12 +807,6 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
               onClick={() => setActiveTab('membership')}
             >
               <CreditCard className="w-4 h-4 text-emerald-600" /> Membership & Coupons
-            </button>
-            <button
-              className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('settings')}
-            >
-              <Database className="w-4 h-4" /> Platform Settings
             </button>
           </nav>
         </aside>
@@ -2184,29 +2178,6 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* TAB 6: PLATFORM SETTINGS */}
-          {activeTab === 'settings' && (
-            <div className="admin-tab-content">
-              <h2 className="admin-page-title">Platform & System Settings</h2>
-
-              <div className="admin-panel-card">
-                <h3 className="panel-title">Maintenance & System Mode</h3>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>System Maintenance Mode</div>
-                    <div style={{ fontSize: '0.85rem', color: '#6B7280' }}>When enabled, non-admin users will see a maintenance notice screen.</div>
-                  </div>
-                  <button
-                    className={maintenanceMode ? 'delete-btn' : 'open-studio-btn'}
-                    onClick={handleToggleMaintenance}
-                  >
-                    {maintenanceMode ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode'}
-                  </button>
-                </div>
-              </div>
             </div>
           )}
         </main>
