@@ -611,16 +611,9 @@ export default function App() {
     // Zooming disabled
   }, []);
 
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(() => {
-    return localStorage.getItem('maintenanceMode') === 'true';
-  });
-
   useEffect(() => {
-    const handleMaintenanceChange = () => {
-      setIsMaintenanceMode(localStorage.getItem('maintenanceMode') === 'true');
-    };
-    window.addEventListener('maintenance-mode-change', handleMaintenanceChange);
-    return () => window.removeEventListener('maintenance-mode-change', handleMaintenanceChange);
+    // Clear legacy maintenanceMode flag from browser cache
+    localStorage.removeItem('maintenanceMode');
   }, []);
 
   if (activeCategoryId) {
@@ -741,82 +734,7 @@ export default function App() {
     return <AboutUsPage onNavigate={navigateTo} />;
   }
 
-  // System Maintenance Mode Guard for non-admin views
-  const storedUserRaw = localStorage.getItem('user');
-  let loggedInUserRole = 'USER';
-  if (storedUserRaw) {
-    try {
-      const parsedUser = JSON.parse(storedUserRaw);
-      if (parsedUser.role) loggedInUserRole = parsedUser.role;
-    } catch {}
-  }
 
-  if (isMaintenanceMode && loggedInUserRole !== 'ADMIN') {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#09090b',
-        color: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        textAlign: 'center',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
-      }}>
-        <div style={{
-          width: '72px',
-          height: '72px',
-          borderRadius: '24px',
-          backgroundColor: '#18181b',
-          border: '1px solid #27272a',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '24px',
-          color: '#d97706',
-          boxShadow: '0 8px 32px rgba(217, 119, 6, 0.15)'
-        }}>
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
-        <span style={{
-          fontSize: '0.75rem',
-          fontWeight: 800,
-          color: '#d97706',
-          textTransform: 'uppercase',
-          letterSpacing: '1.5px',
-          marginBottom: '8px'
-        }}>SYSTEM MAINTENANCE MODE</span>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0 0 12px 0', color: '#ffffff' }}>
-          Keyline Design Studio is Under Scheduled Maintenance
-        </h1>
-        <p style={{ maxWidth: '520px', color: '#a1a1aa', fontSize: '0.95rem', lineHeight: '1.6', margin: '0 0 28px 0' }}>
-          We are currently upgrading our 3D packaging engine & dieline algorithms for maximum performance. We will be back live shortly!
-        </p>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button 
-            onClick={() => navigateTo('admin')} 
-            style={{
-              padding: '11px 22px',
-              borderRadius: '10px',
-              background: '#C89A63',
-              color: '#09090b',
-              border: 'none',
-              fontWeight: 800,
-              cursor: 'pointer',
-              fontSize: '0.88rem'
-            }}
-          >
-            Admin Control Center Access
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const current = steps[stepIndex];
 
