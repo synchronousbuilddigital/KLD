@@ -306,26 +306,23 @@ const googleLogin = async (req, res, next) => {
       return sendError(res, 'Google credential token is required.', 400);
     }
 
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      return sendError(res, 'Google OAuth is not configured on the server.', 500);
+    }
+
     const { OAuth2Client } = require('google-auth-library');
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const client = new OAuth2Client(clientId);
 
     let payload;
     try {
-      if (process.env.GOOGLE_CLIENT_ID) {
-        const ticket = await client.verifyIdToken({
-          idToken: credential,
-          audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        payload = ticket.getPayload();
-      } else {
-        payload = JSON.parse(Buffer.from(credential.split('.')[1], 'base64').toString());
-      }
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
+      payload = ticket.getPayload();
     } catch (verifyErr) {
-      try {
-        payload = JSON.parse(Buffer.from(credential.split('.')[1], 'base64').toString());
-      } catch (e) {
-        return sendError(res, 'Invalid Google ID token.', 401);
-      }
+      return sendError(res, 'Invalid or expired Google ID token.', 401);
     }
 
     if (!payload || !payload.email) {

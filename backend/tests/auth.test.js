@@ -36,4 +36,32 @@ describe('Authentication & Validation Endpoints', () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
   });
+
+  it('should reject invalid or forged Google credential token with HTTP 401', async () => {
+    process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'test-google-client-id';
+
+    // Unverified base64 payload attempt
+    const fakePayload = Buffer.from(JSON.stringify({ email: 'victim@example.com', sub: '123' })).toString('base64');
+    const fakeToken = `header.${fakePayload}.signature`;
+
+    const res = await request(app)
+      .post('/api/auth/google')
+      .send({ credential: fakeToken });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Invalid or expired Google ID token');
+  });
+
+  it('should reject unauthenticated upload requests to /api/uploads/logo with HTTP 401', async () => {
+    const res = await request(app).post('/api/uploads/logo');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('should reject unauthenticated asset deletion attempts with HTTP 401', async () => {
+    const res = await request(app).delete('/api/uploads/sample-asset-12345');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
 });

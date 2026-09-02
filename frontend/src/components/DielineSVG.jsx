@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect, useDeferredValue } from "react";
+import DOMPurify from "dompurify";
 import { generateRTEDieline } from "../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../lib/autoLockDielineGenerator";
@@ -608,7 +609,12 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                   viewBox="0 0 24 24"
                   fill={decal.fillColor || "currentColor"}
                   color={decal.fillColor || "currentColor"}
-                  dangerouslySetInnerHTML={{ __html: (decal.svgString || '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '') }}
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(
+                      (decal.svgString || '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, ''),
+                      { USE_PROFILES: { svg: true } }
+                    )
+                  }}
                 />
               ) : (() => {
                 const sDash = decal.borderStyle === 'dashed' ? `${((decal.strokeWidth || 5) / 72) * 2},${((decal.strokeWidth || 5) / 72) * 2}` : undefined;

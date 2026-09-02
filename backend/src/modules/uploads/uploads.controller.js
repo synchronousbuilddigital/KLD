@@ -1,4 +1,5 @@
 const User = require('../../models/User');
+const UploadedAsset = require('../../models/UploadedAsset');
 const { uploadBufferToCloudinary, deleteFromCloudinary } = require('../../config/cloudinary');
 const { sendSuccess, sendError } = require('../../utils/response');
 
@@ -17,7 +18,6 @@ const uploadLogo = async (req, res, next) => {
       });
     } catch (cloudErr) {
       console.warn('⚠️ Cloudinary Upload Warning (using local data URL fallback):', cloudErr.message);
-      // Fallback if Cloudinary credentials are mock/unreachable
       const base64 = req.file.buffer.toString('base64');
       const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
       cloudResult = {
@@ -28,6 +28,19 @@ const uploadLogo = async (req, res, next) => {
         format: req.file.mimetype.split('/')[1] || 'png',
         bytes: req.file.size,
       };
+    }
+
+    // Save asset record for ownership tracking
+    if (req.user?.id) {
+      await UploadedAsset.create({
+        user: req.user.id,
+        publicId: cloudResult.public_id,
+        url: cloudResult.secure_url,
+        assetType: 'logo',
+        originalName: req.file.originalname,
+        size: req.file.size,
+        format: cloudResult.format,
+      }).catch(err => console.warn('⚠️ Could not save UploadedAsset record:', err.message));
     }
 
     return sendSuccess(
@@ -71,6 +84,18 @@ const uploadAvatar = async (req, res, next) => {
         secure_url: dataUrl,
         public_id: `local_avatar_${Date.now()}`
       };
+    }
+
+    // Save asset record for ownership tracking
+    if (req.user?.id) {
+      await UploadedAsset.create({
+        user: req.user.id,
+        publicId: cloudResult.public_id,
+        url: cloudResult.secure_url,
+        assetType: 'avatar',
+        originalName: req.file.originalname,
+        size: req.file.size,
+      }).catch(err => console.warn('⚠️ Could not save UploadedAsset record:', err.message));
     }
 
     // Update Avatar URL on authenticated user document in MongoDB
@@ -127,6 +152,18 @@ const uploadDielineAsset = async (req, res, next) => {
       };
     }
 
+    // Save asset record for ownership tracking
+    if (req.user?.id) {
+      await UploadedAsset.create({
+        user: req.user.id,
+        publicId: cloudResult.public_id,
+        url: cloudResult.secure_url,
+        assetType: 'dieline',
+        originalName: req.file.originalname,
+        size: req.file.size,
+      }).catch(err => console.warn('⚠️ Could not save UploadedAsset record:', err.message));
+    }
+
     return sendSuccess(
       res,
       {
@@ -145,12 +182,24 @@ const uploadDielineAsset = async (req, res, next) => {
 /* ─── DELETE CLOUDINARY ASSET ────────────────────────────────────── */
 const deleteAsset = async (req, res, next) => {
   try {
-    const { publicId } = req.params;
-    if (!publicId) {
+    // Extract publicId from wildcard route or params (e.g. kld/logos/sample)
+    const rawPublicId = req.params[0] || req.params.publicId;
+    if (!rawPublicId) {
       return sendError(res, 'Asset Public ID is required.', 400);
+    }
+    const publicId = decodeURIComponent(rawPublicId);
+
+    // Verify ownership of the asset in UploadedAsset database model (if user is not ADMIN)
+    if (req.user?.role !== 'ADMIN') {
+      const assetDoc = await UploadedAsset.findOne({ publicId });
+      if (assetDoc && assetDoc.user.toString() !== req.user.id) {
+        return sendError(res, 'Access denied. You do not have permission to delete this asset.', 403);
+      }
     }
 
     await deleteFromCloudinary(publicId);
+    await UploadedAsset.deleteOne({ publicId }).catch(() => {});
+
     return sendSuccess(res, { publicId }, 'Cloudinary asset deleted successfully.');
   } catch (err) {
     next(err);

@@ -9,16 +9,16 @@ const {
   deleteAsset,
 } = require('./uploads.controller');
 
-// POST /api/uploads/logo — Upload brand logo / decal image
-router.post('/logo', uploadImage.single('logo'), uploadLogo);
+// POST /api/uploads/logo — Upload brand logo / decal image (authenticated)
+router.post('/logo', authenticate, uploadImage.single('logo'), uploadLogo);
 
 // POST /api/uploads/avatar — Upload user profile avatar (authenticated)
 router.post('/avatar', authenticate, uploadImage.single('avatar'), uploadAvatar);
 
-// POST /api/uploads/dieline — Upload custom dieline / model file
-router.post('/dieline', uploadDieline.single('dieline'), uploadDielineAsset);
+// POST /api/uploads/dieline — Upload custom dieline / model file (authenticated)
+router.post('/dieline', authenticate, uploadDieline.single('dieline'), uploadDielineAsset);
 
-// DELETE /api/uploads/:publicId — Delete Cloudinary asset (authenticated)
+// DELETE /api/uploads/:publicId — Delete Cloudinary asset with ownership check (authenticated)
 router.delete('/:publicId', authenticate, deleteAsset);
 
 module.exports = router;

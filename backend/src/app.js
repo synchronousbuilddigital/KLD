@@ -68,7 +68,7 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, server-to-server, Postman)
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       return callback(new Error(`CORS Policy Error: Origin '${origin}' is not permitted.`));
