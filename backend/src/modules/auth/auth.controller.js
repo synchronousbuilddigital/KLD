@@ -2,6 +2,7 @@ const User = require('../../models/User');
 const Subscription = require('../../models/Subscription');
 const EmailOTP = require('../../models/EmailOTP');
 const { sendOTPEmail } = require('../../utils/emailService');
+const { validateRealEmail } = require('../../utils/emailValidator');
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -17,6 +18,12 @@ const sendSignupOtp = async (req, res, next) => {
     const { email } = req.body;
     if (!email) {
       return sendError(res, 'Email address is required.', 400);
+    }
+
+    // Validate that the email is real (format + MX DNS + disposable blocklist)
+    const emailCheck = await validateRealEmail(email);
+    if (!emailCheck.valid) {
+      return sendError(res, emailCheck.reason, 422);
     }
 
     // Check if email already taken
@@ -54,12 +61,27 @@ const verifySignupOtp = async (req, res, next) => {
     }
 
     const otpRecord = await EmailOTP.findOne({ email });
-    if (!otpRecord || otpRecord.otp !== otp) {
-      return sendError(res, 'Invalid 6-digit verification code.', 400);
+
+    if (!otpRecord) {
+      return sendError(res, 'Invalid or expired verification code. Please request a new one.', 400);
+    }
+
+    // Invalidate OTP after 5 failed attempts (brute-force protection)
+    if (otpRecord.attempts >= 5) {
+      await EmailOTP.deleteOne({ email });
+      return sendError(res, 'Too many incorrect attempts. Please request a new verification code.', 429);
     }
 
     if (new Date() > otpRecord.expiresAt) {
+      await EmailOTP.deleteOne({ email });
       return sendError(res, 'Verification code has expired. Please request a new code.', 400);
+    }
+
+    if (otpRecord.otp !== otp) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      const remaining = 5 - otpRecord.attempts;
+      return sendError(res, `Invalid verification code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`, 400);
     }
 
     otpRecord.isVerified = true;
@@ -178,6 +200,7 @@ const login = async (req, res, next) => {
     const accessToken = generateAccessToken(user._id);
     setAuthCookies(res, accessToken, refreshToken);
 
+    // NOTE: Tokens are set as HttpOnly cookies only — NOT returned in body to prevent XSS token theft
     return sendSuccess(res, {
       user: {
         id: user._id,
@@ -187,8 +210,6 @@ const login = async (req, res, next) => {
         plan: sub?.plan || 'FREE',
         aiCredits: sub?.aiCredits || 0,
       },
-      accessToken,
-      refreshToken
     }, 'Logged in successfully.');
   } catch (err) {
     next(err);
@@ -198,7 +219,9 @@ const login = async (req, res, next) => {
 /* ─── REFRESH TOKEN ─────────────────────────────────────────────── */
 const refresh = async (req, res, next) => {
   try {
-    const token = req.cookies?.refreshToken || req.body?.refreshToken || req.headers['x-refresh-token'];
+    // Only accept refresh token from HttpOnly cookie — NOT from body or headers
+    // Accepting from body/headers would allow JavaScript (and XSS) to use stolen tokens
+    const token = req.cookies?.refreshToken;
     if (!token) return sendError(res, 'No refresh token found.', 401);
 
     const decoded = verifyRefreshToken(token);
@@ -243,10 +266,13 @@ const forgotPassword = async (req, res, next) => {
     const { email } = req.body;
     if (!email) return sendError(res, 'Email address is required.', 400);
 
-    const user = await User.findOne({ email });
+    // Generic response regardless of whether email exists — prevents email enumeration attacks
+    const GENERIC_MSG = 'If an account with that email exists, a 6-digit reset code has been sent.';
 
+    const user = await User.findOne({ email });
     if (!user) {
-      return sendError(res, 'No account found with this email address.', 404);
+      // Don't reveal that email is not registered
+      return sendSuccess(res, {}, GENERIC_MSG);
     }
 
     // Generate 6-digit OTP for password reset
@@ -259,7 +285,7 @@ const forgotPassword = async (req, res, next) => {
     // Send 6-digit OTP via Email
     await sendOTPEmail(email, otp, 'reset');
 
-    return sendSuccess(res, { email }, 'A 6-digit password reset code has been sent to your email address.');
+    return sendSuccess(res, {}, GENERIC_MSG);
   } catch (err) {
     next(err);
   }
@@ -391,9 +417,10 @@ const googleLogin = async (req, res, next) => {
     delete userObj.passwordHash;
     delete userObj.refreshToken;
 
+    // NOTE: accessToken is set as HttpOnly cookie only — NOT returned in body to prevent XSS token theft
     return sendSuccess(
       res,
-      { user: userObj, accessToken },
+      { user: userObj },
       'Successfully authenticated with Google!'
     );
   } catch (err) {

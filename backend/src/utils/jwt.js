@@ -59,8 +59,15 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
  * Clears both accessToken and refreshToken HttpOnly cookies.
  */
 const clearAuthCookies = (res) => {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'strict' : 'lax',
+    path: '/',
+  };
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
 };
 
 module.exports = {

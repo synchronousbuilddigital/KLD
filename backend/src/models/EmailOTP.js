@@ -16,6 +16,10 @@ const emailOTPSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    attempts: {
+      type: Number,
+      default: 0, // Tracks failed verification attempts — invalidated after 5
+    },
     expiresAt: {
       type: Date,
       required: true,
