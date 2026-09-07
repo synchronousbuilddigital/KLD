@@ -185,18 +185,30 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
       const aiMsg: Message = {
         id: 'msg-ai-' + Date.now(),
         sender: 'assistant',
-        text: res.reply,
+        text: res.reply || res.outputsSummary || 'Design generated successfully.',
         directions: res.directions || [],
         variations: res.renderVariations || [],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages(prev => [...prev, aiMsg]);
-    } catch (err) {
+      
+      // Let MockupDetails handle the renders
+      if (res.renderVariations && res.renderVariations.length > 0) {
+        useBoxStore.setState({ generatedRenders: res.renderVariations });
+      }
+    } catch (err: any) {
       console.error('AI assistant error:', err);
+      const errorMsg: Message = {
+        id: 'msg-err-' + Date.now(),
+        sender: 'assistant',
+        text: `Oops! Request failed: ${err.message || 'Unknown error'}. Please verify you are logged in and the backend is running.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
-    }
+    };
   };
 
   const handleDownloadDielineDXF = () => {

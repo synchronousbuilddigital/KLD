@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { authService } from '../../../services/auth';
+import AnimatedLogo from '../layout/AnimatedLogo';
 import './SignInModal.css';
 
 export default function SignInModal({ onClose }: { onClose: () => void }) {
@@ -240,19 +241,11 @@ export default function SignInModal({ onClose }: { onClose: () => void }) {
         <div className="signin-container">
           {/* Glassmorphism Login Form */}
           <div className="signin-login-section">
-            <header className="signin-header">
-              <div className="signin-logo">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                    <line x1="7.635" y1="4.48" x2="16.365" y2="9.48"></line>
-                  </svg>
-                  <span style={{ fontWeight: 700, letterSpacing: '1px', fontSize: '18px' }}>KEYLINE DESIGN</span>
+              <header className="signin-header">
+                <div className="signin-logo">
+                  <AnimatedLogo style={{ margin: '0' }} />
                 </div>
-              </div>
-            </header>
+              </header>
             
             <div className="signin-form-container">
               {mode === 'signIn' && (
@@ -813,11 +806,10 @@ export default function SignInModal({ onClose }: { onClose: () => void }) {
                         <GoogleLogin
                           onSuccess={handleGoogleSuccess}
                           onError={handleGoogleError}
+                          useOneTap
                           theme="filled_black"
-                          size="large"
-                          text="continue_with"
                           shape="pill"
-                          width="300"
+                          text="continue_with"
                         />
                       </GoogleOAuthProvider>
                     ) : (

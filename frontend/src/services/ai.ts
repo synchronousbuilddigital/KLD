@@ -71,6 +71,7 @@ export async function sendAiChatMessageV2(prompt: string, context: any): Promise
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
       },
       credentials: 'include',
       body: JSON.stringify({ prompt, context }),
@@ -81,10 +82,13 @@ export async function sendAiChatMessageV2(prompt: string, context: any): Promise
       if (json.success && json.data) {
         return json.data;
       }
+      throw new Error(json.message || 'Backend V2 endpoint returned an invalid structure.');
+    } else {
+      const errorJson = await res.json().catch(() => ({}));
+      throw new Error(errorJson.message || `Backend responded with HTTP ${res.status}`);
     }
-    throw new Error('Backend V2 endpoint returned an error.');
   } catch (err) {
-    console.error('Backend AI V2 endpoint unreachable:', err);
+    console.error('Backend AI V2 endpoint unreachable or failed:', err);
     throw err;
   }
 }

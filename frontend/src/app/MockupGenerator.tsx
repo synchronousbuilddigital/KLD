@@ -29,10 +29,9 @@ export default function MockupGenerator({ onBack }: { onBack: () => void }) {
   const [placedImages, setPlacedImages] = useState<PlacedImage[]>([]);
   
   const [activeSide, setActiveSide] = useState<'outside' | 'inside'>('outside');
-  const [packageMaterial, setPackageMaterial] = useState<'white' | 'kraft'>('white');
+  const [packageMaterial, setPackageMaterial] = useState<'white' | 'kraft' | 'custom'>('white');
+  const [packageColor, setPackageColor] = useState<string>('#ffffff');
   const [boxOpenProgress, setBoxOpenProgress] = useState<number>(0);
-  
-  const packageColor = packageMaterial === 'white' ? '#ffffff' : '#d9b99b';
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -323,8 +322,10 @@ export default function MockupGenerator({ onBack }: { onBack: () => void }) {
                   <button 
                     key={c}
                     onClick={() => {
-                      if (c === '#ffffff') setPackageMaterial('white');
+                      setPackageColor(c);
+                      if (c === '#ffffff' || c === '#f8fafc') setPackageMaterial('white');
                       else if (c === '#d9b99b') setPackageMaterial('kraft');
+                      else setPackageMaterial('custom');
                     }}
                     className={`w-6 h-6 rounded-full border border-gray-200 shadow-sm ${packageColor === c ? 'ring-2 ring-offset-2 ring-purple-500' : ''}`}
                     style={{ backgroundColor: c }}

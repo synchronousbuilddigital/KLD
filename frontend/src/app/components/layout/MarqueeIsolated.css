@@ -2,11 +2,10 @@
     width: 100%;
     position: relative;
     background: transparent;
-    padding: 10px 0 20px 0;
-    overflow-x: clip;
+    padding: 20px 0;
+    overflow-x: hidden;
     overflow-y: visible;
-    transform: none;
-    margin-bottom: 0;
+    transform: translateY(-80px);
     z-index: 100;
 }
 
@@ -16,11 +15,11 @@
     animation: scroll 25s linear infinite;
 }
 
-.marquee-container:hover,
-.marquee-container.is-paused,
-.marquee-section:hover .marquee-container {
-    animation-play-state: paused !important;
+.marquee-container:hover {
+    animation-play-state: paused;
 }
+
+
 
 @keyframes scroll {
     0% {
@@ -28,7 +27,7 @@
     }
 
     100% {
-        transform: translateX(-10%);
+        transform: translateX(-50%);
     }
 }
 

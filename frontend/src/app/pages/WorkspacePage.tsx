@@ -9,6 +9,7 @@ import {
 import Header from '../components/layout/Header';
 import { API_BASE_URL } from '../../config/api';
 import { useBoxStore } from '../../lib/useBoxStore';
+import AnimatedLogo from '../components/layout/AnimatedLogo';
 import '../../styles/new-home.css';
 import './UserProfilePage.css';
 
@@ -460,9 +461,9 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
       console.log('Local storage parse error:', err);
     }
 
-    // Merge MongoDB and Local Storage items without duplicates
-    const mongoIds = new Set(mongoItems.map(i => i.id));
-    let combined = [...mongoItems, ...localItems.filter(i => !mongoIds.has(i.id))].filter(i => i.id !== 'active-session-draft');
+    // If authenticated, only show MongoDB items. Otherwise, show Local Storage items.
+    let combined = token ? mongoItems : localItems;
+    combined = combined.filter(i => i.id !== 'active-session-draft');
 
     // Sort by last updated (newest / most recent first)
     combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -703,21 +704,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
          ======================================================== */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-top-section">
-          {/* LOGO */}
-          <div 
-            className="sidebar-logo" 
-            onClick={() => handleNav('landing')} 
-            title="Return to Packaging Studio"
-          >
-            <div className="w-7 h-7 rounded-lg bg-[#C89A63] text-white flex items-center justify-center shadow-sm">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                <line x1="12" y1="22.08" x2="12" y2="12" />
-              </svg>
-            </div>
-            <span>KEYLINE DESIGN</span>
-          </div>
+          <AnimatedLogo onClick={() => handleNav('landing')} style={{ margin: '0 0 20px 0' }} />
 
           <div className="sidebar-section-title">WORKSPACE NAV</div>
 

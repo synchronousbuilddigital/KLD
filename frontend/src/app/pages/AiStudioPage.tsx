@@ -164,6 +164,54 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
     setActiveIconUrl(variation.iconUrl || null);
     setActiveTypography(variation.typography || null);
 
+    // Automatically extract the color from the generated image (design)
+    if (variation.backgroundUrl) {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        // Sample edges of the image to get the true background color (avoiding the center subject)
+        canvas.width = 50;
+        canvas.height = 50;
+        ctx.drawImage(img, 0, 0, 50, 50);
+        
+        try {
+          const data = ctx.getImageData(0, 0, 50, 50).data;
+          let r = 0, g = 0, b = 0, count = 0;
+          
+          // Sample the border pixels to find the most dominant background color
+          for (let y = 0; y < 50; y++) {
+            for (let x = 0; x < 50; x++) {
+              if (x < 5 || x > 45 || y < 5 || y > 45) { // Edge pixels
+                const idx = (y * 50 + x) * 4;
+                r += data[idx];
+                g += data[idx + 1];
+                b += data[idx + 2];
+                count++;
+              }
+            }
+          }
+          
+          if (count > 0) {
+            r = Math.floor(r / count);
+            g = Math.floor(g / count);
+            b = Math.floor(b / count);
+            const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            setActiveBoxColor(hex);
+            if (typeof store.setPackageColor === 'function') {
+              store.setPackageColor(hex);
+            }
+          }
+        } catch (e) {
+          console.warn("Could not extract color automatically:", e);
+        }
+      };
+      img.src = variation.backgroundUrl;
+    }
+
     if (variation.v2Layout) {
       const W_in = store.W || 2.36;
       const H_in = store.H || 6.29;

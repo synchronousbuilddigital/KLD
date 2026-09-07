@@ -411,7 +411,7 @@ export default function CosmeticBox3DViewer({
   const flap = mats.flap;
 
   const windowFilmMat = useMemo(() => new THREE.MeshPhysicalMaterial({
-    color: "#ffffff", transmission: 0.9, opacity: 1, metalness: 0, roughness: 0, ior: 1.5, thickness: 0.01, transparent: true, side: THREE.DoubleSide
+    color: "#ffffff", transmission: 0.9, opacity: 1, metalness: 0, roughness: 0, ior: 1.5, thickness: 0.01, transparent: true, side: THREE.DoubleSide, depthWrite: false
   }), []);
 
   // ── Scene layout ──────────────────────────────────────────────────────────
@@ -444,7 +444,7 @@ export default function CosmeticBox3DViewer({
         {geoms.windowFilmGeomP1 && (
           <mesh geometry={geoms.windowFilmGeomP1} position={[0, 0, nT / 2]}>
             <meshStandardMaterial 
-              transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} 
+              transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} depthWrite={false} 
             />
           </mesh>
         )}
@@ -487,7 +487,7 @@ export default function CosmeticBox3DViewer({
         </mesh>
         {geoms.windowFilmGeomP2 && (
           <mesh geometry={geoms.windowFilmGeomP2} position={[W / 2, 0, nT / 2]}>
-            <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
+            <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} depthWrite={false} />
           </mesh>
         )}
 
@@ -512,7 +512,7 @@ export default function CosmeticBox3DViewer({
           </mesh>
           {geoms.windowFilmGeomP3 && (
             <mesh geometry={geoms.windowFilmGeomP3} position={[L/2, 0, nT / 2]}>
-              <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
+              <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} depthWrite={false} />
             </mesh>
           )}
 
@@ -549,7 +549,7 @@ export default function CosmeticBox3DViewer({
             </mesh>
             {geoms.windowFilmGeomP4 && (
               <mesh geometry={geoms.windowFilmGeomP4} position={[W / 2, 0, nT / 2]}>
-                <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} />
+                <meshStandardMaterial transparent opacity={0.3} roughness={0.1} metalness={0.1} color="#ffffff" side={THREE.DoubleSide} depthWrite={false} />
               </mesh>
             )}
 

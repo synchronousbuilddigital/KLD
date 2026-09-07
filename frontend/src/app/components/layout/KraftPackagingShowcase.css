@@ -1,0 +1,237 @@
+/* ========================================================
+   KraftPackagingShowcase.css - 3D Animated Kraft Packaging
+   ======================================================== */
+
+.kraft-showcase-container {
+  width: 100%;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.85) 0%, rgba(250, 248, 245, 0.95) 100%);
+  border: 1px solid rgba(210, 198, 182, 0.5);
+  box-shadow: 
+    0 10px 40px -10px rgba(74, 56, 36, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  position: relative;
+  overflow: hidden;
+}
+
+.kraft-showcase-stage {
+  perspective: 1400px;
+  transform-style: preserve-3d;
+  height: 380px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+}
+
+.kraft-showcase-stage:active {
+  cursor: grabbing;
+}
+
+/* 3D Box World */
+.kraft-3d-world {
+  transform-style: preserve-3d;
+  position: relative;
+  transition: transform 0.1s ease-out;
+}
+
+/* Kraft Box Panel Base Styling */
+.kraft-panel {
+  position: absolute;
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  box-sizing: border-box;
+  background-color: var(--kraft-bg, #cfa878);
+  border: 1px solid var(--kraft-border, #b58d5c);
+  box-shadow: inset 0 0 20px rgba(120, 80, 40, 0.15);
+  backface-visibility: visible;
+}
+
+/* Subtle Cardboard Texture Overlay */
+.kraft-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 8px 8px, 100% 4px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Die-cut Window */
+.kraft-window {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90px;
+  height: 70px;
+  border-radius: 20px 20px 30px 30px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1.5px dashed rgba(140, 95, 50, 0.4);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(2px);
+  overflow: hidden;
+}
+
+/* Jute Twine Cord Wrap */
+.kraft-twine-h {
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  transform: translateY(-50%) translateZ(2px);
+  background: repeating-linear-gradient(
+    45deg,
+    #8d6741,
+    #8d6741 4px,
+    #b08b62 4px,
+    #b08b62 8px
+  );
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.kraft-twine-v {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 4px;
+  transform: translateX(-50%) translateZ(2px);
+  background: repeating-linear-gradient(
+    45deg,
+    #8d6741,
+    #8d6741 4px,
+    #b08b62 4px,
+    #b08b62 8px
+  );
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Scalloped Kraft Tag & Heart Bow */
+.kraft-tag {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateZ(5px) rotate(-6deg);
+  padding: 6px 14px;
+  background: #fdfbf7;
+  border: 1px solid #d4c2a5;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5c442c;
+  box-shadow: 0 4px 12px rgba(74, 56, 36, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.kraft-tag::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c2a884;
+}
+
+/* Botanical Sprig */
+.kraft-botanical {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-30%, -60%) translateZ(6px) rotate(24deg);
+  pointer-events: none;
+}
+
+/* Ambient ground shadow */
+.kraft-ground-shadow {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 24px;
+  background: radial-gradient(ellipse at center, rgba(60, 42, 24, 0.35) 0%, rgba(60, 42, 24, 0) 70%);
+  border-radius: 50%;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* Control Pills & Buttons */
+.kraft-control-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  border: 1px solid rgba(210, 198, 182, 0.6);
+  background: #ffffff;
+  color: #57534e;
+}
+
+.kraft-control-btn:hover {
+  background: #f5efe6;
+  color: #1c1917;
+  border-color: #b58d5c;
+  transform: translateY(-1px);
+}
+
+.kraft-control-btn.active {
+  background: #1c1917;
+  color: #ffffff;
+  border-color: #1c1917;
+  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.15);
+}
+
+/* Range Slider */
+.kraft-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #e7decb;
+  outline: none;
+}
+
+.kraft-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #b58d5c;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.kraft-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: #8d6741;
+}

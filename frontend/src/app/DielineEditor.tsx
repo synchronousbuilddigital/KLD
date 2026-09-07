@@ -118,9 +118,9 @@ export default function DielineEditor({
               {/* Fill to cover inside of thick green stroke and provide background */}
               <path d={outlinePath} fill="#ffffff" />
               
-              {/* If packageColor is picked and it's not white, blend it lightly for preview */}
-              {packageColor !== '#ffffff' && (
-                <path d={outlinePath} fill={packageColor} fillOpacity="0.2" />
+              {/* Render the solid background color for the dieline */}
+              {packageColor && (
+                <path d={outlinePath} fill={packageColor} fillOpacity="1" />
               )}
               
               {/* Inner Trim line (Blue) */}

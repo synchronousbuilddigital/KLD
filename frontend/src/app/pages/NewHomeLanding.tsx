@@ -1,24 +1,21 @@
-// @ts-nocheck
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import Header from '../components/layout/Header';
+import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import MarqueeIsolated from '../components/layout/MarqueeIsolated';
-import SignInModal from '../components/modals/SignInModal';
 
-/* ---- Motion Variants ---- */
 const slideUpVariant = {
   initial: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const } },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-50px" },
+  transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
 };
 
 const staggerContainer = {
   initial: {},
-  visible: { transition: { staggerChildren: 0.15 } },
+  whileInView: { transition: { staggerChildren: 0.15 } },
+  viewport: { once: true, margin: "-50px" }
 };
-
-const viewportOptions = { once: true, margin: '-50px' } as const;
-
 /**
  * NewHomeLanding - React component that renders the new home landing page
  * with the CSS 3D packaging animation sequencer.
@@ -29,42 +26,7 @@ export default function NewHomeLanding() {
   const canvas3DRef = useRef<HTMLDivElement>(null);
   const modelNameRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<{ mounted: boolean }>({ mounted: true });
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const u = localStorage.getItem('user');
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
-  });
 
-  useEffect(() => {
-    const handleAuthChange = () => {
-      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
-      try {
-        const u = localStorage.getItem('user');
-        setCurrentUser(u ? JSON.parse(u) : null);
-      } catch { setCurrentUser(null); }
-    };
-    window.addEventListener('auth-change', handleAuthChange);
-
-    // Initial route check on mount
-    const path = window.location.pathname.replace('/', '').toLowerCase();
-    const hash = window.location.hash.replace('#', '').toLowerCase();
-    const route = path || hash;
-
-    if (route === '3d-models' || route === 'packaging-collections') {
-      setTimeout(() => document.getElementById('packaging-collections')?.scrollIntoView({ behavior: 'smooth' }), 300);
-    } else if (route === 'dielines' || route === 'top-dielines') {
-      setTimeout(() => document.getElementById('top-dielines')?.scrollIntoView({ behavior: 'smooth' }), 300);
-    } else if (route === 'about-us') {
-      setTimeout(() => document.getElementById('about-us')?.scrollIntoView({ behavior: 'smooth' }), 300);
-    }
-
-    return () => {
-      window.removeEventListener('auth-change', handleAuthChange);
-    };
-  }, []);
 
   useEffect(() => {
     const geomContainer = geomContainerRef.current;
@@ -108,7 +70,7 @@ export default function NewHomeLanding() {
         face.style.width = `${w}px`;
         face.style.height = `${h}px`;
         face.style.transformOrigin = hinge;
-        Object.keys(posCSS).forEach(key => { (face.style as Record<string, string>)[key] = `${posCSS[key]}px`; });
+        Object.keys(posCSS).forEach(key => { (face.style as any)[key] = `${posCSS[key]}px`; });
         parent.appendChild(face);
         return face;
       }
@@ -174,7 +136,7 @@ export default function NewHomeLanding() {
         face.className = `face ${className}`;
         face.style.width = `${w}px`; face.style.height = `${h}px`;
         face.style.transformOrigin = hinge;
-        Object.keys(posCSS).forEach(key => { (face.style as Record<string, string>)[key] = `${posCSS[key]}px`; });
+        Object.keys(posCSS).forEach(key => { (face.style as any)[key] = `${posCSS[key]}px`; });
         parent.appendChild(face);
         return face;
       }
@@ -243,7 +205,7 @@ export default function NewHomeLanding() {
         face.className = `face ${className}`;
         face.style.width = `${w}px`; face.style.height = `${h}px`;
         face.style.transformOrigin = hinge;
-        Object.keys(posCSS).forEach(key => { (face.style as Record<string, string>)[key] = `${posCSS[key]}px`; });
+        Object.keys(posCSS).forEach(key => { (face.style as any)[key] = `${posCSS[key]}px`; });
         parent.appendChild(face);
         return face;
       }
@@ -323,7 +285,7 @@ export default function NewHomeLanding() {
         face.className = `face ${className}`;
         face.style.width = `${w}px`; face.style.height = `${h}px`;
         face.style.transformOrigin = hinge;
-        Object.keys(posCSS).forEach(key => { (face.style as Record<string, string>)[key] = `${posCSS[key]}px`; });
+        Object.keys(posCSS).forEach(key => { (face.style as any)[key] = `${posCSS[key]}px`; });
         parent.appendChild(face);
         return face;
       }
@@ -379,18 +341,10 @@ export default function NewHomeLanding() {
     }
 
     /* ---- Floating Name Positioning Helpers ---- */
-    interface NamePosition {
-      top: string;
-      left: string;
-      right: string;
-      bottom: string;
-      baseTransform: string;
-      textAlign: string;
-    }
-    let activeNamePos: NamePosition | null = null;
+    let activeNamePos: any = null;
 
     function randomizeNamePosition() {
-      const namePositions: NamePosition[] = [
+      const namePositions = [
         { top: '25px', left: '30px', right: 'auto', bottom: 'auto', baseTransform: '', textAlign: 'left' },
         { top: '25px', left: 'auto', right: '30px', bottom: 'auto', baseTransform: '', textAlign: 'right' },
         { top: '65px', left: '30px', right: 'auto', bottom: 'auto', baseTransform: '', textAlign: 'left' },
@@ -405,19 +359,17 @@ export default function NewHomeLanding() {
       modelNameEl.style.transition = 'none';
       modelNameEl.style.opacity = '0';
       modelNameEl.style.transform = `${activeNamePos.baseTransform} translateY(-20px)`.trim();
-      void modelNameEl.offsetHeight; // force reflow
+      modelNameEl.offsetHeight; // force reflow
       modelNameEl.style.transition = 'opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)';
     }
 
     function showName(name: string) {
-      if (!activeNamePos) return;
       modelNameEl.innerText = name;
       modelNameEl.style.opacity = '0.95';
       modelNameEl.style.transform = `${activeNamePos.baseTransform} translateY(0)`.trim();
     }
 
     function hideName() {
-      if (!activeNamePos) return;
       modelNameEl.style.opacity = '0';
       modelNameEl.style.transform = `${activeNamePos.baseTransform} translateY(-20px)`.trim();
     }
@@ -446,8 +398,8 @@ export default function NewHomeLanding() {
 
       geomContainer.className = 'box-3d sliding-in no-transition';
       geomContainer.appendChild(activeBoxElement);
-      void geomContainer.offsetHeight;
-      void canvas3D.offsetHeight;
+      geomContainer.offsetHeight;
+      canvas3D.offsetHeight;
 
       geomContainer.classList.remove('no-transition', 'sliding-in');
       showName(box.name);
@@ -457,7 +409,7 @@ export default function NewHomeLanding() {
 
       canvas3D.classList.remove('no-transition');
       faces.forEach((f: Element) => f.classList.remove('no-transition'));
-      void geomContainer.offsetHeight;
+      geomContainer.offsetHeight;
 
       buildResult.setFoldState('open');
       await sleep(1800);
@@ -505,7 +457,7 @@ export default function NewHomeLanding() {
 
       <main className="hero-container">
         {/* Left Hero Column */}
-        <motion.section className="hero-content" variants={staggerContainer} initial="initial" whileInView="visible" viewport={viewportOptions}>
+        <motion.section className="hero-content" variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
           <motion.div className="badge" variants={slideUpVariant}>
             <span className="badge-dot"></span>
             The new standard in packaging
@@ -522,10 +474,21 @@ export default function NewHomeLanding() {
           <motion.div className="cta-wrapper" variants={slideUpVariant}>
             <div className="cta-group">
               <button className="btn btn-primary">Start Free Trial</button>
-              <button className="btn btn-secondary">View Dieline Gallery <span className="arrow">›</span></button>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'library' }))}
+                className="btn btn-secondary"
+              >
+                View Dieline Gallery <span className="arrow">›</span>
+              </button>
             </div>
-            <div className="demo-group">
-              <button className="btn btn-demo">Book a Live Demo <span className="arrow">→</span></button>
+            <div className="ai-cta-group">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'aistudio' }))}
+                className="btn btn-ai"
+              >
+                <svg className="ai-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z" /></svg>
+                AI
+              </button>
             </div>
           </motion.div>
         </motion.section>
@@ -543,7 +506,6 @@ export default function NewHomeLanding() {
         </section>
       </main>
       <MarqueeIsolated />
-      {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
     </div>
   );
 }

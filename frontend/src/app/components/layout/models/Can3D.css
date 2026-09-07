@@ -1,0 +1,144 @@
+.can-scene {
+  perspective: 1200px;
+  position: relative;
+  width: 300px;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: scale(0.65) translateY(-30px);
+}
+
+.can-camera {
+  position: relative;
+  width: 100px;
+  height: 200px;
+  transform-style: preserve-3d;
+  animation: canCameraMove 8s infinite cubic-bezier(0.45, 0, 0.15, 1);
+}
+
+/* Floor Shadow */
+.can-shadow {
+  position: absolute;
+  width: 120px; height: 120px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 50%;
+  transform: rotateX(90deg) translateZ(-100px);
+  filter: blur(12px);
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+.can-body {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100px; height: 200px;
+  transform-style: preserve-3d;
+}
+
+/* Lid Container */
+.can-lid-container {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100px; height: 100px;
+  transform: rotateX(90deg) translateZ(50px);
+  transform-style: preserve-3d;
+}
+
+.can-lid-surface {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #e5e5e5 0%, #a3a3a3 60%, #777 100%);
+  border: 3px solid #ccc;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+  transform-style: preserve-3d;
+}
+
+/* The hole under the flap */
+.can-lid-hole {
+  position: absolute;
+  top: 68%; left: 50%;
+  width: 24px; height: 32px;
+  background: #0a0a0a;
+  border-radius: 12px 12px 16px 16px;
+  transform: translate(-50%, -50%);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.9);
+}
+
+/* The metal flap that pushes into the can */
+.can-opening-flap {
+  position: absolute;
+  top: 68%; left: 50%;
+  width: 24px; height: 32px;
+  background: linear-gradient(to bottom, #bbb, #888);
+  border-radius: 12px 12px 16px 16px;
+  transform-origin: center top; /* Hinges at the top (Y=52px) */
+  transform: translate(-50%, -50%) rotateX(0deg);
+  animation: canFlapOpen 8s infinite cubic-bezier(0.45, 0, 0.15, 1);
+  box-shadow: inset 0 -1px 3px rgba(0,0,0,0.3);
+}
+
+/* The ring tab you pull */
+.can-ring-tab {
+  position: absolute;
+  top: 40%; left: 50%; /* Center at Y=40px, bottom at Y=52px (same as flap hinge) */
+  width: 16px; height: 24px;
+  background: linear-gradient(to bottom, #f0f0f0, #999);
+  border-radius: 8px;
+  transform-origin: center bottom;
+  transform: translate(-50%, -50%) translateZ(1px) rotateX(0deg);
+  animation: canTabOpen 8s infinite cubic-bezier(0.45, 0, 0.15, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.9);
+}
+
+/* Hole in the ring tab */
+.can-ring-tab::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 10px; height: 10px;
+  background: #666;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Center Rivet connecting tab to lid */
+.can-rivet {
+  position: absolute;
+  top: 52%; left: 50%;
+  width: 6px; height: 6px;
+  background: #888;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) translateZ(2px);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6), 0 1px 1px rgba(255,255,255,0.7);
+}
+
+.can-base {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #777, #333);
+  transform: rotateX(-90deg) translateZ(150px);
+  border: 2px solid #666;
+  box-sizing: border-box;
+}
+
+@keyframes canCameraMove {
+  0%, 15% { transform: rotateX(-10deg) rotateY(15deg); }
+  25%, 60% { transform: rotateX(-65deg) rotateY(-5deg); }
+  70%, 100% { transform: rotateX(-10deg) rotateY(15deg); }
+}
+
+@keyframes canTabOpen {
+  0%, 25% { transform: translate(-50%, -50%) translateZ(1px) rotateX(0deg); }
+  40%, 70% { transform: translate(-50%, -50%) translateZ(1px) rotateX(-75deg); }
+  85%, 100% { transform: translate(-50%, -50%) translateZ(1px) rotateX(0deg); }
+}
+
+@keyframes canFlapOpen {
+  0%, 25% { transform: translate(-50%, -50%) rotateX(0deg); }
+  40%, 70% { transform: translate(-50%, -50%) rotateX(-85deg); }
+  85%, 100% { transform: translate(-50%, -50%) rotateX(0deg); }
+}

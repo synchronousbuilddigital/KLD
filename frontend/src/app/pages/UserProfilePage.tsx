@@ -8,6 +8,7 @@ import { authService, UserProfile } from '../../services/auth';
 import { uploadService } from '../../services/upload';
 import { exportService, ExportItem } from '../../services/exportService';
 import { API_BASE_URL } from '../../config/api';
+import AnimatedLogo from '../components/layout/AnimatedLogo';
 import './UserProfilePage.css';
 
 interface SavedDesignItem {
@@ -419,14 +420,7 @@ function UserProfilePage({ onBack, onNavigate }: { onBack: () => void; onNavigat
       {/* LEFT SIDEBAR PANEL (Matching Screenshot Reference) */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-top-section">
-          <div className="sidebar-logo" onClick={onBack} title="Return to Home">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
-            <span>KEYLINE DESIGN</span>
-          </div>
+          <AnimatedLogo onClick={onBack} style={{ margin: '0 0 20px 0' }} />
 
           <div className="sidebar-section-title">MENU</div>
 

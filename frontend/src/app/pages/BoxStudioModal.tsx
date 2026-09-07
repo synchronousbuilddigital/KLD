@@ -14,6 +14,7 @@ import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
 import { API_BASE_URL } from "../../config/api";
 import { exportService } from "../../services/exportService";
+import { setLargeData } from "../../lib/idbStorage";
 
 interface BoxStudioModalProps {
   isOpen: boolean;
@@ -264,36 +265,49 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   };
 
   const handlePrint = () => {
-    try {
-      const params = {
-        L: store.L,
-        W: store.W,
-        H: store.H,
-        T: store.T,
-        glueFlapWidth: store.glueFlapWidth,
-        bleed: store.bleed,
-        windowDecals: store.windowDecals || []
-      };
-      let dielineData;
-      if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
-      else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
-      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
-      else dielineData = generateRTEDielineDXF(params);
-      
-      const dxfString = generateDXFString(dielineData);
-      
-      // Store in localStorage so dieline-tool.html can pick it up automatically
-      localStorage.setItem("autoLoadDXF", dxfString);
-      localStorage.setItem("autoLoadParams", JSON.stringify({
-        L_mm: Math.round((store.L || 4.7244) * 25.4),
-        W_mm: Math.round((store.W || 2.3622) * 25.4),
-        H_mm: Math.round((store.H || 6.2992) * 25.4),
-        boxModel: store.boxModel
-      }));
-      window.open('/dieline-tool.html', '_blank');
-    } catch (err) {
-      console.error("Print Error:", err);
+    // Open window immediately to prevent popup blocker
+    const printWindow = window.open('about:blank', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to open the Print Studio.");
+      return;
     }
+    
+    // Defer heavy calculation
+    setTimeout(async () => {
+      try {
+        const params = {
+          L: store.L,
+          W: store.W,
+          H: store.H,
+          T: store.T,
+          glueFlapWidth: store.glueFlapWidth,
+          bleed: store.bleed,
+          windowDecals: store.windowDecals || []
+        };
+        let dielineData;
+        if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
+        else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
+        else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
+        else dielineData = generateRTEDielineDXF(params);
+        
+        const dxfString = generateDXFString(dielineData);
+        
+        // Store in IndexedDB to avoid 5MB localStorage quota limits
+        await setLargeData("autoLoadDXF", dxfString);
+        localStorage.setItem("autoLoadParams", JSON.stringify({
+          L_mm: Math.round((store.L || 4.7244) * 25.4),
+          W_mm: Math.round((store.W || 2.3622) * 25.4),
+          H_mm: Math.round((store.H || 6.2992) * 25.4),
+          boxModel: store.boxModel
+        }));
+        
+        printWindow.location.href = '/dieline-tool.html';
+      } catch (err) {
+        console.error("Print Error:", err);
+        printWindow.close();
+        alert("An error occurred while preparing the print layout. See console for details.");
+      }
+    }, 10);
   };
 
   const handleExportPDF = async () => {
@@ -461,16 +475,22 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         {/* TOP NAVBAR */}
         <header className="h-14 bg-white border-b border-zinc-200 px-4 md:px-6 flex items-center justify-between shrink-0 shadow-sm z-20">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-7 h-7 text-zinc-900">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                <path d="m3.3 7 8.7 5 8.7-5" />
-                <path d="M12 22V12" />
-                <path d="m7.5 4.27 9 5.15" />
-              </svg>
-            </div>
-
-            <span className="font-bold text-sm text-zinc-900 hidden sm:inline">{currentTitle}</span>
+            <button 
+              onClick={() => onClose()}
+              className="flex items-center gap-2 px-2 py-1.5 -ml-2 rounded-lg hover:bg-zinc-100 text-zinc-900 transition-colors cursor-pointer group"
+              title="Back to Dielines"
+            >
+              <ArrowLeft className="w-4 h-4 text-zinc-500 group-hover:text-zinc-900 transition-colors" />
+              <div className="flex items-center justify-center w-6 h-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                  <path d="m3.3 7 8.7 5 8.7-5" />
+                  <path d="M12 22V12" />
+                  <path d="m7.5 4.27 9 5.15" />
+                </svg>
+              </div>
+              <span className="font-bold text-sm text-zinc-900 hidden sm:inline">{currentTitle}</span>
+            </button>
 
             <div className="relative">
               <button 

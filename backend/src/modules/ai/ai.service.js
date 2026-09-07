@@ -15,10 +15,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
  */
 async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1) {
   let cleanPrompt = prompt.replace(/["'\\]/g, '').trim();
-  // Aggressively remove packaging terms so the image AI doesn't literally draw a 3D box
   cleanPrompt = cleanPrompt.replace(/\b(box|packaging|package|bottle|tube|3d|mockup|render|carton|container)\b/gi, '').trim();
-
-  const seed = Math.floor(Math.random() * 9000000) + variationIndex * 79191;
 
   let structuralSuffix = '';
   if (isIcon) {
@@ -29,47 +26,67 @@ async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1
 
   const fullPrompt = `${cleanPrompt}, ${structuralSuffix}`;
 
-  // Try Hugging Face first if token is available
-  if (process.env.HF_TOKEN) {
-    try {
-      const hfResponse = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.HF_TOKEN}`,
-          'Content-Type': 'application/json'
+  try {
+    console.log("Submitting image generation to AI Horde...");
+    const submitRes = await fetch("https://stablehorde.net/api/v2/generate/async", {
+      method: "POST",
+      headers: {
+        "apikey": "0000000000",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: fullPrompt.substring(0, 1000),
+        params: {
+          width: 512,
+          height: 512,
+          steps: 20
         },
-        body: JSON.stringify({ inputs: fullPrompt }),
-        signal: AbortSignal.timeout(45000)
-      });
-      if (hfResponse.ok) {
-        const arrayBuffer = await hfResponse.arrayBuffer();
-        if (arrayBuffer.byteLength > 2000) {
-          return `data:${hfResponse.headers.get('content-type') || 'image/jpeg'};base64,${Buffer.from(arrayBuffer).toString('base64')}`;
+        nsfw: false,
+        censor_nsfw: true,
+        models: ["stable_diffusion"]
+      })
+    });
+    
+    if (submitRes.ok) {
+      const submitJson = await submitRes.json();
+      if (submitJson.id) {
+        let attempts = 0;
+        while (attempts < 15) { // Poll for up to ~75 seconds
+          await new Promise(r => setTimeout(r, 5000));
+          attempts++;
+          const statusRes = await fetch(`https://stablehorde.net/api/v2/generate/status/${submitJson.id}`);
+          if (!statusRes.ok) continue;
+          
+          const statusJson = await statusRes.json();
+          if (statusJson.done && statusJson.generations && statusJson.generations.length > 0) {
+            console.log("AI Horde generation complete! Downloading to bypass CORS...");
+            const imgUrl = statusJson.generations[0].img;
+            
+            // Fetch the image from the Horde R2 URL and convert to Base64 to bypass WebGL CORS
+            try {
+              const imgRes = await fetch(imgUrl);
+              const buffer = await imgRes.arrayBuffer();
+              const base64 = Buffer.from(buffer).toString('base64');
+              return `data:image/webp;base64,${base64}`;
+            } catch (dlErr) {
+              console.log("Failed to download Horde image, returning raw URL:", dlErr.message);
+              return imgUrl;
+            }
+          }
+          if (statusJson.faulted) {
+            console.log("AI Horde generation faulted, falling back...");
+            break;
+          }
         }
       }
-    } catch (err) {
-      console.warn("Hugging Face API failed, falling back to Pollinations:", err.message);
     }
+  } catch (err) {
+    console.log("AI Horde error:", err.message);
   }
 
-  // Fallback to Pollinations
-  return new Promise((resolve) => {
-    const encoded = encodeURIComponent(fullPrompt);
-    const url = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${seed}&model=flux`;
-
-    const req = https.get(url, { timeout: 60000 }, (res) => {
-      if (res.statusCode !== 200) return resolve(null);
-      const chunks = [];
-      res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        if (buffer.length < 2000) return resolve(null);
-        resolve(`data:${res.headers['content-type'] || 'image/jpeg'};base64,${buffer.toString('base64')}`);
-      });
-    });
-    req.on('error', () => resolve(null));
-    req.on('timeout', () => { req.destroy(); resolve(null); });
-  });
+  // Final absolute fallback
+  const encoded = encodeURIComponent(fullPrompt);
+  return `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 9000000)}`;
 }
 
 /**
@@ -108,7 +125,7 @@ async function callGeminiLLM(userPrompt, currentContext = {}) {
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
     const promptText = `${SYSTEM_PACKAGING_PROMPT}\n\nCurrent Context: ${JSON.stringify(currentContext)}\nUser Packaging Request: "${userPrompt}"\nReturn ONLY raw JSON.`;
 
@@ -335,8 +352,8 @@ async function processAiChat(prompt, currentContext) {
   const geminiData = await callGeminiLLM(prompt, currentContext);
   if (geminiData && geminiData.reply) {
     // Enforce explicit context if user already selected a box
-    if (currentContext && currentContext.boxModel) {
-      geminiData.model = currentContext.boxModel;
+    if (currentContext && currentContext.requestedBoxModel) {
+      geminiData.model = currentContext.requestedBoxModel;
     }
 
     const primary = geminiData.packageColor || "#18181b";
@@ -422,7 +439,7 @@ async function processAiChatV2(prompt, currentContext) {
     try {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.5-flash",
         generationConfig: { responseMimeType: "application/json" }
       });
       
@@ -449,6 +466,11 @@ async function processAiChatV2(prompt, currentContext) {
     artworkPrompt: `${prompt}, beautiful illustration, isolated on white background`
   };
 
+  // Enforce explicit context if user manually selected a box tag
+  if (currentContext && currentContext.requestedBoxModel) {
+    data.model = currentContext.requestedBoxModel;
+  }
+
   const primary = data.baseColor || data.packageColor || "#18181b";
   const renderVariations = [];
   const safeArtworkPrompt = data.artworkPrompt || prompt;
@@ -470,10 +492,14 @@ async function processAiChatV2(prompt, currentContext) {
     if (idx < 2) await new Promise(r => setTimeout(r, 1000));
   }
 
+  const actions = [{ type: "SET_BOX_MODEL", model: data.model || localBase.model }];
+  if (data.dimensions) actions.push({ type: "SET_DIMENSIONS", ...data.dimensions });
+  if (data.baseColor || data.packageColor) actions.push({ type: "SET_PACKAGE_COLOR", color: data.baseColor || data.packageColor });
+
   return {
     ...data,
     reply: data.reply || localBase.reply,
-    actions: [{ type: "SET_BOX_MODEL", model: data.model || localBase.model }],
+    actions,
     renderVariations,
     outputsSummary: "Outputs: 2 • V2 Multi-Panel Mapping"
   };

@@ -11,6 +11,7 @@ import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerato
 import { generateDXFString } from "../../lib/exportUtils";
 import { Printer, Sparkles } from "lucide-react";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
+import { setLargeData } from "../../lib/idbStorage";
 
 const themes: Record<string, any> = {
   dark: {
@@ -202,35 +203,48 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   };
 
   const handlePrint = () => {
-    try {
-      const params = {
-        L: store.L,
-        W: store.W,
-        H: store.H,
-        T: store.T,
-        glueFlapWidth: store.glueFlapWidth,
-        bleed: store.bleed,
-        windowDecals: store.windowDecals || []
-      };
-      let dielineData;
-      if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
-      else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
-      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
-      else dielineData = generateRTEDielineDXF(params);
-      
-      const dxfString = generateDXFString(dielineData);
-      
-      localStorage.setItem("autoLoadDXF", dxfString);
-      localStorage.setItem("autoLoadParams", JSON.stringify({
-        L_mm: Math.round((store.L || 4.7244) * 25.4),
-        W_mm: Math.round((store.W || 2.3622) * 25.4),
-        H_mm: Math.round((store.H || 6.2992) * 25.4),
-        boxModel: store.boxModel
-      }));
-      window.open('/dieline-tool.html', '_blank');
-    } catch (err) {
-      console.error("Print Error:", err);
+    // Open window immediately to prevent popup blocker
+    const printWindow = window.open('about:blank', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to open the Print Studio.");
+      return;
     }
+
+    // Defer heavy calculation
+    setTimeout(async () => {
+      try {
+        const params = {
+          L: store.L,
+          W: store.W,
+          H: store.H,
+          T: store.T,
+          glueFlapWidth: store.glueFlapWidth,
+          bleed: store.bleed,
+          windowDecals: store.windowDecals || []
+        };
+        let dielineData;
+        if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
+        else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
+        else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
+        else dielineData = generateRTEDielineDXF(params);
+        
+        const dxfString = generateDXFString(dielineData);
+        
+        await setLargeData("autoLoadDXF", dxfString);
+        localStorage.setItem("autoLoadParams", JSON.stringify({
+          L_mm: Math.round((store.L || 4.7244) * 25.4),
+          W_mm: Math.round((store.W || 2.3622) * 25.4),
+          H_mm: Math.round((store.H || 6.2992) * 25.4),
+          boxModel: store.boxModel
+        }));
+        
+        printWindow.location.href = '/dieline-tool.html';
+      } catch (err) {
+        console.error("Print Error:", err);
+        printWindow.close();
+        alert("An error occurred while preparing the print layout. See console for details.");
+      }
+    }, 10);
   };
   
   const themeKey = store.theme || 'light';
@@ -271,109 +285,70 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       `}} />
 
       <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", backgroundColor: t.bgCanvas, color: t.textMain, fontFamily: "'Inter', sans-serif" }}>
-
         {/* --- TOP NAV --- */}
         <div style={{ height: "64px", background: t.bgPanel, borderBottom: `2px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            {/* Creative Back Button */}
-            <button 
+            <div 
+              style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }} 
               onClick={() => setShowExitConfirm(true)}
-              title="Return to Studio Home"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                borderRadius: "12px",
-                background: store.theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(37, 99, 235, 0.08)',
-                border: `1.5px solid ${t.cyan}44`,
-                color: t.cyan,
-                fontSize: "13px",
-                fontWeight: "700",
-                cursor: "pointer",
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                boxShadow: `0 2px 8px rgba(37, 99, 235, 0.12)`
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = t.cyan;
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.transform = 'translateX(-3px)';
-                e.currentTarget.style.boxShadow = `0 4px 14px rgba(37, 99, 235, 0.35)`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = store.theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(37, 99, 235, 0.08)';
-                e.currentTarget.style.color = t.cyan;
-                e.currentTarget.style.transform = 'translateX(0px)';
-                e.currentTarget.style.boxShadow = `0 2px 8px rgba(37, 99, 235, 0.12)`;
-              }}
+              title="Return to Home"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-              </svg>
-              <span>Back</span>
-            </button>
-
-            {/* Vertical Divider */}
-            <div style={{ width: "1px", height: "24px", background: t.border }} />
-
-            {/* Styled Brand Logo Text KLD & Active Project Indicator */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", userSelect: "none" }}>
-              <span style={{ 
-                fontWeight: "900", 
-                fontSize: "24px", 
-                fontFamily: "'Plus Jakarta Sans', 'Outfit', 'Inter', -apple-system, sans-serif",
-                letterSpacing: "-0.5px",
-                background: store.theme === 'dark' 
-                  ? 'linear-gradient(135deg, #ffffff 0%, #93c5fd 60%, #3b82f6 100%)' 
-                  : 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
-                KLD
-              </span>
-              <span style={{ 
-                fontSize: "10px", 
-                fontWeight: "800", 
-                letterSpacing: "1.2px", 
-                color: t.cyan, 
-                textTransform: "uppercase",
-                background: t.activeBg,
-                padding: "2px 7px",
-                borderRadius: "6px",
-                border: `1px solid ${t.cyan}33`
-              }}>
-                MOCKUP
-              </span>
-
-              {/* Editing Project Name Badge */}
-              {store.activeProjectId && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: store.theme === 'dark' ? 'rgba(37, 99, 235, 0.2)' : '#eff6ff',
-                  border: '1px solid #bfdbfe',
-                  color: '#1d4ed8',
-                  padding: '3px 10px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  marginLeft: '4px'
-                }}>
-                  <span>✏️ Editing:</span>
-                  <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {store.activeProjectName || 'Existing Project'}
-                  </span>
-                </div>
-              )}
+              {/* Circle K Logo */}
+              <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#000000", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "14px", letterSpacing: "-0.5px" }}>
+                K
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "15px", fontWeight: "700", color: t.textMain, lineHeight: "1.2" }}>Keyline Design</span>
+                <span style={{ fontSize: "11px", fontWeight: "500", color: t.textMuted }}>Mockup Generator</span>
+              </div>
             </div>
 
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, marginLeft: "4px" }} title="Menu"><IconNav /></button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }} title="Cloud Storage"><IconCloud /></button>
+            {/* Editing Project Name Badge (Restored functionality) */}
+            {store.activeProjectId && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: store.theme === 'dark' ? 'rgba(37, 99, 235, 0.2)' : '#eff6ff',
+                border: '1px solid #bfdbfe',
+                color: '#1d4ed8',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                fontWeight: '800',
+                marginLeft: '4px'
+              }}>
+                <span>✏️ Editing:</span>
+                <span style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {store.activeProjectName || 'Existing Project'}
+                </span>
+              </div>
+            )}
+            
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }} title="Menu"><IconNav /></button>
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }} title="Cloud Storage"><IconCloud /></button>
+
+            <div style={{ width: "1px", height: "24px", backgroundColor: t.border, margin: "0 4px" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", padding: "4px" }} title="Undo">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" /></svg>
+                <span style={{ fontSize: "9px", fontWeight: "500" }}>Undo</span>
+              </button>
+              <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, opacity: 0.4, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", padding: "4px" }} title="Redo">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14l5-5-5-5" /><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" /></svg>
+                <span style={{ fontSize: "9px", fontWeight: "500" }}>Redo</span>
+              </button>
+            </div>
           </div>
 
+
+
+          {/* Right: Credits, Actions & Export */}
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#10b981", marginRight: "6px" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+              <span style={{ fontSize: "12px", fontWeight: "500" }}>All changes saved</span>
+            </div>
 
             <button 
               onClick={handlePrint}
@@ -420,19 +395,20 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               <Sparkles style={{ width: "15px", height: "15px", color: isAiOpen ? "#ffffff" : "#2563eb" }} />
               <span>AI Assistant</span>
             </button>
-            <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
-              <span style={{ color: t.cyan }}>✦</span> 50 credits <span style={{ background: t.textMain, color: t.bgPanel, borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>+</span>
+
+            <button style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.textMain, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `0 1px 2px rgba(0,0,0,0.05)` }}>
+              <span style={{ color: "#6366f1" }}>✨</span> 50 credits <span style={{ background: t.textMain, color: t.bgPanel, borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>+</span>
             </button>
-            <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
-              3D Design ↗
+            <button style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.textMain, padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `0 1px 2px rgba(0,0,0,0.05)` }}>
+              3D Design ▾
             </button>
-            <button onClick={() => store.toggleTheme && store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>
+            <button onClick={() => store.toggleTheme && store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "6px" }} title="Toggle Theme">
               {store.theme === 'dark' ?
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" /></svg> :
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
               }
             </button>
-            <button style={{ background: t.cyan, color: '#fff', border: "none", padding: "8px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `0 4px 12px rgba(37, 99, 235, 0.3)` }}>
+            <button style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)", color: '#fff', border: "none", padding: "8px 20px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `0 2px 8px rgba(79, 70, 229, 0.3)` }}>
               Super export
             </button>
           </div>
@@ -705,6 +681,25 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 )}
               </div>
             )}
+
+            {/* --- RIGHT FLOATING TOOLBAR --- */}
+            <div style={{ position: "absolute", right: "24px", top: "24px", zIndex: 10, display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ background: "#ffffff", border: `1px solid rgba(0,0,0,0.1)`, borderRadius: "16px", padding: "6px", display: "flex", flexDirection: "column", gap: "6px", alignItems: "center", boxShadow: `0 4px 16px rgba(0,0,0,0.06)` }}>
+                <button title="Select Tool" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#ede9fe", color: "#4f46e5", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>
+                </button>
+                <button title="Pan Canvas" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "transparent", color: "#71717a", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 11V6a2 2 0 0 0-4 0v4M14 10V4a2 2 0 0 0-4 0v6M10 10.5V5a2 2 0 0 0-4 0v9M6 14v1a6 6 0 0 0 6 6h1a6 6 0 0 0 6-6V9a2 2 0 0 0-4 0v2" /></svg>
+                </button>
+                <div style={{ width: "20px", height: "1px", background: "rgba(0,0,0,0.1)", margin: "2px 0" }} />
+                <button title="Undo" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "transparent", color: "#71717a", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l5 5M3 10l5-5" /></svg>
+                </button>
+                <button title="Redo" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "transparent", color: "#71717a", opacity: 0.4, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10h-10a5 5 0 0 0-5 5v2M21 10l-5 5M21 10l-5-5" /></svg>
+                </button>
+              </div>
+            </div>
 
             {/* Bottom Toolbar */}
             <div style={{ position: "absolute", bottom: "32px", left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: "16px" }}>

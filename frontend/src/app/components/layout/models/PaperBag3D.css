@@ -1,0 +1,59 @@
+:root { --bag-color: #d1b48c; }
+
+.bag-scene {
+  perspective: 1200px;
+  position: relative;
+  width: 200px;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: scale(0.65) translateY(-30px);
+}
+
+.bag-camera {
+  position: relative;
+  width: 100px;
+  height: 300px;
+  transform-style: preserve-3d;
+  transform: rotateX(-15deg) translateY(20px);
+}
+
+.bag-container {
+  width: 100px; height: 100%; transform-style: preserve-3d;
+  animation: bagSpin 8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.bag-shadow {
+  position: absolute; top: 220px; left: -10px; width: 120px; height: 80px;
+  background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%; transform: rotateX(90deg) translateZ(-5px);
+}
+
+.bag-body { position: absolute; top: 70px; left: 0px; width: 100px; height: 150px; transform-style: preserve-3d; }
+
+.bag-face { position: absolute; background: var(--bag-color); box-sizing: border-box; backface-visibility: hidden; }
+
+.bag-face-front { width: 100px; height: 150px; transform: translateZ(30px); }
+.bag-face-back { width: 100px; height: 150px; transform: rotateY(180deg) translateZ(30px); }
+.bag-face-left { width: 60px; height: 150px; left: 20px; transform: rotateY(-90deg) translateZ(50px); background: #c2a378; }
+.bag-face-right { width: 60px; height: 150px; left: 20px; transform: rotateY(90deg) translateZ(50px); background: #e0c8a6; }
+.bag-face-bottom { width: 100px; height: 60px; top: 90px; transform: rotateX(-90deg) translateZ(30px); background: #b09166; }
+.bag-face-inner-floor { width: 98px; height: 58px; top: 91px; left: 1px; transform: rotateX(90deg) translateZ(29px); background: #9c8058; }
+.bag-face-inner-back { width: 98px; height: 148px; top: 1px; left: 1px; transform: translateZ(-29px); background: #b09166; }
+
+.bag-handle {
+  position: absolute; width: 40px; height: 40px; 
+  border: 3px solid #6b5233; border-radius: 50%; border-bottom: none;
+  top: -40px; left: 30px; box-sizing: border-box;
+  transform-style: preserve-3d; backface-visibility: visible;
+}
+.bag-handle-front { transform: translateZ(30px); }
+.bag-handle-back { transform: rotateY(180deg) translateZ(30px); }
+
+@keyframes bagSpin {
+  0%, 15% { transform: rotateY(0deg); }
+  35%, 65% { transform: rotateY(180deg); }
+  85%, 100% { transform: rotateY(360deg); }
+}
