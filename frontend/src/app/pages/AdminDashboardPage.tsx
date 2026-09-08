@@ -3,7 +3,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users, Package, CreditCard, Sparkles, Shield, Search, Filter, RefreshCw,
   ExternalLink, Trash2, ArrowLeft, CheckCircle2, XCircle, Edit3, Save, Lock, AlertTriangle, Layers, Database,
-  TrendingUp, DollarSign, ChevronDown, ChevronUp, Folder, Tag, Gift, Plus, Calendar, Percent, Lightbulb, Clock
+  TrendingUp, DollarSign, ChevronDown, ChevronUp, Folder, Tag, Gift, Plus, Calendar, Percent, Lightbulb, Clock,
+  Box
 } from 'lucide-react';
 import { authService, UserProfile } from '../../services/auth';
 import { catalogService, CatalogItemData } from '../../services/catalog';
@@ -53,7 +54,7 @@ interface AdminProjectItem {
 }
 
 function AdminDashboardPage({ onBack }: { onBack: () => void }) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'projects' | 'cms' | 'membership'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'projects' | 'cms' | 'mockups' | 'membership'>('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
@@ -137,6 +138,149 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [variantFormMaterial, setVariantFormMaterial] = useState('');
   const [isUploadingVariantImg, setIsUploadingVariantImg] = useState(false);
   const [isSavingVariant, setIsSavingVariant] = useState(false);
+
+  // 3D Mockup CMS State
+  const [selectedMockupCategory, setSelectedMockupCategory] = useState<string>('box-mockups');
+  const [mockupSearchQuery, setMockupSearchQuery] = useState('');
+  const [isMockupModalOpen, setIsMockupModalOpen] = useState(false);
+  const [editingMockup, setEditingMockup] = useState<any | null>(null);
+  const [mockupFormName, setMockupFormName] = useState('');
+  const [mockupFormAnimation, setMockupFormAnimation] = useState('');
+  const [mockupFormWhiteImg, setMockupFormWhiteImg] = useState('');
+  const [mockupFormKraftImg, setMockupFormKraftImg] = useState('');
+  const [mockupFormBoxModelKey, setMockupFormBoxModelKey] = useState('rte');
+  const [mockupFormDimensions, setMockupFormDimensions] = useState('');
+  const [mockupFormMaterial, setMockupFormMaterial] = useState('');
+  const [isUploadingWhiteImg, setIsUploadingWhiteImg] = useState(false);
+  const [isUploadingKraftImg, setIsUploadingKraftImg] = useState(false);
+  const [isSavingMockup, setIsSavingMockup] = useState(false);
+
+  const handleOpenCreateMockupModal = () => {
+    setEditingMockup(null);
+    setMockupFormName('');
+    setMockupFormAnimation('');
+    setMockupFormWhiteImg('');
+    setMockupFormKraftImg('');
+    setMockupFormBoxModelKey('rte');
+    setMockupFormDimensions('');
+    setMockupFormMaterial('');
+    setIsMockupModalOpen(true);
+  };
+
+  const handleStartEditMockup = (mockup: any) => {
+    setEditingMockup(mockup);
+    setMockupFormName(mockup.name || '');
+    setMockupFormAnimation(mockup.animation || '');
+    setMockupFormWhiteImg(mockup.whiteImageUrl || mockup.imageUrl || '');
+    setMockupFormKraftImg(mockup.kraftImageUrl || '');
+    setMockupFormBoxModelKey(mockup.boxModelKey || 'rte');
+    setMockupFormDimensions(mockup.dimensions || '');
+    setMockupFormMaterial(mockup.material || '');
+    setIsMockupModalOpen(true);
+  };
+
+  const handleWhiteImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingWhiteImg(true);
+      const res = await uploadService.uploadLogo(file);
+      if (res.data?.url) {
+        setMockupFormWhiteImg(res.data.url);
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Failed to upload White Board image.');
+    } finally {
+      setIsUploadingWhiteImg(false);
+    }
+  };
+
+  const handleKraftImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingKraftImg(true);
+      const res = await uploadService.uploadLogo(file);
+      if (res.data?.url) {
+        setMockupFormKraftImg(res.data.url);
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Failed to upload Kraft Cardboard image.');
+    } finally {
+      setIsUploadingKraftImg(false);
+    }
+  };
+
+  const handleSaveMockup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mockupFormName.trim()) {
+      alert('Please enter a mockup name.');
+      return;
+    }
+
+    const currentCat = catalogList.find(
+      (c) => c.itemId === selectedMockupCategory || c._id === selectedMockupCategory
+    ) || catalogList[0];
+
+    if (!currentCat) {
+      alert('Target category not found.');
+      return;
+    }
+
+    const catId = currentCat._id || currentCat.itemId;
+    const payload = {
+      name: mockupFormName.trim(),
+      animation: mockupFormAnimation.trim(),
+      imageUrl: mockupFormWhiteImg.trim() || currentCat.img || '/images/box.png',
+      whiteImageUrl: mockupFormWhiteImg.trim(),
+      kraftImageUrl: mockupFormKraftImg.trim(),
+      boxModelKey: mockupFormBoxModelKey || 'rte',
+      dimensions: mockupFormDimensions.trim(),
+      material: mockupFormMaterial.trim(),
+    };
+
+    try {
+      setIsSavingMockup(true);
+      let updatedCat: CatalogItemData;
+      if (editingMockup) {
+        const variantId = editingMockup._id || editingMockup.id;
+        updatedCat = await catalogService.updateVariant(catId, variantId, payload);
+      } else {
+        updatedCat = await catalogService.addVariant(catId, payload);
+      }
+      setCatalogList((prev) =>
+        prev.map((c) => (c._id === updatedCat._id || c.itemId === updatedCat.itemId ? updatedCat : c))
+      );
+      setIsMockupModalOpen(false);
+      alert(editingMockup ? '3D Mockup updated successfully!' : 'New 3D Mockup added successfully!');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to save 3D mockup.');
+    } finally {
+      setIsSavingMockup(false);
+    }
+  };
+
+  const handleDeleteMockup = async (mockup: any) => {
+    if (!window.confirm(`Are you sure you want to delete mockup "${mockup.name}"?`)) return;
+
+    const currentCat = catalogList.find(
+      (c) => c.itemId === selectedMockupCategory || c._id === selectedMockupCategory
+    ) || catalogList[0];
+
+    if (!currentCat) return;
+
+    try {
+      const catId = currentCat._id || currentCat.itemId;
+      const variantId = mockup._id || mockup.id;
+      const updatedCat = await catalogService.deleteVariant(catId, variantId);
+      setCatalogList((prev) =>
+        prev.map((c) => (c._id === updatedCat._id || c.itemId === updatedCat.itemId ? updatedCat : c))
+      );
+      alert('3D Mockup removed successfully.');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete 3D mockup.');
+    }
+  };
 
   const handleOpenVariantsModal = (item: CatalogItemData) => {
     setSelectedCategoryForVariants(item);
@@ -739,7 +883,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     if (activeTab === 'membership') {
       fetchPlanConfig();
       fetchCoupons();
-    } else if (activeTab === 'cms') {
+    } else if (activeTab === 'cms' || activeTab === 'mockups') {
       fetchAdminCatalog();
     }
   }, [activeTab]);
@@ -801,6 +945,12 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
               onClick={() => setActiveTab('cms')}
             >
               <Layers className="w-4 h-4" /> Template & Model CMS
+            </button>
+            <button
+              className={`admin-nav-item ${activeTab === 'mockups' ? 'active' : ''}`}
+              onClick={() => setActiveTab('mockups')}
+            >
+              <Box className="w-4 h-4 text-amber-500" /> 3D Mockup CMS
             </button>
             <button
               className={`admin-nav-item ${activeTab === 'membership' ? 'active' : ''}`}
@@ -1592,6 +1742,220 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
               </div>
             </div>
           )}
+
+          {/* TAB: 3D MOCKUPS & BOX CATALOG CMS */}
+          {activeTab === 'mockups' && (() => {
+            const currentCat = catalogList.find(
+              (c) => c.itemId === selectedMockupCategory || c._id === selectedMockupCategory
+            ) || catalogList[0];
+
+            const variants = (currentCat?.variants || []).filter((v) => {
+              if (!mockupSearchQuery.trim()) return true;
+              const q = mockupSearchQuery.toLowerCase().trim();
+              return (
+                (v.name && v.name.toLowerCase().includes(q)) ||
+                (v.animation && v.animation.toLowerCase().includes(q)) ||
+                (v.boxModelKey && v.boxModelKey.toLowerCase().includes(q))
+              );
+            });
+
+            return (
+              <div className="admin-tab-content">
+                <div className="admin-header-row" style={{ flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                  <div>
+                    <h2 className="admin-page-title" style={{ marginBottom: '4px' }}>3D Mockup & Box Catalog CMS</h2>
+                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#6B7280' }}>
+                      Add, edit, remove, and customize individual 3D mockup images (White Board & Kraft Cardboard), animation descriptions, and linked 3D studio box models.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
+                    <button
+                      onClick={handleOpenCreateMockupModal}
+                      style={{
+                        background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '10px 18px',
+                        borderRadius: '10px',
+                        fontWeight: 800,
+                        fontSize: '0.88rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(217,119,6,0.25)',
+                      }}
+                    >
+                      <Plus className="w-4 h-4" /> Add New 3D Mockup
+                    </button>
+                  </div>
+                </div>
+
+                {/* CATEGORY SELECTOR & SEARCH BAR */}
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px', background: '#ffffff', padding: '16px', borderRadius: '14px', border: '1px solid #e4e4e7' }}>
+                  <div className="admin-search-bar" style={{ flex: 1, minWidth: '260px' }}>
+                    <Search className="w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search mockups by name, animation, or 3D model..."
+                      value={mockupSearchQuery}
+                      onChange={(e) => setMockupSearchQuery(e.target.value)}
+                    />
+                    {mockupSearchQuery && (
+                      <button onClick={() => setMockupSearchQuery('')} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', padding: '0 4px' }}>✕</button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#71717a', textTransform: 'uppercase', marginRight: '4px' }}>
+                      Category:
+                    </span>
+                    {catalogList.map((cat) => {
+                      const isSelected = (cat.itemId === selectedMockupCategory || cat._id === selectedMockupCategory);
+                      return (
+                        <button
+                          key={cat._id || cat.itemId}
+                          onClick={() => setSelectedMockupCategory(cat.itemId || cat._id || '')}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            border: '1px solid',
+                            borderColor: isSelected ? '#18181b' : '#e4e4e7',
+                            background: isSelected ? '#18181b' : '#ffffff',
+                            color: isSelected ? '#ffffff' : '#71717a',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <span>{cat.title}</span>
+                          <span style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', background: isSelected ? 'rgba(255,255,255,0.25)' : '#f4f4f5' }}>
+                            {cat.variants?.length || 0}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* MOCKUP ITEMS TABLE */}
+                <div className="admin-table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>MOCKUP NAME & SUBTITLE</th>
+                        <th>WHITE BOARD MOCKUP</th>
+                        <th>KRAFT CARDBOARD MOCKUP</th>
+                        <th>3D STUDIO MODEL</th>
+                        <th>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoadingCatalog ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '30px' }}>Loading 3D Mockups...</td></tr>
+                      ) : variants.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: 'center', padding: '40px 20px', color: '#71717a' }}>
+                            <Package className="w-8 h-8 mx-auto mb-2 text-zinc-400" />
+                            <div style={{ fontWeight: 700 }}>No mockups found in "{currentCat?.title || 'this category'}".</div>
+                            <div style={{ fontSize: '0.82rem', marginTop: '4px' }}>Click "Add New 3D Mockup" above to create one.</div>
+                          </td>
+                        </tr>
+                      ) : (
+                        variants.map((v: any, idx: number) => {
+                          const whiteImg = v.whiteImageUrl || v.imageUrl || currentCat?.img || '/images/box.png';
+                          const kraftImg = v.kraftImageUrl || '/images/box.png';
+                          const modelKey = v.boxModelKey || (v.name?.toLowerCase().includes('reverse') ? 'rte' : v.name?.toLowerCase().includes('auto') ? 'auto_lock' : v.name?.toLowerCase().includes('cosmetic') ? 'cosmetic' : 'te');
+
+                          return (
+                            <tr key={v._id || v.id || idx}>
+                              <td>
+                                <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#18181b' }}>{v.name}</div>
+                                <div style={{ fontSize: '0.78rem', color: '#71717a', marginTop: '2px' }}>{v.animation || 'Standard reveal animation'}</div>
+                                {v.dimensions && (
+                                  <div style={{ fontSize: '0.72rem', color: '#2563eb', marginTop: '3px', fontWeight: 600 }}>{v.dimensions}</div>
+                                )}
+                              </td>
+
+                              {/* WHITE BOARD IMAGE PREVIEW */}
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ width: '64px', height: '64px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #e4e4e7', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                                    <img src={whiteImg} alt={v.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                                  </div>
+                                  <div>
+                                    <span style={{ display: 'inline-block', fontSize: '0.72rem', fontWeight: 800, background: '#f4f4f5', color: '#18181b', padding: '2px 6px', borderRadius: '4px', border: '1px solid #e4e4e7' }}>
+                                      White Board
+                                    </span>
+                                    <div style={{ fontSize: '0.72rem', color: '#a1a1aa', marginTop: '3px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {v.whiteImageUrl ? 'Custom Image' : 'Default Asset'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* KRAFT CARDBOARD IMAGE PREVIEW */}
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ width: '64px', height: '64px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #d4d4d8', background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                                    <img src={kraftImg} alt={v.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                                  </div>
+                                  <div>
+                                    <span style={{ display: 'inline-block', fontSize: '0.72rem', fontWeight: 800, background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '4px', border: '1px solid #fde68a' }}>
+                                      Kraft Cardboard
+                                    </span>
+                                    <div style={{ fontSize: '0.72rem', color: '#a1a1aa', marginTop: '3px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {v.kraftImageUrl ? 'Custom Image' : 'Not Uploaded'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 3D STUDIO MODEL */}
+                              <td>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 800,
+                                  background: modelKey === 'rte' ? '#eff6ff' : modelKey === 'te' ? '#f0fdf4' : modelKey === 'auto_lock' ? '#faf5ff' : '#fff1f2',
+                                  color: modelKey === 'rte' ? '#1d4ed8' : modelKey === 'te' ? '#15803d' : modelKey === 'auto_lock' ? '#7e22ce' : '#be123c',
+                                  border: '1px solid currentColor',
+                                }}>
+                                  <Box className="w-3 h-3" />
+                                  {modelKey === 'rte' ? 'Reverse Tuck (rte)' : modelKey === 'te' ? 'Straight Tuck (te)' : modelKey === 'auto_lock' ? 'Auto Lock (auto_lock)' : 'Cosmetic (cosmetic)'}
+                                </span>
+                              </td>
+
+                              {/* ACTIONS */}
+                              <td>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <button className="edit-btn" onClick={() => handleStartEditMockup(v)} title="Edit 3D mockup details and images">
+                                    <Edit3 className="w-3.5 h-3.5" /> Edit
+                                  </button>
+                                  <button className="delete-btn" onClick={() => handleDeleteMockup(v)} title="Delete this 3D mockup">
+                                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* TAB 5: MEMBERSHIP & COUPONS MANAGEMENT */}
           {activeTab === 'membership' && (
@@ -2651,6 +3015,253 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL / DIALOG FOR MANAGING 3D MOCKUP (DUAL IMAGES: WHITE & KRAFT) */}
+      {isMockupModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '850px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+              margin: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e4e4e7', paddingBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a' }}>
+                  <Box className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#18181b' }}>
+                    {editingMockup ? `Edit 3D Mockup: "${editingMockup.name}"` : 'Add New 3D Mockup'}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#71717a', marginTop: '2px' }}>
+                    Configure packaging title, White Board render, Kraft Cardboard render, and linked 3D workshop geometry.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setIsMockupModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', color: '#71717a', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+            </div>
+
+            <form onSubmit={handleSaveMockup} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                    MOCKUP NAME *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Reverse Tuck End Box"
+                    value={mockupFormName}
+                    onChange={(e) => setMockupFormName(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                    ANIMATION / FOLDING SUBTITLE
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Flaps fold in opposite directions"
+                    value={mockupFormAnimation}
+                    onChange={(e) => setMockupFormAnimation(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                  LINKED 3D WORKSHOP BOX MODEL
+                </label>
+                <select
+                  value={mockupFormBoxModelKey}
+                  onChange={(e) => setMockupFormBoxModelKey(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.88rem', outline: 'none', background: '#fff' }}
+                >
+                  <option value="rte">Reverse Tuck End Box (rte)</option>
+                  <option value="te">Straight Tuck End Box (te)</option>
+                  <option value="auto_lock">Auto Lock Bottom Box (auto_lock)</option>
+                  <option value="cosmetic">Cosmetic Box (cosmetic)</option>
+                </select>
+                <div style={{ fontSize: '0.75rem', color: '#71717a', marginTop: '4px' }}>
+                  Determines which 3D model opens when users click "Custom" or "3D design" on the catalog page.
+                </div>
+              </div>
+
+              {/* DUAL MATERIAL IMAGES: WHITE & KRAFT */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: '#fafafa', padding: '16px', borderRadius: '14px', border: '1px solid #e4e4e7' }}>
+                {/* WHITE BOARD IMAGE */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffffff', border: '1px solid #000' }} />
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#18181b', textTransform: 'uppercase' }}>
+                      White Board Mockup Image
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #e4e4e7', background: '#ffffff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img src={mockupFormWhiteImg || '/images/box.png'} alt="White preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. /images/boxes/rte_white.jpg or URL"
+                      value={mockupFormWhiteImg}
+                      onChange={(e) => setMockupFormWhiteImg(e.target.value)}
+                      style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.82rem', outline: 'none' }}
+                    />
+                  </div>
+
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: '#ffffff',
+                      color: '#18181b',
+                      padding: '7px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: '1px solid #e4e4e7',
+                    }}
+                  >
+                    <Plus className="w-3.5 h-3.5" /> {isUploadingWhiteImg ? 'Uploading...' : 'Upload White Image'}
+                    <input type="file" accept="image/*" onChange={handleWhiteImageUpload} style={{ display: 'none' }} disabled={isUploadingWhiteImg} />
+                  </label>
+                </div>
+
+                {/* KRAFT CARDBOARD IMAGE */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#c19a6b', border: '1px solid #854d0e' }} />
+                    <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#18181b', textTransform: 'uppercase' }}>
+                      Kraft Cardboard Mockup Image
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid #d4d4d8', background: '#f5f5f4', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img src={mockupFormKraftImg || '/images/box.png'} alt="Kraft preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={(e) => (e.currentTarget.src = '/images/box.png')} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. /images/boxes/rte_kraft.jpg or URL"
+                      value={mockupFormKraftImg}
+                      onChange={(e) => setMockupFormKraftImg(e.target.value)}
+                      style={{ flex: 1, padding: '8px 10px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.82rem', outline: 'none' }}
+                    />
+                  </div>
+
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: '#ffffff',
+                      color: '#18181b',
+                      padding: '7px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: '1px solid #e4e4e7',
+                    }}
+                  >
+                    <Plus className="w-3.5 h-3.5" /> {isUploadingKraftImg ? 'Uploading...' : 'Upload Kraft Image'}
+                    <input type="file" accept="image/*" onChange={handleKraftImageUpload} style={{ display: 'none' }} disabled={isUploadingKraftImg} />
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                    DIMENSIONS (OPTIONAL)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 120 x 60 x 160 mm"
+                    value={mockupFormDimensions}
+                    onChange={(e) => setMockupFormDimensions(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                    MATERIAL SPEC (OPTIONAL)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 350g Coated Paperboard / E-Flute"
+                    value={mockupFormMaterial}
+                    onChange={(e) => setMockupFormMaterial(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px', borderTop: '1px solid #e4e4e7', paddingTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsMockupModalOpen(false)}
+                  style={{ padding: '9px 18px', borderRadius: '8px', background: '#ffffff', color: '#18181b', border: '1px solid #d4d4d8', fontWeight: 700, cursor: 'pointer', fontSize: '0.88rem' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingMockup}
+                  style={{
+                    padding: '9px 24px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontSize: '0.88rem',
+                    boxShadow: '0 4px 12px rgba(217,119,6,0.25)',
+                  }}
+                >
+                  {isSavingMockup ? 'Saving...' : editingMockup ? 'Save Changes' : 'Create 3D Mockup'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

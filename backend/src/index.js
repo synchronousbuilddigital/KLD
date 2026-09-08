@@ -16,7 +16,7 @@ let server;
 
 // Connect to MongoDB first, then start server
 connectDB().then(() => {
-  server = app.listen(PORT, () => {
+  server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 KLD Backend running on http://localhost:${PORT}`);
     console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);

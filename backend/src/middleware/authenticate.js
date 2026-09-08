@@ -48,4 +48,36 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+/**
+ * optionalAuthenticate middleware
+ * If a token is provided and valid, attaches req.user.
+ * If no token or invalid/expired, still allows the request to continue as a guest (req.user = null).
+ */
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const token = req.cookies?.accessToken || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
+
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    const user = await User.findById(decoded.id).select('email isVerified role refreshToken');
+
+    if (user && user.isVerified) {
+      req.user = { id: user._id.toString(), email: user.email, role: user.role || 'USER' };
+    } else {
+      req.user = null;
+    }
+    next();
+  } catch (err) {
+    req.user = null;
+    next();
+  }
+};
+
 module.exports = authenticate;
+module.exports.authenticate = authenticate;
+module.exports.optionalAuthenticate = optionalAuthenticate;
+

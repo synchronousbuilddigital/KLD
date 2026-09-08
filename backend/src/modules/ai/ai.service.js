@@ -475,21 +475,39 @@ async function processAiChatV2(prompt, currentContext) {
   const renderVariations = [];
   const safeArtworkPrompt = data.artworkPrompt || prompt;
   
-  // Only generate 2 variations for V2 to improve speed and prevent timeouts
-  for (let idx = 1; idx <= 2; idx++) {
-    const artworkUrl = await fetchLayer2AssetBase64(safeArtworkPrompt, false, idx);
-    renderVariations.push({
-      id: `var-v2-${idx}`,
-      title: `${data.directions?.[0]?.title || 'Hero'} - V2 Precision ${idx}`,
-      backgroundUrl: artworkUrl || generateFallbackBackground(primary, "#ffffff"),
-      v2Layout: {
-        frontImage: artworkUrl,
-        leftText: data.leftPanelText,
-        rightText: data.rightPanelText,
-        barcodeUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/UPC-A-036000291452.svg'
-      }
-    });
-    if (idx < 2) await new Promise(r => setTimeout(r, 1000));
+  // If localBase already generated variations, reuse all of them with V2 panel layouts
+  if (localBase && localBase.renderVariations && localBase.renderVariations.length > 0 && !v2Data) {
+    for (let idx = 0; idx < localBase.renderVariations.length; idx++) {
+      const v = localBase.renderVariations[idx];
+      renderVariations.push({
+        ...v,
+        id: `var-v2-${idx + 1}`,
+        title: v.title || `${data.directions?.[0]?.title || 'Hero'} - Packshot ${idx + 1}`,
+        v2Layout: {
+          frontImage: v.backgroundUrl,
+          leftText: data.leftPanelText,
+          rightText: data.rightPanelText,
+          barcodeUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/UPC-A-036000291452.svg'
+        }
+      });
+    }
+  } else {
+    // Generate all 4 variations for V2
+    for (let idx = 1; idx <= 4; idx++) {
+      const artworkUrl = await fetchLayer2AssetBase64(safeArtworkPrompt, false, idx);
+      renderVariations.push({
+        id: `var-v2-${idx}`,
+        title: `${data.directions?.[0]?.title || 'Hero'} - Packshot ${idx}`,
+        backgroundUrl: artworkUrl || generateFallbackBackground(primary, "#ffffff"),
+        v2Layout: {
+          frontImage: artworkUrl,
+          leftText: data.leftPanelText,
+          rightText: data.rightPanelText,
+          barcodeUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/UPC-A-036000291452.svg'
+        }
+      });
+      if (idx < 4) await new Promise(r => setTimeout(r, 1000));
+    }
   }
 
   const actions = [{ type: "SET_BOX_MODEL", model: data.model || localBase.model }];
@@ -501,7 +519,7 @@ async function processAiChatV2(prompt, currentContext) {
     reply: data.reply || localBase.reply,
     actions,
     renderVariations,
-    outputsSummary: "Outputs: 2 • V2 Multi-Panel Mapping"
+    outputsSummary: "Outputs: 4 • 1K • 1:1 • V2 Multi-Panel Mapping"
   };
 }
 

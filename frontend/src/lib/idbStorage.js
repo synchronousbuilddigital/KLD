@@ -1,6 +1,6 @@
 export const setLargeData = (key, data) => {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('dieline_db', 1);
+    const req = indexedDB.open('dieline_db', 2);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('dielines')) {
@@ -9,11 +9,15 @@ export const setLargeData = (key, data) => {
     };
     req.onsuccess = (e) => {
       const db = e.target.result;
+      if (!db.objectStoreNames.contains('dielines')) {
+        resolve();
+        return;
+      }
       const tx = db.transaction('dielines', 'readwrite');
       const store = tx.objectStore('dielines');
       store.put(data, key);
       tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
+      tx.onerror = () => resolve(); // Non-blocking
     };
     req.onerror = () => reject(req.error);
   });

@@ -55,7 +55,7 @@ export const authService = {
     const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Registration failed');
     if (data.data?.user) {
-      // Auth tokens are stored in HttpOnly cookies by the server — do NOT store in localStorage
+      if (data.data?.token) localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
@@ -74,7 +74,7 @@ export const authService = {
     const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Verification failed');
     if (data.data?.user) {
-      // Auth tokens are stored in HttpOnly cookies by the server — do NOT store in localStorage
+      if (data.data?.token) localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
@@ -93,7 +93,7 @@ export const authService = {
     const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Login failed');
     if (data.data?.user) {
-      // Auth tokens are stored in HttpOnly cookies by the server — do NOT store in localStorage
+      if (data.data?.token) localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
@@ -112,7 +112,7 @@ export const authService = {
     const data = await safeJson(res);
     if (!res.ok) throw new Error(data.message || 'Google authentication failed');
     if (data.data?.user) {
-      // Auth tokens are stored in HttpOnly cookies by the server — do NOT store in localStorage
+      if (data.data?.token) localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('isLoggedIn', 'true');
       window.dispatchEvent(new Event('auth-change'));
@@ -128,11 +128,10 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       });
-    } catch {
-      // Ignore network error on logout
+    } catch (err) {
+      console.error('Logout error:', err);
     } finally {
       localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       localStorage.removeItem('isLoggedIn');
       window.dispatchEvent(new Event('auth-change'));

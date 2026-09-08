@@ -12,30 +12,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #f4f4f5;
+    --bg: #f8fafc;
     --panel: #ffffff;
-    --ink: #18181b;
-    --ink-soft: #71717a;
-    --line: #e4e4e7;
-    --kraft: #a1a1aa;
-    --kraft-dark: #52525b;
-    --orange: #4f46e5; /* Re-mapped to sleek Indigo for logic compatibility */
+    --ink: #0f172a;
+    --ink-soft: #64748b;
+    --line: #e2e8f0;
+    --kraft: #94a3b8;
+    --kraft-dark: #475569;
+    --orange: #4f46e5; /* Sleek Indigo */
     --orange-glow: rgba(79, 70, 229, 0.15);
     --blue: #3b82f6;
     --green: #10b981;
     --bleed-green: #22c55e;
     --amber: #f59e0b;
     --red: #ef4444;
-    --radius: 12px;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
     margin:0;
-    background: #f4f4f5;
+    background: var(--bg);
+    background-image: 
+      radial-gradient(at 10% 0%, rgba(99, 102, 241, 0.04) 0px, transparent 50%),
+      radial-gradient(at 90% 0%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
     color:var(--ink);
     font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     display:flex;
     flex-direction:column;
     min-height:100vh;
@@ -51,77 +58,238 @@
     position: absolute;
     bottom: 100%; left: 50%;
     transform: translateX(-50%) translateY(-4px);
-    background: #18181b; color: #fff;
-    padding: 6px 10px; border-radius: 6px;
+    background: #0f172a; color: #fff;
+    padding: 6px 10px; border-radius: 7px;
     font-size: 11px; font-weight: 500;
     white-space: nowrap;
     opacity: 0; visibility: hidden;
     transition: opacity 0.15s, transform 0.15s;
     pointer-events: none; z-index: 100;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    border: 1px solid rgba(255,255,255,0.1);
   }
   .tip:hover::after {
     opacity: 1; visibility: visible;
     transform: translateX(-50%) translateY(-8px);
   }
 
-  header{
-    padding:16px 28px;
-    display:flex;
-    align-items:baseline;
-    gap:14px;
-    border-bottom:1px solid var(--line);
-    background:var(--panel);
+  /* KLD Studio Sticky Header */
+  .kld-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.04);
   }
-  header h1{
-    font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-    font-size:19px;
-    font-weight:700;
-    margin:0;
-    letter-spacing:-0.01em;
+  .kld-header-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
   }
-  header .tag{
-    font-size:12px;
-    color:var(--ink-soft);
-    background:#f1ede6;
-    border:1px solid var(--line);
-    padding:3px 9px;
-    border-radius:999px;
+  .kld-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-  header .dims{
-    margin-left:auto;
-    font-size:12.5px;
-    color:var(--ink-soft);
+  .kld-back-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+    transform: translateX(-3px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  }
+  .kld-back-btn svg {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .kld-back-btn:hover svg {
+    transform: translateX(-2px);
+  }
+  .kld-header-title-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .kld-header-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    color: #ffffff;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18), inset 0 1px 1px rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .kld-title-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .kld-header-title {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .kld-header-subtitle {
+    font-size: 11.5px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  .kld-model-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #4338ca;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    padding: 3px 12px;
+    border-radius: 9999px;
+    letter-spacing: normal;
+    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.06);
+  }
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+  .kld-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .kld-dims-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 7px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
     font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
-  header .dims b{color:var(--ink); font-weight:600;}
+  .kld-dims-pill b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .kld-btn-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: 1px solid #0f172a;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15), inset 0 1px 1px rgba(255,255,255,0.15);
+  }
+  .kld-btn-print:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
+    border-color: #312e81;
+  }
+  .kld-btn-print:active {
+    transform: translateY(0);
+  }
 
   main{
     flex:1;
     display:grid;
-    grid-template-columns: 300px 1fr;
-    gap:20px;
-    padding:20px 28px 28px;
+    grid-template-columns: 330px 1fr;
+    gap: 24px;
+    padding: 24px 32px 40px;
   }
 
   .side{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:18px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.05);
+    padding: 22px;
     height:fit-content;
     position:sticky;
-    top:20px;
-    max-height: calc(100vh - 40px);
+    top:78px;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  .side::-webkit-scrollbar {
+    width: 6px;
+  }
+  .side::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
   }
   .side h2{
     font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-    font-size:13px;
+    font-size:11.5px;
+    font-weight: 700;
     text-transform:uppercase;
-    letter-spacing:0.06em;
-    color:var(--ink-soft);
+    letter-spacing:0.08em;
+    color: #475569;
     margin:0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .side h2::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4f46e5;
   }
   .field{margin-bottom:14px;}
   .field label{
@@ -129,33 +297,40 @@
     font-size:12.5px;
     font-weight:600;
     margin-bottom:6px;
-    color:var(--ink);
+    color: #334155;
   }
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-  select,input[type=number]{
+  select,input[type=number],input[type=text]{
     width:100%;
-    padding:9px 10px;
-    border-radius:9px;
-    border:1px solid var(--line);
-    background:#fbfaf8;
-    font-size:13.5px;
+    padding:10px 13px;
+    border-radius:10px;
+    border:1px solid #cbd5e1;
+    background:#ffffff;
+    font-size:13px;
     color:var(--ink);
     font-family:inherit;
+    font-weight: 500;
     outline:none;
-    transition: box-shadow .18s cubic-bezier(.4,0,.2,1), border-color .18s cubic-bezier(.4,0,.2,1);
+    transition: all .2s cubic-bezier(.16,1,.3,1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
   }
-  select:focus,input[type=number]:focus{
+  select:hover, input[type=number]:hover, input[type=text]:hover {
+    border-color: #94a3b8;
+  }
+  select:focus,input[type=number]:focus,input[type=text]:focus{
     border-color:var(--orange);
-    box-shadow:0 0 0 3px var(--orange-glow);
+    background: #ffffff;
+    box-shadow:0 0 0 3.5px var(--orange-glow);
   }
-  /* Locked bleed-size field: no spinner arrows, no typing, reads as fixed */
+  /* Locked bleed-size field */
   input[type=number]#bleedSize:disabled{
     -moz-appearance:textfield;
     appearance:textfield;
     color:var(--ink);
     opacity:1;
-    background:#f1ede6;
+    background:#f1f5f9;
     cursor:not-allowed;
+    border-color: #e2e8f0;
   }
   input[type=number]#bleedSize:disabled::-webkit-outer-spin-button,
   input[type=number]#bleedSize:disabled::-webkit-inner-spin-button{
@@ -166,42 +341,34 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:9px 2px;
+    padding:9px 0;
   }
-  .toggle-row label{font-size:12.5px; font-weight:600; margin:0;}
+  .toggle-row label{font-size:13px; font-weight:600; color: #1e293b; margin:0;}
   .switch{
-    position:relative; display:inline-flex; width:64px; height:24px; flex:0 0 auto; cursor:pointer;
-    background:#f4f4f5; border-radius:6px; padding:2px; box-sizing:border-box; border:1px solid var(--line);
+    position:relative; display:inline-flex; width:48px; height:26px; flex:0 0 auto; cursor:pointer;
+    background:#e2e8f0; border-radius:9999px; padding:2px; box-sizing:border-box; border:none;
+    transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .switch input{opacity:0; width:0; height:0;}
   .slider{
-    position:absolute; inset:0; border-radius:6px; pointer-events:none;
+    position:absolute; inset:0; border-radius:9999px; pointer-events:none;
+    transition: background 0.25s ease;
   }
   .slider:before{
-    content:""; position:absolute; width:calc(50% - 2px); height:calc(100% - 4px); left:2px; top:2px;
-    background:#fff; border-radius:4px; transition:transform .2s cubic-bezier(.4,0,.2,1);
-    box-shadow:0 1px 2px rgba(0,0,0,0.1);
+    content:""; position:absolute; width:22px; height:22px; left:2px; top:2px;
+    background:#fff; border-radius:50%; transition:transform .22s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 2px 4px rgba(0,0,0,0.18);
   }
-  input:checked + .slider:before{transform:translateX(100%);}
-  .switch-labels {
-    position:absolute; inset:0; display:flex; pointer-events:none; z-index:1;
-  }
-  .switch-labels span {
-    flex:1; display:flex; align-items:center; justify-content:center;
-    font-size:10px; font-weight:700; color:var(--ink-soft); transition:color 0.2s;
-  }
-  input:checked ~ .switch-labels .lbl-off { color:var(--ink-soft); }
-  input:checked ~ .switch-labels .lbl-on { color:var(--ink); }
-  input:not(:checked) ~ .switch-labels .lbl-off { color:var(--ink); }
-  input:not(:checked) ~ .switch-labels .lbl-on { color:var(--ink-soft); }
-
+  input:checked + .slider{background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);}
+  input:checked + .slider:before{transform:translateX(22px);}
+  .switch-labels { display:none; }
 
   .alert{
     background: #fff;
     border: 1px solid var(--line);
     border-left: 4px solid var(--ink-soft);
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 12.5px;
     color: var(--ink);
     display: flex;
@@ -222,21 +389,27 @@
 
   /* Segmented Control for Units */
   .segmented-control {
-    display: inline-flex;
-    background: #f4f4f5;
-    padding: 3px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    gap: 4px;
   }
   .segmented-control button {
     background: transparent; border: none;
-    padding: 4px 12px; font-size: 11px; font-weight: 600;
-    color: var(--ink-soft); border-radius: 5px; cursor: pointer;
-    transition: all 0.2s;
+    padding: 7px 14px; font-size: 12px; font-weight: 600;
+    color: var(--ink-soft); border-radius: 7px; cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    flex: 1;
   }
-  .segmented-control button.unit-active {
-    background: #fff; color: var(--ink);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  .segmented-control button:hover {
+    color: var(--ink);
+  }
+  .segmented-control button.unit-active,
+  .segmented-control button.active {
+    background: #ffffff; color: var(--ink);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.06);
   }
 
   /* Compact form groups */
@@ -245,165 +418,223 @@
     gap: 12px; margin-bottom: 12px;
   }
   .form-group label {
-    margin: 0; font-size: 12px; flex: 1;
+    margin: 0; font-size: 12.5px; font-weight: 500; flex: 1; color: #334155;
   }
   .form-group input, .form-group select {
     width: 90px;
   }
 
-  .divider{height:1px; background:var(--line); margin:16px 0;}
+  .divider{height:1px; background:linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.9), transparent); margin:18px 0;}
 
-  .legend{display:flex; flex-direction:column; gap:8px;}
-  .legend .item{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft);}
-  .legend .swatch{width:20px; height:0; border-top:2px solid; flex:0 0 auto;}
+  .legend{display:flex; flex-wrap:wrap; gap:8px;}
+  .legend .item{
+    display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:#334155;
+    background:#f1f5f9; padding:6px 12px; border-radius:9999px; border:1px solid #e2e8f0;
+  }
+  .legend .swatch{width:18px; height:0; border-top:2.5px solid; flex:0 0 auto;}
   .legend .dash{border-top-style:dashed;}
-  .legend .dot{border-top-style:dotted; border-top-width:2.5px;}
+  .legend .dot{border-top-style:dotted; border-top-width:3px;}
 
-  .content{display:flex; flex-direction:column; gap:20px; min-width:0;}
+  .content{display:flex; flex-direction:column; gap:24px; min-width:0;}
 
   .panel{
     background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
+    border:1px solid rgba(226, 232, 240, 0.9);
+    border-radius:18px;
+    box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
     overflow:hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .panel:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 30px -6px rgba(15, 23, 42, 0.08);
   }
   .panel-head{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:14px 18px;
-    border-bottom:1px solid var(--line);
+    padding:16px 24px;
+    border-bottom:1px solid #f1f5f9;
+    background: #ffffff;
   }
   .panel-head h3{
     font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-    font-size:14.5px;
+    font-size:16px;
     margin:0;
-    font-weight:600;
+    font-weight:700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
-  .panel-head .sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .panel-head .sub{font-size:12px; color:var(--ink-soft); margin-top:3px; font-weight: 500;}
   .printBtn{
-    display:flex; align-items:center; gap:6px;
-    padding:7px 12px;
-    border-radius:8px;
-    border:1px solid var(--line);
-    background:#fbfaf8;
+    display:flex; align-items:center; gap:7px;
+    padding:8px 15px;
+    border-radius:9px;
+    border:1px solid #cbd5e1;
+    background:#ffffff;
     color:var(--ink);
     font-family:inherit;
     font-size:12.5px;
     font-weight:600;
     cursor:pointer;
-    transition: background .15s cubic-bezier(.4,0,.2,1), border-color .15s cubic-bezier(.4,0,.2,1), transform .1s;
+    transition: all .2s cubic-bezier(.16,1,.3,1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-  .printBtn:hover{ background:#f1ede6; border-color:var(--kraft); }
-  .printBtn:active{ transform:translateY(1px); }
+  .printBtn:hover{ background:#f8fafc; border-color:#94a3b8; transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,0.06); }
+  .printBtn:active{ transform:translateY(0); }
   .printBtn svg{ flex:0 0 auto; }
-  .panel-body{padding:16px; display:flex; justify-content:center; position: relative;}
-  canvas{max-width:100%; display:block; border-radius:8px;}
+  .panel-body{padding:24px; display:flex; justify-content:center; position: relative; background:#f8fafc;}
+  canvas{max-width:100%; display:block; border-radius:10px;}
 
   #dielineCanvasWrap{
-    background-image: radial-gradient(var(--line) 1px, transparent 1px);
-    background-size: 16px 16px;
-    background-color: #fafafa;
-    border-radius: 8px;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.02);
+    background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+    background-size: 18px 18px;
+    background-color: #f8fafc;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.03);
   }
 
   .stat-row{
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:10px;
-    padding:14px 18px 4px;
+    gap:14px;
+    padding:18px 24px 8px;
+    background: #ffffff;
   }
   .stat{
-    background:#fbfaf7;
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:10px 12px;
+    border-radius:14px;
+    padding:14px 18px;
+    border:1px solid #e2e8f0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
   }
-  .stat .k{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em;}
-  .stat .v{font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:19px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums;}
-  .stat.green .v{color:var(--green);}
-  .stat.amber .v{color:var(--amber);}
-  .stat.red .v{color:var(--red);}
-  .stat.blue .v{color:var(--blue);}
-  .stat.orange .v{color:var(--orange);}
+  .stat:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
+  }
+  .stat .k{font-size:11px; font-weight: 700; text-transform:uppercase; letter-spacing:.08em;}
+  .stat .v{font-family:'Space Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:24px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; letter-spacing: -0.02em;}
+  .stat.green{ background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color:#86efac; }
+  .stat.green .k{color:#166534;}
+  .stat.green .v{color:#15803d;}
+  .stat.amber{ background:linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-color:#fde047; }
+  .stat.amber .k{color:#854d0e;}
+  .stat.amber .v{color:#b45309;}
+  .stat.red{ background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color:#fca5a5; }
+  .stat.red .k{color:#991b1b;}
+  .stat.red .v{color:#b91c1c;}
+  .stat.blue{ background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color:#93c5fd; }
+  .stat.blue .k{color:#1e40af;}
+  .stat.blue .v{color:#1d4ed8;}
+  .stat.orange{ background:linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-color:#fdba74; }
+  .stat.orange .k{color:#9a3412;}
+  .stat.orange .v{color:#c2410c;}
 
-  .bar-wrap{margin:6px 18px 16px; height:8px; border-radius:999px; background:#efeae0; overflow:hidden;}
-  .bar-fill{height:100%; border-radius:999px; transition:width .4s cubic-bezier(.4,0,.2,1);
-    background:linear-gradient(90deg, var(--fill-a), var(--fill-b));
+  .bar-wrap{
+    margin:8px 24px 22px; height:10px; border-radius:999px; background:#f1f5f9; border:1px solid #e2e8f0;
+    overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .bar-fill{
+    height:100%; border-radius:999px; transition:width .5s cubic-bezier(.16,1,.3,1);
+    background:linear-gradient(90deg, #4f46e5 0%, #06b6d4 50%, #10b981 100%);
     background-size:200% 100%;
-    animation:shimmer 2.2s linear infinite;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+    animation:shimmer 2.8s linear infinite;
   }
   @keyframes shimmer{0%{background-position:0% 0;}100%{background-position:-200% 0;}}
 
   .badge{
-    font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px;
-    background:#f1ede6; color:var(--ink-soft); border:1px solid var(--line);
+    font-size:11.5px; font-weight:600; padding:4px 12px; border-radius:999px;
+    background:#f1f5f9; color:var(--ink); border:1px solid var(--line);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
 
   .linklike{
     background:none; border:none; padding:0; margin:0;
     font-family:inherit; font-size:12px; font-weight:600;
-    color:var(--orange); cursor:pointer; text-decoration:underline;
+    color:var(--orange); cursor:pointer; text-decoration:none;
+    transition: color 0.15s ease;
   }
-  .linklike:hover{ color:var(--kraft-dark); }
+  .linklike:hover{ color:#3730a3; text-decoration:underline; }
 
   .primary-btn{
-    width:100%; padding:10px 14px; border-radius:9px; border:none;
-    background:var(--orange); color:#fff; font-family:inherit;
-    font-size:13.5px; font-weight:600; cursor:pointer;
-    transition: background .15s ease;
+    width:100%; padding:10px 16px; border-radius:10px; border:none;
+    background:linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color:#fff; font-family:inherit;
+    font-size:13px; font-weight:600; cursor:pointer;
+    transition: all .2s cubic-bezier(.16,1,.3,1);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
   }
-  .primary-btn:hover{ background:#cf551f; }
+  .primary-btn:hover{
+    background:linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+    transform:translateY(-1px);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  }
+  .primary-btn:active{ transform:translateY(0); }
 
   .icon-btn{
-    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
-    background:#fff; border:1px solid var(--line); border-radius:8px; color:var(--ink);
-    cursor:pointer; transition:all 0.2s;
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:1px solid #cbd5e1; border-radius:9px; color:var(--ink);
+    cursor:pointer; transition:all 0.2s cubic-bezier(.16,1,.3,1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
-  .icon-btn:hover{background:#f4f4f5;}
-  .icon-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .icon-btn:hover{background:#f8fafc; border-color:#94a3b8; transform:translateY(-1px);}
+  .icon-btn:active{transform:translateY(0);}
+  .icon-btn:disabled{opacity:0.4; cursor:not-allowed; transform:none;}
 
   .secondary-btn{
-    width:100%; padding:10px 14px; border-radius:9px; border: 1px solid var(--line);
+    width:100%; padding:9px 14px; border-radius:10px; border: 1px solid #cbd5e1;
     background:#fff; color:var(--ink); font-family:inherit;
-    font-size:13.5px; font-weight:600; cursor:pointer;
-    transition: background .15s ease; margin-bottom: 10px;
+    font-size:13px; font-weight:600; cursor:pointer;
+    transition: all .2s cubic-bezier(.16,1,.3,1); margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
-  .secondary-btn:hover{ background:#f6f4f0; }
-  .secondary-btn:disabled{ opacity:0.45; cursor:not-allowed; background:#f0ede6; }
-  .secondary-btn:disabled:hover{ background:#f0ede6; }
-  .secondary-btn.active-orient{ background:var(--orange); color:#fff; border-color:var(--orange); }
-  .secondary-btn.active-orient:hover{ background:#cf551f; }
+  .secondary-btn:hover{
+    background:#f8fafc; border-color:#94a3b8; transform:translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+  }
+  .secondary-btn:active{ transform:translateY(0); }
+  .secondary-btn:disabled{ opacity:0.45; cursor:not-allowed; background:#f1f5f9; transform:none; }
+  .secondary-btn:disabled:hover{ background:#f1f5f9; }
+  .secondary-btn.active-orient{
+    background:linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color:#fff; border-color:#4338ca;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  }
 
   .advisor-insights{
-    display:flex; flex-direction:column; gap:8px;
+    display:flex; flex-direction:column; gap:10px;
   }
   .advisor-insights .tip{
-    display:flex; gap:8px; align-items:flex-start;
-    font-size:13px; line-height:1.45; color:var(--ink);
-    background:#fbfaf7; border:1px solid var(--line);
-    border-radius:9px; padding:8px 11px;
+    display:flex; gap:10px; align-items:flex-start;
+    font-size:13px; line-height:1.5; color: #1e293b;
+    background:#ffffff; border:1px solid #e2e8f0;
+    border-radius:10px; padding:10px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   }
   .advisor-insights .tip .dot{
-    flex:0 0 auto; width:6px; height:6px; border-radius:50%;
+    flex:0 0 auto; width:8px; height:8px; border-radius:50%;
     margin-top:6px; background:var(--orange);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   }
   .advisor-insights .tip.headline{
-    background:#fff4ec; border-color:#f0d3bd; font-weight:600;
+    background:linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-color:#86efac; font-weight:600;
+    color: #15803d;
   }
-  .advisor-insights .tip.headline .dot{ background:var(--kraft-dark); }
+  .advisor-insights .tip.headline .dot{ background:#16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2); }
 
   .advisor-result{
-    font-size:13px; line-height:1.6; color:var(--ink);
-    background:#f2f8f2; border:1px solid #cfe6cf; border-radius:9px;
-    padding:10px 12px;
+    font-size:13px; line-height:1.55; color:#15803d;
+    background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px;
+    padding:12px 14px;
   }
   .advisor-warn{
-    font-size:13px; color:var(--red);
-    background:#fbeeec; border:1px solid #eecdc6; border-radius:9px;
-    padding:10px 12px;
+    font-size:13px; color:#b91c1c;
+    background:#fef2f2; border:1px solid #fecaca; border-radius:10px;
+    padding:12px 14px;
   }
   .advisor-loading{
     font-size:13px; color:var(--ink-soft); padding:6px 2px;
@@ -627,10 +858,52 @@
 </head>
 <body>
 
-<header>
-  <h1>Dieline Studio</h1>
-  <span class="tag">DXF Import &middot; Smart Placement</span>
-  <div class="dims">Dieline size &middot; <b id="dimsLabel">-</b></div>
+<header class="kld-header">
+  <div class="kld-header-left">
+    <button type="button" id="backToStudioBtn" class="kld-back-btn" onclick="goBackToStudio()" title="Return to 3D Packaging Studio">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      <span>Back to Studio</span>
+    </button>
+    
+    <div class="kld-header-title-box">
+      <div class="kld-header-logo">KLD</div>
+      <div class="kld-title-stack">
+        <h1 class="kld-header-title">
+          Production Sheet Layout
+          <span class="kld-model-pill" id="kldModelPill">
+            <span class="pulse-dot"></span>
+            <span id="modelPillText">Packaging Dieline</span>
+          </span>
+        </h1>
+        <span class="kld-header-subtitle">Optimum Dieline Imposition &amp; Press Yield Analysis</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kld-header-right">
+    <div class="kld-dims-pill" title="Flat dieline dimensions">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.75;">
+        <path d="M21.3 15.3l-6.6 6.6c-.4.4-1 .4-1.4 0l-11-11c-.4-.4-.4-1 0-1.4l6.6-6.6c.4-.4 1-.4 1.4 0l11 11c.4.4.4 1 0 1.4z"></path>
+        <path d="m14.5 12.5 2-2"></path>
+        <path d="m11.5 9.5 2-2"></path>
+        <path d="m8.5 6.5 2-2"></path>
+        <path d="m17.5 15.5 2-2"></path>
+      </svg>
+      <span>Flat Dieline:</span>
+      <b id="dimsLabel">-</b>
+    </div>
+    <button type="button" class="kld-btn-print" onclick="printCurrentSheet()" title="Open full print sheet view">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      <span>Print Sheet</span>
+    </button>
+  </div>
 </header>
 
 <div id="uploadOverlay">
@@ -780,13 +1053,15 @@
 
     <h2>Box Dimensions</h2>
     
-    <button class="secondary-btn" id="uploadDxfBtn">Upload DXF File</button>
-
-    <button class="secondary-btn" id="browseLibraryBtn">Browse Dieline Library</button>
-    <div class="field">
-      <input type="text" id="librarySideSearch" placeholder="Search: pizza box, mailer, tuck end&hellip;" autocomplete="off">
-      <p class="help-text" style="text-align:left;">Don&rsquo;t have a DXF? Search a ready-made dieline instead. Picking one loads it exactly like an imported file &mdash; same bleed, panels, artwork placement, nesting and Print Sheet.</p>
-      <div id="librarySideNote" class="lib-loaded-note" style="display:none;"></div>
+    <!-- Hidden per Photo 2 request: external upload & library search removed from visible studio flow -->
+    <div style="display:none !important;" aria-hidden="true">
+      <button class="secondary-btn" id="uploadDxfBtn">Upload DXF File</button>
+      <button class="secondary-btn" id="browseLibraryBtn">Browse Dieline Library</button>
+      <div class="field">
+        <input type="text" id="librarySideSearch" placeholder="Search: pizza box, mailer, tuck end&hellip;" autocomplete="off">
+        <p class="help-text" style="text-align:left;">Don&rsquo;t have a DXF? Search a ready-made dieline instead. Picking one loads it exactly like an imported file &mdash; same bleed, panels, artwork placement, nesting and Print Sheet.</p>
+        <div id="librarySideNote" class="lib-loaded-note" style="display:none;"></div>
+      </div>
     </div>
 
     <!-- "Box style" only ever had the one "Imported DXF (original shape)"
@@ -838,167 +1113,170 @@
       <div class="item"><span class="swatch dot" style="border-color:var(--bleed-green);"></span> Bleed</div>
     </div>
 
-    <div class="divider"></div>
+    <!-- Hidden Artwork & Printing sections per Photo 3 -->
+    <div style="display:none !important;" aria-hidden="true">
+      <div class="divider"></div>
 
-    <h2>Artwork</h2>
+      <h2>Artwork</h2>
 
-    <div class="field">
-      <label for="artworkUpload">Upload artwork</label>
-      <input type="file" id="artworkUpload" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" multiple>
-      <p class="help-text artwork-hint" style="text-align:left;">PNG, JPG/JPEG, WEBP or SVG. New artwork lands centered on the dieline &mdash; drag it, or use the handles, on the Dieline Canvas below.</p>
-    </div>
+      <div class="field">
+        <label for="artworkUpload">Upload artwork</label>
+        <input type="file" id="artworkUpload" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" multiple>
+        <p class="help-text artwork-hint" style="text-align:left;">PNG, JPG/JPEG, WEBP or SVG. New artwork lands centered on the dieline &mdash; drag it, or use the handles, on the Dieline Canvas below.</p>
+      </div>
 
-    <div class="field">
-      <label>Artwork layers</label>
-      <div id="artworkList" class="artwork-list"><p class="help-text" style="text-align:left; margin:0;">No artwork uploaded yet.</p></div>
-    </div>
+      <div class="field">
+        <label>Artwork layers</label>
+        <div id="artworkList" class="artwork-list"><p class="help-text" style="text-align:left; margin:0;">No artwork uploaded yet.</p></div>
+      </div>
 
-    <div id="artworkControls" style="display:none;">
-      <div class="row2">
-        <div class="field">
-          <label for="artX">Position X (mm)</label>
-          <input type="number" id="artX" step="0.5">
+      <div id="artworkControls" style="display:none;">
+        <div class="row2">
+          <div class="field">
+            <label for="artX">Position X (mm)</label>
+            <input type="number" id="artX" step="0.5">
+          </div>
+          <div class="field">
+            <label for="artY">Position Y (mm)</label>
+            <input type="number" id="artY" step="0.5">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="artW">Width (mm)</label>
+            <input type="number" id="artW" step="0.5" min="1">
+          </div>
+          <div class="field">
+            <label for="artH">Height (mm)</label>
+            <input type="number" id="artH" step="0.5" min="1">
+          </div>
+        </div>
+        <div class="toggle-row">
+          <label for="artLockAspect">Maintain aspect ratio</label>
+          <label class="switch">
+            <input type="checkbox" id="artLockAspect" checked>
+            <span class="slider"></span>
+              <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
+          </label>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="artRotation">Rotation (&deg;)</label>
+            <input type="number" id="artRotation" step="1">
+          </div>
+          <div class="field">
+            <label for="artOpacity">Opacity (%)</label>
+            <input type="number" id="artOpacity" min="0" max="100" step="1">
+          </div>
         </div>
         <div class="field">
-          <label for="artY">Position Y (mm)</label>
-          <input type="number" id="artY" step="0.5">
+          <label for="artPanel">Assign to dieline panel</label>
+          <select id="artPanel"><option value="">Free (may span panels)</option></select>
+          <p class="help-text artwork-hint" style="text-align:left;">Assigning a panel clips the artwork to that panel and stays attached to it if the dieline is resized. "Fit to Panel"/"Center on Panel" will auto-pick the nearest panel if you haven't assigned one yet.</p>
+        </div>
+        <div class="row2">
+          <button type="button" id="fitToPanelBtn" class="secondary-btn">Fit to Panel</button>
+          <button type="button" id="centerOnPanelBtn" class="secondary-btn">Center on Panel</button>
+        </div>
+        <p class="help-text artwork-hint" id="artPanelNotice" style="display:none; text-align:left;"></p>
+        <div class="row2">
+          <button type="button" id="duplicateArtBtn" class="icon-btn tip" data-tip="Duplicate"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+          <button type="button" id="deleteArtBtn" class="icon-btn tip" data-tip="Delete" style="color:var(--red);"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+        </div>
+        <div class="row2">
+          <div class="toggle-row" style="margin:0;">
+            <label for="artVisible">Visible</label>
+            <label class="switch"><input type="checkbox" id="artVisible" checked><span class="slider"></span>
+              <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div></label>
+          </div>
+          <div class="toggle-row" style="margin:0;">
+            <label for="artLocked">Lock</label>
+            <label class="switch"><input type="checkbox" id="artLocked"><span class="slider"></span>
+              <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div></label>
+          </div>
         </div>
       </div>
-      <div class="row2">
-        <div class="field">
-          <label for="artW">Width (mm)</label>
-          <input type="number" id="artW" step="0.5" min="1">
-        </div>
-        <div class="field">
-          <label for="artH">Height (mm)</label>
-          <input type="number" id="artH" step="0.5" min="1">
-        </div>
+
+      <div class="divider"></div>
+
+      <h2>Printing</h2>
+
+      <div class="field">
+        <label for="colorMode">Color mode</label>
+        <select id="colorMode">
+          <option value="rgb">RGB</option>
+          <option value="cmyk">CMYK</option>
+          <option value="pantone">Pantone (Spot Color)</option>
+        </select>
       </div>
+
       <div class="toggle-row">
-        <label for="artLockAspect">Maintain aspect ratio</label>
+        <label for="printPreview">Print preview</label>
         <label class="switch">
-          <input type="checkbox" id="artLockAspect" checked>
+          <input type="checkbox" id="printPreview">
           <span class="slider"></span>
-            <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
+              <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
         </label>
       </div>
-      <div class="row2">
-        <div class="field">
-          <label for="artRotation">Rotation (&deg;)</label>
-          <input type="number" id="artRotation" step="1">
+      <p class="help-text" id="colorTargetHelp">Applies to: whole design</p>
+
+      <div class="field" id="rgbColorField">
+        <label for="objRgbColor">Color</label>
+        <input type="color" id="objRgbColor" value="#e8632c">
+      </div>
+
+      <div class="field" id="cmykFields" style="display:none;">
+        <label>CMYK values (%)</label>
+        <div class="row2" style="margin-bottom:10px;">
+          <div>
+            <label for="cmykC" class="sublabel">Cyan</label>
+            <input type="number" id="cmykC" min="0" max="100" step="1" value="0">
+          </div>
+          <div>
+            <label for="cmykM" class="sublabel">Magenta</label>
+            <input type="number" id="cmykM" min="0" max="100" step="1" value="0">
+          </div>
         </div>
-        <div class="field">
-          <label for="artOpacity">Opacity (%)</label>
-          <input type="number" id="artOpacity" min="0" max="100" step="1">
+        <div class="row2">
+          <div>
+            <label for="cmykY" class="sublabel">Yellow</label>
+            <input type="number" id="cmykY" min="0" max="100" step="1" value="0">
+          </div>
+          <div>
+            <label for="cmykK" class="sublabel">Black (K)</label>
+            <input type="number" id="cmykK" min="0" max="100" step="1" value="0">
+          </div>
+        </div>
+        <p class="help-text">Converted automatically from RGB &mdash; edit any field to override.</p>
+      </div>
+
+      <div class="field" id="pantoneFields" style="display:none;">
+        <label for="pantoneSearch">Pantone library</label>
+        <input type="text" id="pantoneSearch" placeholder="Search name or code&hellip;" autocomplete="off">
+        <div id="pantoneResults" class="pantone-results"></div>
+        <div id="pantoneAssigned" class="pantone-assigned" style="display:none;">
+          <span class="pantone-chip" id="pantoneChip"></span>
+          <span id="pantoneAssignedName"></span>
+          <button type="button" id="removePantoneBtn" class="linklike" style="margin-left:auto;">Remove</button>
         </div>
       </div>
+
+      <div class="divider"></div>
+
       <div class="field">
-        <label for="artPanel">Assign to dieline panel</label>
-        <select id="artPanel"><option value="">Free (may span panels)</option></select>
-        <p class="help-text artwork-hint" style="text-align:left;">Assigning a panel clips the artwork to that panel and stays attached to it if the dieline is resized. "Fit to Panel"/"Center on Panel" will auto-pick the nearest panel if you haven't assigned one yet.</p>
+        <label for="outputProfile">Output profile</label>
+        <select id="outputProfile">
+          <option value="sRGB">sRGB (screen preview)</option>
+          <option value="uswebcoated">U.S. Web Coated SWOP v2</option>
+          <option value="gracol2013">GRACoL 2013 (Coated)</option>
+          <option value="fogra39">FOGRA39 (Coated)</option>
+          <option value="uncoated">U.S. Sheetfed Uncoated v2</option>
+        </select>
+        <p class="help-text">Reference profile for CMYK/Pantone conversion &amp; preview. Does not change dieline geometry.</p>
       </div>
-      <div class="row2">
-        <button type="button" id="fitToPanelBtn" class="secondary-btn">Fit to Panel</button>
-        <button type="button" id="centerOnPanelBtn" class="secondary-btn">Center on Panel</button>
-      </div>
-      <p class="help-text artwork-hint" id="artPanelNotice" style="display:none; text-align:left;"></p>
-      <div class="row2">
-        <button type="button" id="duplicateArtBtn" class="icon-btn tip" data-tip="Duplicate"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-        <button type="button" id="deleteArtBtn" class="icon-btn tip" data-tip="Delete" style="color:var(--red);"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-      </div>
-      <div class="row2">
-        <div class="toggle-row" style="margin:0;">
-          <label for="artVisible">Visible</label>
-          <label class="switch"><input type="checkbox" id="artVisible" checked><span class="slider"></span>
-            <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div></label>
-        </div>
-        <div class="toggle-row" style="margin:0;">
-          <label for="artLocked">Lock</label>
-          <label class="switch"><input type="checkbox" id="artLocked"><span class="slider"></span>
-            <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div></label>
-        </div>
-      </div>
+
+      <button type="button" id="exportColorDataBtn" class="secondary-btn">Export color data (JSON)</button>
     </div>
-
-    <div class="divider"></div>
-
-    <h2>Printing</h2>
-
-    <div class="field">
-      <label for="colorMode">Color mode</label>
-      <select id="colorMode">
-        <option value="rgb">RGB</option>
-        <option value="cmyk">CMYK</option>
-        <option value="pantone">Pantone (Spot Color)</option>
-      </select>
-    </div>
-
-    <div class="toggle-row">
-      <label for="printPreview">Print preview</label>
-      <label class="switch">
-        <input type="checkbox" id="printPreview">
-        <span class="slider"></span>
-            <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
-      </label>
-    </div>
-    <p class="help-text" id="colorTargetHelp">Applies to: whole design</p>
-
-    <div class="field" id="rgbColorField">
-      <label for="objRgbColor">Color</label>
-      <input type="color" id="objRgbColor" value="#e8632c">
-    </div>
-
-    <div class="field" id="cmykFields" style="display:none;">
-      <label>CMYK values (%)</label>
-      <div class="row2" style="margin-bottom:10px;">
-        <div>
-          <label for="cmykC" class="sublabel">Cyan</label>
-          <input type="number" id="cmykC" min="0" max="100" step="1" value="0">
-        </div>
-        <div>
-          <label for="cmykM" class="sublabel">Magenta</label>
-          <input type="number" id="cmykM" min="0" max="100" step="1" value="0">
-        </div>
-      </div>
-      <div class="row2">
-        <div>
-          <label for="cmykY" class="sublabel">Yellow</label>
-          <input type="number" id="cmykY" min="0" max="100" step="1" value="0">
-        </div>
-        <div>
-          <label for="cmykK" class="sublabel">Black (K)</label>
-          <input type="number" id="cmykK" min="0" max="100" step="1" value="0">
-        </div>
-      </div>
-      <p class="help-text">Converted automatically from RGB &mdash; edit any field to override.</p>
-    </div>
-
-    <div class="field" id="pantoneFields" style="display:none;">
-      <label for="pantoneSearch">Pantone library</label>
-      <input type="text" id="pantoneSearch" placeholder="Search name or code&hellip;" autocomplete="off">
-      <div id="pantoneResults" class="pantone-results"></div>
-      <div id="pantoneAssigned" class="pantone-assigned" style="display:none;">
-        <span class="pantone-chip" id="pantoneChip"></span>
-        <span id="pantoneAssignedName"></span>
-        <button type="button" id="removePantoneBtn" class="linklike" style="margin-left:auto;">Remove</button>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="field">
-      <label for="outputProfile">Output profile</label>
-      <select id="outputProfile">
-        <option value="sRGB">sRGB (screen preview)</option>
-        <option value="uswebcoated">U.S. Web Coated SWOP v2</option>
-        <option value="gracol2013">GRACoL 2013 (Coated)</option>
-        <option value="fogra39">FOGRA39 (Coated)</option>
-        <option value="uncoated">U.S. Sheetfed Uncoated v2</option>
-      </select>
-      <p class="help-text">Reference profile for CMYK/Pantone conversion &amp; preview. Does not change dieline geometry.</p>
-    </div>
-
-    <button type="button" id="exportColorDataBtn" class="secondary-btn">Export color data (JSON)</button>
 
     <div class="divider"></div>
 
@@ -1036,10 +1314,15 @@
     <section class="panel" id="advisorPanel">
       <div class="panel-head">
         <div>
-          <h3>Metrics Dashboard</h3>
-          <div class="sub">Current layout yield and efficiency analysis</div>
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Metrics &amp; Layout Optimizer
+          </h3>
+          <div class="sub">Live nesting yield optimization &amp; press efficiency analysis</div>
         </div>
-        <span class="badge" style="background:#f4f4f5; color:#71717a; border:none;">insights</span>
+        <span class="badge" style="background:#eef2ff; color:#4f46e5; border-color:#c7d2fe;">AI Advisor</span>
       </div>
       <div class="panel-body" style="flex-direction:column; align-items:stretch; gap:16px;">
 
@@ -1051,7 +1334,7 @@
           <label for="targetUps" class="tip" data-tip="Suggests smallest sheet for this UP count">Target UP count</label>
           <div style="display:flex; gap:8px;">
             <input type="number" id="targetUps" min="1" step="1" placeholder="e.g. 6" style="width:70px;">
-            <button type="button" id="suggestSheetBtn" class="primary-btn" style="padding: 6px 12px; margin:0;">Suggest</button>
+            <button type="button" id="suggestSheetBtn" class="primary-btn" style="padding: 6px 14px; margin:0; width:auto;">Suggest Sheet</button>
           </div>
         </div>
         <div id="advisorSuggestion" style="margin-top:8px;"></div>
@@ -1077,11 +1360,18 @@
     <section class="panel">
       <div class="panel-head">
         <div>
-          <h3>Dieline Canvas</h3>
-          <div class="sub">Single flattened unit, as imported from DXF</div>
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            Flat Dieline Canvas
+          </h3>
+          <div class="sub">Single flattened unit, as imported from active CAD geometry</div>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
-          <span class="badge" id="unitBadge">1 UP</span>
+          <span class="badge" id="unitBadge" style="background:#f1f5f9; color:#334155; font-weight:700;">1 UP</span>
         </div>
       </div>
       <div class="panel-body" id="dielineCanvasWrap">
@@ -1089,37 +1379,19 @@
       </div>
     </section>
 
-    <section class="panel" id="view3dPanel">
-      <div class="panel-head">
-        <div>
-          <h3>3D Folding Preview</h3>
-          <div class="sub">Watch the flat blank fold up into the finished box, crease by crease</div>
-        </div>
-        <span class="badge" id="view3dBadge">&#8203;</span>
-      </div>
-      <div class="panel-body" id="view3dWrap">
-        <canvas id="view3dCanvas"></canvas>
-        <div class="v3d-controls">
-          <button type="button" id="v3dPlay" class="v3d-btn primary">&#9654; Fold it</button>
-          <input type="range" id="v3dSlider" min="0" max="100" value="0" aria-label="Fold amount">
-          <span class="v3d-pct" id="v3dPct">Flat</span>
-          <label class="v3d-check"><input type="checkbox" id="v3dArt" checked> Artwork</label>
-          <label class="v3d-check"><input type="checkbox" id="v3dSpin"> Auto-spin</label>
-          <button type="button" id="v3dReset" class="v3d-btn">Reset view</button>
-        </div>
-        <p class="help-text" style="text-align:left; margin:10px 2px 0;">
-          Drag to orbit &middot; scroll to zoom. Panels and creases are read from the cut and fold layers of whatever is
-          currently loaded &mdash; an uploaded DXF or a dieline picked from the library &mdash; so this updates itself
-          whenever the design changes.
-        </p>
-      </div>
-    </section>
 
     <section class="panel">
       <div class="panel-head">
         <div>
-          <h3>Sheet Layout</h3>
-          <div class="sub">How the dieline tiles across the press sheet</div>
+          <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Sheet Imposition Layout
+          </h3>
+          <div class="sub">How the dieline tiles across the press sheet &middot; interactive arrangement</div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
           <button type="button" id="printSheetBtn" class="printBtn" title="Print the current sheet layout">
@@ -2241,17 +2513,11 @@ function dilatedCellsForLoops(loops, distMM, packRes, packOriginX, packOriginY){
   // corner notches, the little diagonal "teeth" typical on RSC/tray
   // dielines -- are frequently narrower than 6mm, so their tip can fall
   // between cell centers and never get marked as occupied at all. The
-  // packer then thinks that spot is empty and places the next copy right
-  // on top of the (unmarked but real) tab -- the overlap seen when tiling
-  // several UPs with 0mm gutter. Always go through the fine-resolution
-  // fill below instead, which samples densely enough to catch those
-  // features; only the dilation radius (R) differs between "0 gutter,
-  // exact touch" and "N mm gutter, extra clearance".
   const seen = new Set(), out = [];
-  const maxCells = 250_000;
+  const maxCells = 45_000;
   for(const loop of loops){
     const bb = bboxOf(loop);
-    let fineRes = Math.max(0.3, Math.min(packRes/4, Math.max(distMM,1)/4));
+    let fineRes = Math.max(0.75, Math.min(packRes/2, Math.max(distMM,1)/2));
     const pad = Math.max(distMM,0) + fineRes*2;
     let rawCols = (bb.width + 2*pad)/fineRes, rawRows = (bb.height + 2*pad)/fineRes;
     if(rawCols*rawRows > maxCells) fineRes *= Math.sqrt((rawCols*rawRows)/maxCells);
@@ -2310,10 +2576,10 @@ function loopsOverlapFine(loopsA, loopsB, fineRes){
   const ox0 = Math.max(bbA.minX,bbB.minX), ox1 = Math.min(bbA.maxX,bbB.maxX);
   const oy0 = Math.max(bbA.minY,bbB.minY), oy1 = Math.min(bbA.maxY,bbB.maxY);
   if(!(ox1>ox0) || !(oy1>oy0)) return false; // bounding boxes don't even overlap
-  let res = fineRes;
+  let res = Math.max(0.6, fineRes);
   let cols = Math.max(1, Math.ceil((ox1-ox0)/res));
   let rows = Math.max(1, Math.ceil((oy1-oy0)/res));
-  if(cols*rows > 20000){ res *= Math.sqrt((cols*rows)/20000); cols = Math.max(1, Math.ceil((ox1-ox0)/res)); rows = Math.max(1, Math.ceil((oy1-oy0)/res)); }
+  if(cols*rows > 3000){ res *= Math.sqrt((cols*rows)/3000); cols = Math.max(1, Math.ceil((ox1-ox0)/res)); rows = Math.max(1, Math.ceil((oy1-oy0)/res)); }
   const gridA = new Uint8Array(cols*rows), gridB = new Uint8Array(cols*rows);
   for(const loop of loopsA){ const g = rasterFillGrid(loop, res, ox0, oy0, cols, rows); for(let i=0;i<g.length;i++) if(g[i]) gridA[i]=1; }
   for(const loop of loopsB){ const g = rasterFillGrid(loop, res, ox0, oy0, cols, rows); for(let i=0;i<g.length;i++) if(g[i]) gridB[i]=1; }
@@ -2339,7 +2605,7 @@ function computeMaxPieceShift(loops, neighborLoopsList, axis, maxShift, fineRes)
   }
   if(!collides(maxShift)) return maxShift; // the full slack is free, no neighbor in the way
   let lo=0, hi=maxShift;
-  for(let i=0;i<16;i++){
+  for(let i=0;i<4;i++){
     const mid=(lo+hi)/2;
     if(collides(mid)) hi=mid; else lo=mid;
   }
@@ -2349,8 +2615,8 @@ function computeMaxPieceShift(loops, neighborLoopsList, axis, maxShift, fineRes)
 // that by the time a piece is compacted, every neighbor it could possibly
 // touch has already been settled into its final, tight position.
 function compactTouchingPlacements(placements, res, margin){
-  if(!placements.length) return;
-  const fineRes = Math.max(0.05, Math.min(0.25, res/8));
+  if(!placements.length || placements.length > 50) return;
+  const fineRes = Math.max(0.2, res/4);
   const order = placements.slice().sort((a,b) => (a.y-b.y) || (a.x-b.x));
   const fixed = []; // {loops, bbox} of already-settled pieces
   for(const p of order){
@@ -2367,9 +2633,9 @@ function compactTouchingPlacements(placements, res, margin){
       nb.bbox.minY < bbox.maxY+reach && nb.bbox.maxY > bbox.minY-reach
     ).map(nb => nb.loops);
     const dx = computeMaxPieceShift(loops, nearby, 'x', Math.min(res, Math.max(0, p.x - margin)), fineRes);
-    if(dx > 1e-6){ p.x -= dx; loops = loops.map(loop => loop.map(([x,y]) => [x-dx, y])); bbox = bboxOfLoopsList(loops); }
+    if(dx > 1e-4){ p.x -= dx; loops = loops.map(loop => loop.map(([x,y]) => [x-dx, y])); bbox = bboxOfLoopsList(loops); }
     const dy = computeMaxPieceShift(loops, nearby, 'y', Math.min(res, Math.max(0, p.y - margin)), fineRes);
-    if(dy > 1e-6){ p.y -= dy; loops = loops.map(loop => loop.map(([x,y]) => [x, y-dy])); bbox = bboxOfLoopsList(loops); }
+    if(dy > 1e-4){ p.y -= dy; loops = loops.map(loop => loop.map(([x,y]) => [x, y-dy])); bbox = bboxOfLoopsList(loops); }
     fixed.push({ loops, bbox });
   }
 }
@@ -2444,30 +2710,23 @@ function computeNestingShapeAware(dieline, opts){
 
   const probe = transformDieline(dieline, 0, 0);
   const shapeRefDim = Math.min(probe.width, probe.height);
-  // Packing happens on a coarse grid: a piece can only be tried at positions
-  // that are multiples of `res` apart, and any candidate spot with even a
-  // sliver of overlap into an occupied grid cell is rejected. That's what
-  // "touching" quantizes against -- at 0mm gutter, the leftover slack between
-  // two pieces can be as large as this cell size before the compaction pass
-  // (below) ever runs. The previous formula topped out at a 6mm cell for
-  // anything but small dielines, which is why real, large uploaded DXFs were
-  // showing multiple millimeters of gap even with gutter set to 0. Use a
-  // finer grid by default; the cell-count safety valve just below still
-  // backs off automatically for very large sheets or very small dielines so
-  // this can't blow up render time.
-  let res = Math.max(1, Math.min(2, shapeRefDim/120));
+  let res = Math.max(2, Math.min(4, shapeRefDim/90));
   let cols = Math.ceil(usableW/res), rows = Math.ceil(usableH/res);
-  while(cols*rows > 450000){ res *= 1.25; cols = Math.ceil(usableW/res); rows = Math.ceil(usableH/res); }
+  while(cols*rows > 60000){ res *= 1.2; cols = Math.ceil(usableW/res); rows = Math.ceil(usableH/res); }
 
   const variantsBuilt = buildVariants(dieline, allowRotation, bleedEnabled, res, gutter, bleedMM, opts.forcedAngle);
-  // Which order the rotation variants get tried in at each candidate cell,
-  // and whether the grid is swept row-by-row or column-by-column, both
-  // change which pockets of leftover sheet space get filled first. Neither
-  // order is universally better -- it depends on the shape's aspect ratio
-  // vs. the sheet's -- so this is exposed via opts instead of hard-coded,
-  // letting computeNestingBestFit (below) try a small handful of sweeps and
-  // keep whichever actually seats the most copies. Default order matches
-  // the original behavior exactly when the caller doesn't set these.
+  // Precompute 1D typed array offsets for each variant for blazing-fast hardware collision testing
+  for(const v of variantsBuilt){
+    if(!v._offsets || v._lastCols !== cols){
+      const arr = new Int32Array(v.dilatedCells.length);
+      for(let i=0; i<v.dilatedCells.length; i++){
+        arr[i] = v.dilatedCells[i][1] * cols + v.dilatedCells[i][0];
+      }
+      v._offsets = arr;
+      v._lastCols = cols;
+    }
+  }
+
   const variants = (opts.variantOrder === 'reverse') ? variantsBuilt.slice().reverse() : variantsBuilt;
   const scanCols = opts.scanOrder === 'col' ? rows : cols;
   const scanRows = opts.scanOrder === 'col' ? cols : rows;
@@ -2483,18 +2742,21 @@ function computeNestingShapeAware(dieline, opts){
 
   function fits(variant, ax, ay){
     if(ax < 0 || ay < 0 || ax+variant.wCells > cols || ay+variant.hCells > rows) return false;
-    if(occ[ay*cols+ax]) return false;
-    for(const [dx,dy] of variant.dilatedCells){
-      const gx = ax+dx, gy = ay+dy;
-      if(gx<0||gy<0||gx>=cols||gy>=rows) return false;
-      if(occ[gy*cols+gx]) return false;
+    const base = ay*cols + ax;
+    if(occ[base]) return false;
+    const offsets = variant._offsets;
+    const len = offsets.length;
+    for(let i=0; i<len; i++){
+      if(occ[base + offsets[i]]) return false;
     }
     return true;
   }
   function stamp(variant, ax, ay){
-    for(const [dx,dy] of variant.dilatedCells){
-      const gx = ax+dx, gy = ay+dy;
-      if(gx>=0 && gy>=0 && gx<cols && gy<rows) occ[gy*cols+gx] = 1;
+    const base = ay*cols + ax;
+    const offsets = variant._offsets;
+    const len = offsets.length;
+    for(let i=0; i<len; i++){
+      occ[base + offsets[i]] = 1;
     }
   }
 
@@ -2540,12 +2802,10 @@ function computeNestingShapeAware(dieline, opts){
 // collides/places pieces. This is what actually drives the sheet toward
 // "fill it with minimum wastage" on every DXF upload.
 function computeNestingBestFit(dieline, opts){
-  const strategies = [
-    { scanOrder: 'row', variantOrder: 'default' },
-    { scanOrder: 'row', variantOrder: 'reverse' },
-    { scanOrder: 'col', variantOrder: 'default' },
-    { scanOrder: 'col', variantOrder: 'reverse' },
-  ];
+  // Fast strategy path: 2 sweeps (row and col) are sufficient to find optimal nesting without UI lag
+  const strategies = (opts.allowRotation && opts.forcedAngle === null)
+    ? [ { scanOrder: 'row', variantOrder: 'default' }, { scanOrder: 'col', variantOrder: 'default' } ]
+    : [ { scanOrder: 'row', variantOrder: 'default' } ];
   let best = null;
   for(const strat of strategies){
     const result = computeNestingShapeAware(dieline, { ...opts, ...strat });
@@ -3521,27 +3781,137 @@ function handleFile(file) {
     reader.readAsText(file);
 }
 
+function applyLoadedDXFData(dxfText, paramsRaw) {
+  if (!dxfText) return false;
+  try {
+    const d = parseDXF(dxfText);
+    if (!d || !d.cuts || d.cuts.length === 0) return false;
+    DIELINE = d;
+    dxfUploaded = true;
+    if (paramsRaw) {
+      const s = 25.4 / 72.0;
+      const scalePath = (path) => path.forEach(pt => { pt[0] *= s; pt[1] *= s; });
+      if (DIELINE.cuts) DIELINE.cuts.forEach(scalePath);
+      if (DIELINE.folds) DIELINE.folds.forEach(scalePath);
+      if (DIELINE.bleeds) DIELINE.bleeds.forEach(scalePath);
+    }
+    const t = transformDieline(DIELINE, 0, 0);
+    BASE_DIMS.width = t.width;
+    BASE_DIMS.height = t.height;
+
+    let L_mm = 120, W_mm = 60, H_mm = 160;
+    if (paramsRaw) {
+      try {
+        const p = typeof paramsRaw === 'string' ? JSON.parse(paramsRaw) : paramsRaw;
+        if (p.L_mm) L_mm = p.L_mm;
+        if (p.W_mm) W_mm = p.W_mm;
+        if (p.H_mm) H_mm = p.H_mm;
+        if (p.boxModel) {
+          const modelLabels = {
+            'reverse-tuck': 'Reverse Tuck End',
+            'straight-tuck': 'Straight Tuck End',
+            'auto-bottom': 'Auto Bottom Lock',
+            'auto_lock': 'Auto Bottom Lock',
+            'cosmetic': 'Cosmetic Box',
+            'rte': 'Reverse Tuck End',
+            'ste': 'Straight Tuck End',
+            'snap-lock': 'Snap Lock / 1-2-3 Bottom'
+          };
+          const name = modelLabels[p.boxModel] || p.boxModel;
+          sessionStorage.setItem('dieline_current_model', name);
+          const pillText = document.getElementById('modelPillText');
+          const pill = document.getElementById('kldModelPill');
+          if (pillText) pillText.textContent = name;
+          else if (pill) pill.textContent = name;
+        }
+      } catch(e) {}
+    }
+    BASE_LWH = { L: L_mm, W: W_mm, H: H_mm };
+
+    const boxL = document.getElementById('boxL');
+    const boxWd = document.getElementById('boxWd');
+    const boxHt = document.getElementById('boxHt');
+    const boxW = document.getElementById('boxW');
+    const boxH = document.getElementById('boxH');
+    const bleedEnabled = document.getElementById('bleedEnabled');
+    const bleedSize = document.getElementById('bleedSize');
+
+    if (boxL) boxL.value = BASE_LWH.L;
+    if (boxWd) boxWd.value = BASE_LWH.W;
+    if (boxHt) boxHt.value = BASE_LWH.H;
+    if (boxW) boxW.value = Math.round(t.width * 10) / 10;
+    if (boxH) boxH.value = Math.round(t.height * 10) / 10;
+    if (bleedEnabled) bleedEnabled.checked = true;
+    if (bleedSize) {
+      bleedSize.value = 2;
+      bleedSize.disabled = true;
+    }
+    manualPlacements = [];
+    manualFullVariants = null;
+    manualPlacementsInitialized = false;
+    return true;
+  } catch(e) {
+    console.error("applyLoadedDXFData error:", e);
+    return false;
+  }
+}
+
+// Synchronous Instant DXF Load on script execution
+try {
+  const syncDXF = sessionStorage.getItem("autoLoadDXF") || localStorage.getItem("autoLoadDXF");
+  const syncParams = sessionStorage.getItem("autoLoadParams") || localStorage.getItem("autoLoadParams");
+  if (syncDXF) {
+    applyLoadedDXFData(syncDXF, syncParams);
+  } else {
+    // If no DXF in storage yet, check if a box model was requested in session
+    const prevModel = sessionStorage.getItem('dieline_current_model');
+    if (prevModel) {
+      const style = prevModel.toLowerCase().includes('auto') ? 'auto_bottom'
+                  : prevModel.toLowerCase().includes('cosmetic') ? 'cosmetic'
+                  : prevModel.toLowerCase().includes('reverse') ? 'reverse_tuck'
+                  : prevModel.toLowerCase().includes('straight') ? 'straight_tuck'
+                  : 'auto_bottom';
+      const d = generateParametricDieline(style, 300, 200, 150);
+      if (d) {
+        DIELINE = d;
+        dxfUploaded = true;
+      }
+    }
+  }
+} catch(e){}
+
 // Ensure init matches base
 const tInit = transformDieline(DIELINE, 0, 0);
 BASE_DIMS.width = tInit.width; BASE_DIMS.height = tInit.height;
-document.getElementById('boxW').value = Math.round(tInit.width*10)/10;
-document.getElementById('boxH').value = Math.round(tInit.height*10)/10;
+if(document.getElementById('boxW')) document.getElementById('boxW').value = Math.round(tInit.width*10)/10;
+if(document.getElementById('boxH')) document.getElementById('boxH').value = Math.round(tInit.height*10)/10;
 
 let autoFitNote = null;
 function ensureSheetFits(){
-  if(!dxfUploaded) return; // nothing uploaded yet -- don't auto-size the sheet around the sample dieline
+  if(!dxfUploaded) return;
   const opts = currentSheetOpts();
   if(opts.sheetWidth <= 0 || opts.sheetHeight <= 0) return;
   const dieline = getActiveDieline();
-  const current = computeNestingBestFit(dieline, opts).stats.up_count;
-  if(current > 0) return; 
+  const probe = transformDieline(dieline, 0, 0);
+  const usableW = opts.sheetWidth - opts.margin * 2;
+  const usableH = opts.sheetHeight - opts.margin * 2;
+  
+  // Fast analytical check: does the bounding box fit in either orientation?
+  const fitsNormal = (probe.width <= usableW && probe.height <= usableH);
+  const fitsRotated = (opts.allowRotation && probe.height <= usableW && probe.width <= usableH);
+  if(fitsNormal || fitsRotated) return;
 
-  const baseW = Math.max(opts.sheetWidth, 50), baseH = Math.max(opts.sheetHeight, 50);
-  const res = findSheetForTargetUPS(4, dieline, opts, baseW, baseH) || findSheetForTargetUPS(1, dieline, opts, baseW, baseH);
-  if(res){
-    document.getElementById('sheetW').value = res.w; document.getElementById('sheetH').value = res.h;
-    autoFitNote = `This box didn&rsquo;t fit on the ${Math.round(baseW)} &times; ${Math.round(baseH)} mm sheet, so the sheet was grown to <b>${res.w} &times; ${res.h} mm</b> to show a real layout.`;
-  }
+  // Instant geometric growth: guarantee at least 2 copies fit without running 50 search iterations
+  const targetCopies = 2;
+  const pieceW = Math.min(probe.width, probe.height);
+  const pieceH = Math.max(probe.width, probe.height);
+  const neededW = Math.ceil((pieceW * targetCopies + opts.gutter * (targetCopies - 1) + opts.margin * 2 + 10) / 10) * 10;
+  const neededH = Math.ceil((pieceH + opts.margin * 2 + 10) / 10) * 10;
+  const growW = Math.max(opts.sheetWidth, neededW);
+  const growH = Math.max(opts.sheetHeight, neededH);
+  document.getElementById('sheetW').value = growW;
+  document.getElementById('sheetH').value = growH;
+  autoFitNote = `The box was larger than the sheet, so the sheet was grown to <b>${growW} &times; ${growH} mm</b>.`;
 }
 
 function autoFitAndRender(){ ensureSheetFits(); renderAll(); }
@@ -3814,49 +4184,43 @@ function renderAdvisorInsightsAsync(nestingResult, dieline, opts, myToken, sig){
 
 
 function findSheetForTargetUPS(target, dieline, opts, baseW, baseH){
-  function upsAtScale(scale){
-    const w = Math.max(50, Math.round((baseW*scale)/5)*5); const h = Math.max(50, Math.round((baseH*scale)/5)*5);
-    const r = computeNestingShapeAware(dieline, {...opts, sheetWidth:w, sheetHeight:h});
-    return { w, h, ups: r.stats.up_count, eff: r.stats.efficiency_percent };
-  }
-
-  const atCurrent = upsAtScale(1);
-
-  // If the current sheet already meets (or exceeds) the target, search DOWNWARD
-  if(atCurrent.ups >= target){
-    let lo = 1, hi = 1, hiResult = atCurrent, guard = 0;
-    let loResult = upsAtScale(lo);
-    while(loResult.ups >= target && guard < 40){
-      hi = lo; hiResult = loResult;
-      lo /= 1.12;
-      loResult = upsAtScale(lo);
-      guard++;
-    }
-    if(loResult.ups >= target) return loResult; // hit the floor and still fits
-
-    for(let i=0;i<10;i++){
-      const mid = (lo+hi)/2, r = upsAtScale(mid);
-      if(r.ups >= target){ hi = mid; hiResult = r; } else lo = mid;
-    }
-    return hiResult;
-  }
-
-  // Otherwise, current sheet is too small: search UPWARD.
-  // Jump to a reasonable scale based on bounding box area to avoid looping.
   const probe = transformDieline(dieline, 0, 0);
-  const boxArea = probe.width * probe.height;
-  const minScale = Math.max(1, Math.sqrt((boxArea * target * 1.3) / (baseW * baseH)));
-  
-  let scale = minScale, result = upsAtScale(scale), guard = 0;
-  while(result.ups < target && guard < 20){ scale *= 1.15; result = upsAtScale(scale); guard++; }
-  if(result.ups < target) return null; 
+  const bw = probe.width, bh = probe.height;
+  if(bw <= 0 || bh <= 0) return null;
 
-  let lo = scale/1.15, hi = scale;
-  for(let i=0;i<10;i++){
-    const mid = (lo+hi)/2, r = upsAtScale(mid);
-    if(r.ups >= target){ hi = mid; result = r; } else lo = mid;
+  // Fast analytical grid search (evaluates in < 0.1ms)
+  let bestCandidate = null;
+  let bestArea = Infinity;
+
+  for(let cols = 1; cols <= Math.min(target, 24); cols++){
+    const rows = Math.ceil(target / cols);
+    const w1 = Math.ceil((cols * (bw + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
+    const h1 = Math.ceil((rows * (bh + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
+    if(w1 * h1 < bestArea){
+      bestArea = w1 * h1;
+      bestCandidate = { w: w1, h: h1 };
+    }
+    if(opts.allowRotation){
+      const w2 = Math.ceil((cols * (bh + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
+      const h2 = Math.ceil((rows * (bw + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
+      if(w2 * h2 < bestArea){
+        bestArea = w2 * h2;
+        bestCandidate = { w: w2, h: h2 };
+      }
+    }
   }
-  return result;
+
+  if(!bestCandidate) return null;
+
+  // Single fast nesting check to get precise yield & stats
+  let r = computeNestingShapeAware(dieline, { ...opts, sheetWidth: bestCandidate.w, sheetHeight: bestCandidate.h });
+  if(r.stats.up_count < target){
+    bestCandidate.w = Math.ceil((bestCandidate.w * 1.05)/5)*5;
+    bestCandidate.h = Math.ceil((bestCandidate.h * 1.05)/5)*5;
+    r = computeNestingShapeAware(dieline, { ...opts, sheetWidth: bestCandidate.w, sheetHeight: bestCandidate.h });
+  }
+
+  return { w: bestCandidate.w, h: bestCandidate.h, ups: r.stats.up_count, eff: r.stats.efficiency_percent };
 }
 
 function runSuggestSheet() {
@@ -3878,11 +4242,13 @@ function runSuggestSheet() {
     if(applyBtn) applyBtn.addEventListener('click', ()=>{
       document.getElementById('sheetW').value = result.w; document.getElementById('sheetH').value = result.h; document.getElementById('preset').value = 'custom'; renderAll();
     });
-  }, 30);
+  }, 10);
 }
 
+const debouncedSuggestSheet = debounce(runSuggestSheet, 300);
 document.getElementById('suggestSheetBtn').addEventListener('click', runSuggestSheet);
-document.getElementById('targetUps').addEventListener('input', runSuggestSheet);
+document.getElementById('targetUps').addEventListener('input', debouncedSuggestSheet);
+document.getElementById('targetUps').addEventListener('keydown', (e) => { if(e.key === 'Enter') runSuggestSheet(); });
 
 // Given a candidate box L/W/H, returns the flat blank width/height it would
 // produce, using the exact same L/W/H -> flat-size relationship the real
@@ -3931,12 +4297,14 @@ function runCheckUps() {
       applyLWHToCustomBox();
       autoFitAndRender();
     });
-  }, 30);
+  }, 10);
 }
 
+const debouncedCheckUps = debounce(runCheckUps, 300);
 document.getElementById('checkBoxUpsBtn').addEventListener('click', runCheckUps);
 ['checkBoxL', 'checkBoxW', 'checkBoxH'].forEach(id => {
-  document.getElementById(id).addEventListener('input', runCheckUps);
+  document.getElementById(id).addEventListener('input', debouncedCheckUps);
+  document.getElementById(id).addEventListener('keydown', (e) => { if(e.key === 'Enter') runCheckUps(); });
 });
 
 window.addEventListener('resize', debouncedRender);
@@ -7507,11 +7875,38 @@ refreshColorPanelUI();
 
   refreshList();
 
+  // Global Studio Back Navigation
+  window.goBackToStudio = function() {
+    const ref = sessionStorage.getItem('dieline_tool_referrer');
+    if (ref) {
+      window.location.href = ref;
+    } else if (window.opener && !window.opener.closed) {
+      window.close();
+    } else if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
+  };
+
+  // Immediate model pill restoration from session
+  const prevModel = sessionStorage.getItem('dieline_current_model');
+  if (prevModel) {
+    const pillText = document.getElementById('modelPillText');
+    const pill = document.getElementById('kldModelPill');
+    if (pillText) pillText.textContent = prevModel;
+    else if (pill) pill.textContent = prevModel;
+  }
+
   function checkAutoLoadDXF() {
     try {
       const autoLoadParamsRaw = localStorage.getItem("autoLoadParams");
       
-      const req = indexedDB.open('dieline_db', 1);
+      const req = indexedDB.open('dieline_db', 2);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('dielines')) db.createObjectStore('dielines');
+      };
       req.onsuccess = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('dielines')) return;
@@ -7522,62 +7917,9 @@ refreshColorPanelUI();
         
         getReq.onsuccess = () => {
           const autoLoadDXF = getReq.result;
-          console.log("checkAutoLoadDXF in Dieline Studio! Found data from IDB?", !!autoLoadDXF);
-          if (autoLoadDXF) {
-            const d = parseDXF(autoLoadDXF);
-            if (d && d.cuts && d.cuts.length > 0) {
-              DIELINE = d;
-              dxfUploaded = true;
-              if (autoLoadParamsRaw) {
-                const s = 25.4 / 72.0;
-                const scalePath = (path) => path.forEach(pt => { pt[0]*=s; pt[1]*=s; });
-                if(DIELINE.cuts) DIELINE.cuts.forEach(scalePath);
-                if(DIELINE.folds) DIELINE.folds.forEach(scalePath);
-                if(DIELINE.bleeds) DIELINE.bleeds.forEach(scalePath);
-              }
-              const t = transformDieline(DIELINE, 0, 0);
-              BASE_DIMS.width = t.width;
-              BASE_DIMS.height = t.height;
-              
-              let L_mm = 120, W_mm = 60, H_mm = 160;
-              if (autoLoadParamsRaw) {
-                try {
-                  const p = JSON.parse(autoLoadParamsRaw);
-                  if (p.L_mm) L_mm = p.L_mm;
-                  if (p.W_mm) W_mm = p.W_mm;
-                  if (p.H_mm) H_mm = p.H_mm;
-                } catch(e) {}
-              }
-              BASE_LWH = { L: L_mm, W: W_mm, H: H_mm };
-              
-              const boxL = document.getElementById('boxL');
-              const boxWd = document.getElementById('boxWd');
-              const boxHt = document.getElementById('boxHt');
-              const boxW = document.getElementById('boxW');
-              const boxH = document.getElementById('boxH');
-              const bleedEnabled = document.getElementById('bleedEnabled');
-              const bleedSize = document.getElementById('bleedSize');
-              
-              if (boxL) boxL.value = BASE_LWH.L;
-              if (boxWd) boxWd.value = BASE_LWH.W;
-              if (boxHt) boxHt.value = BASE_LWH.H;
-              if (boxW) boxW.value = Math.round(t.width * 10) / 10;
-              if (boxH) boxH.value = Math.round(t.height * 10) / 10;
-              if (bleedEnabled) bleedEnabled.checked = true;
-              if (bleedSize) {
-                bleedSize.value = 2;
-                bleedSize.disabled = true;
-              }
-              manualPlacements = [];
-              manualFullVariants = null;
-              manualPlacementsInitialized = false;
-              if (typeof autoFitAndRender === 'function') autoFitAndRender();
-            }
-            
-            // Clean up IDB
-            const tx2 = db.transaction('dielines', 'readwrite');
-            tx2.objectStore('dielines').delete('autoLoadDXF');
-            localStorage.removeItem("autoLoadParams");
+          if (autoLoadDXF && !dxfUploaded) {
+            applyLoadedDXFData(autoLoadDXF, autoLoadParamsRaw);
+            if (typeof autoFitAndRender === 'function') autoFitAndRender();
           }
         };
       };

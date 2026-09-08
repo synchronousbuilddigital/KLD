@@ -33,17 +33,21 @@ export interface AiChatResponse {
   dimensions?: { L: number; W: number; H: number; unit?: string };
 }
 
+const getAiHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
+
 export async function sendAiChatMessage(prompt: string, context: any): Promise<AiChatResponse> {
   try {
-    const backendUrl = API_BASE_URL.startsWith('http') 
-      ? `${API_BASE_URL}/ai/chat` 
-      : `http://localhost:5000/api/ai/chat`;
+    const backendUrl = `${API_BASE_URL}/ai/chat`;
 
     const res = await fetch(backendUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAiHeaders(),
       credentials: 'include',
       body: JSON.stringify({ prompt, context }),
     });
@@ -54,25 +58,21 @@ export async function sendAiChatMessage(prompt: string, context: any): Promise<A
         return json.data;
       }
     }
-    throw new Error('Backend AI endpoint returned an invalid response.');
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson.message || 'Backend AI endpoint returned an invalid response.');
   } catch (err) {
-    console.error('Backend AI endpoint unreachable:', err);
+    console.error('Backend AI endpoint error:', err);
     throw err;
   }
 }
 
 export async function sendAiChatMessageV2(prompt: string, context: any): Promise<AiChatResponse> {
   try {
-    const backendUrl = API_BASE_URL.startsWith('http') 
-      ? `${API_BASE_URL}/ai/chat/v2` 
-      : `http://localhost:5000/api/ai/chat/v2`;
+    const backendUrl = `${API_BASE_URL}/ai/chat/v2`;
 
     const res = await fetch(backendUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-      },
+      headers: getAiHeaders(),
       credentials: 'include',
       body: JSON.stringify({ prompt, context }),
     });
@@ -88,7 +88,7 @@ export async function sendAiChatMessageV2(prompt: string, context: any): Promise
       throw new Error(errorJson.message || `Backend responded with HTTP ${res.status}`);
     }
   } catch (err) {
-    console.error('Backend AI V2 endpoint unreachable or failed:', err);
+    console.error('Backend AI V2 endpoint error:', err);
     throw err;
   }
 }

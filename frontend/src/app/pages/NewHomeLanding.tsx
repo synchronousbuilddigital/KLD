@@ -481,15 +481,7 @@ export default function NewHomeLanding() {
                 View Dieline Gallery <span className="arrow">›</span>
               </button>
             </div>
-            <div className="ai-cta-group">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'aistudio' }))}
-                className="btn btn-ai"
-              >
-                <svg className="ai-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z" /></svg>
-                AI
-              </button>
-            </div>
+
           </motion.div>
         </motion.section>
 

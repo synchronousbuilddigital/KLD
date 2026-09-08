@@ -341,8 +341,8 @@
 /* -------------------------------------------------------------
    Buttons System (Capsules)
 ------------------------------------------------------------- */
-.new-home-landing .btn {
-  font-family: var(--font-body);
+.btn {
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
   font-size: 14px;
   font-weight: 600;
   padding: 12px 30px;
@@ -356,11 +356,26 @@
 }
 
 .btn-header {
-  background-color: var(--color-primary);
-  color: var(--color-text-dark);
-  border: 1px solid var(--color-primary);
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 9999px !important;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
+  background: #111111 !important;
+  color: #ffffff !important;
+  border: 1px solid #111111 !important;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  line-height: 1.4;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
 /* Always-running shimmer sweep on the CTA button */
@@ -373,7 +388,7 @@
   height: 100%;
   background: linear-gradient(90deg,
       transparent,
-      rgba(255, 255, 255, 0.15),
+      rgba(255, 255, 255, 0.25),
       transparent);
   animation: btnShimmer 3s ease-in-out infinite;
   pointer-events: none;
@@ -400,7 +415,6 @@
 }
 
 @keyframes arrowBounce {
-
   0%,
   100% {
     transform: translateX(0);
@@ -412,9 +426,11 @@
 }
 
 .btn-header:hover {
-  background-color: transparent;
-  color: var(--color-primary);
+  background: #222222 !important;
+  color: #ffffff !important;
+  border-color: #333333 !important;
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .btn-header:hover::before {

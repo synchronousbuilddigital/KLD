@@ -6,6 +6,9 @@ export interface MockupVariant {
   name: string;
   animation?: string;
   imageUrl?: string;
+  whiteImageUrl?: string;
+  kraftImageUrl?: string;
+  boxModelKey?: string;
   description?: string;
   dimensions?: string;
   material?: string;
@@ -43,22 +46,58 @@ const getAuthHeaders = () => {
   };
 };
 
+const CATALOG_STORAGE_KEY = 'kld_cached_public_catalog';
+
 export const catalogService = {
   /**
-   * Fetch active catalog items for public display
+   * Synchronously get cached catalog from localStorage for instant 0ms rendering
+   */
+  getCachedCatalog(): CatalogItemData[] | null {
+    try {
+      const cached = localStorage.getItem(CATALOG_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  },
+
+  /**
+   * Clear cached catalog in localStorage
+   */
+  clearCache(): void {
+    try {
+      localStorage.removeItem(CATALOG_STORAGE_KEY);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('catalog-updated'));
+      }
+    } catch {}
+  },
+
+  /**
+   * Fetch active catalog items for public display with local cache fallback
    */
   async getPublicCatalog(): Promise<CatalogItemData[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/catalog/public`);
-      const data = await response.json();
-      if (data.success && Array.isArray(data.data)) {
-        return data.data;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          try {
+            localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(data.data));
+          } catch {}
+          return data.data;
+        }
       }
-      return [];
     } catch (error) {
-      console.warn('Failed to fetch catalog from backend API, using local fallback:', error);
-      return [];
+      console.warn('Failed to fetch catalog from backend API, using cached data:', error);
     }
+    return this.getCachedCatalog() || [];
   },
 
   /**
@@ -105,6 +144,7 @@ export const catalogService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to create catalog product.');
     }
+    this.clearCache();
     return data.data;
   },
 
@@ -123,6 +163,7 @@ export const catalogService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to update catalog product.');
     }
+    this.clearCache();
     return data.data;
   },
 
@@ -140,6 +181,7 @@ export const catalogService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to delete catalog product.');
     }
+    this.clearCache();
     return true;
   },
 
@@ -158,6 +200,7 @@ export const catalogService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to add sub-model variant.');
     }
+    this.clearCache();
     return data.data;
   },
 
@@ -176,6 +219,7 @@ export const catalogService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to update sub-model variant.');
     }
+    this.clearCache();
     return data.data;
   },
 
@@ -193,6 +237,7 @@ export const catalogService = {
     if (!response.ok || !data.success) {
       throw new Error(data.message || 'Failed to delete sub-model variant.');
     }
+    this.clearCache();
     return data.data;
   },
 };

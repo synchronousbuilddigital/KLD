@@ -14,10 +14,10 @@ const DEFAULT_CATALOG_ITEMS = [
     order: 1,
     boxModelKey: 'rte',
     variants: [
-      { id: 1, name: 'Reverse Tuck End Box', animation: 'Flaps fold in opposite directions', imageUrl: '/images/box.png', gridSize: 'large' },
-      { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/images/box.png', gridSize: 'large' },
-      { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/images/box.png', gridSize: 'large' },
-      { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/box.png', gridSize: 'large' },
+      { id: 1, name: 'Reverse Tuck End Box', animation: 'Flaps fold in opposite directions', imageUrl: '/images/boxes/rte_white.jpg', whiteImageUrl: '/images/boxes/rte_white.jpg', kraftImageUrl: '/images/boxes/rte_kraft.jpg', boxModelKey: 'rte', gridSize: 'large' },
+      { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/images/boxes/ste_white.jpg', whiteImageUrl: '/images/boxes/ste_white.jpg', kraftImageUrl: '/images/boxes/ste_kraft.jpg', boxModelKey: 'te', gridSize: 'large' },
+      { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/images/boxes/auto_white.jpg', whiteImageUrl: '/images/boxes/auto_white.jpg', kraftImageUrl: '/images/boxes/auto_kraft.jpg', boxModelKey: 'auto_lock', gridSize: 'large' },
+      { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
     ],
   },
   {
@@ -390,36 +390,45 @@ const DEFAULT_CATALOG_ITEMS = [
   },
 ];
 
-// Helper to seed default catalog items if collection is empty or missing variants
+let isCatalogSeeded = false;
+let cachedPublicCatalog = null;
+
+const invalidateCatalogCache = () => {
+  cachedPublicCatalog = null;
+};
+
+// Helper to seed default catalog items once if collection is completely empty
 const ensureCatalogSeeded = async () => {
+  if (isCatalogSeeded) return;
   try {
     const count = await CatalogItem.countDocuments();
     if (count === 0) {
       await CatalogItem.insertMany(DEFAULT_CATALOG_ITEMS);
-      console.log('🌱 Default 3D Model catalog items and sub-variants seeded successfully');
-    } else {
-      // Ensure existing documents in MongoDB have their default sub-variants populated if empty!
-      for (const defaultItem of DEFAULT_CATALOG_ITEMS) {
-        const doc = await CatalogItem.findOne({ itemId: defaultItem.itemId });
-        if (doc && (!doc.variants || doc.variants.length === 0)) {
-          doc.variants = defaultItem.variants || [];
-          await doc.save();
-          console.log(`✅ Populated default sub-models for category: ${doc.title}`);
-        }
-      }
+      console.log('🌱 Default 3D Model catalog items seeded successfully');
     }
+    isCatalogSeeded = true;
   } catch (err) {
     console.error('Error seeding default catalog items:', err);
   }
 };
 
 /**
- * Public: Get active catalog items
+ * Public: Get active catalog items (with instant in-memory cache)
  */
 const getPublicCatalog = async (req, res) => {
   try {
+    if (cachedPublicCatalog && cachedPublicCatalog.length > 0) {
+      return res.json({
+        success: true,
+        data: cachedPublicCatalog,
+        cached: true,
+      });
+    }
+
     await ensureCatalogSeeded();
-    const items = await CatalogItem.find({ active: true }).sort({ order: 1, createdAt: 1 });
+    const items = await CatalogItem.find({ active: true }).sort({ order: 1, createdAt: 1 }).lean();
+    cachedPublicCatalog = items;
+
     res.json({
       success: true,
       data: items,
@@ -436,7 +445,7 @@ const getPublicCatalog = async (req, res) => {
 const getAdminCatalog = async (req, res) => {
   try {
     await ensureCatalogSeeded();
-    const items = await CatalogItem.find().sort({ order: 1, createdAt: 1 });
+    const items = await CatalogItem.find().sort({ order: 1, createdAt: 1 }).lean();
     res.json({
       success: true,
       data: items,
@@ -480,6 +489,8 @@ const createCatalogItem = async (req, res) => {
       variants: Array.isArray(variants) ? variants : [],
     });
 
+    invalidateCatalogCache();
+
     res.status(201).json({
       success: true,
       message: '3D Model Catalog product created successfully.',
@@ -513,6 +524,8 @@ const updateCatalogItem = async (req, res) => {
 
     await item.save();
 
+    invalidateCatalogCache();
+
     res.json({
       success: true,
       message: '3D Model Catalog product updated successfully.',
@@ -536,6 +549,8 @@ const deleteCatalogItem = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Catalog product not found.' });
     }
 
+    invalidateCatalogCache();
+
     res.json({
       success: true,
       message: 'Catalog product deleted successfully.',
@@ -553,7 +568,7 @@ const deleteCatalogItem = async (req, res) => {
 const addVariantToCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, animation, imageUrl, description, dimensions, material, finishing, printing, moq, isFeatured, gridSize } = req.body;
+    const { name, animation, imageUrl, whiteImageUrl, kraftImageUrl, boxModelKey, description, dimensions, material, finishing, printing, moq, isFeatured, gridSize } = req.body;
 
     if (!name) {
       return res.status(400).json({ success: false, message: 'Sub-model variant name is required.' });
@@ -572,7 +587,10 @@ const addVariantToCategory = async (req, res) => {
       id: nextId,
       name,
       animation: animation || '',
-      imageUrl: imageUrl || item.img || '/mockups/generated_box.png',
+      imageUrl: imageUrl || whiteImageUrl || item.img || '/mockups/generated_box.png',
+      whiteImageUrl: whiteImageUrl || imageUrl || '',
+      kraftImageUrl: kraftImageUrl || '',
+      boxModelKey: boxModelKey || 'rte',
       description: description || '',
       dimensions: dimensions || '',
       material: material || '',
@@ -585,6 +603,8 @@ const addVariantToCategory = async (req, res) => {
 
     item.variants.push(newVariant);
     await item.save();
+
+    invalidateCatalogCache();
 
     res.status(201).json({
       success: true,
@@ -615,13 +635,15 @@ const updateCategoryVariant = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Sub-model variant not found.' });
     }
 
-    ['name', 'animation', 'imageUrl', 'description', 'dimensions', 'material', 'finishing', 'printing', 'moq', 'isFeatured', 'gridSize'].forEach((field) => {
+    ['name', 'animation', 'imageUrl', 'whiteImageUrl', 'kraftImageUrl', 'boxModelKey', 'description', 'dimensions', 'material', 'finishing', 'printing', 'moq', 'isFeatured', 'gridSize'].forEach((field) => {
       if (updates[field] !== undefined) {
         variant[field] = updates[field];
       }
     });
 
     await item.save();
+
+    invalidateCatalogCache();
 
     res.json({
       success: true,
@@ -648,6 +670,8 @@ const deleteCategoryVariant = async (req, res) => {
 
     item.variants = item.variants.filter((v) => String(v._id) !== String(variantId) && String(v.id) !== String(variantId));
     await item.save();
+
+    invalidateCatalogCache();
 
     res.json({
       success: true,

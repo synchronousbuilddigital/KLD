@@ -202,49 +202,57 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
     setTimeout(() => setIsSaved(false), 3500);
   };
 
-  const handlePrint = () => {
-    // Open window immediately to prevent popup blocker
-    const printWindow = window.open('about:blank', '_blank');
-    if (!printWindow) {
-      alert("Please allow popups to open the Print Studio.");
-      return;
-    }
-
-    // Defer heavy calculation
-    setTimeout(async () => {
+  const handlePrint = async () => {
+    try {
+      const params = {
+        L: store.L,
+        W: store.W,
+        H: store.H,
+        T: store.T,
+        glueFlapWidth: store.glueFlapWidth,
+        bleed: store.bleed,
+        windowDecals: store.windowDecals || []
+      };
+      let dielineData;
+      if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
+      else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
+      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
+      else dielineData = generateRTEDielineDXF(params);
+      
+      const dxfString = generateDXFString(dielineData);
+      
       try {
-        const params = {
-          L: store.L,
-          W: store.W,
-          H: store.H,
-          T: store.T,
-          glueFlapWidth: store.glueFlapWidth,
-          bleed: store.bleed,
-          windowDecals: store.windowDecals || []
-        };
-        let dielineData;
-        if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
-        else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
-        else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
-        else dielineData = generateRTEDielineDXF(params);
-        
-        const dxfString = generateDXFString(dielineData);
-        
-        await setLargeData("autoLoadDXF", dxfString);
+        sessionStorage.setItem("autoLoadDXF", dxfString);
+        sessionStorage.setItem("autoLoadParams", JSON.stringify({
+          L_mm: Math.round((store.L || 4.7244) * 25.4),
+          W_mm: Math.round((store.W || 2.3622) * 25.4),
+          H_mm: Math.round((store.H || 6.2992) * 25.4),
+          boxModel: store.boxModel
+        }));
+      } catch (e) {
+        console.warn("sessionStorage store error:", e);
+      }
+
+      try {
+        localStorage.setItem("autoLoadDXF", dxfString);
         localStorage.setItem("autoLoadParams", JSON.stringify({
           L_mm: Math.round((store.L || 4.7244) * 25.4),
           W_mm: Math.round((store.W || 2.3622) * 25.4),
           H_mm: Math.round((store.H || 6.2992) * 25.4),
           boxModel: store.boxModel
         }));
-        
-        printWindow.location.href = '/dieline-tool.html';
-      } catch (err) {
-        console.error("Print Error:", err);
-        printWindow.close();
-        alert("An error occurred while preparing the print layout. See console for details.");
-      }
-    }, 10);
+      } catch (e) {}
+
+      try {
+        await setLargeData("autoLoadDXF", dxfString);
+      } catch (e) {}
+      
+      sessionStorage.setItem('dieline_tool_referrer', window.location.href);
+      window.location.href = '/dieline-tool.html';
+    } catch (err) {
+      console.error("Print Error:", err);
+      alert("An error occurred while preparing the print layout. See console for details.");
+    }
   };
   
   const themeKey = store.theme || 'light';

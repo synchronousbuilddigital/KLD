@@ -3,6 +3,9 @@ export type MockupVariant = {
   name: string;
   animation?: string;
   imageUrl?: string;
+  whiteImageUrl?: string;
+  kraftImageUrl?: string;
+  boxModelKey?: string;
   description?: string;
   dimensions?: string;
   material?: string;
@@ -24,10 +27,10 @@ export const mockupCategories: MockupCategory[] = [
     id: 'box-mockups',
     name: 'Box Mockups',
     variants: [
-      { id: 1, name: 'Reverse Tuck End Box', animation: 'Flaps fold in opposite directions', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
-      { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
-      { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
-      { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/mockups/generated_box.png', gridSize: 'large' },
+      { id: 1, name: 'Reverse Tuck End Box', animation: 'Flaps fold in opposite directions', imageUrl: '/images/boxes/rte_white.jpg', whiteImageUrl: '/images/boxes/rte_white.jpg', kraftImageUrl: '/images/boxes/rte_kraft.jpg', boxModelKey: 'rte', gridSize: 'large' },
+      { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/images/boxes/ste_white.jpg', whiteImageUrl: '/images/boxes/ste_white.jpg', kraftImageUrl: '/images/boxes/ste_kraft.jpg', boxModelKey: 'te', gridSize: 'large' },
+      { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/images/boxes/auto_white.jpg', whiteImageUrl: '/images/boxes/auto_white.jpg', kraftImageUrl: '/images/boxes/auto_kraft.jpg', boxModelKey: 'auto_lock', gridSize: 'large' },
+      { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
     ]
   },
   {

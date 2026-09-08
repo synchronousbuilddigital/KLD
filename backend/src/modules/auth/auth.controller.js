@@ -137,6 +137,7 @@ const register = async (req, res, next) => {
     setAuthCookies(res, accessToken, refreshToken);
 
     return sendCreated(res, {
+      token: accessToken,
       user: {
         id: user._id,
         email: user.email,
@@ -167,6 +168,7 @@ const verifyEmail = async (req, res, next) => {
     setAuthCookies(res, accessToken, refreshToken);
 
     return sendSuccess(res, {
+      token: accessToken,
       user: { id: user._id, email: user.email, fullName: user.fullName },
     }, 'Email verified. Welcome to Keyline Design!');
   } catch (err) {
@@ -200,8 +202,8 @@ const login = async (req, res, next) => {
     const accessToken = generateAccessToken(user._id);
     setAuthCookies(res, accessToken, refreshToken);
 
-    // NOTE: Tokens are set as HttpOnly cookies only — NOT returned in body to prevent XSS token theft
     return sendSuccess(res, {
+      token: accessToken,
       user: {
         id: user._id,
         email: user.email,
