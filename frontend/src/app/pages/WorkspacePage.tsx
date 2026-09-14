@@ -368,6 +368,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
               else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
               else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
+              else if (cat.includes('cosmetic b') || cat.includes('mailer') || cat.includes('tray')) boxModel = 'cosmetic_b';
               else if (cat.includes('cosmetic')) boxModel = 'cosmetic';
             }
             if (!boxModel) boxModel = 'rte';
@@ -377,6 +378,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
               else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
               else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
+              else if (boxModel === 'cosmetic_b') categoryName = 'Cosmetic Box B (Mailer/Tray Style)';
               else if (boxModel === 'cosmetic') categoryName = 'Cosmetic Box';
               else categoryName = 'Custom Packaging Box';
             }
@@ -430,6 +432,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
                 else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
                 else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
+                else if (cat.includes('cosmetic b') || cat.includes('mailer') || cat.includes('tray')) boxModel = 'cosmetic_b';
                 else if (cat.includes('cosmetic')) boxModel = 'cosmetic';
               }
               if (!boxModel) boxModel = 'rte';
@@ -439,6 +442,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
                 else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
                 else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
+                else if (boxModel === 'cosmetic_b') categoryName = 'Cosmetic Box B (Mailer/Tray Style)';
                 else if (boxModel === 'cosmetic') categoryName = 'Cosmetic Box';
                 else categoryName = 'Custom Packaging Box';
               }

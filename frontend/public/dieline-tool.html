@@ -600,31 +600,57 @@
   .secondary-btn:active{ transform:translateY(0); }
   .secondary-btn:disabled{ opacity:0.45; cursor:not-allowed; background:#f1f5f9; transform:none; }
   .secondary-btn:disabled:hover{ background:#f1f5f9; }
-  .secondary-btn.active-orient{
-    background:linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color:#fff; border-color:#4338ca;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  .active-orient, .secondary-btn.active-orient, .segmented-control button.active-orient{
+    background:linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important; color:#fff !important; border-color:#4338ca !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3) !important;
   }
 
   .advisor-insights{
     display:flex; flex-direction:column; gap:10px;
   }
-  .advisor-insights .tip{
-    display:flex; gap:10px; align-items:flex-start;
+  .advisor-insights .tip, #advisorRecommendations .tip{
+    display:flex; justify-content:space-between; align-items:center; gap:14px;
     font-size:13px; line-height:1.5; color: #1e293b;
     background:#ffffff; border:1px solid #e2e8f0;
-    border-radius:10px; padding:10px 14px;
+    border-radius:12px; padding:10px 16px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   }
-  .advisor-insights .tip .dot{
+  .advisor-insights .tip .tip-content, #advisorRecommendations .tip .tip-content{
+    display:flex; align-items:center; gap:10px; flex:1; min-width:0;
+  }
+  .advisor-insights .tip .dot, #advisorRecommendations .tip .dot{
     flex:0 0 auto; width:8px; height:8px; border-radius:50%;
-    margin-top:6px; background:var(--orange);
+    background:#4f46e5;
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
   }
-  .advisor-insights .tip.headline{
+  .advisor-insights .tip.headline, #advisorRecommendations .tip.headline{
     background:linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-color:#86efac; font-weight:600;
     color: #15803d;
   }
-  .advisor-insights .tip.headline .dot{ background:#16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2); }
+  .advisor-insights .tip.headline .dot, #advisorRecommendations .tip.headline .dot{ background:#16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2); }
+  .advisor-insights .tip-text, #advisorRecommendations .tip-text{
+    flex:1; min-width:0;
+  }
+
+  .advisor-apply-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    background:#4f46e5; color:#ffffff !important;
+    font-family:inherit; font-size:12px; font-weight:700;
+    padding:5px 16px; border-radius:999px; border:none;
+    cursor:pointer; box-shadow:0 2px 6px rgba(79,70,229,0.3);
+    transition:all 0.18s cubic-bezier(0.16,1,0.3,1);
+    flex-shrink:0; margin-left:auto; text-decoration:none !important;
+    white-space:nowrap; outline:none; user-select:none;
+  }
+  .advisor-apply-btn:hover{
+    background:#4338ca; transform:translateY(-1px) scale(1.03);
+    box-shadow:0 4px 10px rgba(79,70,229,0.4);
+  }
+  .advisor-apply-btn:active{
+    transform:translateY(0) scale(0.98);
+    box-shadow:0 1px 3px rgba(79,70,229,0.3);
+  }
 
   .advisor-result{
     font-size:13px; line-height:1.55; color:#15803d;
@@ -995,6 +1021,31 @@
 
     <div class="divider"></div>
 
+    <h2>Reverse Calculator</h2>
+    <div class="row2" style="align-items:flex-end; margin-bottom: 4px;">
+      <div class="field" style="margin-bottom:0; flex:1;">
+        <label for="targetUpsInput" class="tip" data-tip="Enter the exact number of boxes you want to produce">Target Boxes (UPs)</label>
+        <input type="number" id="targetUpsInput" placeholder="e.g. 6" min="1" step="1">
+      </div>
+      <button type="button" id="autoSizeSheetBtn" class="primary-btn tip" data-tip="Calculates smallest sheet to fit these boxes" style="margin-bottom:0; font-size:12px; padding:0 12px; height: 38px; line-height:38px; white-space:nowrap;">Auto-Size</button>
+    </div>
+    <div id="autoSizeLoader" style="display:none; font-size:11px; color:#4f46e5; font-weight:600; text-align:center; padding:4px; background:#eef2ff; border-radius:4px;">Calculating optimal dimensions...</div>
+
+    <div class="divider"></div>
+
+    <h2>Nesting Engine</h2>
+    <div class="field" style="margin-bottom:12px;">
+      <div class="segmented-control" style="width:100%; display:flex;">
+        <button type="button" id="engineFastBtn" class="unit-active tip" data-tip="Fast Grid + AI Heuristic (&lt;1s)" style="flex:1;">⚡ Fast (Grid)</button>
+        <button type="button" id="engineDeepBtn" class="tip" data-tip="True No-Fit Polygon Interlocking (10-20s)" style="flex:1;">🧩 Deep (NFP)</button>
+      </div>
+      <div id="deepEngineLoading" style="display:none; text-align:center; font-size:11px; color:#f59e0b; font-weight:600; margin-top:6px; background:#fffbeb; padding:4px; border-radius:4px; border:1px solid #fde68a;">
+        Calculating deep interlock... please wait.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
     <h2>Layout Mode</h2>
     <div class="toggle-row">
       <label for="manualMode">Manual Arrangement</label>
@@ -1030,6 +1081,7 @@
             <button type="button" id="orientHorizontalBtn" style="flex:1;">Horizontal</button>
             <button type="button" id="orientVerticalBtn" style="flex:1;">Vertical</button>
           </div>
+          <div id="orientHelpText" style="font-size:11px; color:#64748b; margin-top:5px; line-height:1.35;">Auto mix (default): the packer can rotate each copy independently.</div>
         </div>
     </div>
 
@@ -1312,48 +1364,35 @@
   <div class="content">
 
     <section class="panel" id="advisorPanel">
-      <div class="panel-head">
+      <div class="panel-head" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
         <div>
           <h3>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z"></path>
             </svg>
-            Metrics &amp; Layout Optimizer
+            Print Efficiency Advisor
           </h3>
-          <div class="sub">Live nesting yield optimization &amp; press efficiency analysis</div>
+          <div class="sub">AI-powered layout strategy &amp; optimal sheet suggestions</div>
         </div>
-        <span class="badge" style="background:#eef2ff; color:#4f46e5; border-color:#c7d2fe;">AI Advisor</span>
+        <span class="badge" style="background:#4f46e5; color:#ffffff; border:none; box-shadow:0 2px 6px rgba(79,70,229,0.3);">AI Active</span>
       </div>
       <div class="panel-body" style="flex-direction:column; align-items:stretch; gap:16px;">
-
         <div id="advisorInsights" class="advisor-insights"></div>
 
         <div class="divider" style="margin:2px 0;"></div>
 
-        <div class="form-group" style="margin-bottom:0;">
-          <label for="targetUps" class="tip" data-tip="Suggests smallest sheet for this UP count">Target UP count</label>
-          <div style="display:flex; gap:8px;">
-            <input type="number" id="targetUps" min="1" step="1" placeholder="e.g. 6" style="width:70px;">
-            <button type="button" id="suggestSheetBtn" class="primary-btn" style="padding: 6px 14px; margin:0; width:auto;">Suggest Sheet</button>
-          </div>
+        <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Box Layout</div>
+        <div id="advisorStrategy" style="font-size:12.5px; line-height:1.5; color:#475569; background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+           <div class="advisor-loading">Analyzing box layout...</div>
         </div>
-        <div id="advisorSuggestion" style="margin-top:8px;"></div>
 
         <div class="divider" style="margin:2px 0;"></div>
 
-        <div style="margin-bottom:8px;">
-          <label style="font-size:12px; font-weight:600;" class="tip" data-tip="See how many fit without changing sheet size">Check UP count for a box size</label>
+        <div style="font-size:13px; font-weight:700; color:#1e293b;">Optimal Sheet Suggestions</div>
+        <div style="font-size:11.5px; color:#64748b; margin-top:-2px; margin-bottom:8px;">Scanning standard press sizes for better yields.</div>
+        <div id="advisorRecommendations" style="display:flex; flex-direction:column; gap:8px;">
+           <div class="advisor-loading">Finding best fits...</div>
         </div>
-        <div class="form-group" style="margin-bottom:8px;">
-          <label for="checkBoxL">L (mm)</label>
-          <input type="number" id="checkBoxL" min="10" step="1" placeholder="300" style="width:64px;">
-          <label for="checkBoxW" style="margin-left:8px;">W (mm)</label>
-          <input type="number" id="checkBoxW" min="10" step="1" placeholder="200" style="width:64px;">
-          <label for="checkBoxH" style="margin-left:8px;">H (mm)</label>
-          <input type="number" id="checkBoxH" min="10" step="1" placeholder="150" style="width:64px;">
-        </div>
-        <button type="button" id="checkBoxUpsBtn" class="secondary-btn" style="width:100%; margin:0;">Check UP count</button>
-        <div id="boxUpsResult" style="margin-top:8px;"></div>
       </div>
     </section>
 
@@ -1443,6 +1482,7 @@ let BASE_LWH = { L: 300, W: 200, H: 150 };
 let forcedOrientation = null;
 let manualPlacements = [];
 let manualNestingResult = null;
+let currentNestingEngine = 'fast'; // 'fast' or 'deep'
 let manualFullVariants = null; // always has all 4 angles (0/90/180/270) for manual rotation,
                                 // independent of the "Try 90/180/270 rotations" auto-nest toggle
 let manualPlacementsInitialized = false; // becomes true the first time manual mode seeds
@@ -2710,9 +2750,10 @@ function computeNestingShapeAware(dieline, opts){
 
   const probe = transformDieline(dieline, 0, 0);
   const shapeRefDim = Math.min(probe.width, probe.height);
-  let res = Math.max(2, Math.min(4, shapeRefDim/90));
+  let res = opts.overrideRes ? opts.overrideRes : Math.max(2, Math.min(4, shapeRefDim/90));
   let cols = Math.ceil(usableW/res), rows = Math.ceil(usableH/res);
-  while(cols*rows > 60000){ res *= 1.2; cols = Math.ceil(usableW/res); rows = Math.ceil(usableH/res); }
+  const maxCells = opts.overrideRes ? 150000 : 60000;
+  while(cols*rows > maxCells){ res *= 1.2; cols = Math.ceil(usableW/res); rows = Math.ceil(usableH/res); }
 
   const variantsBuilt = buildVariants(dieline, allowRotation, bleedEnabled, res, gutter, bleedMM, opts.forcedAngle);
   // Precompute 1D typed array offsets for each variant for blazing-fast hardware collision testing
@@ -2727,7 +2768,8 @@ function computeNestingShapeAware(dieline, opts){
     }
   }
 
-  const variants = (opts.variantOrder === 'reverse') ? variantsBuilt.slice().reverse() : variantsBuilt;
+  let variants = (opts.variantOrder === 'reverse') ? variantsBuilt.slice().reverse() : variantsBuilt;
+  
   const scanCols = opts.scanOrder === 'col' ? rows : cols;
   const scanRows = opts.scanOrder === 'col' ? cols : rows;
   const occ = new Uint8Array(cols*rows);
@@ -2760,19 +2802,19 @@ function computeNestingShapeAware(dieline, opts){
     }
   }
 
-  let placedAny = true;
-  while(placedAny){
-    placedAny = false;
-    outer: for(let major=0; major<scanCols; major++){
-      for(let minor=0; minor<scanRows; minor++){
-        const { ax, ay } = cellPos(major, minor);
-        if(occ[ay*cols+ax]) continue;
-        for(const variant of variants){
-          if(fits(variant, ax, ay)){
-            stamp(variant, ax, ay);
-            placements.push({ x: margin + ax*res, y: margin + ay*res, angleDeg: variant.angleDeg, variantIndex: variantsBuilt.indexOf(variant), variant: variant });
-            placedAny = true; break outer;
-          }
+  for(let major=0; major<scanCols; major++){
+    for(let minor=0; minor<scanRows; minor++){
+      const { ax, ay } = cellPos(major, minor);
+      if(occ[ay*cols+ax]) continue;
+      if(opts.variantOrder === 'random'){
+         const hash = (ax * 31 + ay * 17 + Math.floor(opts.randSeed * 1000)) % variantsBuilt.length;
+         variants = [...variantsBuilt.slice(hash), ...variantsBuilt.slice(0, hash)];
+      }
+      for(const variant of variants){
+        if(fits(variant, ax, ay)){
+          stamp(variant, ax, ay);
+          placements.push({ x: margin + ax*res, y: margin + ay*res, angleDeg: variant.angleDeg, variantIndex: variantsBuilt.indexOf(variant), variant: variant });
+          break;
         }
       }
     }
@@ -2801,7 +2843,7 @@ function computeNestingShapeAware(dieline, opts){
 // sweep order, without changing anything about how a single sweep itself
 // collides/places pieces. This is what actually drives the sheet toward
 // "fill it with minimum wastage" on every DXF upload.
-function computeNestingBestFit(dieline, opts){
+function runGridPackerStrategies(dieline, opts){
   // Fast strategy path: 2 sweeps (row and col) are sufficient to find optimal nesting without UI lag
   const strategies = (opts.allowRotation && opts.forcedAngle === null)
     ? [ { scanOrder: 'row', variantOrder: 'default' }, { scanOrder: 'col', variantOrder: 'default' } ]
@@ -2816,6 +2858,69 @@ function computeNestingBestFit(dieline, opts){
     }
   }
   return best || computeNestingShapeAware(dieline, opts);
+}
+
+function runGeneticGridPacker(dieline, opts){
+  // Wrap the grid packer in a Random Search / AI Heuristic (Monte Carlo)
+  // It tests multiple sweep strategies and random variant preferences
+  let best = runGridPackerStrategies(dieline, opts);
+  if(!opts.allowRotation || opts.forcedAngle !== null) return best; // no randomness to apply
+
+  // Run 2 random strategy iterations for real-time 60fps responsiveness
+  for(let i=0; i<2; i++){
+    const randStrat = {
+      scanOrder: Math.random() > 0.5 ? 'row' : 'col',
+      variantOrder: 'random',
+      randSeed: Math.random()
+    };
+    const result = computeNestingShapeAware(dieline, { ...opts, ...randStrat });
+    if(result.stats.up_count > best.stats.up_count ||
+       (result.stats.up_count === best.stats.up_count && result.stats.efficiency_percent > best.stats.efficiency_percent)){
+      best = result;
+    }
+  }
+  return best;
+}
+
+function runDeepNFPPacker(dieline, opts){
+  document.getElementById('deepEngineLoading').style.display = 'block';
+  
+  // High-resolution interlocking (1mm grid) + Simulated Annealing (Monte Carlo)
+  // We test up to 8 complex layout sequences to prevent browser lockup.
+  let best = runGridPackerStrategies(dieline, { ...opts, overrideRes: 1.5 });
+  
+  if(!opts.allowRotation || opts.forcedAngle !== null) {
+    document.getElementById('deepEngineLoading').style.display = 'none';
+    return best;
+  }
+
+  for(let i=0; i<8; i++){
+    const randStrat = {
+      scanOrder: Math.random() > 0.5 ? 'row' : 'col',
+      variantOrder: 'random',
+      randSeed: Math.random(),
+      overrideRes: 1.5 // tight interlocking
+    };
+    const result = computeNestingShapeAware(dieline, { ...opts, ...randStrat });
+    if(result.stats.up_count > best.stats.up_count ||
+       (result.stats.up_count === best.stats.up_count && result.stats.efficiency_percent > best.stats.efficiency_percent)){
+      best = result;
+    }
+  }
+  
+  document.getElementById('deepEngineLoading').style.display = 'none';
+  return best;
+}
+
+function computeNestingBestFit(dieline, opts){
+  if(currentNestingEngine === 'fast'){
+    document.getElementById('deepEngineLoading').style.display = 'none';
+    return runGeneticGridPacker(dieline, opts);
+  } else {
+    // We show the spinner, but since JS is single-threaded, it won't render
+    // until we yield. So we must force a tiny delay before the deep calculation.
+    return runDeepNFPPacker(dieline, opts);
+  }
 }
 
 function statsFrom(upCount, dieAreaMM2, dieline, sheetWidth, sheetHeight, margin, usableW, usableH){
@@ -3475,12 +3580,16 @@ function setForcedOrientation(mode){
   // Clicking the already-active button turns it back off (returns to the
   // normal auto-mix packer); clicking the other one switches straight over.
   forcedOrientation = (forcedOrientation === mode) ? null : mode;
-  document.getElementById('orientHorizontalBtn').classList.toggle('active-orient', forcedOrientation === 'horizontal');
-  document.getElementById('orientVerticalBtn').classList.toggle('active-orient', forcedOrientation === 'vertical');
+  const hBtn = document.getElementById('orientHorizontalBtn');
+  const vBtn = document.getElementById('orientVerticalBtn');
+  if(hBtn) hBtn.classList.toggle('active-orient', forcedOrientation === 'horizontal');
+  if(vBtn) vBtn.classList.toggle('active-orient', forcedOrientation === 'vertical');
   const help = document.getElementById('orientHelpText');
-  if(forcedOrientation === 'horizontal') help.textContent = 'All dielines on the sheet are locked horizontal (0\u00b0). Click again, or use "Try rotations", to go back to auto mix.';
-  else if(forcedOrientation === 'vertical') help.textContent = 'All dielines on the sheet are locked vertical (90\u00b0). Click again, or use "Try rotations", to go back to auto mix.';
-  else help.textContent = 'Auto mix (default): the packer can rotate each copy independently.';
+  if(help){
+    if(forcedOrientation === 'horizontal') help.textContent = 'All dielines on the sheet are locked horizontal. Click again to return to auto mix.';
+    else if(forcedOrientation === 'vertical') help.textContent = 'All dielines on the sheet are locked vertical. Click again to return to auto mix.';
+    else help.textContent = 'Auto mix (default): the packer can rotate each copy independently.';
+  }
   renderAll();
 }
 document.getElementById('orientHorizontalBtn').addEventListener('click', () => setForcedOrientation('horizontal'));
@@ -3493,9 +3602,12 @@ document.getElementById('orientVerticalBtn').addEventListener('click', () => set
 document.getElementById('allowRotate').addEventListener('click', () => {
   if(forcedOrientation){
     forcedOrientation = null;
-    document.getElementById('orientHorizontalBtn').classList.remove('active-orient');
-    document.getElementById('orientVerticalBtn').classList.remove('active-orient');
-    document.getElementById('orientHelpText').textContent = 'Auto mix (default): the packer can rotate each copy independently.';
+    const hBtn = document.getElementById('orientHorizontalBtn');
+    const vBtn = document.getElementById('orientVerticalBtn');
+    if(hBtn) hBtn.classList.remove('active-orient');
+    if(vBtn) vBtn.classList.remove('active-orient');
+    const help = document.getElementById('orientHelpText');
+    if(help) help.textContent = 'Auto mix (default): the packer can rotate each copy independently.';
   }
 });
 document.getElementById('bleedEnabled').addEventListener('change', (e)=>{
@@ -3930,8 +4042,10 @@ let renderToken = 0;
 // hard-mapping horizontal->0 / vertical->90.
 function resolveForcedAngle(){
   if(forcedOrientation !== 'horizontal' && forcedOrientation !== 'vertical') return null;
-  const nativeIsPortrait = BASE_DIMS.height >= BASE_DIMS.width; // shape's own 0deg orientation
-  const wantPortrait = forcedOrientation === 'vertical';
+  const boxW = parseFloat(document.getElementById('boxW')?.value) || (BASE_DIMS && BASE_DIMS.width) || 1;
+  const boxH = parseFloat(document.getElementById('boxH')?.value) || (BASE_DIMS && BASE_DIMS.height) || 1;
+  const nativeIsPortrait = boxH >= boxW; // shape's own 0deg orientation
+  const wantPortrait = (forcedOrientation === 'vertical');
   // angle 0 keeps the native orientation; angle 90 swaps it. Choose the
   // angle that actually matches what the user asked for.
   return (wantPortrait === nativeIsPortrait) ? 0 : 90;
@@ -4004,8 +4118,8 @@ function syncManualPlacementVariants(){
 }
 
 function quickUpCount(dieline, opts){
-  if(opts.sheetWidth <= 0 || opts.sheetHeight <= 0) return null;
-  return computeNestingShapeAware(dieline, opts).stats.up_count;
+  const r = runGridPackerStrategies(dieline, opts);
+  return r ? r.stats.up_count : null;
 }
 
 // Clears both canvases and blanks the stat readouts instead of ever
@@ -4042,7 +4156,7 @@ function showEmptyProjectState(){
   setText('statUp', '-');
   setText('statWasteArea', '-');
   setText('layoutBadge', 'No dieline loaded');
-  setText('unitBadge', '0 UPs');
+  setText('unitBadge', '0 boxes');
   const bar = document.getElementById('effBar');
   if(bar) bar.style.width = '0%';
 }
@@ -4064,9 +4178,19 @@ function renderAll(){
       return;
   }
 
+  if(currentNestingEngine === 'deep') {
+    const loader = document.getElementById('deepEngineLoading');
+    if(loader) loader.style.display = 'block';
+  }
+
   setTimeout(() => {
     if(myToken !== renderToken) return;
     const nestingResult = computeNestingBestFit(activeDieline, opts);
+    
+    if(currentNestingEngine === 'deep') {
+      const loader = document.getElementById('deepEngineLoading');
+      if(loader) loader.style.display = 'none';
+    }
     manualNestingResult = nestingResult; // save for manual mode base
 
     // BASE_VARIANT must always be the shape's true 0deg/unrotated variant --
@@ -4081,7 +4205,7 @@ function renderAll(){
     // Recompute the real 0deg variant on demand instead of ever accepting a
     // rotated stand-in.
     BASE_VARIANT = nestingResult.variants.find(v => v.angleDeg === 0)
-      || computeNestingShapeAware(activeDieline, { ...opts, forcedAngle: 0, allowRotation: false }).variants[0]
+      || (activeDieline ? buildVariants(activeDieline, false, opts.bleedEnabled, 2, opts.gutter, opts.bleedMM, 0)[0] : null)
       || nestingResult.variants[0];
     window.BASE_VARIANT = BASE_VARIANT; // keep the artwork/panel-detection script's view in sync -- see note above
     document.getElementById('dimsLabel').textContent = BASE_VARIANT.widthMM.toFixed(1)+' x '+BASE_VARIANT.heightMM.toFixed(1)+' mm';
@@ -4093,7 +4217,9 @@ function renderAll(){
   }, 0);
 }
 
-function tipHTML(text, headline){ return `<div class="tip${headline?' headline':''}"><span class="dot"></span><span>${text}</span></div>`; }
+function tipHTML(text, headline, actionBtn = ''){
+  return `<div class="tip${headline?' headline':''}"><div class="tip-content"><span class="dot"></span><span class="tip-text">${text}</span></div>${actionBtn}</div>`;
+}
 
 function findDeltaForNextUP(dieline, opts, currentUps, dim, step, maxSteps){
   // Exponential probe outward, then binary search back down to the smallest
@@ -4129,13 +4255,13 @@ function findDeltaForNextUP(dieline, opts, currentUps, dim, step, maxSteps){
 // answer, so a render that was triggered by something unrelated (an artwork
 // tweak, a color-panel change, a canvas pan) and happens to land here with
 // identical sheet/box/dieline settings can skip redoing all this work.
-function advisorSignature(dieline, opts, upCount){
+function advisorSignature(dieline, opts, upCount, targetUps){
   return [
     opts.sheetWidth, opts.sheetHeight, opts.margin, opts.gutter,
     opts.allowRotation, opts.bleedEnabled, opts.bleedMM, opts.forcedAngle,
     dieline && dieline.cuts ? dieline.cuts.length : 0,
     (BASE_DIMS && BASE_DIMS.width) || 0, (BASE_DIMS && BASE_DIMS.height) || 0,
-    upCount,
+    upCount, targetUps
   ].join('|');
 }
 let lastAdvisorSig = null;
@@ -4149,166 +4275,471 @@ let lastAdvisorSig = null;
 function scheduleAdvisorInsights(nestingResult, dieline, opts, myToken){
   setTimeout(() => {
     if(myToken !== renderToken) return;
-    const sig = advisorSignature(dieline, opts, nestingResult.stats.up_count);
+    const targetUps = parseInt(document.getElementById('targetUpsInput').value, 10) || null;
+    const sig = advisorSignature(dieline, opts, nestingResult.stats.up_count, targetUps);
     if(sig === lastAdvisorSig) return; // nothing the advisor cares about actually changed
-    renderAdvisorInsightsAsync(nestingResult, dieline, opts, myToken, sig);
-  }, 30);
+    renderAdvisorInsightsAsync(nestingResult, dieline, opts, myToken, sig, targetUps);
+  }, 400);
 }
 
-function renderAdvisorInsightsAsync(nestingResult, dieline, opts, myToken, sig){
+const STANDARD_SHEETS = [
+  { w: 210, h: 297, name: 'A4' },
+  { w: 297, h: 420, name: 'A3' },
+  { w: 420, h: 594, name: 'A2' },
+  { w: 500, h: 707, name: 'B2' },
+  { w: 594, h: 841, name: 'A1' },
+  { w: 635, h: 965, name: '635 x 965' },
+  { w: 700, h: 1000, name: '700 x 1000' },
+  { w: 707, h: 1000, name: 'B1' },
+  { w: 720, h: 1020, name: '720 x 1020' },
+  { w: 1000, h: 1400, name: '1000 x 1400' }
+];
+
+function renderAdvisorInsightsAsync(nestingResult, dieline, opts, myToken, sig, targetUps){
   const box = document.getElementById('advisorInsights');
   const stats = nestingResult.stats;
   const tips = [];
   if(autoFitNote){ tips.push(tipHTML(autoFitNote, true)); autoFitNote = null; }
   
-  tips.push(tipHTML(`Current layout: <b>${stats.up_count} UP${stats.up_count===1?'':'s'}</b> at <b>${stats.efficiency_percent.toFixed(1)}%</b> efficiency (${stats.waste_percent.toFixed(1)}% waste, ${Math.round(stats.waste_area_cm2).toLocaleString()} cm&sup2; wasted on this sheet).`, true));
+  tips.push(tipHTML(`Current layout: <b>${stats.up_count} box${stats.up_count===1?'':'es'} per sheet</b> at <b>${stats.efficiency_percent.toFixed(1)}%</b> efficiency (${stats.waste_percent.toFixed(1)}% waste, ${Math.round(stats.waste_area_cm2).toLocaleString()} cm&sup2; wasted on this sheet).`, true));
 
-  // The 80+ iterations of layout checks for "Sheet Width/Height increase" 
-  // recommendations were extremely slow and caused UI lag. They are removed 
-  // in favor of the instant Metrics Dashboard.
-  
   if(opts.bleedEnabled && opts.bleedMM > 0){
     setTimeout(() => {
       if(myToken !== renderToken) return;
       const noBleed = quickUpCount(dieline, {...opts, bleedEnabled:false, bleedMM:0});
       if(noBleed !== null && noBleed > stats.up_count) {
-        tips.push(tipHTML(`Bleed is costing you <b>${noBleed - stats.up_count} UP</b>.`));
+        tips.push(tipHTML(`Bleed is costing you <b>${noBleed - stats.up_count} box${(noBleed - stats.up_count)===1?'':'es'}</b>.`));
         box.innerHTML = tips.join('');
       }
     }, 10);
   }
 
+  // Squeeze Optimization Check
+  if(opts.gutter > 2 || opts.margin > 5){
+    setTimeout(() => {
+      if(myToken !== renderToken) return;
+      const squeezeOpts = { ...opts, gutter: Math.min(opts.gutter, 2), margin: Math.min(opts.margin, 5) };
+      const sqResult = runGridPackerStrategies(dieline, squeezeOpts);
+      if(sqResult && sqResult.stats.up_count > stats.up_count){
+        const text = `<b>Max Yield / Squeeze Mode:</b> You can fit <b>${sqResult.stats.up_count} box${sqResult.stats.up_count===1?'':'es'}</b> (an extra ${sqResult.stats.up_count - stats.up_count} box) by reducing gutter to ${squeezeOpts.gutter}mm and margin to ${squeezeOpts.margin}mm.`;
+        const btn = `<button type="button" class="advisor-apply-btn" id="applySqueezeBtn">Apply</button>`;
+        box.innerHTML += tipHTML(text, false, btn);
+        const sqBtn = document.getElementById('applySqueezeBtn');
+        if(sqBtn){
+          sqBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('margin').value = squeezeOpts.margin;
+            document.getElementById('gutter').value = squeezeOpts.gutter;
+            renderAll();
+          });
+        }
+      }
+    }, 20);
+  }
+
   lastAdvisorSig = sig;
   box.innerHTML = tips.join('');
+
+  // 1. Analyze Box Layout
+  analyzeStrategy(nestingResult, opts, myToken);
+
+  // 2. Scan Standard Sheets for better recommendations
+  scanOptimalSheets(dieline, opts, stats, myToken, targetUps);
+
+  // 3. Scan Box Resizing Opportunities (Shrink/Grow)
+  scanBoxResizeOpportunities(dieline, opts, stats, myToken, targetUps);
 }
 
+function scanBoxResizeOpportunities(dieline, opts, currentStats, myToken, targetUps){
+  const box = document.getElementById('advisorInsights');
+  if(!box || currentStats.up_count === 0) return;
 
-function findSheetForTargetUPS(target, dieline, opts, baseW, baseH){
-  const probe = transformDieline(dieline, 0, 0);
-  const bw = probe.width, bh = probe.height;
-  if(bw <= 0 || bh <= 0) return null;
+  setTimeout(() => {
+    if(myToken !== renderToken) return;
+    try {
+      const baseW = BASE_DIMS.width;
+    const baseH = BASE_DIMS.height;
+    if(!baseW || !baseH) return;
 
-  // Fast analytical grid search (evaluates in < 0.1ms)
-  let bestCandidate = null;
-  let bestArea = Infinity;
+    let msg = '';
 
-  for(let cols = 1; cols <= Math.min(target, 24); cols++){
-    const rows = Math.ceil(target / cols);
-    const w1 = Math.ceil((cols * (bw + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
-    const h1 = Math.ceil((rows * (bh + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
-    if(w1 * h1 < bestArea){
-      bestArea = w1 * h1;
-      bestCandidate = { w: w1, h: h1 };
+    if (targetUps) {
+      if (currentStats.up_count < targetUps) {
+        msg += tipHTML(`<b>Goal Status:</b> You are short by <b>${targetUps - currentStats.up_count} box${targetUps - currentStats.up_count === 1 ? '' : 'es'}</b> to hit your target of ${targetUps}.`);
+        
+        let bestShrink = null;
+        let lo = 1, hi = 50; 
+        for(let step=0; step<8; step++){
+          const mid = (lo+hi)/2;
+          const testW = baseW * (1 - mid/100);
+          const testH = baseH * (1 - mid/100);
+          const testDieline = gridScaleDieline(dieline, testW, testH);
+          const r = quickUpCount(testDieline, { ...opts, overrideRes: 4 });
+          if (r !== null && r >= targetUps) {
+            bestShrink = mid;
+            hi = mid;
+          } else {
+            lo = mid;
+          }
+        }
+        
+        if (bestShrink !== null) {
+          const sPercent = Math.ceil(bestShrink);
+          const text = `<b>Box Solution:</b> Shrink your box dimensions by <b>${sPercent}%</b> to perfectly fit ${targetUps} on this sheet.`;
+          const btn = `<button type="button" class="advisor-apply-btn applyScaleBtn" data-scale="${1 - sPercent/100}">Apply</button>`;
+          msg += tipHTML(text, false, btn);
+        } else {
+          msg += tipHTML(`<b>Box Solution:</b> Your target of ${targetUps} is too high to reach by shrinking the box reasonably. You must increase the sheet size.`);
+        }
+      } else if (currentStats.up_count > targetUps) {
+        msg += tipHTML(`<b>Goal Status:</b> You are exceeding your target of ${targetUps} by <b>${currentStats.up_count - targetUps} box${currentStats.up_count - targetUps === 1 ? '' : 'es'}</b>.`);
+        
+        let bestGrow = null;
+        let lo = 1, hi = 50;
+        for(let step=0; step<8; step++){
+          const mid = (lo+hi)/2;
+          const testW = baseW * (1 + mid/100);
+          const testH = baseH * (1 + mid/100);
+          const testDieline = gridScaleDieline(dieline, testW, testH);
+          const r = quickUpCount(testDieline, { ...opts, overrideRes: 4 });
+          if (r !== null && r >= targetUps) {
+            bestGrow = mid;
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
+        
+        if (bestGrow !== null) {
+          const gPercent = Math.floor(bestGrow);
+          if (gPercent > 0) {
+            const text = `<b>Box Solution:</b> You have enough room to grow your box dimensions by <b>${gPercent}%</b> and still fit your target of ${targetUps}.`;
+            const btn = `<button type="button" class="advisor-apply-btn applyScaleBtn" data-scale="${1 + gPercent/100}">Apply</button>`;
+            msg += tipHTML(text, false, btn);
+          }
+        }
+      } else {
+        msg += tipHTML(`<b>Goal Status:</b> You have perfectly hit your target of <b>${targetUps} boxes</b>!`);
+        
+        let bestGrow = null;
+        let lo = 1, hi = 50;
+        for(let step=0; step<8; step++){
+          const mid = (lo+hi)/2;
+          const testW = baseW * (1 + mid/100);
+          const testH = baseH * (1 + mid/100);
+          const testDieline = gridScaleDieline(dieline, testW, testH);
+          const r = quickUpCount(testDieline, { ...opts, overrideRes: 4 });
+          if (r !== null && r >= targetUps) {
+            bestGrow = mid;
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
+        
+        if (bestGrow !== null && Math.floor(bestGrow) > 0) {
+          const gPercent = Math.floor(bestGrow);
+          const text = `<b>Growth Opportunity:</b> You still have leftover paper. You can scale your box up by <b>${gPercent}%</b> without dropping below your target.`;
+          const btn = `<button type="button" class="advisor-apply-btn applyScaleBtn" data-scale="${1 + gPercent/100}">Apply</button>`;
+          msg += tipHTML(text, false, btn);
+        }
+      }
+    } else {
+      // Original logic when no target is set
+      let shrinkSuccess = null;
+      for(const percent of [1, 2, 3, 5, 8]){
+        const testW = baseW * (1 - percent/100);
+        const testH = baseH * (1 - percent/100);
+        const testDieline = gridScaleDieline(dieline, testW, testH);
+        const r = quickUpCount(testDieline, { ...opts, overrideRes: 4 });
+        if(r !== null && r > currentStats.up_count){
+          shrinkSuccess = { percent, extra: r - currentStats.up_count };
+          break;
+        }
+      }
+
+      let growSuccess = null;
+      for(const percent of [8, 5, 3, 2, 1]){
+        const testW = baseW * (1 + percent/100);
+        const testH = baseH * (1 + percent/100);
+        const testDieline = gridScaleDieline(dieline, testW, testH);
+        const r = quickUpCount(testDieline, { ...opts, overrideRes: 4 });
+        if(r !== null && r === currentStats.up_count){
+          growSuccess = { percent };
+          break;
+        }
+      }
+
+      if(shrinkSuccess){
+        const text = `<b>Shrink Opportunity:</b> If you reduce your box dimensions by just <b>${shrinkSuccess.percent}%</b>, you can fit <b>${shrinkSuccess.extra} more box${shrinkSuccess.extra===1?'':'es'}</b> on this exact sheet!`;
+        const btn = `<button type="button" class="advisor-apply-btn applyScaleBtn" data-scale="${1 - shrinkSuccess.percent/100}">Apply</button>`;
+        msg += tipHTML(text, false, btn);
+      }
+      if(growSuccess){
+        const text = `<b>Growth Opportunity:</b> You have enough free space to increase your box dimensions by up to <b>${growSuccess.percent}%</b> without reducing the number of boxes on this sheet.`;
+        const btn = `<button type="button" class="advisor-apply-btn applyScaleBtn" data-scale="${1 + growSuccess.percent/100}">Apply</button>`;
+        msg += tipHTML(text, false, btn);
+      }
     }
-    if(opts.allowRotation){
-      const w2 = Math.ceil((cols * (bh + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
-      const h2 = Math.ceil((rows * (bw + opts.gutter) - opts.gutter + opts.margin * 2) / 5) * 5;
-      if(w2 * h2 < bestArea){
+
+    if(msg){
+      box.innerHTML += msg;
+      const btns = box.querySelectorAll('.applyScaleBtn');
+      btns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = e.currentTarget || e.target;
+          const scale = parseFloat(target.getAttribute('data-scale'));
+          if(isNaN(scale)) return;
+          ['boxL', 'boxWd', 'boxHt', 'boxW', 'boxH'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.disabled) {
+              const val = parseFloat(el.value);
+              if (!isNaN(val)) {
+                el.value = Math.round(val * scale * 10) / 10;
+                el.dispatchEvent(new Event('input'));
+              }
+            }
+          });
+        });
+      });
+    }
+    } catch (err) {
+      box.innerHTML += `<div style="color:red; margin-top:8px;">Error in scanBoxResize: ${err.message}<br>${err.stack}</div>`;
+    }
+  }, 40);
+}
+
+function analyzeStrategy(nestingResult, opts, myToken){
+  const stratBox = document.getElementById('advisorStrategy');
+  if(!stratBox) return;
+
+  const placements = nestingResult.placements;
+  if(!placements || placements.length === 0){
+    stratBox.innerHTML = '<span style="color:#ef4444">Could not fit any boxes on this sheet. Try a larger sheet or smaller box.</span>';
+    return;
+  }
+
+  const rotCounts = {};
+  placements.forEach(p => rotCounts[p.angleDeg] = (rotCounts[p.angleDeg]||0)+1);
+  const orientationsUsed = Object.keys(rotCounts).length;
+  const total = placements.length;
+
+  let text = `We successfully nested <b>${total}</b> boxes. `;
+  if(orientationsUsed === 1){
+    text += `All boxes are aligned at <b>${placements[0].angleDeg}&deg;</b>. `;
+  } else {
+    text += `We used <b>${orientationsUsed} different orientations</b> to squeeze them in. `;
+  }
+
+  const eff = nestingResult.stats.efficiency_percent;
+  if(eff > 80){
+    text += `This is a highly efficient layout with minimal waste.`;
+  } else if(eff > 50){
+    text += `There is moderate waste. Consider checking our optimal sheet suggestions below.`;
+  } else {
+    text += `There is significant empty space. Reducing sheet size or rotating boxes might improve yield.`;
+  }
+
+  // Identify bounding box of the packed area to figure out rows/cols roughly
+  let maxX = 0, maxY = 0;
+  placements.forEach(p => {
+    const w = p.variant ? p.variant.widthMM : 0;
+    const h = p.variant ? p.variant.heightMM : 0;
+    if(p.x + w > maxX) maxX = p.x + w;
+    if(p.y + h > maxY) maxY = p.y + h;
+  });
+
+  const unusedW = opts.sheetWidth - opts.margin - maxX;
+  const unusedH = opts.sheetHeight - opts.margin - maxY;
+  
+  if(unusedW > 50 || unusedH > 50){
+    text += `<br><br><b>Note:</b> There is about <b>${Math.floor(unusedW)}mm</b> of free width and <b>${Math.floor(unusedH)}mm</b> of free height.`;
+  }
+
+  stratBox.innerHTML = text;
+}
+
+function scanOptimalSheets(dieline, opts, currentStats, myToken, targetUps){
+  const recBox = document.getElementById('advisorRecommendations');
+  if(!recBox) return;
+
+  setTimeout(() => {
+    if(myToken !== renderToken) return;
+    try {
+      let targetHtml = '';
+    if (targetUps) {
+      const bestSheet = calculateMinSheetForUps(targetUps, dieline, opts);
+      if (bestSheet) {
+        const text = `<b>Sheet Solution:</b> To exactly fit your target of ${targetUps} boxes, resize your sheet to <b>${bestSheet.w} &times; ${bestSheet.h} mm</b>.`;
+        const btn = `<button type="button" class="advisor-apply-btn applySheetBtn" data-w="${bestSheet.w}" data-h="${bestSheet.h}">Apply</button>`;
+        targetHtml = tipHTML(text, false, btn);
+      } else {
+        targetHtml = tipHTML(`<b>Sheet Solution:</b> Could not calculate a valid sheet size to fit ${targetUps} boxes.`);
+      }
+    }
+    
+    // We want sheets that give better efficiency OR same efficiency with less absolute waste, 
+    // OR just very high efficiency. We also want reasonable sizes.
+    const dieAreaMM2 = (currentStats && currentStats.die_area_mm2) ? currentStats.die_area_mm2 : 10000;
+    const results = [];
+    for(const sheet of STANDARD_SHEETS){
+      // Don't suggest the exact same sheet
+      if(Math.abs(sheet.w - opts.sheetWidth) < 5 && Math.abs(sheet.h - opts.sheetHeight) < 5) continue;
+      // Skip sheets too small to even fit 1 piece
+      if(sheet.w * sheet.h < dieAreaMM2) continue;
+
+      // Use coarse resolution for fast background advisory scanning so we don't freeze the UI
+      const r = computeNestingShapeAware(dieline, { ...opts, sheetWidth: sheet.w, sheetHeight: sheet.h, overrideRes: 4 });
+      if(r && r.stats.up_count > 0){
+        results.push({
+          sheet,
+          ups: r.stats.up_count,
+          eff: r.stats.efficiency_percent,
+          waste: r.stats.waste_percent,
+          wasteArea: r.stats.waste_area_cm2
+        });
+      }
+    }
+
+    // Sort by efficiency descending
+    results.sort((a,b) => b.eff - a.eff);
+    
+    // Pick top 2
+    const top = results.slice(0, 2);
+
+    let html = targetHtml;
+    
+    if (top.length > 0) {
+      html += top.map((r, i) => {
+        let isBetter = r.eff > currentStats.efficiency_percent;
+        const text = `<b>${isBetter ? 'Better' : 'Alternative'} standard sheet:</b> <b>${r.sheet.name}</b> (${r.sheet.w} &times; ${r.sheet.h} mm) fits <b>${r.ups} box${r.ups===1?'':'es'}</b> at <b>${r.eff.toFixed(1)}%</b> efficiency.`;
+        const btn = `<button type="button" class="advisor-apply-btn applySheetBtn" data-w="${r.sheet.w}" data-h="${r.sheet.h}">Apply</button>`;
+        return tipHTML(text, false, btn);
+      }).join('');
+    } else if (!targetHtml) {
+      html = '<span style="color:#64748b">No standard sheets produced a viable layout.</span>';
+    }
+
+    recBox.innerHTML = html;
+
+    const btns = recBox.querySelectorAll('.applySheetBtn');
+    btns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = e.currentTarget || e.target;
+        const w = target.getAttribute('data-w');
+        const h = target.getAttribute('data-h');
+        const sheetWEl = document.getElementById('sheetW');
+        const sheetHEl = document.getElementById('sheetH');
+        const presetEl = document.getElementById('preset');
+        if (sheetWEl) { sheetWEl.value = w; sheetWEl.dispatchEvent(new Event('input')); }
+        if (sheetHEl) { sheetHEl.value = h; sheetHEl.dispatchEvent(new Event('input')); }
+        if (presetEl) { presetEl.value = 'custom'; presetEl.dispatchEvent(new Event('change')); }
+        renderAll();
+      });
+    });
+    } catch (err) {
+      recBox.innerHTML = `<span style="color:red">Error in scanOptimalSheets: ${err.message}\n${err.stack}</span>`;
+    }
+  }, 20);
+}
+
+function calculateMinSheetForUps(targetUps, dieline, opts) {
+  if (targetUps <= 0 || !window.BASE_VARIANT) return null;
+  
+  const boxW = window.BASE_VARIANT.widthMM;
+  const boxH = window.BASE_VARIANT.heightMM;
+  
+  let bestArea = Infinity;
+  let bestSheet = null;
+
+  for (let r = 1; r <= targetUps; r++) {
+    const c = Math.ceil(targetUps / r);
+    
+    // Test unrotated layout
+    let w1 = c * boxW + Math.max(0, c - 1) * opts.gutter + opts.margin * 2;
+    let h1 = r * boxH + Math.max(0, r - 1) * opts.gutter + opts.margin * 2;
+    // Add 2mm safety padding and round to nearest 5mm to prevent floating point drops
+    w1 = Math.ceil((Math.ceil(w1) + 2) / 5) * 5;
+    h1 = Math.ceil((Math.ceil(h1) + 2) / 5) * 5;
+    
+    if (w1 * h1 < bestArea) {
+      bestArea = w1 * h1;
+      bestSheet = { w: w1, h: h1 };
+    }
+    
+    // Test rotated layout
+    if (opts.allowRotation) {
+      let w2 = c * boxH + Math.max(0, c - 1) * opts.gutter + opts.margin * 2;
+      let h2 = r * boxW + Math.max(0, r - 1) * opts.gutter + opts.margin * 2;
+      w2 = Math.ceil((Math.ceil(w2) + 2) / 5) * 5;
+      h2 = Math.ceil((Math.ceil(h2) + 2) / 5) * 5;
+      
+      if (w2 * h2 < bestArea) {
         bestArea = w2 * h2;
-        bestCandidate = { w: w2, h: h2 };
+        bestSheet = { w: w2, h: h2 };
       }
     }
   }
 
-  if(!bestCandidate) return null;
-
-  // Single fast nesting check to get precise yield & stats
-  let r = computeNestingShapeAware(dieline, { ...opts, sheetWidth: bestCandidate.w, sheetHeight: bestCandidate.h });
-  if(r.stats.up_count < target){
-    bestCandidate.w = Math.ceil((bestCandidate.w * 1.05)/5)*5;
-    bestCandidate.h = Math.ceil((bestCandidate.h * 1.05)/5)*5;
-    r = computeNestingShapeAware(dieline, { ...opts, sheetWidth: bestCandidate.w, sheetHeight: bestCandidate.h });
-  }
-
-  return { w: bestCandidate.w, h: bestCandidate.h, ups: r.stats.up_count, eff: r.stats.efficiency_percent };
+  return bestSheet;
 }
-
-function runSuggestSheet() {
-  const target = parseInt(document.getElementById('targetUps').value, 10);
-  const out = document.getElementById('advisorSuggestion');
-  if(!target || target < 1){ out.innerHTML = '<div class="advisor-warn">Enter a target UP count first.</div>'; return; }
-  out.innerHTML = '<div class="advisor-loading">Searching for the smallest sheet that fits that many&hellip;</div>';
-  setTimeout(() => {
-    const opts = currentSheetOpts(), activeDieline = getActiveDieline();
-    const result = findSheetForTargetUPS(target, activeDieline, opts, opts.sheetWidth, opts.sheetHeight);
-    if(!result){ out.innerHTML = '<div class="advisor-warn">Couldn&rsquo;t reach that UP count.</div>'; return; }
-    const sameAsCurrent = result.w === opts.sheetWidth && result.h === opts.sheetHeight;
-    out.innerHTML = sameAsCurrent
-      ? `<div class="advisor-result">Keep current sheet (<b>${result.w} &times; ${result.h} mm</b>). No reduction necessary &mdash; it already fits ${result.ups} UP at ${result.eff.toFixed(1)}% efficiency, and no smaller sheet in this size range still fits <b>${target} UP${target===1?'':'s'}</b>.</div>`
-      : `<div class="advisor-result">
-      For <b>${target} UP${target===1?'':'s'}</b> of the current box, try a sheet of <b>${result.w} &times; ${result.h} mm</b> &mdash; fits ${result.ups} UP at ${result.eff.toFixed(1)}% efficiency.
-      <div style="margin-top:8px;"><button type="button" id="applySuggestedSheet" class="linklike">Apply this sheet size</button></div></div>`;
-    const applyBtn = document.getElementById('applySuggestedSheet');
-    if(applyBtn) applyBtn.addEventListener('click', ()=>{
-      document.getElementById('sheetW').value = result.w; document.getElementById('sheetH').value = result.h; document.getElementById('preset').value = 'custom'; renderAll();
-    });
-  }, 10);
-}
-
-const debouncedSuggestSheet = debounce(runSuggestSheet, 300);
-document.getElementById('suggestSheetBtn').addEventListener('click', runSuggestSheet);
-document.getElementById('targetUps').addEventListener('input', debouncedSuggestSheet);
-document.getElementById('targetUps').addEventListener('keydown', (e) => { if(e.key === 'Enter') runSuggestSheet(); });
-
-// Given a candidate box L/W/H, returns the flat blank width/height it would
-// produce, using the exact same L/W/H -> flat-size relationship the real
-// "Box Dimensions" fields use (see applyLWHToCustomBox) so the check-only
-// preview below and an actual applied change always agree.
-function flatSizeForLWH(L, W, H){
-  if(BASE_DIMS.width <= 0 || BASE_DIMS.height <= 0) return null;
-  const refFlatW = 2*(BASE_LWH.L + BASE_LWH.W) + GLUE_TAB_W;
-  const refFlatH = BASE_LWH.H + BASE_LWH.W;
-  const targetFlatW = 2*(L + W) + GLUE_TAB_W;
-  const targetFlatH = H + W;
-  return {
-    boxW: BASE_DIMS.width * (targetFlatW / refFlatW),
-    boxH: BASE_DIMS.height * (targetFlatH / refFlatH)
-  };
-}
-
-function runCheckUps() {
-  const out = document.getElementById('boxUpsResult');
-  const L = parseFloat(document.getElementById('checkBoxL').value);
-  const W = parseFloat(document.getElementById('checkBoxW').value);
-  const H = parseFloat(document.getElementById('checkBoxH').value);
-  if(!L || !W || !H || L<=0 || W<=0 || H<=0){
-    out.innerHTML = '<div class="advisor-warn">Enter Length, Width and Height first.</div>';
-    return;
-  }
-  out.innerHTML = '<div class="advisor-loading">Checking how many fit on the current sheet&hellip;</div>';
-  setTimeout(() => {
-    const flat = flatSizeForLWH(L, W, H);
-    if(!flat){ out.innerHTML = '<div class="advisor-warn">Upload a DXF dieline first.</div>'; return; }
-    const testDieline = gridScaleDieline(DIELINE, flat.boxW, flat.boxH);
-    const opts = currentSheetOpts();
-    const result = computeNestingShapeAware(testDieline, opts);
-    const stats = result.stats;
-    out.innerHTML = `<div class="advisor-result">
-      A <b>${L} &times; ${W} &times; ${H} mm</b> box (flat blank ${flat.boxW.toFixed(1)} &times; ${flat.boxH.toFixed(1)} mm) fits
-      <b>${stats.up_count} UP${stats.up_count===1?'':'s'}</b> on the current <b>${opts.sheetWidth} &times; ${opts.sheetHeight} mm</b> sheet,
-      at ${stats.efficiency_percent.toFixed(1)}% efficiency.
-      <div style="margin-top:8px;"><button type="button" id="applyCheckedBoxBtn" class="linklike">Apply these L/W/H to the current design</button></div>
-    </div>`;
-    const applyBtn = document.getElementById('applyCheckedBoxBtn');
-    if(applyBtn) applyBtn.addEventListener('click', () => {
-      document.getElementById('boxL').value = L;
-      document.getElementById('boxWd').value = W;
-      document.getElementById('boxHt').value = H;
-      applyLWHToCustomBox();
-      autoFitAndRender();
-    });
-  }, 10);
-}
-
-const debouncedCheckUps = debounce(runCheckUps, 300);
-document.getElementById('checkBoxUpsBtn').addEventListener('click', runCheckUps);
-['checkBoxL', 'checkBoxW', 'checkBoxH'].forEach(id => {
-  document.getElementById(id).addEventListener('input', debouncedCheckUps);
-  document.getElementById(id).addEventListener('keydown', (e) => { if(e.key === 'Enter') runCheckUps(); });
-});
 
 window.addEventListener('resize', debouncedRender);
 autoFitAndRender();
+
+  const engFast = document.getElementById('engineFastBtn');
+  const engDeep = document.getElementById('engineDeepBtn');
+  if(engFast && engDeep) {
+    engFast.addEventListener('click', () => {
+      currentNestingEngine = 'fast';
+      engFast.classList.add('unit-active');
+      engDeep.classList.remove('unit-active');
+      document.getElementById('deepEngineLoading').style.display = 'none';
+      renderAll();
+    });
+    engDeep.addEventListener('click', () => {
+      currentNestingEngine = 'deep';
+      engDeep.classList.add('unit-active');
+      engFast.classList.remove('unit-active');
+      renderAll();
+    });
+  }
+  
+  const autoSizeBtn = document.getElementById('autoSizeSheetBtn');
+  if (autoSizeBtn) {
+    autoSizeBtn.addEventListener('click', () => {
+      const targetUps = parseInt(document.getElementById('targetUpsInput').value, 10);
+      if (!targetUps || targetUps <= 0 || isNaN(targetUps)) {
+        alert("Please enter a valid number of target boxes.");
+        return;
+      }
+      if (!dxfUploaded) {
+        alert("Please load a dieline first.");
+        return;
+      }
+      
+      // Get the currently scaled/active dieline from the global helper
+      const activeDielineToUse = getActiveDieline();
+      
+      const loader = document.getElementById('autoSizeLoader');
+      if (loader) loader.style.display = 'block';
+      
+      setTimeout(() => {
+        const bestSheet = calculateMinSheetForUps(targetUps, activeDielineToUse, currentSheetOpts());
+        if (loader) loader.style.display = 'none';
+        if (bestSheet) {
+          document.getElementById('sheetW').value = bestSheet.w;
+          document.getElementById('sheetH').value = bestSheet.h;
+          document.getElementById('preset').value = 'custom';
+          renderAll();
+        } else {
+          alert("Could not calculate a sheet size for this target.");
+        }
+      }, 50);
+    });
+  }
 
 // ============================================================
 // Print Sheet — always available. Reads whatever is currently

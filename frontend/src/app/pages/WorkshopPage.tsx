@@ -8,6 +8,7 @@ import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
+import { generateCosmeticBoxBDieline } from "../../lib/cosmeticBoxBDielineGenerator";
 import { generateDXFString } from "../../lib/exportUtils";
 import { Printer, Sparkles } from "lucide-react";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
@@ -43,13 +44,23 @@ const themes: Record<string, any> = {
 const IconNav = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18" /></svg>;
 const IconCloud = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42-1.89-1.78-3.5-3.5-3.5a5.5 5.5 0 0 0-5.38 4.41c-2 .19-3.62 1.63-3.62 3.59A3.5 3.5 0 0 0 7 19Z" /></svg>;
 
+// New pacdora-style sidebar icons
+const IconEdit = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>;
+const IconModels = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
+const IconLayout2 = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>;
+const IconImage = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>;
+const IconVideo = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>;
+const IconMore = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>;
+const IconUploadLarge = () => <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
+const IconSparkles = () => <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4M3 5h4"/></svg>;
+
 export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const store = useBoxStore((state: any) => state);
   const [foldProgress, setFoldProgress] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playDirection, setPlayDirection] = useState(-1);
-  const [activeSidebarTab, setActiveSidebarTab] = useState("Assets");
+  const [activeSidebarTab, setActiveSidebarTab] = useState("Edit");
   const [activeAnimation, setActiveAnimation] = useState("none");
   const [contextMenu, setContextMenu] = useState<any>(null);
   const [isStudioOpen, setIsStudioOpen] = useState(false);
@@ -91,6 +102,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       currentModel === 'rte' ? 'Reverse Tuck End Box' :
       currentModel === 'te' ? 'Straight Tuck End Box' :
       currentModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
+      currentModel === 'cosmetic_b' ? 'Cosmetic Box B (Mailer/Tray Style)' :
       currentModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 
     const dimL_mm = Math.round((store.L || 4.72) * 25.4);
@@ -217,6 +229,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
       else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
+      else if (store.boxModel === "cosmetic_b") dielineData = generateCosmeticBoxBDieline(params);
       else dielineData = generateRTEDielineDXF(params);
       
       const dxfString = generateDXFString(dielineData);
@@ -298,7 +311,13 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div 
               style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }} 
-              onClick={() => setShowExitConfirm(true)}
+              onClick={() => {
+                if (store.activeProjectId) {
+                  executeNavigation();
+                } else {
+                  setShowExitConfirm(true);
+                }
+              }}
               title="Return to Home"
             >
               {/* Circle K Logo */}
@@ -404,12 +423,13 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               <span>AI Assistant</span>
             </button>
 
-            <button style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.textMain, padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `0 1px 2px rgba(0,0,0,0.05)` }}>
-              <span style={{ color: "#6366f1" }}>✨</span> 50 credits <span style={{ background: t.textMain, color: t.bgPanel, borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>+</span>
-            </button>
-            <button style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.textMain, padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer", boxShadow: `0 1px 2px rgba(0,0,0,0.05)` }}>
-              3D Design ▾
-            </button>
+              <button 
+                onClick={handleSaveToWorkspace}
+                style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.textMain, padding: "6px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: `0 1px 2px rgba(0,0,0,0.05)` }}
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Save
+              </button>
             <button onClick={() => store.toggleTheme && store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "6px" }} title="Toggle Theme">
               {store.theme === 'dark' ?
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" /></svg> :
@@ -422,164 +442,225 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
           </div>
         </div>
 
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", background: "#d1d5db" }}>
 
-          {/* --- LEFT TOOLBAR (ORIGINAL 3 TABS WITH ROUNDED BOX STYLING) --- */}
-          <div style={{ width: "76px", background: t.bgPanel, borderRight: `2px solid ${t.border}`, display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0", gap: "20px", zIndex: 10, overflowY: "auto" }}>
-            {[
-              { id: 'Assets', label: 'ASSETS', icon: <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg> },
-              { id: 'Layout', label: 'LAYOUT', icon: <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="3" ry="3" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" /></svg> },
-              { id: 'Video', label: 'VIDEO', icon: <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="3" ry="3" /></svg> }
-            ].map((item, i) => {
-              const isActive = activeSidebarTab === item.id;
-              return (
-                <div 
-                  key={i} 
-                  onClick={() => {
-                    setActiveSidebarTab(item.id);
-                    if (item.id !== 'Video') {
-                      setIsPlaying(false);
-                      setFoldProgress(1);
-                    }
-                  }} 
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", cursor: "pointer", color: isActive ? t.cyan : t.textMuted }}
-                >
-                  <div style={{ 
-                    width: "52px", 
-                    height: "52px", 
-                    borderRadius: "18px", 
-                    background: isActive ? t.activeBg : "transparent", 
-                    border: isActive ? `1.5px solid ${t.cyan}` : "1.5px solid transparent",
-                    display: "flex", 
-                    alignItems: "center", 
-                    justifyContent: "center",
-                    transition: "all 0.2s ease"
-                  }}>
-                    {item.icon}
-                  </div>
-                  <span style={{ fontSize: "10px", fontWeight: isActive ? "800" : "600", letterSpacing: "0.5px" }}>
-                    {item.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* --- LEFT PANEL (ORIGINAL WORKSHOP CONTENT WITH MODERN BOX STYLING) --- */}
-          <div style={{ width: "320px", background: t.bgPanel, padding: "24px", display: "flex", flexDirection: "column", overflowY: "auto", zIndex: 10, borderRight: `2px solid ${t.border}` }}>
-
-            {activeSidebarTab === "Assets" && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>GRAPHICS & ASSETS</div>
-                  <button 
-                    onClick={() => setIsStudioOpen(true)}
-                    style={{ width: "100%", background: t.cyan, color: '#fff', border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: "600", fontSize: "14px", cursor: "pointer", boxShadow: `0 4px 12px rgba(37, 99, 235, 0.3)`, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                    Design Editor
-                  </button>
-                </div>
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>ASSETS LIBRARY</div>
-                  <div style={{ color: t.textMuted, fontSize: "13px", padding: '20px', background: t.inputBg, borderRadius: '8px', border: `1px solid ${t.border}`, textAlign: 'center' }}>No assets available.</div>
-                </div>
-              </div>
-            )}
-
-            {activeSidebarTab === "Layout" && (
-              <div>
-                <div style={{ fontSize: "12px", fontWeight: "700", color: t.textMuted, letterSpacing: "1px", marginBottom: "16px" }}>SCENE LAYOUT</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  {[
-                    { id: 'single', label: 'Single', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'single' ? t.cyan : t.textMuted}><polygon points="12,8 4,12 12,16 20,12" /></svg> },
-                    { id: 'stacked2', label: 'Stacked (2)', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'stacked2' ? t.cyan : t.textMuted}><polygon points="12,4 4,8 12,12 20,8" opacity="0.6" /><polygon points="12,12 4,16 12,20 20,16" /></svg> },
-                    { id: 'stacked3', label: 'Stacked (3)', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'stacked3' ? t.cyan : t.textMuted}><polygon points="12,2 5,5 12,8 19,5" opacity="0.4" /><polygon points="12,9 5,12 12,15 19,12" opacity="0.7" /><polygon points="12,16 5,19 12,22 19,19" /></svg> },
-                    { id: 'sidebyside', label: 'Side by Side', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'sidebyside' ? t.cyan : t.textMuted}><polygon points="8,10 2,13 8,16 14,13" /><polygon points="16,10 10,13 16,16 22,13" opacity="0.7" /></svg> },
-                    { id: 'offset', label: 'Offset', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'offset' ? t.cyan : t.textMuted}><polygon points="12,6 5,10 12,14 19,10" opacity="0.6" /><polygon points="16,13 9,17 16,21 23,17" /></svg> },
-                    { id: 'cascade', label: 'Cascade', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'cascade' ? t.cyan : t.textMuted}><polygon points="7,4 1,7 7,10 13,7" opacity="0.4" /><polygon points="12,9 6,12 12,15 18,12" opacity="0.7" /><polygon points="17,14 11,17 17,20 23,17" /></svg> },
-                  ].map(l => (
-                    <div key={l.id} onClick={() => store.setSceneLayout && store.setSceneLayout(l.id)} style={{ cursor: "pointer", background: t.inputBg, border: store.sceneLayout === l.id ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, borderRadius: "16px", padding: "20px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", boxShadow: store.sceneLayout === l.id ? `2px 3px 0px rgba(212, 140, 112, 0.2)` : `2px 3px 0px rgba(58,46,38,0.05)` }}>
-                      {l.icon}
-                      <div style={{ fontSize: "11px", fontWeight: "600", color: store.sceneLayout === l.id ? t.cyan : t.textMain, textAlign: "center" }}>{l.label}</div>
+          {/* FLOATING SIDEBAR WRAPPER */}
+          <div style={{ position: "absolute", left: "24px", top: "24px", bottom: "24px", zIndex: 10, display: "flex", gap: "16px", pointerEvents: "none" }}>
+            
+            {/* Nav Strip */}
+            <div style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ background: "#ffffff", borderRadius: "32px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
+                {[
+                  { id: 'Edit', icon: <IconEdit /> },
+                  { id: 'Models', icon: <IconModels /> },
+                  { id: 'Layout', icon: <IconLayout2 /> },
+                  { id: 'AI Background', icon: <IconImage /> },
+                  { id: 'Video', icon: <IconVideo /> },
+                  { id: 'More', icon: <IconMore /> }
+                ].map((item, i) => {
+                  const isActive = activeSidebarTab === item.id;
+                  return (
+                    <div 
+                      key={i} 
+                      onClick={() => {
+                        setActiveSidebarTab(item.id);
+                        if (item.id !== 'Video') {
+                          setIsPlaying(false);
+                          setFoldProgress(1);
+                        }
+                      }} 
+                      style={{ 
+                        width: "48px", 
+                        height: "48px", 
+                        borderRadius: "50%", 
+                        background: isActive ? "#eff6ff" : "transparent", 
+                        color: isActive ? "#2563eb" : "#6b7280",
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                      title={item.id}
+                    >
+                      {item.icon}
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+              <div 
+                style={{ background: "#ffffff", borderRadius: "32px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", cursor: "pointer", color: "#2563eb", transition: "all 0.2s ease" }}
+                onClick={() => setIsAiOpen(!isAiOpen)}
+                title="AI Design"
+              >
+                <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <IconSparkles />
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeSidebarTab === "Video" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div style={{ display: "flex", background: t.inputBg, border: `2px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", padding: "4px" }}>
-                  <div style={{ flex: 1, textAlign: "center", padding: "8px", fontSize: "12px", fontWeight: "600", borderRadius: "8px", background: t.activeBg, color: t.textMain, cursor: "pointer" }}>Animation</div>
-                  <div style={{ flex: 1, textAlign: "center", padding: "8px", fontSize: "12px", fontWeight: "600", color: t.textMuted, cursor: "pointer" }}>AI Video</div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "8px", paddingBottom: "24px" }}>
-                  {[
-                    { id: 'folder', label: 'Folder', src: '/videos/folding.mp4', time: '5s' },
-                    { id: 'rotation', label: 'Rotation', src: '/videos/rotate.mp4', time: '4s' },
-                    { id: 'drop', label: 'Drop', src: '/videos/drop.mp4', time: '3s' },
-                    { id: 'scale', label: 'Scale', src: '/videos/emphasis.mp4', time: '4s' },
-                    { id: 'emphasis', label: 'Emphasis', src: '/videos/emphasis.mp4', time: '4s' }
-                  ].map(vid => (
-                    <div key={vid.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      <div style={{ fontSize: "14px", fontWeight: "500", color: t.textMain }}>{vid.label}</div>
-                      
+            {/* Main Panel */}
+            {(activeSidebarTab === "Edit" || activeSidebarTab === "Layout" || activeSidebarTab === "Video") && (
+              <div style={{ pointerEvents: "auto", width: "320px", background: "#ffffff", borderRadius: "24px", padding: "24px", display: "flex", flexDirection: "column", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", overflowY: "auto" }}>
+                
+                {activeSidebarTab === "Edit" && (
+                  <>
+                    {/* Upload Section */}
+                    <div style={{ marginBottom: "24px" }}>
+                      <div style={{ fontSize: "16px", fontWeight: "700", color: "#111827", marginBottom: "16px" }}>Upload images</div>
                       <div 
-                        style={{ position: "relative", width: "100%", height: "200px", borderRadius: "12px", background: t.inputBg, border: activeAnimation === vid.id ? `2px solid ${t.cyan}` : `2px solid ${t.border}`, overflow: "hidden", cursor: "pointer", boxShadow: activeAnimation === vid.id ? `2px 3px 0px rgba(212, 140, 112, 0.2)` : `2px 3px 0px rgba(58,46,38,0.05)` }}
-                        onClick={() => {
-                          setActiveAnimation(vid.id);
-                          if (vid.id === 'folder') {
-                            setIsPlaying(true);
-                          } else {
-                            setIsPlaying(false);
-                            setFoldProgress(1);
-                          }
-                        }}
-                        onMouseEnter={(e) => {
-                          const v = e.currentTarget.querySelector('video');
-                          const overlay = e.currentTarget.querySelector('.vid-overlay') as HTMLElement;
-                          if (v) v.play().catch(e => console.log(e));
-                          if (overlay) overlay.style.opacity = '1';
-                        }}
-                        onMouseLeave={(e) => {
-                          const v = e.currentTarget.querySelector('video');
-                          const overlay = e.currentTarget.querySelector('.vid-overlay') as HTMLElement;
-                          if (v) { v.pause(); v.currentTime = 0; }
-                          if (overlay) overlay.style.opacity = '0';
-                        }}
+                        style={{ border: "2px dashed #93c5fd", borderRadius: "16px", padding: "32px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", background: "#eff6ff", cursor: "pointer" }}
+                        onClick={() => setIsStudioOpen(true)}
                       >
-                        <video 
-                          src={vid.src} 
-                          loop 
-                          muted 
-                          playsInline 
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                        <div style={{ position: "absolute", top: "12px", left: "12px", background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px" }}>{vid.time}</div>
-                        
-                        <div className="vid-overlay" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.25)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s" }}>
-                          <span style={{ color: "#fff", fontWeight: "600", fontSize: "18px", letterSpacing: "0.5px", textShadow: "0 2px 4px rgba(0,0,0,0.4)" }}>Preview</span>
-                        </div>
-                        
-                        <a 
-                          href={vid.src}
-                          download={`${vid.label} Animation.mp4`}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ position: "absolute", bottom: "12px", right: "12px", background: "rgba(0,0,0,0.5)", width: "32px", height: "32px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", transition: "background 0.2s" }}
-                          onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.7)"}
-                          onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.5)"}
-                        >
-                          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        </a>
+                        <div style={{ color: "#3b82f6" }}><IconUploadLarge /></div>
+                        <button style={{ background: "#3b82f6", color: "#ffffff", border: "none", borderRadius: "24px", padding: "10px 32px", fontSize: "15px", fontWeight: "600", cursor: "pointer", width: "100%" }}>
+                          Upload
+                        </button>
+                      </div>
+                      <div style={{ marginTop: "12px", fontSize: "13px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+                        Download dieline(AI, PDF)
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    <div style={{ width: "100%", height: "1px", background: "#e5e7eb", marginBottom: "24px" }} />
+
+                    {/* Configuration Cards */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      
+                      {/* Custom Material */}
+                      <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom material</span>
+                          <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
+                            {store.materialType || "Corrugated board"}
+                          </span>
+                        </div>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                      </div>
+
+                      {/* Custom Size */}
+                      <div 
+                        style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setContextMenu({
+                            x: rect.right + 12,
+                            y: rect.top,
+                            view: 'customSize'
+                          });
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom size</span>
+                          <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
+                            {(store.L * 25.4 / 25.4).toFixed(4)} x {(store.W * 25.4 / 25.4).toFixed(4)} x {(store.H * 25.4 / 25.4).toFixed(4)} in
+                          </span>
+                        </div>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                      </div>
+
+                      {/* Find Similar */}
+                      <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                        <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>Find similar with AI</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                      </div>
+                    </div>
+
+                    <div style={{ flex: 1 }} />
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#9ca3af", marginTop: "24px" }}>
+                      <span style={{ fontSize: "13px" }}>Model ID: {store.boxModel === "rte" ? "150010" : "150020"}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </div>
+                  </>
+                )}
+
+                {activeSidebarTab === "Layout" && (
+                  <div>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: "#111827", marginBottom: "20px" }}>Scene Layout</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      {[
+                        { id: 'single', label: 'Single', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'single' ? "#3b82f6" : "#9ca3af"}><polygon points="12,8 4,12 12,16 20,12" /></svg> },
+                        { id: 'stacked2', label: 'Stacked (2)', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'stacked2' ? "#3b82f6" : "#9ca3af"}><polygon points="12,4 4,8 12,12 20,8" opacity="0.6" /><polygon points="12,12 4,16 12,20 20,16" /></svg> },
+                        { id: 'stacked3', label: 'Stacked (3)', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'stacked3' ? "#3b82f6" : "#9ca3af"}><polygon points="12,2 5,5 12,8 19,5" opacity="0.4" /><polygon points="12,9 5,12 12,15 19,12" opacity="0.7" /><polygon points="12,16 5,19 12,22 19,19" /></svg> },
+                        { id: 'sidebyside', label: 'Side by Side', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'sidebyside' ? "#3b82f6" : "#9ca3af"}><polygon points="8,10 2,13 8,16 14,13" /><polygon points="16,10 10,13 16,16 22,13" opacity="0.7" /></svg> },
+                        { id: 'offset', label: 'Offset', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'offset' ? "#3b82f6" : "#9ca3af"}><polygon points="12,6 5,10 12,14 19,10" opacity="0.6" /><polygon points="16,13 9,17 16,21 23,17" /></svg> },
+                        { id: 'cascade', label: 'Cascade', icon: <svg width="32" height="32" viewBox="0 0 24 24" fill={store.sceneLayout === 'cascade' ? "#3b82f6" : "#9ca3af"}><polygon points="7,4 1,7 7,10 13,7" opacity="0.4" /><polygon points="12,9 6,12 12,15 18,12" opacity="0.7" /><polygon points="17,14 11,17 17,20 23,17" /></svg> },
+                      ].map(l => (
+                        <div key={l.id} onClick={() => store.setSceneLayout && store.setSceneLayout(l.id)} style={{ cursor: "pointer", background: store.sceneLayout === l.id ? "#eff6ff" : "#f9fafb", border: store.sceneLayout === l.id ? `2px solid #93c5fd` : `2px solid transparent`, borderRadius: "16px", padding: "20px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", transition: "all 0.2s" }}>
+                          {l.icon}
+                          <div style={{ fontSize: "12px", fontWeight: "600", color: store.sceneLayout === l.id ? "#2563eb" : "#4b5563", textAlign: "center" }}>{l.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeSidebarTab === "Video" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: "#111827", marginBottom: "4px" }}>Video Animations</div>
+                    <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "12px", overflow: "hidden", padding: "4px" }}>
+                      <div style={{ flex: 1, textAlign: "center", padding: "8px", fontSize: "13px", fontWeight: "600", borderRadius: "8px", background: "#ffffff", color: "#111827", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>Animation</div>
+                      <div style={{ flex: 1, textAlign: "center", padding: "8px", fontSize: "13px", fontWeight: "600", color: "#6b7280", cursor: "pointer" }}>AI Video</div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "8px", paddingBottom: "24px" }}>
+                      {[
+                        { id: 'folder', label: 'Folder', src: '/videos/folding.mp4', time: '5s' },
+                        { id: 'rotation', label: 'Rotation', src: '/videos/rotate.mp4', time: '4s' },
+                        { id: 'drop', label: 'Drop', src: '/videos/drop.mp4', time: '3s' },
+                        { id: 'scale', label: 'Scale', src: '/videos/emphasis.mp4', time: '4s' },
+                        { id: 'emphasis', label: 'Emphasis', src: '/videos/emphasis.mp4', time: '4s' }
+                      ].map(vid => (
+                        <div key={vid.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>{vid.label}</div>
+                          
+                          <div 
+                            style={{ position: "relative", width: "100%", height: "200px", borderRadius: "16px", background: "#f9fafb", border: activeAnimation === vid.id ? `2px solid #93c5fd` : `2px solid transparent`, overflow: "hidden", cursor: "pointer", transition: "all 0.2s" }}
+                            onClick={() => {
+                              setActiveAnimation(vid.id);
+                              if (vid.id === 'folder') {
+                                setIsPlaying(true);
+                              } else {
+                                setIsPlaying(false);
+                                setFoldProgress(1);
+                              }
+                            }}
+                            onMouseEnter={(e) => {
+                              const v = e.currentTarget.querySelector('video');
+                              const overlay = e.currentTarget.querySelector('.vid-overlay') as HTMLElement;
+                              if (v) v.play().catch(e => console.log(e));
+                              if (overlay) overlay.style.opacity = '1';
+                            }}
+                            onMouseLeave={(e) => {
+                              const v = e.currentTarget.querySelector('video');
+                              const overlay = e.currentTarget.querySelector('.vid-overlay') as HTMLElement;
+                              if (v) { v.pause(); v.currentTime = 0; }
+                              if (overlay) overlay.style.opacity = '0';
+                            }}
+                          >
+                            <video 
+                              src={vid.src} 
+                              loop 
+                              muted 
+                              playsInline 
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                            <div style={{ position: "absolute", top: "12px", left: "12px", background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: "11px", fontWeight: "600", padding: "4px 8px", borderRadius: "6px" }}>{vid.time}</div>
+                            
+                            <div className="vid-overlay" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.25)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s" }}>
+                              <span style={{ color: "#fff", fontWeight: "600", fontSize: "18px", letterSpacing: "0.5px", textShadow: "0 2px 4px rgba(0,0,0,0.4)" }}>Preview</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-
           </div>
 
           {/* --- MAIN CANVAS --- */}
@@ -810,9 +891,6 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: t.textMain, lineHeight: 1.3 }}>
                   Save changes before leaving?
                 </h3>
-                <p style={{ margin: "6px 0 0 0", fontSize: "13px", color: t.textMuted, lineHeight: 1.5 }}>
-                  You have active 3D mockup design edits in your workspace. Would you like to save your project or discard changes?
-                </p>
               </div>
             </div>
 

@@ -56,7 +56,7 @@ export default function MarqueeIsolated() {
   return (
     <>
       <section className="marquee-section">
-        <div className="marquee-container" id="marquee-container">
+        <div className={`marquee-container ${hoveredItem ? 'paused' : ''}`} id="marquee-container">
           {renderItems()}
           {renderItems()}
         </div>

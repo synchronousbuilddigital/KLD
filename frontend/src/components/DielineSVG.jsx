@@ -4,6 +4,7 @@ import { generateRTEDieline } from "../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../lib/cosmeticBoxDielineGenerator";
+import { generateCosmeticBoxBDieline } from "../lib/cosmeticBoxBDielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
@@ -149,6 +150,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     }
     if (boxModel === 'cosmetic') {
       return generateCosmeticBoxDieline({ L: manuL, W: manuW, H: manuH, T });
+    }
+    if (boxModel === 'cosmetic_b') {
+      return generateCosmeticBoxBDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
     }
     return generateRTEDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, method: generatorMethod, windowDecals });
   }, [manuL, manuW, manuH, T, glueFlapWidth, bleed, generatorMethod, boxModel, windowDecals]);

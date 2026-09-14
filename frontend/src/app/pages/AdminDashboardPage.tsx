@@ -115,7 +115,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [catalogFormTitle, setCatalogFormTitle] = useState('');
   const [catalogFormSubtitle, setCatalogFormSubtitle] = useState('');
   const [catalogFormImg, setCatalogFormImg] = useState('');
-  const [catalogFormGroup, setCatalogFormGroup] = useState<'boxes' | 'bottles' | 'pouches' | 'containers'>('boxes');
+  const [catalogFormDieline2DImg, setCatalogFormDieline2DImg] = useState('');
+  const [catalogFormBox3DImg, setCatalogFormBox3DImg] = useState('');
+  const [catalogFormGroup, setCatalogFormGroup] = useState<'boxes' | 'bottles' | 'pouches' | 'containers' | 'dielines'>('boxes');
   const [catalogFormBadge, setCatalogFormBadge] = useState('');
   const [catalogFormTag, setCatalogFormTag] = useState('');
   const [catalogFormIsFeatured, setCatalogFormIsFeatured] = useState(false);
@@ -124,6 +126,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [catalogFormOrder, setCatalogFormOrder] = useState(1);
   const [catalogFormBoxModelKey, setCatalogFormBoxModelKey] = useState('rte');
   const [isUploadingCatalogImg, setIsUploadingCatalogImg] = useState(false);
+  const [isUploadingCatalogDielineImg, setIsUploadingCatalogDielineImg] = useState(false);
+  const [isUploadingCatalogBoxImg, setIsUploadingCatalogBoxImg] = useState(false);
   const [isSavingCatalogItem, setIsSavingCatalogItem] = useState(false);
 
   // Sub-models / Variants management state
@@ -402,6 +406,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     setCatalogFormTitle('');
     setCatalogFormSubtitle('');
     setCatalogFormImg('/images/box.png');
+    setCatalogFormDieline2DImg('');
+    setCatalogFormBox3DImg('');
     setCatalogFormGroup('boxes');
     setCatalogFormBadge('');
     setCatalogFormTag('3D Studio');
@@ -418,6 +424,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
     setCatalogFormTitle(item.title || '');
     setCatalogFormSubtitle(item.subtitle || '');
     setCatalogFormImg(item.img || '');
+    setCatalogFormDieline2DImg(item.dieline2DImg || '');
+    setCatalogFormBox3DImg(item.box3DImg || '');
     setCatalogFormGroup(item.group || 'boxes');
     setCatalogFormBadge(item.badge || '');
     setCatalogFormTag(item.tag || '');
@@ -442,6 +450,8 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
         title: catalogFormTitle,
         subtitle: catalogFormSubtitle,
         img: catalogFormImg,
+        dieline2DImg: catalogFormDieline2DImg,
+        box3DImg: catalogFormBox3DImg,
         group: catalogFormGroup,
         badge: catalogFormBadge,
         tag: catalogFormTag,
@@ -517,6 +527,38 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
       alert('Failed to upload image. Fallback to image URL input.');
     } finally {
       setIsUploadingCatalogImg(false);
+    }
+  };
+
+  const handleDielineImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingCatalogDielineImg(true);
+      const res = await uploadService.uploadLogo(file);
+      if (res.success && res.data?.url) {
+        setCatalogFormDieline2DImg(res.data.url);
+      }
+    } catch (err) {
+      alert('Failed to upload image. Fallback to image URL input.');
+    } finally {
+      setIsUploadingCatalogDielineImg(false);
+    }
+  };
+
+  const handleBox3DImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingCatalogBoxImg(true);
+      const res = await uploadService.uploadLogo(file);
+      if (res.success && res.data?.url) {
+        setCatalogFormBox3DImg(res.data.url);
+      }
+    } catch (err) {
+      alert('Failed to upload image. Fallback to image URL input.');
+    } finally {
+      setIsUploadingCatalogBoxImg(false);
     }
   };
 
@@ -1580,6 +1622,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                   {[
                     { id: 'all', label: 'All Products' },
                     { id: 'boxes', label: 'Boxes' },
+                    { id: 'dielines', label: 'Dieline Models' },
                     { id: 'bottles', label: 'Bottles & Cans' },
                     { id: 'pouches', label: 'Pouches & Bags' },
                     { id: 'containers', label: 'Containers & Food' },
@@ -2628,6 +2671,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                     style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #e4e4e7', fontSize: '0.9rem', outline: 'none', background: '#ffffff' }}
                   >
                     <option value="boxes">Boxes</option>
+                    <option value="dielines">Dieline Models</option>
                     <option value="bottles">Bottles & Cans</option>
                     <option value="pouches">Pouches & Bags</option>
                     <option value="containers">Containers & Food</option>
@@ -2692,6 +2736,96 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                   </div>
                 </div>
               </div>
+
+              {catalogFormGroup === 'dielines' && (
+                <>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>DIELINE 2D BLUEPRINT IMAGE</label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #e4e4e7', background: '#fafafa', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {catalogFormDieline2DImg ? (
+                          <img src={catalogFormDieline2DImg} alt="Dieline Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        ) : (
+                          <span style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>No img</span>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Image URL (e.g. /images/blueprint.png)"
+                          value={catalogFormDieline2DImg}
+                          onChange={(e) => setCatalogFormDieline2DImg(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                        />
+
+                        <label
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: '#f4f4f5',
+                            color: '#18181b',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: '1px solid #e4e4e7',
+                            width: 'fit-content',
+                          }}
+                        >
+                          <Plus className="w-3.5 h-3.5" /> {isUploadingCatalogDielineImg ? 'Uploading...' : 'Upload Dieline Image'}
+                          <input type="file" accept="image/*" onChange={handleDielineImageFileUpload} style={{ display: 'none' }} disabled={isUploadingCatalogDielineImg} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#374151', display: 'block', marginBottom: '6px' }}>3D BOX PREVIEW IMAGE</label>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid #e4e4e7', background: '#fafafa', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {catalogFormBox3DImg ? (
+                          <img src={catalogFormBox3DImg} alt="Box 3D Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        ) : (
+                          <span style={{ fontSize: '0.7rem', color: '#a1a1aa' }}>No img</span>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Image URL (e.g. /images/box3d.png)"
+                          value={catalogFormBox3DImg}
+                          onChange={(e) => setCatalogFormBox3DImg(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+                        />
+
+                        <label
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: '#f4f4f5',
+                            color: '#18181b',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: '1px solid #e4e4e7',
+                            width: 'fit-content',
+                          }}
+                        >
+                          <Plus className="w-3.5 h-3.5" /> {isUploadingCatalogBoxImg ? 'Uploading...' : 'Upload 3D Box Image'}
+                          <input type="file" accept="image/*" onChange={handleBox3DImageFileUpload} style={{ display: 'none' }} disabled={isUploadingCatalogBoxImg} />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>

@@ -23,12 +23,16 @@ export const TemplateDetailCard = ({
   title, 
   type, 
   href, 
-  onClick 
+  onClick,
+  dieline2DImg,
+  box3DImg
 }: { 
   title: string, 
-  type: 'straight' | 'reverse' | 'auto_lock' | 'cosmetic', 
+  type: string, 
   href?: string, 
-  onClick?: () => void 
+  onClick?: () => void,
+  dieline2DImg?: string,
+  box3DImg?: string
 }) => {
   return (
     <a 
@@ -43,21 +47,21 @@ export const TemplateDetailCard = ({
       style={{ textDecoration: 'none' }}
     >
       {/* Top Preview Canvas Box */}
-      <div className="relative rounded-xl h-[190px] p-4 bg-gradient-to-b from-zinc-50 to-zinc-100/60 border border-zinc-100 flex items-center justify-between overflow-hidden mb-4 group-hover/detail:bg-indigo-50/30 transition-colors">
+      <div className="relative rounded-xl h-[250px] p-3 bg-zinc-100/80 border border-zinc-100 flex items-center justify-between overflow-hidden mb-4 group-hover/detail:bg-zinc-200/50 transition-colors">
         
-        {/* Badges Top Right */}
-        <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-          <span className="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-zinc-600 border border-zinc-200/80 shadow-xs">
-            Printable
-          </span>
-          <span className="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-zinc-600 border border-zinc-200/80 shadow-xs">
-            Downloadable
-          </span>
-        </div>
-
         {/* Dieline 2D Vector Left */}
-        <div className="w-1/2 h-full flex items-center justify-center relative pr-2">
-          <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] transition-transform duration-300 group-hover/detail:scale-105">
+        <div className="w-[65%] h-full flex items-center justify-center relative pr-2 overflow-hidden">
+          {dieline2DImg ? (
+            <img 
+              src={dieline2DImg} 
+              alt={`${title} Dieline`} 
+              className="w-full h-full object-contain transition-transform duration-300 scale-[1.3] group-hover/detail:scale-[1.35]"
+              style={{
+                mixBlendMode: 'darken'
+              }}
+            />
+          ) : (
+            <svg viewBox="0 0 100 100" className="w-full h-full transition-transform duration-300 scale-[1.2] group-hover/detail:scale-[1.25]">
             {type === 'straight' && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M25,25 h50 M25,75 h50 M40,20 v60 M60,20 v60 M75,25 v50 M25,25 v50" stroke="#EF4444" strokeDasharray="1.5 1.5" />
@@ -66,7 +70,7 @@ export const TemplateDetailCard = ({
                 <path d="M25,25 h-5 v50 h5 M75,25 h5 v50 h-5" stroke="#4F46E5" />
               </g>
             )}
-            {type === 'reverse' && (
+            {(type === 'reverse' || type === 'rte') && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M25,25 h50 M25,75 h50 M40,20 v60 M60,20 v60 M75,25 v50 M25,25 v50" stroke="#EF4444" strokeDasharray="1.5 1.5" />
                 <path d="M40,25 v-10 c0,-1 1,-2 2,-2 h16 c1,0 2,1 2,2 v10 M25,75 v10 c0,1 1,2 2,2 h11 c1,0 2,-1 2,-2 v-10" stroke="#4F46E5" />
@@ -82,7 +86,7 @@ export const TemplateDetailCard = ({
                 <path d="M25,65 l7,15 h8 v-15 M40,65 v15 h20 v-15 M60,65 l7,15 h8 v-15" stroke="#4F46E5" />
               </g>
             )}
-            {type === 'cosmetic' && (
+            {(type === 'cosmetic' || type === 'cosmetic_b') && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M20,35 h60 M20,75 h60 M35,20 v55 M55,20 v55 M75,35 v40 M20,35 v40" stroke="#EF4444" strokeDasharray="1.5 1.5" />
                 <path d="M35,35 L45,15 h10 L65,35" stroke="#4F46E5" />
@@ -91,14 +95,18 @@ export const TemplateDetailCard = ({
                 <path d="M20,35 h-5 v40 h5 M75,35 h5 v40 h-5" stroke="#4F46E5" />
               </g>
             )}
-          </svg>
+            </svg>
+          )}
         </div>
 
         {/* 3D Box Right */}
-        <div className="w-1/2 h-full flex items-center justify-center pl-2 relative">
-          <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] drop-shadow-md transition-transform duration-300 group-hover/detail:-translate-y-1.5 group-hover/detail:scale-105">
+        <div className="w-[35%] h-full flex items-center justify-center pl-2 relative">
+          {box3DImg ? (
+            <img src={box3DImg} alt={`${title} 3D Box`} className="w-full h-full object-contain drop-shadow-md transition-transform duration-300 group-hover/detail:-translate-y-1.5 group-hover/detail:scale-105" />
+          ) : (
+            <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] drop-shadow-md transition-transform duration-300 group-hover/detail:-translate-y-1.5 group-hover/detail:scale-105">
             <ellipse cx="60" cy="88" rx="20" ry="4" fill="rgba(0,0,0,0.1)" />
-            {type === 'cosmetic' ? (
+            {type === 'cosmetic' || type === 'cosmetic_b' ? (
               <>
                 <path d="M35,35 L65,30 L65,18 L35,22 Z" fill="#D97706" />
                 <path d="M35,22 L50,10 L65,18 Z" fill="#F59E0B" />
@@ -116,7 +124,8 @@ export const TemplateDetailCard = ({
                 <path d="M35,22 L65,18 L65,15 L35,20 Z" fill="#F8FAFC" />
               </>
             )}
-          </svg>
+            </svg>
+          )}
         </div>
       </div>
 
@@ -218,7 +227,8 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
                         <button onClick={() => setSelectedBoxModel('te')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Straight Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('rte')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Reverse Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('auto_lock')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Auto Lock Bottom Box</button>
-                        <button onClick={() => setSelectedBoxModel('cosmetic')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-indigo-600 font-semibold hover:bg-indigo-50">Cosmetic Box</button>
+                        <button onClick={() => setSelectedBoxModel('cosmetic')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Cosmetic Box</button>
+                        <button onClick={() => setSelectedBoxModel('cosmetic_b')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-indigo-600 font-semibold hover:bg-indigo-50">Cosmetic Box B (Mailer/Tray)</button>
                       </div>
                     </motion.div>
                   )}
@@ -242,11 +252,12 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
             </p>
 
             {/* GRID OF 4 ACTIVE BOX CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <TemplateDetailCard title="Straight Tuck End Box" type="straight" onClick={() => setSelectedBoxModel('te')} />
               <TemplateDetailCard title="Reverse Tuck End Box" type="reverse" onClick={() => setSelectedBoxModel('rte')} />
               <TemplateDetailCard title="Auto Lock Bottom Box" type="auto_lock" onClick={() => setSelectedBoxModel('auto_lock')} />
               <TemplateDetailCard title="Cosmetic Box" type="cosmetic" onClick={() => setSelectedBoxModel('cosmetic')} />
+              <TemplateDetailCard title="Cosmetic Box B (Mailer/Tray)" type="cosmetic_b" onClick={() => setSelectedBoxModel('cosmetic_b')} />
             </div>
           </div>
 

@@ -416,7 +416,7 @@ export default function App() {
   });
   const [stepIndex, setStepIndex] = useState(0);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' }>({
+  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' }>({
     isOpen: false,
     model: 'rte'
   });
@@ -873,13 +873,14 @@ export default function App() {
           onOpenStudioWithBox={(box, mode = 'dieline') => {
             if (!box) return;
 
-            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | null = box.boxModel || null;
+            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | null = box.boxModel || null;
 
             if (!boxModelKey && box.category) {
               const cat = box.category.toLowerCase();
               if (cat.includes('reverse') || cat.includes('rte')) boxModelKey = 'rte';
               else if (cat.includes('straight') || cat.includes('te')) boxModelKey = 'te';
               else if (cat.includes('auto') || cat.includes('lock')) boxModelKey = 'auto_lock';
+              else if (cat.includes('cosmetic b') || cat.includes('mailer') || cat.includes('tray')) boxModelKey = 'cosmetic_b';
               else if (cat.includes('cosmetic')) boxModelKey = 'cosmetic';
             }
 

@@ -18,9 +18,10 @@ import RTEBox3DViewer      from "./RTEBox3DViewer";
 import TEBox3DViewer       from "./TEBox3DViewer";
 import AutoLockBox3DViewer from "./AutoLockBox3DViewer";
 
-import CosmeticBox3DViewer from "./CosmeticBox3DViewer";
+import CosmeticBox3DViewer  from "./CosmeticBox3DViewer";
+import CosmeticBBox3DViewer from "./CosmeticBBox3DViewer";
 
-export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer };
+export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer };
 
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
@@ -28,5 +29,6 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
   if (model === "te") return <TEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
   if (model === "auto_lock") return <AutoLockBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
   if (model === "cosmetic") return <CosmeticBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
+  if (model === "cosmetic_b") return <CosmeticBBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
   return <RTEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
 }

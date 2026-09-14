@@ -15,7 +15,8 @@
     animation: scroll 25s linear infinite;
 }
 
-.marquee-container:hover {
+.marquee-container:hover,
+.marquee-container.paused {
     animation-play-state: paused;
 }
 

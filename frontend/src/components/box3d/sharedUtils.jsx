@@ -133,6 +133,7 @@ export function createProceduralTexture(materialCategory, packageColor) {
 
   let r, g, b;
   switch (materialCategory) {
+    case "kraft_cardboard":
     case "kraft_paperboard": r = 203; g = 171; b = 125; break; // Warm natural tan (matches Pacdora)
     case "corrugated":       r = 188; g = 149; b = 104; break; // Classic corrugated brown
     case "art_paper":        r = 255; g = 255; b = 255; break;
@@ -159,7 +160,7 @@ export function createProceduralTexture(materialCategory, packageColor) {
   const data     = imgData.data;
 
   let noiseMultiplier = 0;
-  if (materialCategory === "kraft_paperboard" || materialCategory === "corrugated") {
+  if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard" || materialCategory === "corrugated") {
     noiseMultiplier = 12; // Softer multiplier
   } else if (materialCategory === "white_paperboard") {
     noiseMultiplier = 1;
@@ -218,7 +219,7 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
   let metalness = 0.0;
   let bumpScale = 0.0;
   
-  if (materialCategory === "kraft_paperboard") {
+  if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") {
     roughness = 0.92; // Slightly softer reflection
     bumpScale = 0.002; // Very subtle bump, matching soft fibrous kraft
   } else if (materialCategory === "corrugated") {
@@ -239,7 +240,7 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
   });
 
   let insideHex = "#fdfbf7";
-  if (materialCategory === "kraft_paperboard") insideHex = "#dcb98e";
+  if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") insideHex = "#dcb98e";
   if (materialCategory === "corrugated")       insideHex = "#c19a6b";
   if (materialCategory === "art_paper")        insideHex = "#ffffff";
   if (insideColor && insideColor !== "transparent") insideHex = insideColor;
@@ -249,7 +250,7 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
   });
 
   let edgeHex = "#ebe5dc";
-  if (materialCategory === "kraft_paperboard") edgeHex = "#bfa079";
+  if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") edgeHex = "#bfa079";
   if (materialCategory === "corrugated")       edgeHex = "#a8865c";
   if (materialCategory === "art_paper")        edgeHex = "#f5f5f5";
   if (packageColor && packageColor !== "transparent") edgeHex = packageColor;

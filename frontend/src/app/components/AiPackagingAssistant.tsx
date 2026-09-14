@@ -6,6 +6,7 @@ import { generateRTEDielineDXF } from '../../lib/rteDielineGenerator';
 import { generateTEDielineDXF } from '../../lib/teDielineGenerator';
 import { generateAutoLockDieline } from '../../lib/autoLockDielineGenerator';
 import { generateCosmeticBoxDieline } from '../../lib/cosmeticBoxDielineGenerator';
+import { generateCosmeticBoxBDieline } from '../../lib/cosmeticBoxBDielineGenerator';
 import { generateDXFString } from '../../lib/exportUtils';
 import './AiPackagingAssistant.css';
 import { 
@@ -226,6 +227,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
       if (store.boxModel === 'te') dielineData = generateTEDielineDXF(params);
       else if (store.boxModel === 'auto_lock') dielineData = generateAutoLockDieline(params);
       else if (store.boxModel === 'cosmetic') dielineData = generateCosmeticBoxDieline(params);
+      else if (store.boxModel === 'cosmetic_b') dielineData = generateCosmeticBoxBDieline(params);
       else dielineData = generateRTEDielineDXF(params);
 
       const dxfString = generateDXFString(dielineData);
@@ -447,6 +449,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
             { id: 'rte', label: 'Reverse Tuck' },
             { id: 'te', label: 'Straight Tuck' },
             { id: 'cosmetic', label: 'Cosmetic Box' },
+            { id: 'cosmetic_b', label: 'Mailer/Tray' },
             { id: 'auto_lock', label: 'Auto-Lock' }
           ].map(tag => (
             <button

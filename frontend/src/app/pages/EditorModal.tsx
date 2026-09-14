@@ -77,7 +77,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       // This ensures useEditorStore keeps its own setDecals and doesn't mutate globalStore
       const stateData = JSON.parse(JSON.stringify(useBoxStore.getState()));
       if (isAiMode) {
-        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [] };
+        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [] };
       }
       useEditorStore.setState(stateData);
       
@@ -177,6 +177,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
         store.boxModel === 'te' ? 'Straight Tuck End Box' :
         store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
+        store.boxModel === 'cosmetic_b' ? 'Cosmetic Box B (Mailer/Tray Style)' :
         store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 
       const dimL_mm = Math.round((store.L || 4.72) * 25.4);

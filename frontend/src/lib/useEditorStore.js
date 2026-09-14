@@ -18,6 +18,42 @@ const createDefaultState = () => ({
   insideColor: null
 });
 
+const createCosmeticBDefaultState = () => ({
+  L: 270 / 25.4,
+  W: 260 / 25.4,
+  H: 62 / 25.4,
+  T: 0.5 / 25.4,
+  glueFlapWidth: 0.625,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "paperboard",
+  materialName: "350g white paperboard(0.5mm)",
+  isCustomMaterial: false,
+  materialColor: "#fdfbf7",
+  materialCategory: "white_paperboard",
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
+});
+
+const createCosmeticDefaultState = () => ({
+  L: 1.4016,
+  W: 1.4016,
+  H: 4.7874,
+  T: 0.0197, 
+  glueFlapWidth: 0.625,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "paperboard",
+  materialName: "350g white paperboard(0.5mm)",
+  isCustomMaterial: false,
+  materialColor: "#fdfbf7",
+  materialCategory: "white_paperboard",
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
+});
+
 export const useEditorStore = create((set) => ({
   // Default Dimensions & Unit
   unit: "in",
@@ -34,13 +70,15 @@ export const useEditorStore = create((set) => ({
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
-      cosmetic: createDefaultState()
+      cosmetic: createCosmeticDefaultState(),
+      cosmetic_b: createCosmeticBDefaultState()
     },
     mockup: {
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
-      cosmetic: createDefaultState()
+      cosmetic: createCosmeticDefaultState(),
+      cosmetic_b: createCosmeticBDefaultState()
     }
   },
 
@@ -200,7 +238,7 @@ export const useEditorStore = create((set) => ({
   }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];

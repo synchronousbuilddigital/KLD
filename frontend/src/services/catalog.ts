@@ -25,7 +25,9 @@ export interface CatalogItemData {
   title: string;
   subtitle: string;
   img: string;
-  group: 'boxes' | 'bottles' | 'pouches' | 'containers';
+  dieline2DImg?: string;
+  box3DImg?: string;
+  group: 'boxes' | 'bottles' | 'pouches' | 'containers' | 'dielines';
   badge?: string;
   tag?: string;
   isFeatured?: boolean;

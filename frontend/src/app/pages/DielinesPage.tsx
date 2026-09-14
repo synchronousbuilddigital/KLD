@@ -18,6 +18,7 @@ import Header from '../components/layout/Header';
 import TemplateLibraryPage, { TemplateDetailCard } from './TemplateLibraryPage';
 import TopDielineTemplates from './TopDielineTemplates';
 import BoxStudioModal from './BoxStudioModal';
+import { catalogService, CatalogItemData } from '../../services/catalog';
 
 interface DielinesPageProps {
   onNavigate: (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'workspace') => void;
@@ -43,6 +44,7 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dielineModels, setDielineModels] = useState<CatalogItemData[]>([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -57,29 +59,26 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchDielines = async () => {
+      const catalog = await catalogService.getPublicCatalog();
+      setDielineModels(catalog.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0)));
+    };
+    fetchDielines();
+    
+    const handleUpdate = () => fetchDielines();
+    window.addEventListener('catalog-updated', handleUpdate);
+    return () => window.removeEventListener('catalog-updated', handleUpdate);
+  }, []);
+
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
 
-    const cleanDefaultState = {
-      L: 4.7244,
-      W: 2.3622,
-      H: 6.2992,
-      T: 0.0197,
-      glueFlapWidth: 0.625,
-      bleed: 2 / 25.4,
-      sizeMode: "manufacture",
-      materialType: "paperboard",
-      materialName: "350g white paperboard(0.5mm)",
-      isCustomMaterial: false,
-      materialColor: "#fdfbf7",
-      materialCategory: "white_paperboard",
-      packageColor: null,
-      insideColor: null
-    };
-
-    let targetModel: 'rte' | 'te' | 'auto_lock' | 'cosmetic' = 'rte';
+    let targetModel: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' = 'rte';
     if (category === 'tuck_end' || category === 'folding' || category === 'rte') {
       targetModel = 'rte';
+    } else if (category === 'cosmetic_b' || category === 'mailer' || category === 'tray') {
+      targetModel = 'cosmetic_b';
     } else if (category === 'paper_bag' || category === 'envelope' || category === 'cosmetic') {
       targetModel = 'cosmetic';
     } else if (category === 'box_lid' || category === 'rigid_box' || category === 'auto_lock') {
@@ -88,25 +87,30 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
       targetModel = 'te';
     }
 
-    useBoxStore.setState({ boxModel: targetModel, ...cleanDefaultState });
+    useBoxStore.getState().setContextAndModel('dieline', targetModel);
     setSelectedBoxModel(targetModel);
   };
 
-  const filteredCards = [
-    { id: 'te', title: 'Straight Tuck End Box', type: 'straight', model: 'te', categories: ['all', 'te'] },
-    { id: 'rte', title: 'Reverse Tuck End Box', type: 'reverse', model: 'rte', categories: ['all', 'rte', 'tuck_end', 'folding'] },
-    { id: 'auto_lock', title: 'Auto Lock Bottom Box', type: 'auto_lock', model: 'auto_lock', categories: ['all', 'auto_lock', 'box_lid', 'rigid_box'] },
-    { id: 'cosmetic', title: 'Cosmetic Box', type: 'cosmetic', model: 'cosmetic', categories: ['all', 'cosmetic', 'paper_bag', 'envelope'] },
-  ].filter(card => {
+  const filteredCards = dielineModels.filter(card => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const matchesTitle = card.title.toLowerCase().includes(q);
-      const matchesType = card.type.toLowerCase().includes(q);
-      if (!matchesTitle && !matchesType) return false;
+      const matchesTitle = card.title?.toLowerCase().includes(q) || false;
+      const matchesSubtitle = card.subtitle?.toLowerCase().includes(q) || false;
+      if (!matchesTitle && !matchesSubtitle) return false;
     }
 
     if (activeCategory === 'all') return true;
-    return card.categories.includes(activeCategory);
+    
+    const key = card.boxModelKey;
+    if (activeCategory === key) return true;
+    if (activeCategory === 'folding' && key === 'rte') return true;
+    if (activeCategory === 'tuck_end' && key === 'rte') return true;
+    if (activeCategory === 'box_lid' && key === 'auto_lock') return true;
+    if (activeCategory === 'paper_bag' && key === 'cosmetic') return true;
+    if (activeCategory === 'mailer' && key === 'cosmetic_b') return true;
+    if (activeCategory === 'tray' && key === 'cosmetic_b') return true;
+    
+    return false;
   });
 
   return (
@@ -220,13 +224,15 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
             )}
 
             {filteredCards.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredCards.map((card) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCards.map((item) => (
                   <TemplateDetailCard
-                    key={card.id}
-                    title={card.title}
-                    type={card.type}
-                    onClick={() => setSelectedBoxModel(card.model as any)}
+                    key={item._id || item.itemId}
+                    title={item.title}
+                    type={item.boxModelKey || 'rte'}
+                    dieline2DImg={item.dieline2DImg}
+                    box3DImg={item.box3DImg}
+                    onClick={() => setSelectedBoxModel(item.boxModelKey as any)}
                   />
                 ))}
               </div>

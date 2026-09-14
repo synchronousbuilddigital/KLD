@@ -18,6 +18,7 @@ const DEFAULT_CATALOG_ITEMS = [
       { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/images/boxes/ste_white.jpg', whiteImageUrl: '/images/boxes/ste_white.jpg', kraftImageUrl: '/images/boxes/ste_kraft.jpg', boxModelKey: 'te', gridSize: 'large' },
       { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/images/boxes/auto_white.jpg', whiteImageUrl: '/images/boxes/auto_white.jpg', kraftImageUrl: '/images/boxes/auto_kraft.jpg', boxModelKey: 'auto_lock', gridSize: 'large' },
       { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
+      { id: 5, name: 'Cosmetic Box B (Mailer/Tray Style)', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
     ],
   },
   {
@@ -397,7 +398,7 @@ const invalidateCatalogCache = () => {
   cachedPublicCatalog = null;
 };
 
-// Helper to seed default catalog items once if collection is completely empty
+// Helper to seed default catalog items once if collection is completely empty, and ensure cosmetic_b is present
 const ensureCatalogSeeded = async () => {
   if (isCatalogSeeded) return;
   try {
@@ -405,6 +406,26 @@ const ensureCatalogSeeded = async () => {
     if (count === 0) {
       await CatalogItem.insertMany(DEFAULT_CATALOG_ITEMS);
       console.log('🌱 Default 3D Model catalog items seeded successfully');
+    } else {
+      const boxItem = await CatalogItem.findOne({ itemId: 'box-mockups' });
+      if (boxItem) {
+        const hasCosmeticB = boxItem.variants && boxItem.variants.some(v => v.boxModelKey === 'cosmetic_b' || (v.name && v.name.includes('Cosmetic Box B')));
+        if (!hasCosmeticB) {
+          boxItem.variants.push({
+            id: 5,
+            name: 'Cosmetic Box B (Mailer/Tray Style)',
+            animation: 'Roll end tray and tuck front closure',
+            imageUrl: '/images/boxes/cosmetic_b_white.jpg',
+            whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg',
+            kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg',
+            boxModelKey: 'cosmetic_b',
+            gridSize: 'large'
+          });
+          await boxItem.save();
+          invalidateCatalogCache();
+          console.log('🌱 Added Cosmetic Box B (Mailer/Tray Style) to box-mockups in database');
+        }
+      }
     }
     isCatalogSeeded = true;
   } catch (err) {
@@ -417,6 +438,8 @@ const ensureCatalogSeeded = async () => {
  */
 const getPublicCatalog = async (req, res) => {
   try {
+    await ensureCatalogSeeded();
+
     if (cachedPublicCatalog && cachedPublicCatalog.length > 0) {
       return res.json({
         success: true,
@@ -425,8 +448,23 @@ const getPublicCatalog = async (req, res) => {
       });
     }
 
-    await ensureCatalogSeeded();
     const items = await CatalogItem.find({ active: true }).sort({ order: 1, createdAt: 1 }).lean();
+    
+    // Ensure box-mockups has cosmetic_b variant
+    const boxMockup = items.find(i => i.itemId === 'box-mockups');
+    if (boxMockup && boxMockup.variants && !boxMockup.variants.some(v => v.boxModelKey === 'cosmetic_b')) {
+      boxMockup.variants.push({
+        id: 5,
+        name: 'Cosmetic Box B (Mailer/Tray Style)',
+        animation: 'Roll end tray and tuck front closure',
+        imageUrl: '/images/boxes/cosmetic_b_white.jpg',
+        whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg',
+        kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg',
+        boxModelKey: 'cosmetic_b',
+        gridSize: 'large'
+      });
+    }
+
     cachedPublicCatalog = items;
 
     res.json({

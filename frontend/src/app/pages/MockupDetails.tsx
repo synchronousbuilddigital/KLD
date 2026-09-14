@@ -40,6 +40,10 @@ const BOX_MOCKUP_IMAGES: Record<string, { white: string; kraft: string }> = {
     white: '/images/boxes/cosmetic_white.jpg',
     kraft: '/images/boxes/cosmetic_kraft.jpg',
   },
+  cosmetic_b: {
+    white: '/images/boxes/cosmetic_b_white.jpg',
+    kraft: '/images/boxes/cosmetic_b_kraft.jpg',
+  },
 };
 
 const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVariant }: any) => {
@@ -50,8 +54,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isRTE = variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte';
   const isAuto = variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock';
   const isCosmetic = variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic';
-  const isBox = isTE || isRTE || isAuto || isCosmetic;
-  const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmetic ? 'cosmetic' : 'rte');
+  const isCosmeticB = variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b';
+  const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB;
+  const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isCosmetic ? 'cosmetic' : 'rte');
 
   const [material, setMaterial] = useState<'white' | 'kraft'>('white');
 
@@ -62,9 +67,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const handleClick = () => {
     const isKraft = material === 'kraft';
     const cleanDefaultState = {
-      L: 4.7244,
-      W: 2.3622,
-      H: 6.2992,
+      L: isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244),
+      W: isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622),
+      H: isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992),
       T: 0.0197,
       glueFlapWidth: 0.625,
       bleed: 2 / 25.4,
@@ -76,10 +81,10 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       materialCategory: isKraft ? "kraft_cardboard" : "white_paperboard",
       packageColor: null,
       insideColor: null,
-      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [] }
+      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [] }
     };
 
-    const targetModel = variant.boxModelKey || (isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmetic ? 'cosmetic' : 'rte');
+    const targetModel = variant.boxModelKey || (isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isCosmetic ? 'cosmetic' : 'rte');
 
     useBoxStore.setState({ 
       boxModel: targetModel, 
@@ -124,10 +129,22 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
           
           {/* Bottom Buttons */}
           <div className="absolute bottom-28 left-0 right-0 flex justify-center gap-3 w-full">
-            <button className="pointer-events-auto px-6 py-2.5 bg-white text-zinc-900 font-medium rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow text-[15px]">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClick();
+              }}
+              className="pointer-events-auto px-6 py-2.5 bg-white text-zinc-900 font-medium rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow text-[15px] cursor-pointer"
+            >
               Custom
             </button>
-            <button className="pointer-events-auto px-6 py-2.5 bg-white text-zinc-900 font-medium rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow text-[15px]">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClick();
+              }}
+              className="pointer-events-auto px-6 py-2.5 bg-white text-zinc-900 font-medium rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow text-[15px] cursor-pointer"
+            >
               3D design
             </button>
           </div>
@@ -210,11 +227,32 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 };
 
 
+const ensureBoxMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
+  return cats.map((cat) => {
+    if (cat.id === 'box-mockups') {
+      const defaultBoxCategory = mockupCategories.find(c => c.id === 'box-mockups');
+      const defaultVariants = defaultBoxCategory?.variants || [];
+      const currentVariants = [...(cat.variants || [])];
+      for (const defV of defaultVariants) {
+        const exists = currentVariants.some(v => v.boxModelKey === defV.boxModelKey || (v.name && v.name.toLowerCase().includes('cosmetic box b')));
+        if (!exists) {
+          currentVariants.push(defV);
+        }
+      }
+      return {
+        ...cat,
+        variants: currentVariants
+      };
+    }
+    return cat;
+  });
+};
+
 export default function MockupDetails({ initialCategoryId, onBack }: MockupDetailsProps) {
   const [categories, setCategories] = useState<MockupCategory[]>(() => {
     const cached = catalogService.getCachedCatalog();
     if (cached && cached.length > 0) {
-      return cached.map((item) => ({
+      const mapped = cached.map((item) => ({
         id: item.itemId || item._id || '',
         name: item.title,
         variants: item.variants && item.variants.length > 0
@@ -223,6 +261,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
               { id: 1, name: item.title, animation: item.subtitle, imageUrl: item.img }
             ],
       }));
+      return ensureBoxMockupsComplete(mapped);
     }
     return mockupCategories;
   });
@@ -249,7 +288,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
                   { id: 1, name: item.title, animation: item.subtitle, imageUrl: item.img }
                 ],
           }));
-          setCategories(mapped);
+          setCategories(ensureBoxMockupsComplete(mapped));
         }
       });
     };

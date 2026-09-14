@@ -290,11 +290,13 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-3xl p-10 border-2 border-indigo-500 shadow-[0_30px_60px_-15px_rgba(99,102,241,0.15)] flex flex-col h-full relative overflow-hidden"
+            className="bg-white rounded-3xl p-10 border-2 border-indigo-500 shadow-[0_30px_60px_-15px_rgba(99,102,241,0.15)] flex flex-col h-full relative"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+            <div className="absolute inset-0 overflow-hidden rounded-[calc(1.5rem-2px)] pointer-events-none">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 translate-x-1/2 -translate-y-1/2"></div>
+            </div>
             
-            <div className="absolute top-0 right-10 transform -translate-y-1/2">
+            <div className="absolute top-0 right-10 transform -translate-y-1/2 z-10">
               <div className="bg-indigo-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
                 ✦ Commercial Use
               </div>

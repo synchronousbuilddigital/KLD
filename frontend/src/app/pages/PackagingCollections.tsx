@@ -48,7 +48,7 @@ interface Props {
 export default function PackagingCollections({ onCategorySelect, showExploreButton }: Props) {
   const [categories, setCategories] = useState<CategoryItem[]>(() => {
     const cached = catalogService.getCachedCatalog();
-    return cached && cached.length > 0 ? mapCatalogItems(cached) : [];
+    return cached && cached.length > 0 ? mapCatalogItems(cached.filter(item => item.group !== 'dielines')) : [];
   });
   const [isLoading, setIsLoading] = useState<boolean>(categories.length === 0);
 
@@ -60,7 +60,7 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
         const publicCatalog = await catalogService.getPublicCatalog();
         if (isMounted) {
           if (publicCatalog && publicCatalog.length > 0) {
-            setCategories(mapCatalogItems(publicCatalog));
+            setCategories(mapCatalogItems(publicCatalog.filter(item => item.group !== 'dielines')));
           }
           setIsLoading(false);
         }

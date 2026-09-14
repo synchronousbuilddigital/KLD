@@ -58,49 +58,52 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
   return (
     <>
       <motion.header className="main-header" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
-        <AnimatedLogo onClick={() => handleNavClick('landing', '/')} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <AnimatedLogo onClick={() => handleNavClick('landing', '/')} />
+        </div>
 
         <nav className="nav-links">
           <a href="/3d-models" onClick={(e) => {
             e.preventDefault();
             handleNavClick('models', '/3d-models');
-          }} className="nav-link">
+          }} className={`nav-link ${activeNav === 'models' ? 'active' : ''}`}>
             <svg className="nav-link-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
             3D Models
           </a>
           <a href="/dielines" onClick={(e) => {
             e.preventDefault();
             handleNavClick('dielines', '/dielines');
-          }} className="nav-link">
+          }} className={`nav-link ${activeNav === 'dielines' ? 'active' : ''}`}>
             <svg className="nav-link-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" /></svg>
             Dieline Templates
           </a>
           <a href="/ai-studio" onClick={(e) => {
             e.preventDefault();
             handleNavClick('aistudio', '/ai-studio');
-          }} className="nav-link">
+          }} className={`nav-link ${activeNav === 'aistudio' ? 'active' : ''} ai-nav-btn`}>
             <svg className="nav-link-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z" /></svg>
             AI creation
           </a>
           <a href="/pricing" onClick={(e) => {
             e.preventDefault();
             handleNavClick('pricing', '/pricing');
-          }} className="nav-link">
+          }} className={`nav-link ${activeNav === 'pricing' ? 'active' : ''}`}>
             <svg className="nav-link-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
             Pricing
           </a>
           <a href="/about-us" onClick={(e) => {
             e.preventDefault();
             handleNavClick('about', '/about-us');
-          }} className="nav-link">
+          }} className={`nav-link ${activeNav === 'about' ? 'active' : ''}`}>
             <svg className="nav-link-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
             About us
           </a>
         </nav>
 
-        {isLoggedIn ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div className="group relative cursor-pointer mr-0.5">
+        {/* RIGHT ACTION BUTTONS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {isLoggedIn ? (
+            <div className="group relative cursor-pointer">
               <div
                 onClick={() => handleNavClick(currentUser?.role === 'ADMIN' ? 'admin' : 'profile', currentUser?.role === 'ADMIN' ? '/admin' : '/profile')}
                 className="w-10 h-10 rounded-full bg-zinc-950 text-white flex items-center justify-center font-extrabold text-sm uppercase shadow-xs border border-zinc-800 hover:ring-2 hover:ring-zinc-300 transition-all"
@@ -145,20 +148,24 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
                 </button>
               </div>
             </div>
-          </div>
-        ) : (
-          <button className="btn btn-header" onClick={() => setIsSignInModalOpen(true)}>
-            Start Designing <span className="arrow">→</span>
+          ) : (
+            <button className="btn btn-header" onClick={() => setIsSignInModalOpen(true)}>
+              Start Designing <span className="arrow">→</span>
+            </button>
+          )}
+
+          <button
+            onClick={(e) => { e.preventDefault(); handleNavClick('workspace', '/workspace'); }}
+            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all border ${
+              activeNav === 'workspace'
+                ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
+                : 'bg-zinc-100/90 hover:bg-zinc-200/90 text-zinc-800 border-zinc-200/80'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={activeNav === 'workspace' ? '#ffffff' : '#6366f1'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /></svg>
+            <span>Workspace</span>
           </button>
-        )}
-        <button
-          onClick={(e) => { e.preventDefault(); handleNavClick('workspace', '/workspace'); }}
-          className="px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all border bg-zinc-100/90 hover:bg-zinc-200/90 text-zinc-800 border-zinc-200/80"
-          style={{ marginLeft: '12px' }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /></svg>
-          <span>Workspace</span>
-        </button>
+        </div>
       </motion.header>
 
       {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}

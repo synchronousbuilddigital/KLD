@@ -11,6 +11,7 @@ import { generateCosmeticBoxDieline } from '../../lib/cosmeticBoxDielineGenerato
 import { generateDXFString } from '../../lib/exportUtils';
 import DielineSVG from '../../components/DielineSVG';
 import EditorModal from './EditorModal';
+import Header from '../components/layout/Header';
 import './AiStudioPage.css';
 import { 
   Sparkles, 
@@ -274,16 +275,12 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
     <div className={`ai-studio-root ${store.theme === 'dark' ? 'dark-theme' : ''}`}>
       
       {/* --- TOP NAVIGATION BAR --- */}
-      <div className="ai-studio-topbar">
+      <Header activeNav="aistudio" />
+      
+      {/* --- AI STUDIO TOOLBAR --- */}
+      <div className="ai-studio-topbar" style={{ marginTop: '10px' }}>
         <div className="ai-topbar-left">
-          <button 
-            className="ai-brand-logo"
-            onClick={onBack || (() => window.history.back())}
-            title="Return to Studio Home"
-          >
-            P
-          </button>
-          <span className="ai-project-name">Untitled Pacdora AI Design</span>
+          <span className="ai-project-name" style={{ marginLeft: '12px' }}>Untitled Pacdora AI Design</span>
         </div>
       </div>
 

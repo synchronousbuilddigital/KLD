@@ -47,8 +47,18 @@ const catalogItemSchema = new mongoose.Schema(
     group: {
       type: String,
       required: true,
-      enum: ['boxes', 'bottles', 'pouches', 'containers'],
+      enum: ['boxes', 'bottles', 'pouches', 'containers', 'dielines'],
       default: 'boxes',
+    },
+    dieline2DImg: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    box3DImg: {
+      type: String,
+      default: '',
+      trim: true,
     },
     badge: {
       type: String,
