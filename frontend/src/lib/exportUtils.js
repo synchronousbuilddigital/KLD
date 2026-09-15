@@ -298,6 +298,118 @@ export async function exportPDF(svgElement, filename = "dieline.pdf", colorMode 
   }
 }
 
+async function sanitizeSVGForExport(svgElement, bounds, colorMode, variant) {
+  const { minX, minY, width, height } = bounds;
+  const svgClone = svgElement.cloneNode(true);
+  svgClone.removeAttribute("class");
+  svgClone.style.background = "transparent";
+  svgClone.setAttribute("viewBox", `${minX} ${minY} ${width} ${height}`);
+  svgClone.setAttribute("width", `${width}in`);
+  svgClone.setAttribute("height", `${height}in`);
+
+  if (variant === 'artwork') {
+    svgClone.querySelectorAll('.dieline-vector').forEach(el => el.remove());
+    svgClone.querySelectorAll('.dieline-cut-paths').forEach(el => el.setAttribute('stroke', 'none'));
+  } else if (variant === 'dieline') {
+    svgClone.querySelectorAll('.decal-group').forEach(el => el.remove());
+    svgClone.querySelectorAll('.dieline-cut-paths').forEach(el => el.setAttribute('fill', 'none'));
+  }
+
+  // 1. Remove unsupported elements that crash svg2pdf, as well as UI-only elements
+  const unsupported = svgClone.querySelectorAll("filter, pattern, foreignObject, .editor-measurements");
+  unsupported.forEach(el => el.remove());
+
+  // 2. Process image elements (Convert photos to CMYK print gamut if CMYK mode requested)
+  const images = Array.from(svgClone.querySelectorAll("image"));
+  for (const img of images) {
+    const href = img.getAttribute("href") || img.getAttribute("xlink:href");
+    if (href) {
+      let finalHref = href;
+      if (colorMode === "CMYK" || colorMode === "cmyk") {
+        try {
+          finalHref = await convertImageToCMYKDataUrl(href);
+        } catch (e) {
+          console.warn("Error converting decal photo to CMYK:", e);
+        }
+      }
+      img.setAttribute("href", finalHref);
+      img.setAttribute("xlink:href", finalHref);
+    }
+  }
+
+  // 3. Remove comment nodes
+  const iterator = document.createNodeIterator(svgClone, NodeFilter.SHOW_COMMENT, null, false);
+  let currNode;
+  const comments = [];
+  while (currNode = iterator.nextNode()) comments.push(currNode);
+  comments.forEach(c => c.parentNode.removeChild(c));
+
+  // 4. Remove attributes that reference deleted defs
+  const allElements = svgClone.querySelectorAll("*");
+  allElements.forEach(el => {
+    el.removeAttribute("marker-start");
+    el.removeAttribute("marker-end");
+    el.removeAttribute("marker");
+    el.removeAttribute("filter");
+  });
+
+  // 5. Transform vector strokes and fills for CMYK mode if requested
+  const pathsAndGroups = svgClone.querySelectorAll("path, line, rect, circle, polyline, g, text");
+  pathsAndGroups.forEach(p => {
+    if (p.getAttribute("stroke") === "currentColor") p.setAttribute("stroke", "#000000");
+
+    const fill = p.getAttribute("fill");
+    if (fill && fill.startsWith("url(#kraft-pattern")) {
+      p.setAttribute("fill", "none");
+    }
+
+    if (colorMode === "CMYK" || colorMode === "cmyk") {
+      if (fill && fill.startsWith("#")) {
+        const rgb = hexToRgb(fill);
+        const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+        const cmykRgb = cmykToRgb(cmyk.c, cmyk.m, cmyk.y, cmyk.k);
+        const cmykHex = `#${((1 << 24) + (cmykRgb.r << 16) + (cmykRgb.g << 8) + cmykRgb.b).toString(16).slice(1)}`;
+        p.setAttribute("fill", cmykHex);
+      }
+    }
+  });
+
+  return svgClone;
+}
+
+export async function exportSuperPDF(svgElement, filename = "dieline.pdf", colorMode = "RGB") {
+  if (!svgElement) return;
+  try {
+    const { jsPDF } = await import("jspdf");
+    await import("svg2pdf.js");
+
+    const bounds = getSVGPhysicalBounds(svgElement);
+    const { width, height } = bounds;
+
+    const doc = new jsPDF({
+      orientation: width > height ? "l" : "p",
+      unit: "in",
+      format: [width, height]
+    });
+
+    const variants = ['full', 'artwork', 'dieline'];
+    for (let i = 0; i < variants.length; i++) {
+      if (i > 0) {
+        doc.addPage([width, height], width > height ? "l" : "p");
+      }
+      const svgClone = await sanitizeSVGForExport(svgElement, bounds, colorMode, variants[i]);
+      await doc.svg(svgClone, { x: 0, y: 0, width: width, height: height });
+    }
+
+    doc.save(filename);
+  } catch (error) {
+    console.error("Failed to generate multi-page PDF:", error);
+    alert("There was an error generating the multi-page PDF. Check console for details.");
+  }
+}
+
+
+
 // --- DXF EXPORTER ENGINE ---
 
 function svgArcToSegments(cx, cy, rx, ry, xAxisRotation, largeArcFlag, sweepFlag, tx, ty) {

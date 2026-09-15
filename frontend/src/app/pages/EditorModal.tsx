@@ -7,7 +7,7 @@ import { useEditorStore } from "../../lib/useEditorStore";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
 import { generateRTEDieline } from "../../lib/rteDielineGenerator";
 import { packagingSymbols } from "../../lib/packagingSymbols";
-import { exportPDF } from "../../lib/exportUtils";
+import { exportSuperPDF } from "../../lib/exportUtils";
 import { mockupService } from "../../services/mockups";
 const IconUpload = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
 const IconLayers = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
@@ -138,34 +138,17 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   const [exportColorMode, setExportColorMode] = useState('CMYK');
   const [exportFormat, setExportFormat] = useState('PDF');
 
-  const handleExport = async (fileType, colorMode, format) => {
-    // ... logic remains same ...
+  const handleExport = async (colorMode, format) => {
     const svgElement = document.querySelector('#export-preview-container svg');
     if (!svgElement) {
       alert('Could not find SVG to export');
       return;
     }
     
-    const clonedSvg = svgElement.cloneNode(true);
-    
-    if (fileType === 'dieline') {
-      const decalsGroup = clonedSvg.querySelectorAll('.decal-group');
-      decalsGroup.forEach(d => d.remove());
-    }
-
-    const bgGroup = Array.from(clonedSvg.querySelectorAll('g')).find(g => g.getAttribute('fill') === 'url(#kraft-pattern)');
-    if (bgGroup) {
-      if (fileType === 'artwork' && store.packageColor && store.packageColor !== 'transparent') {
-        bgGroup.setAttribute('fill', store.packageColor);
-      } else {
-        bgGroup.setAttribute('fill', 'none');
-      }
-    }
-
     const ext = format === 'AI' ? 'ai' : 'pdf';
-    const filename = `boxcraft_${fileType}_${colorMode}_${ext}.${ext}`;
+    const baseFilename = `boxcraft_${colorMode.toLowerCase()}_export`;
     
-    await exportPDF(clonedSvg, filename, colorMode);
+    await exportSuperPDF(svgElement, `${baseFilename}.${ext}`, colorMode);
     
     setIsExportModalOpen(false);
   };
@@ -232,7 +215,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   };
 
   const handleCloseClick = () => {
-    setIsExitModalOpen(true);
+    onClose();
   };
 
   const pushHistory = (newDecals) => {
@@ -412,497 +395,492 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   // Removed early return to prevent hooks violation
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 99999 }}>
+    <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 99999, backgroundColor: t.bgCanvas, color: t.textMain, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
       <style dangerouslySetInnerHTML={{ __html: `
         * { box-sizing: border-box; }
+        .glass-panel {
+          background: ${t.bgPanel};
+          border-radius: 24px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+          border: 1px solid ${t.border};
+          transform: translateZ(0);
+          will-change: transform;
+        }
       `}} />
-      <div style={{ display: "flex", height: "100vh", width: "100vw", backgroundColor: t.bgCanvas, color: t.textMain, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
-      
-      <div style={{ width: "80px", backgroundColor: t.bgPanel, borderRight: `2px solid ${t.border}`, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: "20px" }}>
-        {[
-          { name: "Uploads", icon: <IconUpload /> },
-          { name: "Elements", icon: <IconLayers /> },
-          { name: "AI Creation", icon: <IconSparkles /> },
-          { name: "Templates", icon: <IconLayout /> },
-          { name: "AI Logo", icon: <IconSparkles /> },
-        ].map(tab => (
-          <div 
-            key={tab.name}
-            onClick={() => setActiveTab(tab.name)}
-            style={{ 
-              display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 0", width: "100%", cursor: "pointer",
-              color: activeTab === tab.name ? t.cyan : t.textMuted,
-              borderLeft: activeTab === tab.name ? `3px solid ${t.cyan}` : "3px solid transparent"
-            }}
-          >
-            {tab.icon}
-            <span style={{ fontSize: "10px", marginTop: "4px", fontWeight: activeTab === tab.name ? "600" : "400", textAlign: "center" }}>{tab.name}</span>
-          </div>
-        ))}
-      </div>
 
-      <div style={{ width: "280px", backgroundColor: t.bgPanel, borderRight: `2px solid ${t.border}`, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "16px", display: "flex", alignItems: "center", borderBottom: `2px solid ${t.border}` }}>
-          <button onClick={handleCloseClick} style={{ border: "none", background: "none", cursor: "pointer", marginRight: "12px", color: t.textMuted }}>✕</button>
-          <span style={{ fontWeight: "400", fontSize: "18px", fontFamily: "Georgia, 'Times New Roman', serif" }}>{activeTab === "Elements" ? "Elements" : "Upload & Design"}</span>
-        </div>
+      {/* Dotted Background */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundImage: `url("data:image/svg+xml,%3Csvg width='30' height='30' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='15' cy='15' r='1.5' fill='${store.theme === 'dark' ? '%23ffffff' : '%23000000'}'/%3E%3C/svg%3E")`, opacity: 0.1, pointerEvents: "none" }} />
+
+      {/* Top Header */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "70px", backgroundColor: t.bgPanel, borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 50 }}>
         
-        <div style={{ padding: "16px", flex: 1, overflowY: "auto" }}>
-          {activeTab === "Uploads" ? (
-            <>
-              <input 
-                type="file" 
-                accept=".jpg,.jpeg,.png,.svg" 
-                ref={fileInputRef} 
-                style={{ display: "none" }} 
-                onChange={handleFileUpload} 
-              />
-              <button onClick={() => fileInputRef.current?.click()} style={{ width: "100%", padding: "12px", backgroundColor: t.inputBg, color: t.textMain, border: `2px solid ${t.border}`, borderRadius: "12px 8px 14px 10px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "20px", boxShadow: `2px 3px 0px ${t.border}` }}>
-                <IconUpload /> JPG, PNG, SVG
-              </button>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                {galleryImages.map((url, i) => (
-                  <div key={i} onClick={() => handleAddDecal(url)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px 10px 14px 8px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", border: `2px solid ${t.border}` }}>
-                    <img src={url} alt={`upload-${i}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : activeTab === "Elements" ? (
-            expandedSection ? (
-              <div>
-                <div 
-                  onClick={() => setExpandedSection(null)} 
-                  style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: t.textMain, fontWeight: "500", marginBottom: "20px", fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "16px" }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-                  {expandedSection}
-                </div>
-                
-                {expandedSection === "Shape" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {allShapes.map((shape) => (
-                      <div key={shape.name} onClick={() => { handleAddShapeDecal(shape.type); setExpandedSection(null); }} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}`, color: t.textMain }}>
-                        {shape.render()}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {expandedSection === "Packaging Symbols" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {packagingSymbols.map((sym, idx) => (
-                      <div key={idx} onClick={() => { handleAddSymbolDecal(sym.svg); setExpandedSection(null); }} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}` }} title={sym.name} dangerouslySetInnerHTML={{ __html: sym.svg.replace(/width="[^"]+"/, 'width="48"').replace(/height="[^"]+"/, 'height="48"') }} />
-                    ))}
-                  </div>
-                )}
-
-                {expandedSection === "Social Media" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    {allSocialMedia.map((sm) => (
-                      <div key={sm.name} onClick={() => { handleAddSymbolDecal(sm.svg); setExpandedSection(null); }} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}`, color: t.textMain }} title={sm.name} dangerouslySetInnerHTML={{ __html: sm.svg.replace(/width="[^"]+"/, 'width="48"').replace(/height="[^"]+"/, 'height="48"').replace('<svg ', '<svg width="48" height="48" ') }} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontSize: "16px", fontWeight: "400", marginBottom: "12px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Text</div>
-                <div 
-                  onClick={handleAddTextDecal}
-                  style={{ width: "100px", height: "100px", backgroundColor: t.inputBg, border: `2px solid ${t.border}`, borderRadius: "14px 10px 8px 12px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: `2px 3px 0px ${t.border}` }}
-                >
-                  <span style={{ fontSize: "24px", fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: "bold", color: t.textMain }}>T</span>
-                  <span style={{ fontSize: "13px", color: t.textMuted }}>Add text</span>
-                </div>
-                
-                <div style={{ marginTop: "32px", borderTop: `2px solid ${t.border}`, paddingTop: "20px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                    <div style={{ fontSize: "16px", fontWeight: "400", fontFamily: "Georgia, 'Times New Roman', serif" }}>Shape</div>
-                    <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Shape")}>More</div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                    {allShapes.slice(0, 3).map((shape) => (
-                      <div key={shape.name} onClick={() => handleAddShapeDecal(shape.type)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}`, color: t.textMain }}>
-                        {shape.render()}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: "32px", borderTop: `2px solid ${t.border}`, paddingTop: "20px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                    <div style={{ fontSize: "16px", fontWeight: "400", fontFamily: "Georgia, 'Times New Roman', serif" }}>Packaging Symbols</div>
-                    <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Packaging Symbols")}>More</div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                    {packagingSymbols.slice(0, 3).map((sym, idx) => (
-                      <div key={idx} onClick={() => handleAddSymbolDecal(sym.svg)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}` }} title={sym.name} dangerouslySetInnerHTML={{ __html: sym.svg.replace('width="1em"', 'width="32"').replace('height="1em"', 'height="32"') }}>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: "32px", borderTop: `2px solid ${t.border}`, paddingTop: "20px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                    <div style={{ fontSize: "16px", fontWeight: "400", fontFamily: "Georgia, 'Times New Roman', serif" }}>Social Media</div>
-                    <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Social Media")}>More</div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                    {allSocialMedia.slice(0, 3).map((sm) => (
-                      <div key={sm.name} onClick={() => handleAddSymbolDecal(sm.svg)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}`, color: t.textMain }} title={sm.name} dangerouslySetInnerHTML={{ __html: sm.svg.replace('<svg ', '<svg width="32" height="32" ') }}>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: "32px", borderTop: `2px solid ${t.border}`, paddingTop: "20px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                    <div style={{ fontSize: "16px", fontWeight: "400", fontFamily: "Georgia, 'Times New Roman', serif" }}>Window Cutouts</div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                    {allShapes.filter(s => ['square', 'rounded-square', 'circle', 'triangle', 'star'].includes(s.name)).map((shape) => (
-                      <div key={`window-${shape.name}`} onClick={() => handleAddWindowDecal(shape.type)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px ${t.border}`, color: store.trimColor || '#0055ff' }}>
-                        {shape.render()}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              {activeDecal && (activeDecal.type === 'shape' || activeDecal.type === 'custom-svg') && !activeDecal.isWindow && (
-                <div style={{ marginTop: "32px", borderTop: `2px solid ${t.border}`, paddingTop: "20px" }}>
-                  <div style={{ fontSize: "16px", fontWeight: "400", marginBottom: "12px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Shape Colors</div>
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-                      <label style={{ fontSize: "12px", color: t.textMuted }}>Fill</label>
-                      <input 
-                        type="color" 
-                        value={activeDecal.fillColor || "#000000"} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          pushHistory(decals.map(d => d.id === activeDecal.id ? { ...d, fillColor: val } : d));
-                        }}
-                        style={{ width: "40px", height: "40px", padding: "0", border: `2px solid ${t.border}`, borderRadius: "8px", cursor: "pointer", background: "none" }}
-                      />
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-                      <label style={{ fontSize: "12px", color: t.textMuted }}>Border</label>
-                      <input 
-                        type="color" 
-                        value={activeDecal.strokeColor || "#000000"} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          pushHistory(decals.map(d => d.id === activeDecal.id ? { ...d, strokeColor: val } : d));
-                        }}
-                        style={{ width: "40px", height: "40px", padding: "0", border: `2px solid ${t.border}`, borderRadius: "8px", cursor: "pointer", background: "none" }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div style={{ marginTop: "32px", borderTop: `2px solid ${t.border}`, paddingTop: "20px" }}>
-                <div style={{ fontSize: "16px", fontWeight: "400", marginBottom: "12px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Your Elements</div>
-                {decals.length === 0 ? (
-                  <div style={{ color: t.textMuted, fontSize: "12px", fontStyle: "italic" }}>No elements added yet.</div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {decals.map((decal, idx) => (
-                      <div key={decal.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: t.inputBg, padding: "8px 12px", borderRadius: "8px", border: `2px solid ${t.border}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
-                          {decal.type === 'image' ? (
-                            <img src={decal.url} style={{ width: "24px", height: "24px", objectFit: "cover", borderRadius: "4px", flexShrink: 0 }} />
-                          ) : (
-                            <div style={{ width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", background: t.activeBg, borderRadius: "4px", flexShrink: 0 }}>
-                              <span style={{ fontSize: "14px", fontWeight: "bold", color: t.cyan }}>T</span>
-                            </div>
-                          )}
-                          <span style={{ fontSize: "12px", fontWeight: "500", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }}>
-                            {decal.type === 'image' ? `Image ${idx + 1}` : decal.isWindow ? `Window Cutout` : `Text: ${decal.content || 'Shape'}`}
-                          </span>
-                        </div>
-                        <button 
-                          onClick={() => pushHistory(decals.filter(d => d.id !== decal.id))}
-                          style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "12px", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px" }}
-                          onMouseOver={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
-                          onMouseOut={(e) => e.currentTarget.style.background = "transparent"}
-                          title="Delete element"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            )
-          ) : activeTab === "AI Creation" ? (
-            <div style={{ position: "relative", width: "100%", height: "100%" }}>
-              <AiPackagingAssistant useStore={useEditorStore} isOpen={true} onClose={() => setActiveTab("Elements")} />
-            </div>
-          ) : (
-            <div style={{ textAlign: "center", color: t.textMuted, fontSize: "13px", marginTop: "20px" }}>Coming soon...</div>
-          )}
+        {/* Header Left */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: t.textMain, color: t.bgPanel, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>K</div>
+          <div style={{ fontWeight: "700", fontSize: "20px" }}>
+            Keyline Design
+          </div>
+          <div style={{ height: "20px", width: "1px", backgroundColor: t.border }}></div>
+          <div style={{ color: t.textMuted, fontSize: "14px", fontWeight: "500" }}>Mockup Generator</div>
         </div>
-      </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
-        <div 
-          style={{ flex: 1, padding: "40px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: activeTool === "hand" ? (isPanning ? "grabbing" : "grab") : "default" }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-        >
-          <div style={{ width: "100%", height: "100%", transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "center", transition: isPanning ? "none" : "transform 0.2s ease-out" }}>
-            {useMemo(() => (
-              <DielineSVG 
-                L={store.L} W={store.W} H={store.H} T={store.T} 
-                materialType={store.materialType} 
-                isEditorMode={true} 
-                colorDieline={true}
-                activeColor={activeColor}
-                activeSurface={activeSurface}
-                decals={surfaceDecals}
-                setDecals={setDecals}
-                onDragEnd={commitHistory}
-                activeDecalId={activeDecalId}
-                setActiveDecalId={setActiveDecalId}
-                onDeleteDecal={handleDeleteDecal}
-                disableInteractions={activeTool === "hand"}
-                useStore={useEditorStore}
-              />
-            ), [store.L, store.W, store.H, store.T, store.materialType, activeColor, activeSurface, surfaceDecals, setDecals, commitHistory, activeDecalId, setActiveDecalId, handleDeleteDecal, activeTool])}
+        {/* Header Middle (Undo/Redo & Save Status) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ display: "flex", gap: "12px", borderRight: `1px solid ${t.border}`, paddingRight: "16px" }}>
+            <button onClick={handleUndo} style={{ background: "none", border: "none", cursor: historyIndex > -1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex > -1 ? 1 : 0.3, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}><IconUndo /><span style={{fontSize:"10px"}}>Undo</span></button>
+            <button onClick={handleRedo} style={{ background: "none", border: "none", cursor: historyIndex < history.length - 1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex < history.length - 1 ? 1 : 0.3, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}><IconRedo /><span style={{fontSize:"10px"}}>Redo</span></button>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#10b981", fontSize: "12px", fontWeight: "600" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+            All changes saved
           </div>
         </div>
 
-        <div style={{ position: "absolute", bottom: "30px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "16px", background: t.bgPanel, padding: "8px 16px", borderRadius: "12px 14px 10px 12px", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px rgba(58,46,38,0.1)` }}>
-          <div style={{ display: "flex", gap: "12px", borderRight: `2px solid ${t.border}`, paddingRight: "16px" }}>
+        {/* Header Right */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <button style={{ padding: "8px 16px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg> Print
+          </button>
+          
+          <button style={{ padding: "8px 16px", backgroundColor: t.inputBg, color: t.textMain, border: `1px solid ${t.border}`, borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <IconSparkles /> AI Assistant
+          </button>
+
+          <button onClick={handleSaveAndExit} disabled={isSaving} style={{ padding: "8px 16px", backgroundColor: t.inputBg, color: t.textMain, border: `1px solid ${t.border}`, borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>
+            {isSaving ? "Saving..." : "Save"}
+          </button>
+
+          <button onClick={() => store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>
+            {store.theme === 'dark' ? 
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg> :
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            }
+          </button>
+          
+          <button onClick={() => setIsExportModalOpen(true)} style={{ padding: "8px 20px", backgroundColor: "#5b5fc7", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", boxShadow: "0 4px 12px rgba(91, 95, 199, 0.3)" }}>
+            Super export
+          </button>
+
+          <div style={{ height: "24px", width: "1px", backgroundColor: t.border, margin: "0 4px" }}></div>
+
+          <button onClick={handleCloseClick} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }}>
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Workspace */}
+      <div style={{ position: "absolute", top: "70px", left: 0, width: "100%", height: "calc(100vh - 70px)", display: "flex", overflow: "hidden" }}>
+        
+        {/* Floating Left Section */}
+        <div style={{ position: "absolute", left: "24px", top: "24px", bottom: "24px", display: "flex", gap: "16px", zIndex: 40, pointerEvents: "none" }}>
+          
+          {/* Left Navbar */}
+          <div className="glass-panel" style={{ width: "72px", display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0", pointerEvents: "auto" }}>
+            {[
+              { name: "Uploads", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> },
+              { name: "Elements", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
+              { name: "Templates", icon: <IconLayout /> },
+              { name: "AI Creation", icon: <IconSparkles /> },
+            ].map(tab => (
+              <div 
+                key={tab.name}
+                onClick={() => setActiveTab(tab.name)}
+                style={{ 
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  width: "56px", height: "56px", marginBottom: "8px", cursor: "pointer", borderRadius: "16px",
+                  backgroundColor: activeTab === tab.name ? t.cyan : "transparent",
+                  color: activeTab === tab.name ? "#fff" : t.textMuted,
+                  transition: "all 0.2s ease"
+                }}
+              >
+                {tab.icon}
+              </div>
+            ))}
+            <div style={{ flex: 1 }}></div>
+            <div onClick={() => setActiveTab("AI Logo")} style={{ width: "48px", height: "48px", borderRadius: "50%", background: "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", pointerEvents: "auto", color: "#fff" }}>
+              <IconSparkles />
+            </div>
+          </div>
+
+          {/* Left Panel Content */}
+          <div className="glass-panel" style={{ width: "320px", display: "flex", flexDirection: "column", pointerEvents: "auto", overflow: "hidden" }}>
+            <div style={{ padding: "24px", fontSize: "16px", fontWeight: "700", borderBottom: `1px solid ${t.border}` }}>
+               {activeTab === "Elements" ? "Elements" : activeTab === "Uploads" ? "Upload images" : activeTab}
+            </div>
+            
+            <div style={{ padding: "24px", flex: 1, overflowY: "auto" }}>
+              {activeTab === "Uploads" ? (
+                <>
+                  <input 
+                    type="file" 
+                    accept=".jpg,.jpeg,.png,.svg" 
+                    ref={fileInputRef} 
+                    style={{ display: "none" }} 
+                    onChange={handleFileUpload} 
+                  />
+                  <button onClick={() => fileInputRef.current?.click()} style={{ width: "100%", padding: "10px", backgroundColor: t.cyan, color: "#fff", border: "none", borderRadius: "10px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "20px", transition: "opacity 0.2s" }} onMouseOver={(e) => e.target.style.opacity = "0.9"} onMouseOut={(e) => e.target.style.opacity = "1"}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload Image
+                  </button>
+                  
+                  <div style={{ fontSize: "12px", color: t.textMuted, cursor: "pointer", marginBottom: "24px" }}>Download dieline(AI, PDF) &gt;</div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {galleryImages.map((url, i) => (
+                      <div key={i} onClick={() => handleAddDecal(url)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", border: `1px solid ${t.border}` }}>
+                        <img src={url} alt={`upload-${i}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    ))}
+                  </div>
+
+                </>
+              ) : activeTab === "Elements" ? (
+                expandedSection ? (
+                  <div>
+                    <div 
+                      onClick={() => setExpandedSection(null)} 
+                      style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", color: t.textMain, fontWeight: "500", marginBottom: "20px", fontSize: "16px" }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+                      {expandedSection}
+                    </div>
+                    
+                    {expandedSection === "Shape" && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        {allShapes.map((shape) => (
+                          <div key={shape.name} onClick={() => { handleAddShapeDecal(shape.type); setExpandedSection(null); }} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}`, color: t.textMain }}>
+                            {shape.render()}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {expandedSection === "Packaging Symbols" && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        {packagingSymbols.map((sym, idx) => (
+                          <div key={idx} onClick={() => { handleAddSymbolDecal(sym.svg); setExpandedSection(null); }} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}` }} title={sym.name} dangerouslySetInnerHTML={{ __html: sym.svg.replace(/width="[^"]+"/, 'width="48"').replace(/height="[^"]+"/, 'height="48"') }} />
+                        ))}
+                      </div>
+                    )}
+
+                    {expandedSection === "Social Media" && (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        {allSocialMedia.map((sm) => (
+                          <div key={sm.name} onClick={() => { handleAddSymbolDecal(sm.svg); setExpandedSection(null); }} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}`, color: t.textMain }} title={sm.name} dangerouslySetInnerHTML={{ __html: sm.svg.replace(/width="[^"]+"/, 'width="48"').replace(/height="[^"]+"/, 'height="48"').replace('<svg ', '<svg width="48" height="48" ') }} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px" }}>Text</div>
+                    <div 
+                      onClick={handleAddTextDecal}
+                      style={{ width: "100px", height: "100px", backgroundColor: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "16px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                    >
+                      <span style={{ fontSize: "24px", fontWeight: "bold", color: t.textMain }}>T</span>
+                      <span style={{ fontSize: "13px", color: t.textMuted }}>Add text</span>
+                    </div>
+                    
+                    <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div style={{ fontSize: "16px", fontWeight: "600" }}>Shape</div>
+                        <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Shape")}>More</div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                        {allShapes.slice(0, 3).map((shape) => (
+                          <div key={shape.name} onClick={() => handleAddShapeDecal(shape.type)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}`, color: t.textMain }}>
+                            {shape.render()}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div style={{ fontSize: "16px", fontWeight: "600" }}>Packaging Symbols</div>
+                        <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Packaging Symbols")}>More</div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                        {packagingSymbols.slice(0, 3).map((sym, idx) => (
+                          <div key={idx} onClick={() => handleAddSymbolDecal(sym.svg)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}` }} title={sym.name} dangerouslySetInnerHTML={{ __html: sym.svg.replace('width="1em"', 'width="32"').replace('height="1em"', 'height="32"') }}>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div style={{ fontSize: "16px", fontWeight: "600" }}>Social Media</div>
+                        <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Social Media")}>More</div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                        {allSocialMedia.slice(0, 3).map((sm) => (
+                          <div key={sm.name} onClick={() => handleAddSymbolDecal(sm.svg)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}`, color: t.textMain }} title={sm.name} dangerouslySetInnerHTML={{ __html: sm.svg.replace('<svg ', '<svg width="32" height="32" ') }}>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div style={{ fontSize: "16px", fontWeight: "600" }}>Window Cutouts</div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                        {allShapes.filter(s => ['square', 'rounded-square', 'circle', 'triangle', 'star'].includes(s.name)).map((shape) => (
+                          <div key={`window-${shape.name}`} onClick={() => handleAddWindowDecal(shape.type)} style={{ aspectRatio: "1", backgroundColor: t.inputBg, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `1px solid ${t.border}`, color: store.trimColor || '#0055ff' }}>
+                            {shape.render()}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  {activeDecal && (activeDecal.type === 'shape' || activeDecal.type === 'custom-svg') && !activeDecal.isWindow && (
+                    <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                      <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px" }}>Shape Colors</div>
+                      <div style={{ display: "flex", gap: "12px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                          <label style={{ fontSize: "12px", color: t.textMuted }}>Fill</label>
+                          <input 
+                            type="color" 
+                            value={activeDecal.fillColor || "#000000"} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              pushHistory(decals.map(d => d.id === activeDecal.id ? { ...d, fillColor: val } : d));
+                            }}
+                            style={{ width: "40px", height: "40px", padding: "0", border: `1px solid ${t.border}`, borderRadius: "8px", cursor: "pointer", background: "none" }}
+                          />
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                          <label style={{ fontSize: "12px", color: t.textMuted }}>Border</label>
+                          <input 
+                            type="color" 
+                            value={activeDecal.strokeColor || "#000000"} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              pushHistory(decals.map(d => d.id === activeDecal.id ? { ...d, strokeColor: val } : d));
+                            }}
+                            style={{ width: "40px", height: "40px", padding: "0", border: `1px solid ${t.border}`, borderRadius: "8px", cursor: "pointer", background: "none" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                    <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px" }}>Your Elements</div>
+                    {decals.length === 0 ? (
+                      <div style={{ color: t.textMuted, fontSize: "12px", fontStyle: "italic" }}>No elements added yet.</div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {decals.map((decal, idx) => (
+                          <div key={decal.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: t.inputBg, padding: "8px 12px", borderRadius: "8px", border: `1px solid ${t.border}` }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+                              {decal.type === 'image' ? (
+                                <img src={decal.url} style={{ width: "24px", height: "24px", objectFit: "cover", borderRadius: "4px", flexShrink: 0 }} />
+                              ) : (
+                                <div style={{ width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", background: t.activeBg, borderRadius: "4px", flexShrink: 0 }}>
+                                  <span style={{ fontSize: "14px", fontWeight: "bold", color: t.cyan }}>T</span>
+                                </div>
+                              )}
+                              <span style={{ fontSize: "12px", fontWeight: "500", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }}>
+                                {decal.type === 'image' ? `Image ${idx + 1}` : decal.isWindow ? `Window Cutout` : `Text: ${decal.content || 'Shape'}`}
+                              </span>
+                            </div>
+                            <button 
+                              onClick={() => pushHistory(decals.filter(d => d.id !== decal.id))}
+                              style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "12px", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px" }}
+                              title="Delete element"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                )
+              ) : activeTab === "AI Creation" ? (
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                  <AiPackagingAssistant useStore={useEditorStore} isOpen={true} onClose={() => setActiveTab("Elements")} />
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", color: t.textMuted, fontSize: "13px", marginTop: "20px" }}>Coming soon...</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Center Canvas */}
+        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+          <div 
+            style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: activeTool === "hand" ? (isPanning ? "grabbing" : "grab") : "default" }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            <div style={{ width: "100%", height: "100%", transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "center", transition: isPanning ? "none" : "transform 0.2s ease-out" }}>
+              {useMemo(() => (
+                <DielineSVG 
+                  L={store.L} W={store.W} H={store.H} T={store.T} 
+                  materialType={store.materialType} 
+                  isEditorMode={true} 
+                  colorDieline={true}
+                  activeColor={activeColor}
+                  activeSurface={activeSurface}
+                  decals={surfaceDecals}
+                  setDecals={setDecals}
+                  onDragEnd={commitHistory}
+                  activeDecalId={activeDecalId}
+                  setActiveDecalId={setActiveDecalId}
+                  onDeleteDecal={handleDeleteDecal}
+                  disableInteractions={activeTool === "hand"}
+                  useStore={useEditorStore}
+                />
+              ), [store.L, store.W, store.H, store.T, store.materialType, activeColor, activeSurface, surfaceDecals, setDecals, commitHistory, activeDecalId, setActiveDecalId, handleDeleteDecal, activeTool])}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Floating Pill (Zoom / Pan) */}
+        <div style={{ position: "absolute", bottom: "32px", left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", alignItems: "center", gap: "16px", padding: "12px 24px" }} className="glass-panel">
+          <div style={{ display: "flex", gap: "12px", borderRight: `1px solid ${t.border}`, paddingRight: "16px" }}>
             <button onClick={() => setActiveTool("pointer")} style={{ background: "none", border: "none", cursor: "pointer", color: activeTool === "pointer" ? t.cyan : t.textMuted }}><IconPointer /></button>
             <button onClick={() => setActiveTool("hand")} style={{ background: "none", border: "none", cursor: "pointer", color: activeTool === "hand" ? t.cyan : t.textMuted }}><IconHand /></button>
           </div>
-          <div style={{ display: "flex", gap: "12px", borderRight: `2px solid ${t.border}`, paddingRight: "16px" }}>
-            <button onClick={handleUndo} style={{ background: "none", border: "none", cursor: historyIndex > -1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex > -1 ? 1 : 0.3 }}><IconUndo /></button>
-            <button onClick={handleRedo} style={{ background: "none", border: "none", cursor: historyIndex < history.length - 1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex < history.length - 1 ? 1 : 0.3 }}><IconRedo /></button>
-          </div>
-          <div style={{ display: "flex", gap: "16px", alignItems: "center", borderRight: `2px solid ${t.border}`, paddingRight: "16px" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
             <button onClick={() => setZoom(Math.max(0.1, zoom - 0.2))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>−</button>
-            <span onClick={() => { setZoom(1); setPan({x:0, y:0}); }} style={{ cursor: "pointer", fontSize: "13px", fontWeight: "500", color: t.textMain }}>{Math.round(zoom * 100)}%</span>
+            <span onClick={() => { setZoom(1); setPan({x:0, y:0}); }} style={{ cursor: "pointer", fontSize: "14px", fontWeight: "600", color: t.textMain }}>{Math.round(zoom * 100)}%</span>
             <button onClick={() => setZoom(Math.min(5, zoom + 0.2))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>+</button>
           </div>
-          <div style={{ display: "flex", gap: "12px", color: t.textMuted, alignItems: "center" }}>
-            <button onClick={() => store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>
-              {store.theme === 'dark' ? 
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg> :
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-              }
-            </button>
-            <span onClick={() => setIsExpanded(!isExpanded)} style={{ cursor: "pointer", fontSize: "18px", color: isExpanded ? t.cyan : t.textMuted }}>⛶</span>
-            <span onClick={() => setShow3D(!show3D)} style={{ cursor: "pointer", fontSize: "18px", color: show3D ? t.cyan : t.textMuted }}>👁</span>
-          </div>
-        </div>
-      </div>
-
-      {!isExpanded && (
-      <div style={{ width: "320px", backgroundColor: t.bgPanel, borderLeft: `2px solid ${t.border}`, display: "flex", flexDirection: "column", padding: "16px", overflowY: "auto" }}>
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-          <button onClick={handleSaveAndExit} disabled={isSaving} style={{ flex: 1, padding: "12px", backgroundColor: t.activeBg, color: t.textMain, border: `2px solid ${t.border}`, borderRadius: "14px 10px 12px 16px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px ${t.border}` }}>
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-          <button onClick={() => setIsExportModalOpen(true)} style={{ flex: 1, padding: "12px", backgroundColor: t.cyan, color: (store.theme === 'dark' ? '#3a2e26' : '#fff'), border: `2px solid ${t.border}`, borderRadius: "10px 14px 16px 12px", fontWeight: "600", cursor: "pointer", boxShadow: `2px 3px 0px ${t.border}` }}>
-            Super Export
-          </button>
         </div>
 
-        {/* 3D Box Preview Component */}
-        {show3D && (
-        <div style={{ width: "100%", height: "260px", background: t.inputBg, border: `2px solid ${t.border}`, borderRadius: "12px 14px 10px 16px", position: "relative", overflow: "hidden", marginBottom: "12px" }}>
-          <div style={{ position: "absolute", top: "8px", right: "8px", background: t.bgApp, padding: "4px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: "700", zIndex: 10, border: `1px solid ${t.border}`, color: t.textMain }}>3D</div>
-          {isRendering3D && (
-            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.4)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20, fontSize: "14px", fontWeight: "bold", backdropFilter: "blur(2px)" }}>
-              Rendering...
-            </div>
-          )}
-          <Box3DViewer 
-            L={store.L} W={store.W} H={store.H} T={store.T}
-            progress={foldProgress}
-            materialPreset={
-              (store.materialType || "").toLowerCase().includes("corrugated") ? "corrugated-kraft" :
-              (store.materialType || "").toLowerCase().includes("kraft")      ? "natural-kraft" :
-              "white-kraft"
-            }
-            packageColor={activeColor}
-            lightingPreset="studio"
-            decals={deferredDecals}
-            useStore={useEditorStore}
-          />
-        </div>
-        )}
-        
-        {/* Dimensions Box */}
-        <div style={{ background: t.inputBg, border: `2px solid ${t.border}`, borderRadius: "16px 14px 18px 16px", padding: "16px", marginBottom: "16px", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
-          <div style={{ fontSize: "11px", color: t.textMuted, fontWeight: "700", marginBottom: "12px", letterSpacing: "0.5px" }}>DIMENSIONS (IN)</div>
+        {/* Floating Right Section */}
+        <div style={{ position: "absolute", right: "24px", top: "24px", bottom: "24px", width: "360px", display: "flex", flexDirection: "column", zIndex: 40, pointerEvents: "none" }}>
           
-          <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-            {[
-              { label: 'LENGTH', key: 'L', val: store.L },
-              { label: 'WIDTH', key: 'W', val: store.W },
-              { label: 'HEIGHT', key: 'H', val: store.H }
-            ].map((dim) => (
-              <div key={dim.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <input 
-                  type="number" step="0.0001" value={dim.val} 
-                  onChange={(e) => store.setDim(dim.key, e.target.value)}
-                  style={{ 
-                    width: "100%", background: store.theme === 'dark' ? t.bgApp : t.activeBg, border: `2px solid ${t.border}`, 
-                    color: t.textMain, fontSize: "15px", fontWeight: "700", textAlign: "center", 
-                    padding: "8px 4px", borderRadius: "8px", marginBottom: "6px", outline: "none",
-                    fontFamily: "'Inter', sans-serif"
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = t.cyan}
-                  onBlur={(e) => e.target.style.borderColor = t.border}
+          <div className="glass-panel" style={{ flex: 1, pointerEvents: "auto", display: "flex", flexDirection: "column", overflowY: "auto", padding: "24px" }}>
+            
+            {/* 3D Viewer */}
+            <div style={{ width: "100%", height: "240px", backgroundColor: store.theme === 'dark' ? "#202020" : "#f0f0f0", borderRadius: "16px", overflow: "hidden", position: "relative", marginBottom: "24px", border: `1px solid ${t.border}` }}>
+              {useMemo(() => (
+                <Box3DViewer 
+                  L={store.L} W={store.W} H={store.H} T={store.T}
+                  progress={foldProgress}
+                  materialPreset={
+                    (store.materialType || "").toLowerCase().includes("corrugated") ? "corrugated-kraft" :
+                    (store.materialType || "").toLowerCase().includes("kraft")      ? "natural-kraft" :
+                    "white-kraft"
+                  }
+                  packageColor={activeColor}
+                  lightingPreset="studio"
+                  decals={deferredDecals}
+                  useStore={useEditorStore}
                 />
-                <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "600" }}>{dim.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", background: store.theme === 'dark' ? t.bgApp : t.activeBg, padding: "12px 16px", borderRadius: "10px", border: `2px solid ${t.border}` }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>VOL (IN³)</span>
-              <span style={{ fontSize: "16px", color: t.cyan, fontWeight: "700" }}>{(store.L * store.W * store.H).toFixed(1)}</span>
+              ), [store.L, store.W, store.H, store.T, foldProgress, store.materialType, activeColor, deferredDecals])}
+              <div style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(255,255,255,0.8)", padding: "4px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: "bold", color: "#333" }}>3D</div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-              <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>AREA (IN²)</span>
-              <span style={{ fontSize: "16px", color: t.cyan, fontWeight: "700" }}>{(2 * (store.L * store.W + store.L * store.H + store.W * store.H)).toFixed(1)}</span>
+
+            {/* Fold Slider */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px", background: t.inputBg, border: `1px solid ${t.border}`, padding: "12px", borderRadius: "16px" }}>
+              <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>
+              <input 
+                type="range" min="0" max="1" step="0.01" 
+                value={foldProgress} onChange={(e) => setFoldProgress(parseFloat(e.target.value))}
+                style={{ flex: 1, accentColor: t.cyan }}
+              />
+              <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Close</span>
             </div>
-          </div>
-        </div>
 
-        {/* Fold Slider */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px", background: t.inputBg, border: `2px solid ${t.border}`, padding: "8px 12px", borderRadius: "14px 12px 16px 10px" }}>
-          <span style={{ fontSize: "12px", color: t.textMuted }}>Open</span>
-          <input 
-            type="range" min="0" max="1" step="0.01" 
-            value={foldProgress} onChange={(e) => setFoldProgress(parseFloat(e.target.value))}
-            style={{ flex: 1, accentColor: t.cyan }}
-          />
-          <span style={{ fontSize: "12px", color: t.textMuted }}>Close</span>
-        </div>
-
-        {/* Outside / Inside Toggle */}
-        <div style={{ display: "flex", border: `2px solid ${t.border}`, borderRadius: "10px 14px 8px 12px", overflow: "hidden", marginBottom: "24px", background: t.inputBg }}>
-          <button 
-            onClick={() => setActiveSurface("Outside")}
-            style={{ flex: 1, padding: "8px", border: "none", background: activeSurface === "Outside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Outside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Outside" ? t.textMain : t.textMuted }}
-          >Outside</button>
-          <div style={{ width: "2px", background: t.border }}></div>
-          <button 
-            onClick={() => setActiveSurface("Inside")}
-            style={{ flex: 1, padding: "8px", border: "none", background: activeSurface === "Inside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Inside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Inside" ? t.textMain : t.textMuted }}
-          >Inside</button>
-        </div>
-
-        {/* Exit Confirmation Modal */}
-        {isExitModalOpen && (
-          <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100000 }}>
-            <div style={{ background: "#ffffff", padding: "32px", borderRadius: "12px", width: "420px", maxWidth: "90vw", boxShadow: "0 20px 40px rgba(0,0,0,0.1)", color: "#333", fontFamily: "'Inter', sans-serif" }}>
-              <h3 style={{ margin: "0 0 12px 0", fontSize: "18px", fontWeight: "700", color: "#222" }}>Save Changes Before Closing?</h3>
-              <p style={{ margin: "0 0 32px 0", fontSize: "14px", color: "#555", lineHeight: "1.5" }}>
-                You have unsaved changes. If you continue without saving, these changes will be lost.
-              </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "flex-start" }}>
-                <button 
-                  onClick={handleSaveAndExit}
-                  disabled={isSaving}
-                  style={{ padding: "10px 24px", background: "#4f75f6", color: "#ffffff", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-                <button 
-                  onClick={() => setIsExitModalOpen(false)}
-                  style={{ padding: "10px 24px", background: "#ffffff", color: "#555", border: "1px solid #ccc", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleDiscardAndExit}
-                  style={{ marginLeft: "auto", padding: "10px 24px", background: "#ffffff", color: "#e03e3e", border: "1px solid #e03e3e", borderRadius: "20px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
-                >
-                  Don't Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Package Color */}
-        <div>
-          <div style={{ fontSize: "16px", fontWeight: "400", marginBottom: "12px", color: t.textMain, fontFamily: "Georgia, 'Times New Roman', serif" }}>Package Color</div>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-            {packageColors.map((item, idx) => {
-              const isSelected = activeColor === item.value || (item.type === "transparent" && activeColor === "transparent");
+            {/* Dimensions Box */}
+            <div style={{ background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "16px", padding: "16px", marginBottom: "24px" }}>
+              <div style={{ fontSize: "12px", color: t.textMuted, fontWeight: "700", marginBottom: "16px", letterSpacing: "0.5px" }}>DIMENSIONS (IN)</div>
               
-              if (item.type === "picker") {
-                return (
-                  <div key={`color-${idx}`} style={{ position: "relative", width: "28px", height: "28px" }}>
-                    <div style={{
-                      width: "100%", height: "100%", borderRadius: "4px 10px 8px 12px", cursor: "pointer",
-                      background: "linear-gradient(white, white) padding-box, conic-gradient(#ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000) border-box",
-                      border: "2.5px solid transparent",
-                      boxShadow: `1px 2px 0px ${t.border}`,
-                      pointerEvents: "none", position: "absolute", zIndex: 2
-                    }} />
+              <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                {[
+                  { label: 'LENGTH', key: 'L', val: store.L },
+                  { label: 'WIDTH', key: 'W', val: store.W },
+                  { label: 'HEIGHT', key: 'H', val: store.H }
+                ].map((dim) => (
+                  <div key={dim.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <input 
-                      type="color"
-                      value={activeColor && activeColor !== "transparent" ? activeColor : "#ffffff"}
-                      onChange={(e) => handleColorSelect(e.target.value)}
+                      type="number" step="0.0001" value={dim.val} 
+                      onChange={(e) => store.setDim(dim.key, e.target.value)}
                       style={{ 
-                        position: "absolute", top: 0, left: 0, width: "100%", height: "100%", 
-                        opacity: 0, cursor: "pointer", zIndex: 3 
+                        width: "100%", background: store.theme === 'dark' ? t.bgApp : t.activeBg, border: `1px solid ${t.border}`, 
+                        color: t.textMain, fontSize: "16px", fontWeight: "700", textAlign: "center", 
+                        padding: "10px 4px", borderRadius: "12px", marginBottom: "8px", outline: "none",
+                        fontFamily: "'Inter', sans-serif"
                       }}
+                      onFocus={(e) => e.target.style.borderColor = t.cyan}
+                      onBlur={(e) => e.target.style.borderColor = t.border}
                     />
+                    <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "600" }}>{dim.label}</span>
                   </div>
-                );
-              }
+                ))}
+              </div>
 
-              if (item.type === "transparent") {
-                return (
-                  <div 
-                    key={`color-${idx}`}
-                    onClick={() => handleColorSelect("transparent")}
-                    style={{
-                      width: "28px", height: "28px", borderRadius: "10px 12px 14px 8px", cursor: "pointer",
-                      background: "repeating-conic-gradient(#e2e8f0 0% 25%, white 0% 50%) 50% / 10px 10px",
-                      border: isSelected ? `2.5px solid ${t.cyan}` : `2px solid ${t.border}`,
-                      boxShadow: isSelected ? `2px 3px 0px ${t.border}` : `1px 2px 0px rgba(58,46,38,0.05)`
-                    }}
-                  />
-                );
-              }
+              <div style={{ display: "flex", justifyContent: "space-between", background: store.theme === 'dark' ? t.bgApp : t.activeBg, padding: "16px", borderRadius: "12px", border: `1px solid ${t.border}` }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>VOL (IN³)</span>
+                  <span style={{ fontSize: "18px", color: t.cyan, fontWeight: "700" }}>{(store.L * store.W * store.H).toFixed(1)}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>AREA (IN²)</span>
+                  <span style={{ fontSize: "18px", color: t.cyan, fontWeight: "700" }}>{(2 * (store.L * store.W + store.L * store.H + store.W * store.H)).toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
 
-              return (
-                <div 
-                  key={`color-${idx}`}
-                  onClick={() => handleColorSelect(item.value)}
-                  style={{
-                    width: "28px", height: "28px", borderRadius: "50%", backgroundColor: item.value, cursor: "pointer",
-                    border: isSelected ? `2.5px solid ${t.cyan}` : `2px solid ${t.border}`,
-                    boxShadow: isSelected ? `0 0 0 2px ${t.bgPanel} inset, 2px 3px 0px ${t.border}` : `1px 2px 0px rgba(58,46,38,0.05)`,
-                    boxSizing: "border-box"
-                  }}
-                />
-              );
-            })}
+            {/* Outside / Inside Toggle */}
+            <div style={{ display: "flex", border: `1px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", marginBottom: "24px", background: t.inputBg }}>
+              <button 
+                onClick={() => setActiveSurface("Outside")}
+                style={{ flex: 1, padding: "12px", border: "none", background: activeSurface === "Outside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Outside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Outside" ? t.textMain : t.textMuted }}
+              >Outside</button>
+              <button 
+                onClick={() => setActiveSurface("Inside")}
+                style={{ flex: 1, padding: "12px", border: "none", background: activeSurface === "Inside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Inside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Inside" ? t.textMain : t.textMuted }}
+              >Inside</button>
+            </div>
+
+            {/* Color Picker */}
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "16px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Package Color</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {packageColors.map((col, i) => (
+                  <div key={i} style={{ width: "32px", height: "32px", borderRadius: "50%", border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                    {col.type === "picker" ? (
+                      <input 
+                        type="color" value={activeColor || "#ffffff"} onChange={(e) => handleColorSelect(e.target.value)}
+                        style={{ position: "absolute", opacity: 0, width: "100%", height: "100%", cursor: "pointer" }}
+                      />
+                    ) : null}
+                    {col.type === "picker" ? (
+                      <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)", outline: activeColor === null ? `2px solid ${t.cyan}` : "none", outlineOffset: "2px" }} />
+                    ) : col.type === "transparent" ? (
+                      <div 
+                        onClick={() => handleColorSelect("transparent")}
+                        style={{ width: "26px", height: "26px", borderRadius: "50%", background: "repeating-conic-gradient(#ccc 0% 25%, transparent 0% 50%) 50% / 10px 10px", outline: activeColor === "transparent" ? `2px solid ${t.cyan}` : "none", outlineOffset: "2px" }} 
+                      />
+                    ) : (
+                      <div 
+                        onClick={() => handleColorSelect(col.value)}
+                        style={{ width: "26px", height: "26px", borderRadius: "50%", backgroundColor: col.value, outline: activeColor === col.value ? `2px solid ${t.cyan}` : "none", outlineOffset: "2px" }} 
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
-        
       </div>
-      )}
 
-      {/* Export Modal */}
+{/* Export Modal */}
       {isExportModalOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ width: "900px", height: "600px", backgroundColor: t.bgPanel, borderRadius: "16px", display: "flex", flexDirection: "column", overflow: "hidden", border: `2px solid ${t.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
@@ -945,19 +923,10 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "16px", color: t.textMain }}>File type</div>
                   
                   <div 
-                    onClick={() => setExportFileType('artwork')}
-                    style={{ border: exportFileType === 'artwork' ? `2px solid #8b5cf6` : `1px solid ${t.border}`, borderRadius: "8px", padding: "16px", marginBottom: "12px", cursor: "pointer", backgroundColor: exportFileType === 'artwork' ? (store.theme === 'dark' ? 'rgba(139, 92, 246, 0.1)' : '#f9f5ff') : 'transparent', transition: "all 0.2s ease" }}
+                    style={{ border: `2px solid #8b5cf6`, borderRadius: "8px", padding: "16px", marginBottom: "12px", backgroundColor: store.theme === 'dark' ? 'rgba(139, 92, 246, 0.1)' : '#f9f5ff' }}
                   >
-                    <div style={{ fontSize: "14px", fontWeight: "600", color: t.textMain, marginBottom: "4px" }}>Artwork file</div>
-                    <div style={{ fontSize: "12px", color: t.textMuted, lineHeight: "1.4" }}>Includes dieline and artwork, ready for printing.</div>
-                  </div>
-                  
-                  <div 
-                    onClick={() => setExportFileType('dieline')}
-                    style={{ border: exportFileType === 'dieline' ? `2px solid #8b5cf6` : `1px solid ${t.border}`, borderRadius: "8px", padding: "16px", cursor: "pointer", backgroundColor: exportFileType === 'dieline' ? (store.theme === 'dark' ? 'rgba(139, 92, 246, 0.1)' : '#f9f5ff') : 'transparent', transition: "all 0.2s ease" }}
-                  >
-                    <div style={{ fontSize: "14px", fontWeight: "600", color: t.textMain, marginBottom: "4px" }}>Dieline file</div>
-                    <div style={{ fontSize: "12px", color: t.textMuted, lineHeight: "1.4" }}>Artwork is not included, open the dieline in your favorite application and complete the design.</div>
+                    <div style={{ fontSize: "14px", fontWeight: "600", color: t.textMain, marginBottom: "4px" }}>Super Export Bundle</div>
+                    <div style={{ fontSize: "12px", color: t.textMuted, lineHeight: "1.4" }}>Automatically generates and exports 3 versions: Full Layout, Artwork Only, and Dieline Only.</div>
                   </div>
                 </div>
 
@@ -990,7 +959,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                 </div>
 
                 <button 
-                  onClick={() => handleExport(exportFileType, exportColorMode, exportFormat)}
+                  onClick={() => handleExport(exportColorMode, exportFormat)}
                   style={{ width: "100%", padding: "16px", backgroundColor: "#8b5cf6", color: "white", border: "none", borderRadius: "8px", fontWeight: "600", fontSize: "16px", cursor: "pointer", marginTop: "32px", transition: "opacity 0.2s ease" }}
                   onMouseOver={(e) => e.target.style.opacity = "0.9"}
                   onMouseOut={(e) => e.target.style.opacity = "1"}
@@ -1002,7 +971,6 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

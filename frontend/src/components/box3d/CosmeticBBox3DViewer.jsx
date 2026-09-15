@@ -363,7 +363,22 @@ export default function CosmeticBBox3DViewer({
           material={outsideMaterial}
           castShadow
           receiveShadow
-        />
+        >
+          <CosmeticBDecals
+            geom={geom}
+            decals={debouncedDecals}
+            panelName={panelName}
+            nL={nL}
+            nW={nW}
+            nH={nH}
+            thickness={thickness}
+            dynScaleFactor={dynScaleFactor}
+            uSX={userScaleX}
+            uSY={userScaleY}
+            uSZ={userScaleZ}
+            T={T}
+          />
+        </mesh>
         {!skipInside && (
           <mesh
             geometry={geom}
@@ -371,20 +386,6 @@ export default function CosmeticBBox3DViewer({
             receiveShadow
           />
         )}
-        <CosmeticBDecals
-          geom={geom}
-          decals={debouncedDecals}
-          panelName={panelName}
-          nL={nL}
-          nW={nW}
-          nH={nH}
-          thickness={thickness}
-          dynScaleFactor={dynScaleFactor}
-          uSX={userScaleX}
-          uSY={userScaleY}
-          uSZ={userScaleZ}
-          T={T}
-        />
       </group>
     );
   };
@@ -486,7 +487,7 @@ export default function CosmeticBBox3DViewer({
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <Canvas
+      <Canvas frameloop="demand"
         camera={{ position: camPos, fov: 38, zoom }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         shadows

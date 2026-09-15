@@ -62,9 +62,37 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
   const [basePriceMonthly, setBasePriceMonthly] = useState<number>(1000);
   const [basePriceYearly, setBasePriceYearly] = useState<number>(600);
   const [baseAiCredits, setBaseAiCredits] = useState<number>(300);
+  const [baseTitle, setBaseTitle] = useState<string>('Base Plan');
+  const [baseDescription, setBaseDescription] = useState<string>('Essential tools for beginners.');
+  const [baseFeatures, setBaseFeatures] = useState<any[]>([
+    { text: "Remove all watermarks", included: true },
+    { text: "Export dieline templates: not supported", included: false },
+    { text: "Maximum export of 2K rendered images", included: true },
+    { text: "Maximum export of 720p rendered videos", included: true },
+    { text: "Maximum export of 2K AI background images", included: true },
+    { text: "For personal use only", included: true, info: true },
+  ]);
+  const [baseAiFeatures, setBaseAiFeatures] = useState<any[]>([
+    { text: "300 AI credits, updated monthly", included: true },
+    { text: "Access to AI Design, AI Creation, AI Video, AI Background and AI Logo features.", included: true },
+  ]);
+
   const [proPriceMonthly, setProPriceMonthly] = useState<number>(10000);
   const [proPriceYearly, setProPriceYearly] = useState<number>(6000);
   const [proAiCredits, setProAiCredits] = useState<number>(10000);
+  const [proTitle, setProTitle] = useState<string>('Pro Plan');
+  const [proDescription, setProDescription] = useState<string>('Advanced features for serious creators and professionals.');
+  const [proFeatures, setProFeatures] = useState<any[]>([
+    { text: "Maximum export of 8K rendered images", included: true },
+    { text: "Maximum export of 2K rendered videos", included: true },
+    { text: "Advanced features of the dieline templates", included: true },
+    { text: "Commercial use and resale license", included: true, info: true },
+  ]);
+  const [proAiFeatures, setProAiFeatures] = useState<any[]>([
+    { text: "10,000 AI credits, updated monthly", included: true },
+    { text: "Access to AI Design, AI Creation, AI Video, AI Background and AI Logo features.", included: true },
+  ]);
+
   const [yearlyDiscountPercent, setYearlyDiscountPercent] = useState<number>(40);
   const [membershipSubTab, setMembershipSubTab] = useState<'prices' | 'campaign' | 'coupons'>('prices');
 
@@ -784,9 +812,19 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
         setBasePriceMonthly(c.basePriceMonthly || 1000);
         setBasePriceYearly(c.basePriceYearly || 600);
         setBaseAiCredits(c.baseAiCredits || 300);
+        if (c.baseTitle) setBaseTitle(c.baseTitle);
+        if (c.baseDescription) setBaseDescription(c.baseDescription);
+        if (c.baseFeatures) setBaseFeatures(c.baseFeatures);
+        if (c.baseAiFeatures) setBaseAiFeatures(c.baseAiFeatures);
+
         setProPriceMonthly(c.proPriceMonthly || 10000);
         setProPriceYearly(c.proPriceYearly || 6000);
         setProAiCredits(c.proAiCredits || 10000);
+        if (c.proTitle) setProTitle(c.proTitle);
+        if (c.proDescription) setProDescription(c.proDescription);
+        if (c.proFeatures) setProFeatures(c.proFeatures);
+        if (c.proAiFeatures) setProAiFeatures(c.proAiFeatures);
+
         setYearlyDiscountPercent(c.yearlyDiscountPercent || 40);
 
         if (c.promotion) {
@@ -814,9 +852,17 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
           basePriceMonthly,
           basePriceYearly,
           baseAiCredits,
+          baseTitle,
+          baseDescription,
+          baseFeatures,
+          baseAiFeatures,
           proPriceMonthly,
           proPriceYearly,
           proAiCredits,
+          proTitle,
+          proDescription,
+          proFeatures,
+          proAiFeatures,
           yearlyDiscountPercent,
           promotion: {
             active: promoActive,
@@ -929,6 +975,52 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
       fetchAdminCatalog();
     }
   }, [activeTab]);
+  const renderFeatureEditor = (features: any[], setFeatures: any, title: string) => (
+    <div style={{ background: '#fafafa', padding: '14px 16px', borderRadius: '14px', border: '1px solid #f4f4f5' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#27272a' }}>{title}</label>
+        <button type="button" onClick={() => setFeatures([...features, { text: '', included: true }])} style={{ color: '#4f46e5', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>+ Add Feature</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {features.map((feat, idx) => (
+          <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => {
+                const newF = [...features];
+                newF[idx].included = !newF[idx].included;
+                setFeatures(newF);
+              }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: feat.included ? '#10b981' : '#a1a1aa' }}
+            >
+              {feat.included ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+            </button>
+            <input
+              type="text"
+              value={feat.text}
+              onChange={(e) => {
+                const newF = [...features];
+                newF[idx].text = e.target.value;
+                setFeatures(newF);
+              }}
+              style={{ flex: 1, padding: '6px 10px', borderRadius: '8px', border: '1px solid #e4e4e7', fontSize: '0.85rem', outline: 'none' }}
+              placeholder="Feature description"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const newF = features.filter((_, i) => i !== idx);
+                setFeatures(newF);
+              }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="admin-dashboard-container">
@@ -2156,9 +2248,19 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f4f4f5', color: '#18181b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <CreditCard className="w-5 h-5" />
                         </div>
-                        <div>
-                          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#18181b', margin: 0 }}>Base Plan</h3>
-                          <span style={{ fontSize: '0.78rem', color: '#71717a' }}>Starter tier for individual designers</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                          <input
+                            type="text"
+                            value={baseTitle}
+                            onChange={(e) => setBaseTitle(e.target.value)}
+                            style={{ fontSize: '1.15rem', fontWeight: 800, color: '#18181b', margin: 0, border: 'none', background: 'transparent', outline: 'none', width: '100%', padding: 0 }}
+                          />
+                          <input
+                            type="text"
+                            value={baseDescription}
+                            onChange={(e) => setBaseDescription(e.target.value)}
+                            style={{ fontSize: '0.78rem', color: '#71717a', border: 'none', background: 'transparent', outline: 'none', width: '100%', padding: 0 }}
+                          />
                         </div>
                       </div>
                       <span style={{ background: '#f4f4f5', color: '#52525b', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>BASE TIER</span>
@@ -2212,6 +2314,10 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                           />
                         </div>
                       </div>
+                      
+                      {renderFeatureEditor(baseFeatures, setBaseFeatures, "Key Features")}
+                      {renderFeatureEditor(baseAiFeatures, setBaseAiFeatures, "AI Features")}
+
                     </div>
                   </div>
 
@@ -2232,9 +2338,19 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                         <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Sparkles className="w-5 h-5" />
                         </div>
-                        <div>
-                          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#18181b', margin: 0 }}>Pro Plan</h3>
-                          <span style={{ fontSize: '0.78rem', color: '#71717a' }}>Commercial tier for packaging studios</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                          <input
+                            type="text"
+                            value={proTitle}
+                            onChange={(e) => setProTitle(e.target.value)}
+                            style={{ fontSize: '1.15rem', fontWeight: 800, color: '#18181b', margin: 0, border: 'none', background: 'transparent', outline: 'none', width: '100%', padding: 0 }}
+                          />
+                          <input
+                            type="text"
+                            value={proDescription}
+                            onChange={(e) => setProDescription(e.target.value)}
+                            style={{ fontSize: '0.78rem', color: '#71717a', border: 'none', background: 'transparent', outline: 'none', width: '100%', padding: 0 }}
+                          />
                         </div>
                       </div>
                       <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>COMMERCIAL PRO</span>
@@ -2288,6 +2404,9 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                           />
                         </div>
                       </div>
+
+                      {renderFeatureEditor(proFeatures, setProFeatures, "Key Features")}
+                      {renderFeatureEditor(proAiFeatures, setProAiFeatures, "AI Features")}
                     </div>
                   </div>
                 </div>

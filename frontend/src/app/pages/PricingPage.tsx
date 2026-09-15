@@ -21,9 +21,17 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
     basePriceMonthly: 1000,
     basePriceYearly: 600,
     baseAiCredits: 300,
+    baseTitle: 'Base Plan',
+    baseDescription: 'Essential tools for beginners.',
+    baseFeatures: [] as { text: string; included: boolean; info?: boolean }[],
+    baseAiFeatures: [] as { text: string; included: boolean; info?: boolean }[],
     proPriceMonthly: 10000,
     proPriceYearly: 6000,
     proAiCredits: 10000,
+    proTitle: 'Pro Plan',
+    proDescription: 'Advanced features for serious creators and professionals.',
+    proFeatures: [] as { text: string; included: boolean; info?: boolean }[],
+    proAiFeatures: [] as { text: string; included: boolean; info?: boolean }[],
     yearlyDiscountPercent: 40,
     promotion: {
       active: false,
@@ -131,7 +139,7 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
     }
   }
 
-  const baseFeatures = [
+  const baseFeatures = planConfig.baseFeatures && planConfig.baseFeatures.length > 0 ? planConfig.baseFeatures : [
     { text: "Remove all watermarks", included: true },
     { text: "Export dieline templates: not supported", included: false },
     { text: "Maximum export of 2K rendered images", included: true },
@@ -140,19 +148,19 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
     { text: "For personal use only", included: true, info: true },
   ];
 
-  const baseAiFeatures = [
+  const baseAiFeatures = planConfig.baseAiFeatures && planConfig.baseAiFeatures.length > 0 ? planConfig.baseAiFeatures : [
     { text: `${planConfig.baseAiCredits.toLocaleString()} AI credits, updated monthly`, included: true },
     { text: "Access to AI Design, AI Creation, AI Video, AI Background and AI Logo features.", included: true },
   ];
 
-  const proFeatures = [
+  const proFeatures = planConfig.proFeatures && planConfig.proFeatures.length > 0 ? planConfig.proFeatures : [
     { text: "Maximum export of 8K rendered images", included: true },
     { text: "Maximum export of 2K rendered videos", included: true },
     { text: "Advanced features of the dieline templates", included: true },
     { text: "Commercial use and resale license", included: true, info: true },
   ];
 
-  const proAiFeatures = [
+  const proAiFeatures = planConfig.proAiFeatures && planConfig.proAiFeatures.length > 0 ? planConfig.proAiFeatures : [
     { text: `${planConfig.proAiCredits.toLocaleString()} AI credits, updated monthly`, included: true },
     { text: "Access to AI Design, AI Creation, AI Video, AI Background and AI Logo features.", included: true },
   ];
@@ -244,8 +252,8 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
             
-            <h3 className="text-2xl font-bold text-zinc-900 mb-2">Base Plan</h3>
-            <p className="text-sm text-zinc-500 mb-8">Essential tools for beginners.</p>
+            <h3 className="text-2xl font-bold text-zinc-900 mb-2">{planConfig.baseTitle}</h3>
+            <p className="text-sm text-zinc-500 mb-8">{planConfig.baseDescription}</p>
             
             <div className="mb-8 flex items-baseline">
               <span className="text-5xl font-black text-zinc-900">₹{rawBasePrice.toLocaleString('en-IN')}</span>
@@ -302,8 +310,8 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
               </div>
             </div>
 
-            <h3 className="text-2xl font-bold text-zinc-900 mb-2">Pro Plan</h3>
-            <p className="text-sm text-zinc-500 mb-8">Advanced features for serious creators and professionals.</p>
+            <h3 className="text-2xl font-bold text-zinc-900 mb-2">{planConfig.proTitle}</h3>
+            <p className="text-sm text-zinc-500 mb-8">{planConfig.proDescription}</p>
             
             <div className="mb-8 flex items-baseline">
               <span className="text-5xl font-black text-zinc-900">₹{rawProPrice.toLocaleString('en-IN')}</span>

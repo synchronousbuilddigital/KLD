@@ -546,7 +546,7 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
   else if (panelInput === "Right") panel = "p2";
   else if (panelInput === "Left") panel = "p4";
 
-  const { x1, x2, x3, x4, x5, yTop, yBot } = dims;
+  const { x1, x2, x3, x4, x5, yTop, yBot } = dims || {};
   const nT = Math.max(0.015, Number(T) || 0.0197);
   const coverDepth = W - 2 * nT;
   const sec1L = W * (11.5 / 35.6);
@@ -701,7 +701,7 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
 
 export function getOverlappingDecals(panel, decals, dims, W, T) {
   if (!decals || decals.length === 0) return [];
-  const { x1, x2, x3, x4, x5, yTop, yBot } = dims;
+  const { x1, x2, x3, x4, x5, yTop, yBot } = dims || {};
   const nT = Math.max(0.015, Number(T) || 0.0197);
   const coverDepth = W - 2 * nT;
   const lipDepth = W * (14.25 / 60);

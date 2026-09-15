@@ -25,9 +25,17 @@ const getPlanConfig = async (req, res, next) => {
         basePriceMonthly: config.basePriceMonthly,
         basePriceYearly: config.basePriceYearly,
         baseAiCredits: config.baseAiCredits,
+        baseTitle: config.baseTitle,
+        baseDescription: config.baseDescription,
+        baseFeatures: config.baseFeatures,
+        baseAiFeatures: config.baseAiFeatures,
         proPriceMonthly: config.proPriceMonthly,
         proPriceYearly: config.proPriceYearly,
         proAiCredits: config.proAiCredits,
+        proTitle: config.proTitle,
+        proDescription: config.proDescription,
+        proFeatures: config.proFeatures,
+        proAiFeatures: config.proAiFeatures,
         yearlyDiscountPercent: config.yearlyDiscountPercent,
         promotion: {
           active: isPromoValid,
@@ -58,9 +66,17 @@ const updatePlanConfig = async (req, res, next) => {
       basePriceMonthly,
       basePriceYearly,
       baseAiCredits,
+      baseTitle,
+      baseDescription,
+      baseFeatures,
+      baseAiFeatures,
       proPriceMonthly,
       proPriceYearly,
       proAiCredits,
+      proTitle,
+      proDescription,
+      proFeatures,
+      proAiFeatures,
       yearlyDiscountPercent,
       promotion,
     } = req.body;
@@ -68,9 +84,19 @@ const updatePlanConfig = async (req, res, next) => {
     if (typeof basePriceMonthly === 'number') config.basePriceMonthly = basePriceMonthly;
     if (typeof basePriceYearly === 'number') config.basePriceYearly = basePriceYearly;
     if (typeof baseAiCredits === 'number') config.baseAiCredits = baseAiCredits;
+    if (typeof baseTitle === 'string') config.baseTitle = baseTitle;
+    if (typeof baseDescription === 'string') config.baseDescription = baseDescription;
+    if (Array.isArray(baseFeatures)) config.baseFeatures = baseFeatures;
+    if (Array.isArray(baseAiFeatures)) config.baseAiFeatures = baseAiFeatures;
+
     if (typeof proPriceMonthly === 'number') config.proPriceMonthly = proPriceMonthly;
     if (typeof proPriceYearly === 'number') config.proPriceYearly = proPriceYearly;
     if (typeof proAiCredits === 'number') config.proAiCredits = proAiCredits;
+    if (typeof proTitle === 'string') config.proTitle = proTitle;
+    if (typeof proDescription === 'string') config.proDescription = proDescription;
+    if (Array.isArray(proFeatures)) config.proFeatures = proFeatures;
+    if (Array.isArray(proAiFeatures)) config.proAiFeatures = proAiFeatures;
+
     if (typeof yearlyDiscountPercent === 'number') config.yearlyDiscountPercent = yearlyDiscountPercent;
 
     if (promotion && typeof promotion === 'object') {

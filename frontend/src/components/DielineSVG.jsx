@@ -436,13 +436,14 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         </defs>
 
         {showBleedLine && (
-          <g stroke={bleedColor} strokeWidth={strokeW * 1.5} fill="none" strokeLinejoin="round" strokeLinecap="round" opacity={0.7}>
+          <g className="dieline-vector" stroke={bleedColor} strokeWidth={strokeW * 1.5} fill="none" strokeLinejoin="round" strokeLinecap="round" opacity={0.7}>
             {bleedPaths.map((p, i) => <path key={`bleed-${i}`} d={p} />)}
           </g>
         )}
 
         {/* When in editor mode, fill the shape with the photorealistic texture and add a subtle drop shadow */}
         <g
+          className="dieline-cut-paths"
           stroke={trimColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
           fill={isEditorMode ? "url(#kraft-pattern)" : (packageColor && packageColor !== "transparent" ? packageColor : "none")}
@@ -455,6 +456,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         </g>
 
         <g
+          className="dieline-vector"
           stroke={creaseColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
           strokeDasharray={dashPattern}
@@ -556,6 +558,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         {isEditorMode && decals.map((decal) => (
           <g
             key={decal.id}
+            className="decal-group"
             transform={`translate(${decal.x}, ${decal.y}) ${activeSurface === 'Inside' ? 'scale(-1, 1)' : ''}`}
             onPointerDown={(e) => {
               e.stopPropagation();
