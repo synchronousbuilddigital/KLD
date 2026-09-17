@@ -221,7 +221,8 @@ export default function CosmeticBBox3DViewer({
   activeAnimation = "none",
   colorOverride = null,
   disableZoom = false,
-  useStore = useBoxStore
+  useStore = useBoxStore,
+  showWatermark = false
 }) {
   const store = useStore();
 
@@ -247,8 +248,8 @@ export default function CosmeticBBox3DViewer({
 
   // Standard procedural paperboard texture matching all KLD boxes
   const texture = useMemo(
-    () => createProceduralTexture(materialCategoryToUse, packageColorToUse),
-    [materialCategoryToUse, packageColorToUse]
+    () => createProceduralTexture(materialCategoryToUse, packageColorToUse, showWatermark),
+    [materialCategoryToUse, packageColorToUse, showWatermark]
   );
 
   const mats = useMemo(
@@ -493,7 +494,9 @@ export default function CosmeticBBox3DViewer({
         shadows
         dpr={[1, 2]}
       >
-        <Environment preset="city" />
+        <React.Suspense fallback={null}>
+          <Environment preset="city" />
+        </React.Suspense>
         <LightingPreset preset={lightingPreset} />
         <ContactShadows
           position={[0, -0.02, 0]}
@@ -501,6 +504,8 @@ export default function CosmeticBBox3DViewer({
           scale={Math.max(L, W) * 4}
           blur={2.5}
           far={4}
+          resolution={256}
+          frames={activeAnimation === "none" && (progress === 0 || Math.abs(progress - 1) < 0.01) ? 1 : Infinity}
         />
 
         <SceneAnimator activeAnimation={activeAnimation}>

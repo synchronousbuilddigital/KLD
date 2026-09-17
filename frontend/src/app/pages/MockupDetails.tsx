@@ -7,7 +7,6 @@ import { catalogService } from '../../services/catalog';
 import { useBoxStore } from '../../lib/useBoxStore';
 import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import Header from '../components/layout/Header';
-import SignInModal from '../components/modals/SignInModal';
 import HoverBoxAnimation from '../animations/HoverBoxAnimation';
 import MagneticRigidBoxAnimation from '../animations/MagneticRigidBoxAnimation';
 import DrawerSleeveBoxAnimation from '../animations/DrawerSleeveBoxAnimation';
@@ -65,6 +64,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
     : (variant.whiteImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.white) || variant.imageUrl || '/mockups/generated_box.png');
 
   const handleClick = () => {
+
     const isKraft = material === 'kraft';
     const cleanDefaultState = {
       L: isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244),
@@ -97,9 +97,10 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   };
 
   return (
-    <div
-      className="flex flex-col group/detail cursor-pointer transition-all duration-300"
-      style={{ textDecoration: 'none' }}
+    <>
+      <div
+        className="flex flex-col group/detail cursor-pointer transition-all duration-300"
+        style={{ textDecoration: 'none' }}
       onMouseEnter={() => setHoveredVariant(variant)}
       onMouseLeave={() => setHoveredVariant(null)}
       onClick={handleClick}
@@ -152,6 +153,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
         {/* Box Image / Animation Container */}
         <div className="w-full h-[260px] relative flex items-center justify-center overflow-hidden rounded-lg mb-4">
+
           {isBox ? (
             <motion.div
               className="w-full h-full flex items-center justify-center p-2"
@@ -223,7 +225,8 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
         </div>
       </div>
     </div>
-  );
+  </>
+);
 };
 
 
@@ -269,7 +272,6 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(initialCategoryId);
   const [hoveredVariant, setHoveredVariant] = useState<MockupVariant | null>(null);
 
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
 
   useEffect(() => {
@@ -401,10 +403,6 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
           </div>
         </main>
       </div>
-
-      {isSignInModalOpen && (
-        <SignInModal onClose={() => setIsSignInModalOpen(false)} />
-      )}
     </div>
   );
 }

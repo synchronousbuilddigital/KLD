@@ -13,6 +13,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 "use client";
+import React, { useState, useEffect } from 'react';
 import { useBoxStore }     from "../../lib/useBoxStore";
 import RTEBox3DViewer      from "./RTEBox3DViewer";
 import TEBox3DViewer       from "./TEBox3DViewer";
@@ -26,9 +27,22 @@ export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
   const model = boxModelOverride || store.boxModel || "rte";
-  if (model === "te") return <TEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
-  if (model === "auto_lock") return <AutoLockBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
-  if (model === "cosmetic") return <CosmeticBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
-  if (model === "cosmetic_b") return <CosmeticBBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
-  return <RTEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} {...props} />;
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('isLoggedIn') === 'true';
+    return false;
+  });
+
+  useEffect(() => {
+    const handleAuthChange = () => setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
+  }, []);
+
+  const showWatermark = !isLoggedIn;
+
+  if (model === "te") return <TEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  if (model === "auto_lock") return <AutoLockBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  if (model === "cosmetic") return <CosmeticBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  if (model === "cosmetic_b") return <CosmeticBBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  return <RTEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
 }

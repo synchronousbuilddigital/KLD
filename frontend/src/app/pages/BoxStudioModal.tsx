@@ -132,6 +132,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   // Zoom / Reset Canvas State
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const canvasAreaRef = useRef<HTMLElement>(null);
+  const isDragging = useRef(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   // Set initial box model
   useEffect(() => {
@@ -187,6 +190,46 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [isPlayingAnim]);
+
+  // Custom Zoom & Pan Logic
+  useEffect(() => {
+    const el = canvasAreaRef.current;
+    if (!el || !isOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (e.ctrlKey || e.metaKey) {
+        setZoom(prev => Math.min(Math.max(0.1, prev - e.deltaY * 0.01), 10));
+      } else {
+        setPan(prev => ({
+          x: prev.x - e.deltaX,
+          y: prev.y - e.deltaY
+        }));
+      }
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [isOpen]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDragging.current = true;
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - lastMousePos.current.x;
+    const dy = e.clientY - lastMousePos.current.y;
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+    setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    isDragging.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
 
   if (!isOpen) return null;
 
@@ -753,7 +796,13 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
           {/* ========================================================================= */}
           <main
             id="dieline-canvas-area"
-            className="flex-1 min-w-0 bg-[#fffcf7] relative flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden"
+            ref={canvasAreaRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            style={{ touchAction: 'none' }}
+            className="flex-1 min-w-0 bg-[#fffcf7] relative flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden cursor-grab active:cursor-grabbing"
           >
             {/* Top Legend Bar */}
             <div className="absolute top-4 left-6 flex items-center gap-6 text-xs text-zinc-600 font-semibold z-10">

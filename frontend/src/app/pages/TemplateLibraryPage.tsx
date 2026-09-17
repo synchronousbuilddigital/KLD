@@ -29,7 +29,6 @@ export const TemplateDetailCard = ({
 }: { 
   title: string, 
   type: string, 
-  href?: string, 
   onClick?: () => void,
   dieline2DImg?: string,
   box3DImg?: string
@@ -55,13 +54,13 @@ export const TemplateDetailCard = ({
             <img 
               src={dieline2DImg} 
               alt={`${title} Dieline`} 
-              className="w-full h-full object-contain transition-transform duration-300 scale-[1.3] group-hover/detail:scale-[1.35]"
+              className="w-full h-full object-contain transition-transform duration-300 scale-[1.0] group-hover/detail:scale-[1.05]"
               style={{
                 mixBlendMode: 'darken'
               }}
             />
           ) : (
-            <svg viewBox="0 0 100 100" className="w-full h-full transition-transform duration-300 scale-[1.2] group-hover/detail:scale-[1.25]">
+            <svg viewBox="0 0 100 100" className="w-full h-full transition-transform duration-300 scale-[1.0] group-hover/detail:scale-[1.05]">
             {type === 'straight' && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M25,25 h50 M25,75 h50 M40,20 v60 M60,20 v60 M75,25 v50 M25,25 v50" stroke="#EF4444" strokeDasharray="1.5 1.5" />

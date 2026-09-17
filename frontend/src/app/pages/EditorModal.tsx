@@ -476,27 +476,39 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         <div style={{ position: "absolute", left: "24px", top: "24px", bottom: "24px", display: "flex", gap: "16px", zIndex: 40, pointerEvents: "none" }}>
           
           {/* Left Navbar */}
-          <div className="glass-panel" style={{ width: "72px", display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0", pointerEvents: "auto" }}>
+          <div className="glass-panel" style={{ width: "80px", display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0", pointerEvents: "auto", gap: "4px" }}>
             {[
-              { name: "Uploads", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg> },
-              { name: "Elements", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
-              { name: "Templates", icon: <IconLayout /> },
-              { name: "AI Creation", icon: <IconSparkles /> },
-            ].map(tab => (
-              <div 
-                key={tab.name}
-                onClick={() => setActiveTab(tab.name)}
-                style={{ 
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  width: "56px", height: "56px", marginBottom: "8px", cursor: "pointer", borderRadius: "16px",
-                  backgroundColor: activeTab === tab.name ? t.cyan : "transparent",
-                  color: activeTab === tab.name ? "#fff" : t.textMuted,
-                  transition: "all 0.2s ease"
-                }}
-              >
-                {tab.icon}
-              </div>
-            ))}
+              { name: "Uploads", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.5 19h-11a5.5 5.5 0 0 1-1.34-10.83A7.5 7.5 0 0 1 19.66 9.6 5.5 5.5 0 0 1 17.5 19z" fill="currentColor" stroke="none" /><path d="M12 15V8M9 11l3-3 3 3" stroke={activeTab === "Uploads" ? "#ffffff" : t.bgPanel} strokeWidth="2" fill="none" /></svg> },
+              { name: "Elements", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="5" /><rect x="11" y="11" width="8" height="8" rx="1" /></svg> },
+              { name: "Text", icon: <span style={{ fontFamily: "serif", fontSize: "24px", lineHeight: 1, fontWeight: "bold" }}>T</span> },
+              { type: "divider" },
+              { name: "Tools", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="16" cy="12" r="1.5" fill="currentColor" stroke="none" /></svg> },
+            ].map((tab, idx) => {
+              if (tab.type === "divider") {
+                return <div key={`div-${idx}`} style={{ width: "40px", height: "1px", backgroundColor: t.border, margin: "8px 0" }}></div>;
+              }
+              const isActive = activeTab === tab.name;
+              return (
+                <div 
+                  key={tab.name}
+                  onClick={() => setActiveTab(tab.name)}
+                  style={{ 
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    width: "64px", cursor: "pointer", borderRadius: "12px",
+                    color: isActive ? t.cyan : t.textMain,
+                    transition: "all 0.2s ease",
+                    padding: "8px 0"
+                  }}
+                >
+                  <div style={{ marginBottom: "4px" }}>
+                    {tab.icon}
+                  </div>
+                  <span style={{ fontSize: "11px", fontWeight: isActive ? "600" : "500", color: isActive ? t.cyan : t.textMuted }}>
+                    {tab.name}
+                  </span>
+                </div>
+              );
+            })}
             <div style={{ flex: 1 }}></div>
             <div onClick={() => setActiveTab("AI Logo")} style={{ width: "48px", height: "48px", borderRadius: "50%", background: "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", pointerEvents: "auto", color: "#fff" }}>
               <IconSparkles />
@@ -506,7 +518,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
           {/* Left Panel Content */}
           <div className="glass-panel" style={{ width: "320px", display: "flex", flexDirection: "column", pointerEvents: "auto", overflow: "hidden" }}>
             <div style={{ padding: "24px", fontSize: "16px", fontWeight: "700", borderBottom: `1px solid ${t.border}` }}>
-               {activeTab === "Elements" ? "Elements" : activeTab === "Uploads" ? "Upload images" : activeTab}
+               {activeTab === "Elements" ? "Elements" : activeTab === "Uploads" ? "Upload images" : activeTab === "Text" ? "Text" : activeTab === "Tools" ? "Tools" : activeTab}
             </div>
             
             <div style={{ padding: "24px", flex: 1, overflowY: "auto" }}>
@@ -574,16 +586,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   </div>
                 ) : (
                   <div>
-                    <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px" }}>Text</div>
-                    <div 
-                      onClick={handleAddTextDecal}
-                      style={{ width: "100px", height: "100px", backgroundColor: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "16px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px" }}
-                    >
-                      <span style={{ fontSize: "24px", fontWeight: "bold", color: t.textMain }}>T</span>
-                      <span style={{ fontSize: "13px", color: t.textMuted }}>Add text</span>
-                    </div>
-                    
-                    <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
+                    <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                         <div style={{ fontSize: "16px", fontWeight: "600" }}>Shape</div>
                         <div style={{ fontSize: "12px", color: t.textMain, cursor: "pointer" }} onClick={() => setExpandedSection("Shape")}>More</div>
@@ -702,6 +705,20 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   </div>
                 </div>
                 )
+              ) : activeTab === "Text" ? (
+                <div>
+                  <div 
+                    onClick={handleAddTextDecal}
+                    style={{ width: "100%", padding: "16px", backgroundColor: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "16px", transition: "all 0.2s" }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = t.activeBg}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = t.inputBg}
+                  >
+                    <span style={{ fontSize: "32px", fontWeight: "bold", color: t.textMain, fontFamily: "serif" }}>T</span>
+                    <span style={{ fontSize: "16px", fontWeight: "600", color: t.textMain }}>Add a text box</span>
+                  </div>
+                </div>
+              ) : activeTab === "Tools" ? (
+                <div style={{ textAlign: "center", color: t.textMuted, fontSize: "13px", marginTop: "20px" }}>Tools coming soon...</div>
               ) : activeTab === "AI Creation" ? (
                 <div style={{ position: "relative", width: "100%", height: "100%" }}>
                   <AiPackagingAssistant useStore={useEditorStore} isOpen={true} onClose={() => setActiveTab("Elements")} />

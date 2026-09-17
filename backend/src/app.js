@@ -86,6 +86,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
+// Serve static uploads for local file fallback
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 /* ─── NOSQL INJECTION SANITIZATION (EXPRESS 5 COMPATIBLE) ────────── */
 // Strips '$' keys and '.' operators from req.body, req.query, and req.params in-place to prevent NoSQL injection attacks
 const sanitizeInPlace = (target) => {

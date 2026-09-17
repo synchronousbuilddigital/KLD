@@ -1,0 +1,319 @@
+/* SignInModal.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.signin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 9999999 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Inter', sans-serif;
+}
+
+.signin-new-card {
+    display: flex;
+    width: 900px;
+    height: 600px;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    position: relative;
+    animation: signin-fade-in 0.3s ease-out;
+}
+
+@keyframes signin-fade-in {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Left Pane with Pattern */
+.signin-left-pane {
+    width: 45%;
+    height: 100%;
+    background-color: #f3e8ff; /* Light purple */
+    background-image: radial-gradient(#d8b4fe 2px, transparent 2px);
+    background-size: 32px 32px;
+    border-right: 1px solid #e2e8f0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Add a decorative element to the left pane */
+.signin-left-pane::after {
+    content: "KEYLINE";
+    position: absolute;
+    font-size: 120px;
+    font-weight: 900;
+    color: rgba(168, 85, 247, 0.15);
+    transform: rotate(-45deg);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: -5px;
+}
+
+/* Right Pane */
+.signin-right-pane {
+    width: 55%;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.signin-close-x {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.signin-close-x:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.signin-right-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.signin-options-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+}
+
+.auth-option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    height: 48px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.auth-option-btn.black-btn {
+    background: #111827;
+    color: #ffffff;
+    border: 1px solid #111827;
+}
+
+.auth-option-btn.black-btn:hover {
+    background: #1f2937;
+}
+
+.auth-option-btn.outline-btn {
+    background: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.auth-option-btn.outline-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.custom-google-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    /* Hide the default Google button styles and stretch */
+}
+
+.custom-google-wrapper > div {
+    width: 100% !important;
+}
+
+.auth-terms {
+    margin-top: 48px;
+    font-size: 12px;
+    color: #6b7280;
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+.auth-terms a {
+    color: #374151;
+    text-decoration: underline;
+    text-decoration-color: #d1d5db;
+    text-underline-offset: 2px;
+}
+
+.auth-terms a:hover {
+    color: #111827;
+    text-decoration-color: #9ca3af;
+}
+
+/* Sign In Form View */
+.signin-form-view {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    animation: signin-fade-in 0.3s ease-out;
+}
+
+.signin-form-container h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+    text-align: center;
+}
+
+.signin-subtitle {
+    color: #64748b;
+    font-size: 14px;
+    text-align: center;
+    margin: 0 0 32px 0;
+}
+
+.signin-input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.signin-input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.signin-input-group input {
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 15px;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.signin-input-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.signin-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.signin-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+}
+
+.signin-forgot-password {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.signin-forgot-password:hover {
+    text-decoration: underline;
+}
+
+.signin-btn {
+    width: 100%;
+    height: 44px;
+    background: #111827;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.signin-btn:hover {
+    background: #1f2937;
+}
+
+.signin-btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .signin-new-card {
+        flex-direction: column;
+        height: auto;
+        min-height: 500px;
+    }
+    
+    .signin-left-pane {
+        width: 100%;
+        height: 120px;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .signin-left-pane::after {
+        font-size: 60px;
+    }
+    
+    .signin-right-pane {
+        width: 100%;
+        height: auto;
+    }
+    
+    .signin-right-content {
+        padding: 32px 24px;
+    }
+}

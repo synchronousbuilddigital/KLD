@@ -2,6 +2,22 @@ const User = require('../../models/User');
 const UploadedAsset = require('../../models/UploadedAsset');
 const { uploadBufferToCloudinary, deleteFromCloudinary } = require('../../config/cloudinary');
 const { sendSuccess, sendError } = require('../../utils/response');
+const fs = require('fs');
+const path = require('path');
+
+const saveLocalFallback = (buffer, mimetype, folder) => {
+  const ext = mimetype.split('/')[1] || 'png';
+  const fileName = `local_${Date.now()}.${ext}`;
+  const uploadDir = path.join(__dirname, '../../../../public/uploads', folder);
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  fs.writeFileSync(path.join(uploadDir, fileName), buffer);
+  return {
+    public_id: `local_${folder}_${Date.now()}`,
+    fileName
+  };
+};
 
 /* ─── UPLOAD BRAND LOGO / DECAL ──────────────────────────────────── */
 const uploadLogo = async (req, res, next) => {
@@ -17,12 +33,13 @@ const uploadLogo = async (req, res, next) => {
         resource_type: 'image',
       });
     } catch (cloudErr) {
-      console.warn('⚠️ Cloudinary Upload Warning (using local data URL fallback):', cloudErr.message);
-      const base64 = req.file.buffer.toString('base64');
-      const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+      console.warn('⚠️ Cloudinary Upload Warning (using local file fallback):', cloudErr.message);
+      const baseUrl = req.protocol + '://' + req.get('host');
+      const localResult = saveLocalFallback(req.file.buffer, req.file.mimetype, 'logos');
+      
       cloudResult = {
-        secure_url: dataUrl,
-        public_id: `local_logo_${Date.now()}`,
+        secure_url: `${baseUrl}/uploads/logos/${localResult.fileName}`,
+        public_id: localResult.public_id,
         width: 500,
         height: 500,
         format: req.file.mimetype.split('/')[1] || 'png',
@@ -77,12 +94,13 @@ const uploadAvatar = async (req, res, next) => {
         ]
       });
     } catch (cloudErr) {
-      console.warn('⚠️ Cloudinary Upload Warning for avatar (using base64 fallback):', cloudErr.message);
-      const base64 = req.file.buffer.toString('base64');
-      const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+      console.warn('⚠️ Cloudinary Upload Warning for avatar (using local file fallback):', cloudErr.message);
+      const baseUrl = req.protocol + '://' + req.get('host');
+      const localResult = saveLocalFallback(req.file.buffer, req.file.mimetype, 'avatars');
+
       cloudResult = {
-        secure_url: dataUrl,
-        public_id: `local_avatar_${Date.now()}`
+        secure_url: `${baseUrl}/uploads/avatars/${localResult.fileName}`,
+        public_id: localResult.public_id
       };
     }
 
@@ -143,12 +161,13 @@ const uploadDielineAsset = async (req, res, next) => {
         resource_type: 'auto',
       });
     } catch (cloudErr) {
-      console.warn('⚠️ Cloudinary Upload Warning for dieline asset:', cloudErr.message);
-      const base64 = req.file.buffer.toString('base64');
-      const dataUrl = `data:${req.file.mimetype || 'application/octet-stream'};base64,${base64}`;
+      console.warn('⚠️ Cloudinary Upload Warning for dieline asset (using local file fallback):', cloudErr.message);
+      const baseUrl = req.protocol + '://' + req.get('host');
+      const localResult = saveLocalFallback(req.file.buffer, req.file.mimetype || 'application/octet-stream', 'dielines');
+
       cloudResult = {
-        secure_url: dataUrl,
-        public_id: `local_dieline_${Date.now()}`
+        secure_url: `${baseUrl}/uploads/dielines/${localResult.fileName}`,
+        public_id: localResult.public_id
       };
     }
 

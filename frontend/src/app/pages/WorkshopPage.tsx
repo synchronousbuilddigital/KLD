@@ -3,6 +3,7 @@ import Box3DViewer from "../../components/Box3DViewer";
 import { useBoxStore } from "../../lib/useBoxStore";
 import BoxStudioModal from "./BoxStudioModal";
 import EditorModal from "./EditorModal";
+import MockupSignInModal from "../components/modals/MockupSignInModal";
 import { API_BASE_URL } from "../../config/api";
 import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
@@ -68,6 +69,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSavingAndExiting, setIsSavingAndExiting] = useState(false);
   const [isAiOpen, setIsAiOpen] = useState(false);
+
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
   const executeNavigation = () => {
     if (onBack) {
@@ -510,7 +514,13 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                       <div style={{ fontSize: "16px", fontWeight: "700", color: "#111827", marginBottom: "16px" }}>Upload images</div>
                       <div 
                         style={{ border: "2px dashed #93c5fd", borderRadius: "16px", padding: "32px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", background: "#eff6ff", cursor: "pointer" }}
-                        onClick={() => setIsStudioOpen(true)}
+                        onClick={() => {
+                          if (!isLoggedIn) {
+                            setIsSignInModalOpen(true);
+                          } else {
+                            setIsStudioOpen(true);
+                          }
+                        }}
                       >
                         <div style={{ color: "#3b82f6" }}><IconUploadLarge /></div>
                         <button style={{ background: "#3b82f6", color: "#ffffff", border: "none", borderRadius: "24px", padding: "10px 32px", fontSize: "15px", fontWeight: "600", cursor: "pointer", width: "100%" }}>
@@ -691,6 +701,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 decals={store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : []}
                 overrideLayout={activeSidebarTab === "Layout" ? null : "single"}
                 activeAnimation={activeAnimation}
+                showWatermark={!isLoggedIn}
               />
             </div>
 
@@ -714,7 +725,14 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 {contextMenu.view === 'main' ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <button 
-                      onClick={() => { setContextMenu(null); setIsStudioOpen(true); }} 
+                      onClick={() => { 
+                        setContextMenu(null); 
+                        if (!isLoggedIn) {
+                          setIsSignInModalOpen(true);
+                        } else {
+                          setIsStudioOpen(true); 
+                        }
+                      }} 
                       style={{ display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: "12px", cursor: "pointer", fontSize: "15px", fontWeight: "400", borderRadius: "10px", color: "#333", textAlign: "left", transition: "background 0.2s" }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
                       onMouseLeave={e => e.currentTarget.style.background = "none"}
@@ -974,6 +992,10 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
             </div>
           </div>
         </div>
+      )}
+
+      {isSignInModalOpen && (
+        <MockupSignInModal onClose={() => setIsSignInModalOpen(false)} />
       )}
     </>
   );

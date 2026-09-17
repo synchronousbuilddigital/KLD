@@ -884,9 +884,30 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               MODEL DISPLAY CONTENT AREA (GRID / LIST / TAILORED EMPTY STATE)
              ======================================================== */}
           {isLoading ? (
-            <div className="py-32 text-center text-zinc-400 font-bold flex flex-col items-center justify-center gap-3">
-              <RefreshCw className="w-7 h-7 animate-spin text-zinc-900" />
-              <span>Loading workspace items...</span>
+            <div className="flex-1 flex justify-center items-center min-h-[400px]">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-10 h-10 border-4 border-amber-200 border-t-amber-500 rounded-full animate-spin"></div>
+                <p className="text-sm font-bold text-zinc-500">Loading your workspace...</p>
+              </div>
+            </div>
+          ) : !isLoggedIn ? (
+            /* UNAUTHENTICATED WORKSPACE CARD */
+            <div className="flex-1 min-h-[460px] bg-white rounded-3xl p-12 md:p-20 text-center border-2 border-dashed border-zinc-200/80 flex flex-col items-center justify-center shadow-sm my-2">
+              <div className="w-20 h-20 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-6 shadow-sm">
+                <Box className="w-10 h-10 stroke-[2]" />
+              </div>
+              <h3 className="text-xl font-extrabold text-zinc-900 mb-2">
+                Sign In to View Your Workspace
+              </h3>
+              <p className="text-sm text-zinc-500 mb-8 max-w-md leading-relaxed">
+                Log in to your account to save 3D box models, custom dielines, and access your personal workspace across devices.
+              </p>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open-sign-in-modal'))}
+                className="px-6 py-3.5 bg-zinc-900 text-white text-xs font-extrabold rounded-2xl shadow-md hover:bg-zinc-800 transition-all flex items-center gap-2.5 cursor-pointer active:scale-95"
+              >
+                <User className="w-4 h-4 text-amber-400" /> Sign In / Create Account
+              </button>
             </div>
           ) : filteredItems.length === 0 ? (
             
@@ -978,26 +999,6 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 </div>
               </div>
             ) : (
-              !isLoggedIn ? (
-                /* UNAUTHENTICATED WORKSPACE CARD */
-                <div className="flex-1 min-h-[460px] bg-white rounded-3xl p-12 md:p-20 text-center border-2 border-dashed border-zinc-200/80 flex flex-col items-center justify-center shadow-sm my-2">
-                  <div className="w-20 h-20 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 mb-6 shadow-sm">
-                    <Box className="w-10 h-10 stroke-[2]" />
-                  </div>
-                  <h3 className="text-xl font-extrabold text-zinc-900 mb-2">
-                    Sign In to View Your Workspace
-                  </h3>
-                  <p className="text-sm text-zinc-500 mb-8 max-w-md leading-relaxed">
-                    Log in to your account to save 3D box models, custom dielines, and access your personal workspace across devices.
-                  </p>
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-sign-in-modal'))}
-                    className="px-6 py-3.5 bg-zinc-900 text-white text-xs font-extrabold rounded-2xl shadow-md hover:bg-zinc-800 transition-all flex items-center gap-2.5 cursor-pointer active:scale-95"
-                  >
-                    <User className="w-4 h-4 text-amber-400" /> Sign In / Create Account
-                  </button>
-                </div>
-              ) : (
                 /* RECENT WORK & PROJECTS CUSTOM EMPTY STATE FOR LOGGED IN USERS */
                 <div className="flex-1 min-h-[460px] bg-white rounded-3xl p-12 md:p-20 text-center border-2 border-dashed border-zinc-200/80 flex flex-col items-center justify-center shadow-sm my-2">
                   <div className="relative w-36 h-36 mb-8 flex items-center justify-center">
@@ -1039,8 +1040,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                   </div>
                 </div>
               )
-            )
-
+            
           ) : viewMode === 'grid' ? (
             
             /* GRID VIEW WITH 3D BOX PREVIEWS & INLINE RENAME */

@@ -123,7 +123,7 @@ export function assignMaterialGroups(geom, nT) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PROCEDURAL TEXTURE GENERATOR
 // ─────────────────────────────────────────────────────────────────────────────
-export function createProceduralTexture(materialCategory, packageColor) {
+export function createProceduralTexture(materialCategory, packageColor, showWatermark = false) {
   if (typeof window === "undefined") return null;
 
   const canvas = document.createElement("canvas");
@@ -202,6 +202,45 @@ export function createProceduralTexture(materialCategory, packageColor) {
       }
       ctx.fillRect(x, 0, 1, 1024);
     }
+  }
+
+  // Draw Watermark if required
+  if (showWatermark) {
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const wmColor = luminance > 0.5 ? '0, 0, 0' : '255, 255, 255';
+    
+    ctx.save();
+    ctx.strokeStyle = `rgba(${wmColor}, 0.15)`;
+    ctx.lineWidth = 2;
+    ctx.fillStyle = `rgba(${wmColor}, 0.35)`; // Increased opacity for text
+    ctx.font = "bold 120px Inter, sans-serif"; // Significantly increased font size
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    // Draw diagonal grid
+    const step = 256;
+    ctx.beginPath();
+    for (let i = -1024; i < 2048; i += step) {
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + 1024, 1024);
+      ctx.moveTo(i, 1024);
+      ctx.lineTo(i + 1024, 0);
+    }
+    ctx.stroke();
+
+    // Draw KLD text at intersections, diagonally rotated
+    for (let y = 0; y <= 1024; y += step) {
+      for (let x = 0; x <= 1024; x += step) {
+        if ((x / step + y / step) % 2 === 0) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(-Math.PI / 4);
+          ctx.fillText("KLD", 0, 0);
+          ctx.restore();
+        }
+      }
+    }
+    ctx.restore();
   }
 
   const tex = new THREE.CanvasTexture(canvas);

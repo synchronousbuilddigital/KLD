@@ -332,7 +332,8 @@ export default function CosmeticBox3DViewer({
   activeAnimation = "none",
   colorOverride = null,
   disableZoom = false,
-  useStore = useBoxStore
+  useStore = useBoxStore,
+  showWatermark = false
 }) {
   const store = useStore();
   const nT    = Math.max(0.015, Number(T) || 0.0197);
@@ -400,8 +401,8 @@ export default function CosmeticBox3DViewer({
   const packageColorToUse = colorOverride || store.packageColor;
 
   const texture = useMemo(
-    () => createProceduralTexture(store.materialCategory, packageColorToUse),
-    [store.materialCategory, packageColorToUse]
+    () => createProceduralTexture(store.materialCategory, packageColorToUse, showWatermark),
+    [store.materialCategory, packageColorToUse, showWatermark]
   );
   
   const mats = useMemo(
@@ -584,9 +585,11 @@ export default function CosmeticBox3DViewer({
         shadows
         dpr={[1, 2]}
       >
-        <Environment preset="city" />
+        <React.Suspense fallback={null}>
+          <Environment preset="city" />
+        </React.Suspense>
         <LightingPreset preset={lightingPreset} />
-        <ContactShadows position={[0, -H/2 - 0.02, 0]} opacity={0.5} scale={Math.max(L, W) * 4} blur={2.5} far={4} />
+        <ContactShadows position={[0, -H/2 - 0.02, 0]} opacity={0.5} scale={Math.max(L, W) * 4} blur={2.5} far={4} resolution={256} frames={activeAnimation === "none" && (progress === 0 || Math.abs(progress - 1) < 0.01) ? 1 : Infinity} />
 
         <SceneAnimator activeAnimation={activeAnimation}>
           <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
