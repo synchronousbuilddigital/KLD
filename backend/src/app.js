@@ -60,17 +60,46 @@ app.use(
 );
 
 /* ─── MULTI-DOMAIN CORS HARDENING ────────────────────────────────── */
-const allowedOrigins = process.env.FRONTEND_URL
+const baseAllowed = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'https://kld-roan.vercel.app',
+  'https://keylinedesign.ai',
+  'https://www.keylinedesign.ai',
+];
+
+const envAllowed = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map((url) => url.trim().replace(/\/$/, ''))
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'];
+  : [];
+
+const allowedOrigins = Array.from(new Set([...baseAllowed, ...envAllowed]));
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, server-to-server, Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+
+      // Direct match
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
+      // Automatically allow all *.keylinedesign.ai and *.vercel.app domains
+      try {
+        const { hostname } = new URL(origin);
+        if (
+          hostname === 'keylinedesign.ai' ||
+          hostname.endsWith('.keylinedesign.ai') ||
+          hostname.endsWith('.vercel.app')
+        ) {
+          return callback(null, true);
+        }
+      } catch (e) {
+        // Invalid URL format, fallback to rejection
+      }
+
       return callback(new Error(`CORS Policy Error: Origin '${origin}' is not permitted.`));
     },
     credentials: true, // Allow HttpOnly cookies (accessToken / refreshToken)
