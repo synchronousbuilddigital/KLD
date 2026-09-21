@@ -60,12 +60,14 @@ export default function KraftBoxAnimation() {
   const D = 110; // Depth
   const H = 42;  // Height
 
-  // Calculate angles
+  // Calculate angles with clamped values (0 to 1) for proper sequencing
+  const clamp = (val: number) => Math.min(1, Math.max(0, val));
   const norm = progress / 100;
-  const wallAngle = 90 * Math.min(1, norm * 1.6);
-  const lidAngle = 90 * Math.max(0, (norm - 0.45) * 2);
-  const tuckFlapAngle = 90 * Math.max(0, (norm - 0.7) * 3.3);
-  const twineOpacity = norm > 0.8 ? Math.min(1, (norm - 0.8) / 0.18) : 0;
+  const wallAngle = 90 * clamp(norm / 0.35); // Walls fold up
+  const dustFlapAngle = 90 * clamp((norm - 0.3) / 0.15); // Inner dust/front flaps fold
+  const lidAngle = 90 * clamp((norm - 0.45) / 0.25); // Top lid folds over
+  const lidTuckAngle = 90 * clamp((norm - 0.65) / 0.15); // Lid tuck folds in
+  const twineOpacity = norm > 0.8 ? clamp((norm - 0.8) / 0.18) : 0;
 
   return (
     <div
@@ -153,7 +155,7 @@ export default function KraftBoxAnimation() {
                 width: `${W}px`,
                 height: '20px',
                 transformOrigin: 'top center',
-                transform: `rotateX(${tuckFlapAngle}deg)`,
+                transform: `rotateX(${dustFlapAngle}deg)`,
                 backgroundColor: '#bd9666',
               }}
             />
@@ -215,7 +217,7 @@ export default function KraftBoxAnimation() {
                   width: `${W}px`,
                   height: '22px',
                   transformOrigin: 'bottom center',
-                  transform: `rotateX(-${tuckFlapAngle}deg)`,
+                  transform: `rotateX(-${lidTuckAngle}deg)`,
                   backgroundColor: '#bd9666',
                   borderRadius: '0 0 4px 4px',
                 }}
@@ -244,7 +246,7 @@ export default function KraftBoxAnimation() {
                 width: '22px',
                 height: `${D}px`,
                 transformOrigin: 'right center',
-                transform: `rotateY(${tuckFlapAngle}deg)`,
+                transform: `rotateY(${dustFlapAngle}deg)`,
                 backgroundColor: '#c09868',
               }}
             />
@@ -271,7 +273,7 @@ export default function KraftBoxAnimation() {
                 width: '22px',
                 height: `${D}px`,
                 transformOrigin: 'left center',
-                transform: `rotateY(-${tuckFlapAngle}deg)`,
+                transform: `rotateY(-${dustFlapAngle}deg)`,
                 backgroundColor: '#c09868',
               }}
             />

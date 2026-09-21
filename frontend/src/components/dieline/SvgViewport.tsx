@@ -25,9 +25,9 @@ export const SvgViewport: React.FC<SvgViewportProps> = ({
   const CVH = 600;
   const PAD = 24;
 
-  // Svg zoom & pan state
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  // Svg zoom & pan state (moved to refs for performance)
+  const zoom = useRef(1);
+  const pan = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
@@ -41,11 +41,22 @@ export const SvgViewport: React.FC<SvgViewportProps> = ({
   const mX = (margin / sheetW) * pW;
   const mY = (margin / sheetH) * pH;
 
+  const transformGroupRef = useRef<SVGGElement>(null);
+
+  const updateTransform = () => {
+    if (transformGroupRef.current && allowZoomPan) {
+      transformGroupRef.current.setAttribute(
+        'transform',
+        `translate(${pan.current.x}, ${pan.current.y}) translate(${CVW / 2}, ${CVH / 2}) scale(${zoom.current}) translate(${-CVW / 2}, ${-CVH / 2})`
+      );
+    }
+  };
+
   const handleWheel = (e: React.WheelEvent) => {
     if (!allowZoomPan) return;
-    e.preventDefault();
     const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom(prev => Math.max(0.2, Math.min(10, prev * factor)));
+    zoom.current = Math.max(0.2, Math.min(10, zoom.current * factor));
+    updateTransform();
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -53,17 +64,18 @@ export const SvgViewport: React.FC<SvgViewportProps> = ({
     // Pan with middle click or left click with shift
     if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
       isPanning.current = true;
-      panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+      panStart.current = { x: e.clientX - pan.current.x, y: e.clientY - pan.current.y };
       e.preventDefault();
     }
   };
 
   const handleViewportMouseMove = (e: React.MouseEvent) => {
     if (isPanning.current) {
-      setPan({
+      pan.current = {
         x: e.clientX - panStart.current.x,
         y: e.clientY - panStart.current.y
-      });
+      };
+      updateTransform();
     }
     if (onMouseMove) {
       onMouseMove(e);
@@ -88,9 +100,9 @@ export const SvgViewport: React.FC<SvgViewportProps> = ({
     }
   };
 
-  // Compose overall transform matrix: center dieline transform, zoom, and pan offset
-  const transform = allowZoomPan
-    ? `translate(${pan.x}, ${pan.y}) translate(${CVW / 2}, ${CVH / 2}) scale(${zoom}) translate(${-CVW / 2}, ${-CVH / 2})`
+  // Initial transform matrix
+  const initialTransform = allowZoomPan
+    ? `translate(${pan.current.x}, ${pan.current.y}) translate(${CVW / 2}, ${CVH / 2}) scale(${zoom.current}) translate(${-CVW / 2}, ${-CVH / 2})`
     : '';
 
   return (
@@ -113,7 +125,7 @@ export const SvgViewport: React.FC<SvgViewportProps> = ({
         onMouseUp={handleViewportMouseUp}
         onMouseLeave={handleViewportMouseLeave}
       >
-        <g transform={transform}>
+        <g ref={transformGroupRef} transform={initialTransform}>
           {/* Paper drop-shadow */}
           <rect
             x={pX + 3}

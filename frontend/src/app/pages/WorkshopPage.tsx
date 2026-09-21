@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import Box3DViewer from "../../components/Box3DViewer";
 import { useBoxStore } from "../../lib/useBoxStore";
-import BoxStudioModal from "./BoxStudioModal";
 import EditorModal from "./EditorModal";
 import MockupSignInModal from "../components/modals/MockupSignInModal";
 import { API_BASE_URL } from "../../config/api";

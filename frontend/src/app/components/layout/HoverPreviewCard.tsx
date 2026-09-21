@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom';
-import Box3D, { BoxState } from './models/Box3D';
-import Bottle3D from './models/Bottle3D';
-import WaterBottle3D from './models/WaterBottle3D';
-import Can3D from './models/Can3D';
-import Tube3D from './models/Tube3D';
-import Cup3D from './models/Cup3D';
-import PizzaBox3D from './models/PizzaBox3D';
-import TuckBox3D from './models/TuckBox3D';
-import GiftBox3D from './models/GiftBox3D';
-import PaperBag3D from './models/PaperBag3D';
-import Pouch3D from './models/Pouch3D';
+import { BoxState } from './models/Box3D';
 import './HoverPreviewCard.css';
+
+const Box3D = lazy(() => import('./models/Box3D'));
+const Bottle3D = lazy(() => import('./models/Bottle3D'));
+const WaterBottle3D = lazy(() => import('./models/WaterBottle3D'));
+const Can3D = lazy(() => import('./models/Can3D'));
+const Tube3D = lazy(() => import('./models/Tube3D'));
+const Cup3D = lazy(() => import('./models/Cup3D'));
+const PizzaBox3D = lazy(() => import('./models/PizzaBox3D'));
+const TuckBox3D = lazy(() => import('./models/TuckBox3D'));
+const GiftBox3D = lazy(() => import('./models/GiftBox3D'));
+const PaperBag3D = lazy(() => import('./models/PaperBag3D'));
+const Pouch3D = lazy(() => import('./models/Pouch3D'));
 
 interface Props {
   item: { label: string; img: string };
@@ -55,9 +57,10 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
       const posX = (rect.left + scrollX) / zoom + (rect.width / zoom) / 2;
       const posY = (rect.top + scrollY) / zoom;
 
-      // Always position UPWARD above the hovered item
+      // Position above by default
       let left = posX - CARD_W / 2;
       let top = posY - CARD_H - (14 / zoom);
+      let newPlacement: 'above' | 'below' = 'above';
 
       // Clamp horizontally to viewport
       const minLeft = 16 + scrollX;
@@ -65,11 +68,14 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
       if (left < minLeft) left = minLeft;
       if (left > maxLeft) left = maxLeft;
 
-      // Prevent card from clipping into top navbar
+      // Flip placement to below if it clips into top navbar
       const minTop = 75 + scrollY;
       if (top < minTop) {
-        top = minTop;
+        top = posY + (rect.height / zoom) + (14 / zoom);
+        newPlacement = 'below';
       }
+
+      setPlacement(prev => (prev !== newPlacement ? newPlacement : prev));
 
       cardRef.current.style.left = `${left}px`;
       cardRef.current.style.top = `${top}px`;
@@ -110,7 +116,7 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
   const card = (
     <div
       ref={cardRef}
-      className={`hover-preview-card ${visible ? 'hover-preview-card--visible' : ''}`}
+      className={`hover-preview-card ${visible ? 'hover-preview-card--visible' : ''} ${placement === 'below' ? 'hover-preview-card--below' : ''}`}
       style={{
         position: 'absolute',
         width: `${CARD_W}px`,
@@ -136,49 +142,56 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
 
       {/* 3D Viewport */}
       <div className="hover-preview-card__viewport">
-        {(() => {
-          if (item.label === 'Pizza Box') {
-            return <div style={{ transform: 'scale(0.55)' }}><PizzaBox3D animState={animState} /></div>;
-          }
-          if (item.label === 'Supplement') {
-            return <div style={{ transform: 'scale(0.8)' }}><Bottle3D /></div>;
-          }
-          if (item.label === 'Bottle' || item.label === 'Water Bottle') {
-            return <div style={{ transform: 'scale(0.8)' }}><WaterBottle3D /></div>;
-          }
-          if (item.label === 'Can') {
-            return <div style={{ transform: 'scale(0.9)' }}><Can3D /></div>;
-          }
-          if (item.label === 'Tube') {
-            return <div style={{ transform: 'scale(0.9)' }}><Tube3D /></div>;
-          }
-          if (item.label === 'Cup') {
-            return <div style={{ transform: 'scale(0.9)' }}><Cup3D /></div>;
-          }
-          if (item.label === 'Tuck End') {
-            return <div style={{ transform: 'scale(0.9)' }}><TuckBox3D /></div>;
-          }
-          if (item.label === 'Gift Box') {
-            return <div style={{ transform: 'scale(0.9)' }}><GiftBox3D /></div>;
-          }
-          if (item.label === 'Paper Bag') {
-            return <div style={{ transform: 'scale(0.9)' }}><PaperBag3D /></div>;
-          }
-          if (item.label === 'Pouch') {
-            return <div style={{ transform: 'scale(1.0)' }}><Pouch3D /></div>;
-          }
-          if (isBox) {
-            return <div style={{ transform: 'scale(0.55)' }}><Box3D boxState={animState} type={item.label} /></div>;
-          }
-          return (
-            <div className="hover-preview-card__float-container">
-              <div 
-                className="hover-preview-card__float-img"
-                style={{ backgroundImage: `url(${item.img})` }}
-              />
-            </div>
-          );
-        })()}
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center w-full h-full opacity-50">
+            <div className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin mb-2"></div>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Loading 3D...</span>
+          </div>
+        }>
+          {(() => {
+            if (item.label === 'Pizza Box') {
+              return <div style={{ transform: 'scale(0.55)' }}><PizzaBox3D animState={animState} /></div>;
+            }
+            if (item.label === 'Supplement') {
+              return <div style={{ transform: 'scale(0.8)' }}><Bottle3D /></div>;
+            }
+            if (item.label === 'Bottle' || item.label === 'Water Bottle') {
+              return <div style={{ transform: 'scale(0.8)' }}><WaterBottle3D /></div>;
+            }
+            if (item.label === 'Can') {
+              return <div style={{ transform: 'scale(0.9)' }}><Can3D /></div>;
+            }
+            if (item.label === 'Tube') {
+              return <div style={{ transform: 'scale(0.9)' }}><Tube3D /></div>;
+            }
+            if (item.label === 'Cup') {
+              return <div style={{ transform: 'scale(0.9)' }}><Cup3D /></div>;
+            }
+            if (item.label === 'Tuck End') {
+              return <div style={{ transform: 'scale(0.9)' }}><TuckBox3D /></div>;
+            }
+            if (item.label === 'Gift Box') {
+              return <div style={{ transform: 'scale(0.9)' }}><GiftBox3D /></div>;
+            }
+            if (item.label === 'Paper Bag') {
+              return <div style={{ transform: 'scale(0.9)' }}><PaperBag3D /></div>;
+            }
+            if (item.label === 'Pouch') {
+              return <div style={{ transform: 'scale(1.0)' }}><Pouch3D /></div>;
+            }
+            if (isBox) {
+              return <div style={{ transform: 'scale(0.55)' }}><Box3D boxState={animState} type={item.label} /></div>;
+            }
+            return (
+              <div className="hover-preview-card__float-container">
+                <div 
+                  className="hover-preview-card__float-img"
+                  style={{ backgroundImage: `url(${item.img})` }}
+                />
+              </div>
+            );
+          })()}
+        </Suspense>
       </div>
 
       {/* State indicator dots */}

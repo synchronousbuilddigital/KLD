@@ -17,7 +17,8 @@ import {
 import Header from '../components/layout/Header';
 import TemplateLibraryPage, { TemplateDetailCard } from './TemplateLibraryPage';
 import TopDielineTemplates from './TopDielineTemplates';
-import BoxStudioModal from './BoxStudioModal';
+
+const BoxStudioModal = React.lazy(() => import('./BoxStudioModal').then(module => ({ default: module.BoxStudioModal })));
 import { catalogService, CatalogItemData } from '../../services/catalog';
 
 interface DielinesPageProps {
@@ -44,8 +45,14 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [dielineModels, setDielineModels] = useState<CatalogItemData[]>([]);
-
+  const [dielineModels, setDielineModels] = useState<CatalogItemData[]>(() => {
+    const cached = catalogService.getCachedCatalog();
+    if (cached) {
+      return cached.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(!catalogService.getCachedCatalog());
   useEffect(() => {
     window.scrollTo(0, 0);
     document.body.style.zoom = '1';
@@ -61,8 +68,12 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
 
   useEffect(() => {
     const fetchDielines = async () => {
-      const catalog = await catalogService.getPublicCatalog();
-      setDielineModels(catalog.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0)));
+      try {
+        const catalog = await catalogService.getPublicCatalog();
+        setDielineModels(catalog.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0)));
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchDielines();
     
@@ -236,6 +247,10 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
                   />
                 ))}
               </div>
+            ) : isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              </div>
             ) : (
               <div className="bg-zinc-50 border border-dashed border-zinc-300 rounded-2xl p-10 text-center flex flex-col items-center justify-center space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-1">
@@ -267,11 +282,18 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
 
       {/* STUDIO MODAL */}
       {selectedBoxModel && (
-        <BoxStudioModal
-          isOpen={!!selectedBoxModel}
-          onClose={() => setSelectedBoxModel(null)}
-          initialModel={selectedBoxModel}
-        />
+        <React.Suspense fallback={
+          <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
+            <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading 3D Studio...</h2>
+          </div>
+        }>
+          <BoxStudioModal
+            isOpen={!!selectedBoxModel}
+            onClose={() => setSelectedBoxModel(null)}
+            initialModel={selectedBoxModel}
+          />
+        </React.Suspense>
       )}
     </div>
   );

@@ -6,7 +6,8 @@ import '../../styles/new-home.css';
 import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import Header from '../components/layout/Header';
 import SignInModal from '../components/modals/SignInModal';
-import BoxStudioModal from './BoxStudioModal';
+
+const BoxStudioModal = React.lazy(() => import('./BoxStudioModal').then(module => ({ default: module.BoxStudioModal })));
 
 const categories = [
   { id: 'folding', title: 'Folding Box Templates' },
@@ -265,11 +266,18 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
 
       {/* Studio Modal */}
       {selectedBoxModel && (
-        <BoxStudioModal
-          isOpen={!!selectedBoxModel}
-          onClose={() => setSelectedBoxModel(null)}
-          initialModel={selectedBoxModel}
-        />
+        <React.Suspense fallback={
+          <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
+            <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading 3D Studio...</h2>
+          </div>
+        }>
+          <BoxStudioModal
+            isOpen={!!selectedBoxModel}
+            onClose={() => setSelectedBoxModel(null)}
+            initialModel={selectedBoxModel}
+          />
+        </React.Suspense>
       )}
 
       {isSignInModalOpen && (

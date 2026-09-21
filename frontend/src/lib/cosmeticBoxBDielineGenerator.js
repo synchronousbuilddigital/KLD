@@ -4182,16 +4182,18 @@ function transformSVGPath(pathStr, L, W, H, thickness) {
 }
 
 function buildLinePaths(segments, L, W, H, thickness) {
-  return segments.map(seg => {
+  const parts = [];
+  for (const seg of segments) {
     if (Array.isArray(seg)) {
       const [x1, y1, x2, y2] = seg;
       const a = transformPoint(x1, y1, L, W, H, thickness);
       const b = transformPoint(x2, y2, L, W, H, thickness);
-      return `M ${a.x},${a.y} L ${b.x},${b.y}`;
+      parts.push(`M ${a.x},${a.y} L ${b.x},${b.y}`);
     } else {
-      return transformSVGPath(seg, L, W, H, thickness);
+      parts.push(transformSVGPath(seg, L, W, H, thickness));
     }
-  });
+  }
+  return parts.length > 0 ? [parts.join(' ')] : [];
 }
 
 function buildFoldLines(segments, L, W, H, thickness) {

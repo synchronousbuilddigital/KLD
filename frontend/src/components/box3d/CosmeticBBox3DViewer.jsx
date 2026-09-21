@@ -128,11 +128,18 @@ function CosmeticBDecals({ geom, decals, panelName, nL, nW, nH, thickness, dynSc
     // 2. Inverse map the dynamic mm coordinates BACK to the hardcoded template coordinates
     const { origX: cx_svg, origY: cy_svg } = inverseTransformPoint(dynX, dynY, nL, nW, nH);
 
+    const dynW = decal.width / dynScaleFactor;
+    const dynH = decal.height / dynScaleFactor;
+
+    // Allow decal to span multiple panels by checking bounding box intersection
+    const halfW = dynW / 2;
+    const halfH = dynH / 2;
+
     if (
-      cx_svg < svgX ||
-      cx_svg > svgX + svgW ||
-      cy_svg < svgY ||
-      cy_svg > svgY + svgH
+      cx_svg + halfW < svgX ||
+      cx_svg - halfW > svgX + svgW ||
+      cy_svg + halfH < svgY ||
+      cy_svg - halfH > svgY + svgH
     ) {
       return null;
     }
@@ -141,9 +148,6 @@ function CosmeticBDecals({ geom, decals, panelName, nL, nW, nH, thickness, dynSc
     const localY = (cy_svg - svgY) / svgH * physHeight;
     const cx = localX - pivotX;
     const cy = physHeight - localY - pivotY;
-
-    const dynW = decal.width / dynScaleFactor;
-    const dynH = decal.height / dynScaleFactor;
 
     const modifiedDecal = {
       ...decal,
@@ -206,6 +210,23 @@ function buildCosmeticBGeometries(sX, sZ, sY) {
     tuckLeftEarGeom: createUVGeometry(52.0 * sX, 61.0 * sY, 85.0, 5.0, 52.0, 61.0, 52.0 * sX, 0),
     tuckRightEarGeom: createUVGeometry(52.0 * sX, 61.0 * sY, 414.0, 5.0, 52.0, 61.0, 0, 0),
   };
+}
+
+function getFlippedGeometry(geom) {
+  if (geom.userData.flippedGeom) return geom.userData.flippedGeom;
+  const cloned = geom.clone();
+  const indices = cloned.index.array;
+  for (let i = 0; i < indices.length; i += 3) {
+    const tmp = indices[i];
+    indices[i] = indices[i + 2];
+    indices[i + 2] = tmp;
+  }
+  const normals = cloned.attributes.normal.array;
+  for (let i = 0; i < normals.length; i++) {
+    normals[i] = -normals[i];
+  }
+  geom.userData.flippedGeom = cloned;
+  return cloned;
 }
 
 export default function CosmeticBBox3DViewer({
@@ -272,10 +293,10 @@ export default function CosmeticBBox3DViewer({
     mat.alphaMap = alphaMap;
     mat.transparent = true;
     mat.alphaTest = 0.5;
-    mat.side = THREE.DoubleSide;
-    mat.shadowSide = THREE.DoubleSide;
+    mat.side = THREE.FrontSide;
+    mat.shadowSide = THREE.FrontSide;
     return mat;
-  }, [mats.outside]);
+  }, [mats.outside, alphaMap]);
 
   // Exterior Carton Material (BackSide)
   const outsideBackMaterial = useMemo(() => {
@@ -311,10 +332,10 @@ export default function CosmeticBBox3DViewer({
     mat.alphaMap = alphaMap;
     mat.transparent = true;
     mat.alphaTest = 0.5;
-    mat.side = THREE.DoubleSide;
-    mat.shadowSide = THREE.DoubleSide;
+    mat.side = THREE.FrontSide;
+    mat.shadowSide = THREE.FrontSide;
     return mat;
-  }, [mats.inside, isKraft, materialCategoryToUse, texture]);
+  }, [mats.inside, isKraft, materialCategoryToUse, texture, alphaMap]);
 
   // ── Kinematics Calculation (0 to 1) ────────────────────────────────────────
   const t = Math.min(Math.max(progress, 0), 1);
@@ -357,17 +378,20 @@ export default function CosmeticBBox3DViewer({
   );
 
   const renderPanel = (geom, panelName, skipInside = false) => {
+    const outsideDecals = debouncedDecals.filter(d => d.surface === "Outside").map(d => ({...d, surface: "Inside"}));
+    const insideDecals = debouncedDecals.filter(d => d.surface === "Inside").map(d => ({...d, surface: "Outside"}));
+
     return (
       <group>
         <mesh
-          geometry={geom}
+          geometry={getFlippedGeometry(geom)}
           material={outsideMaterial}
           castShadow
           receiveShadow
         >
           <CosmeticBDecals
             geom={geom}
-            decals={debouncedDecals}
+            decals={outsideDecals}
             panelName={panelName}
             nL={nL}
             nW={nW}
@@ -385,7 +409,22 @@ export default function CosmeticBBox3DViewer({
             geometry={geom}
             material={insideBackMaterial}
             receiveShadow
-          />
+          >
+            <CosmeticBDecals
+              geom={geom}
+              decals={insideDecals}
+              panelName={panelName}
+              nL={nL}
+              nW={nW}
+              nH={nH}
+              thickness={thickness}
+              dynScaleFactor={dynScaleFactor}
+              uSX={userScaleX}
+              uSY={userScaleY}
+              uSZ={userScaleZ}
+              T={T}
+            />
+          </mesh>
         )}
       </group>
     );

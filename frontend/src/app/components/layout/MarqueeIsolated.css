@@ -13,6 +13,8 @@
     display: flex;
     width: max-content;
     animation: scroll 25s linear infinite;
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 .marquee-container:hover,

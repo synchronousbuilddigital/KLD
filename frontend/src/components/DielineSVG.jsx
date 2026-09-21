@@ -48,14 +48,14 @@ const EditableText = React.memo(({ decal, activeDecalId, setDecals }) => {
   );
 }, (prev, next) => {
   return prev.activeDecalId === next.activeDecalId &&
-         prev.decal.fontSize === next.decal.fontSize &&
-         prev.decal.color === next.decal.color &&
-         prev.decal.fontFamily === next.decal.fontFamily &&
-         prev.decal.textAlign === next.decal.textAlign &&
-         prev.decal.bold === next.decal.bold &&
-         prev.decal.italic === next.decal.italic &&
-         prev.decal.width === next.decal.width &&
-         prev.decal.height === next.decal.height;
+    prev.decal.fontSize === next.decal.fontSize &&
+    prev.decal.color === next.decal.color &&
+    prev.decal.fontFamily === next.decal.fontFamily &&
+    prev.decal.textAlign === next.decal.textAlign &&
+    prev.decal.bold === next.decal.bold &&
+    prev.decal.italic === next.decal.italic &&
+    prev.decal.width === next.decal.width &&
+    prev.decal.height === next.decal.height;
 });
 
 function createTextTextureURL(decal) {
@@ -97,9 +97,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const containerRef = useRef(null);
   const svgRef = forwardedRef || props.innerRef || internalRef;
 
-  const { 
-    isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface, 
-    activeDecalId, setActiveDecalId, colorDieline = false, 
+  const {
+    isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface,
+    activeDecalId, setActiveDecalId, colorDieline = false,
     useStore = useBoxStore
   } = props;
 
@@ -172,9 +172,16 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const baseH = height + pad * 2;
 
   // Center the view and fit to available space perfectly
-  const [view, setView] = useState({ x: -pad - (baseW * 0.2), y: -pad - (baseH * 0.2), w: baseW * 1.4, h: baseH * 1.4 });
-  const viewRef = useRef(view);
-  viewRef.current = view;
+  // Use ref to avoid React state re-renders on zoom/pan
+  const viewRef = useRef({ x: -pad - (baseW * 0.2), y: -pad - (baseH * 0.2), w: baseW * 1.4, h: baseH * 1.4 });
+  const view = viewRef.current; // for initial render only
+
+  const updateSvgViewBox = () => {
+    if (svgRef && svgRef.current) {
+      const v = viewRef.current;
+      svgRef.current.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`);
+    }
+  };
 
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 
@@ -190,7 +197,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         });
       }
     }
-  }, [activeDecalId, decals, view, isDraggingCanvas, activeSurface]);
+  }, [activeDecalId, decals, isDraggingCanvas, activeSurface]);
 
   // Generate ultra-realistic procedural cardboard texture data URL
   const [textureDataUrl, setTextureDataUrl] = useState("");
@@ -206,8 +213,18 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   }, [materialCategory, packageColor, activeColor, colorDieline]);
 
   useEffect(() => {
-    setView({ x: -pad - (baseW * 0.2), y: -pad - (baseH * 0.2), w: baseW * 1.4, h: baseH * 1.4 });
+    viewRef.current = { x: -pad - (baseW * 0.2), y: -pad - (baseH * 0.2), w: baseW * 1.4, h: baseH * 1.4 };
+    updateSvgViewBox();
   }, [width, height]);
+
+  useEffect(() => {
+    const handleReset = () => {
+      viewRef.current = { x: -pad - (baseW * 0.2), y: -pad - (baseH * 0.2), w: baseW * 1.4, h: baseH * 1.4 };
+      updateSvgViewBox();
+    };
+    window.addEventListener('reset-dieline-view', handleReset);
+    return () => window.removeEventListener('reset-dieline-view', handleReset);
+  }, [baseW, baseH]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -234,7 +251,8 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
       const newX = svgMouseX - normalizedMouseX * newW;
       const newY = svgMouseY - (mouseY / rect.height) * newH;
 
-      setView({ x: newX, y: newY, w: newW, h: newH });
+      viewRef.current = { x: newX, y: newY, w: newW, h: newH };
+      updateSvgViewBox();
     };
 
     container.addEventListener("wheel", handleWheel, { passive: false });
@@ -249,14 +267,15 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
   const handlePointerMove = (e) => {
     const rect = containerRef.current.getBoundingClientRect();
-    const dx = (e.movementX / rect.width) * view.w * (activeSurface === 'Inside' ? -1 : 1);
-    const dy = (e.movementY / rect.height) * view.h;
+    const v = viewRef.current;
+    const dx = (e.movementX / rect.width) * v.w * (activeSurface === 'Inside' ? -1 : 1);
+    const dy = (e.movementY / rect.height) * v.h;
 
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     const normalizedMouseX = activeSurface === 'Inside' ? 1 - (mouseX / rect.width) : (mouseX / rect.width);
-    const svgMouseX = view.x + normalizedMouseX * view.w;
-    const svgMouseY = view.y + (mouseY / rect.height) * view.h;
+    const svgMouseX = v.x + normalizedMouseX * v.w;
+    const svgMouseY = v.y + (mouseY / rect.height) * v.h;
 
     if (activeDecalId && setDecals && interactionMode === 'drag') {
       setDecals(prev => prev.map(d => {
@@ -269,7 +288,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           let newY = vY;
 
           // Reduced threshold to avoid confusing aggressive snapping
-          const snapThreshold = 0.015; 
+          const snapThreshold = 0.015;
           const { x1, x2, x3, x4, x5, yTop, yBot } = dimensions;
 
           // Skip snapping if dimensions aren't loaded yet
@@ -359,7 +378,8 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         return d;
       }));
     } else if (isDraggingCanvas) {
-      setView((v) => ({ ...v, x: v.x - dx, y: v.y - dy }));
+      viewRef.current = { ...v, x: v.x - dx, y: v.y - dy };
+      updateSvgViewBox();
     }
   };
 
@@ -388,7 +408,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         width: "100%",
         height: "100%",
         touchAction: "none",
-        cursor: isDraggingCanvas ? "grabbing" : (activeDecalId ? "move" : "grab"),
+        cursor: (isDraggingCanvas || (isEditorMode && !activeDecalId)) ? "grab" : (activeDecalId ? "move" : "default"),
         background: "transparent"
       }}
       onPointerDown={handlePointerDown}
@@ -562,21 +582,21 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
             transform={`translate(${decal.x}, ${decal.y}) ${activeSurface === 'Inside' ? 'scale(-1, 1)' : ''}`}
             onPointerDown={(e) => {
               e.stopPropagation();
-                  setActiveDecalId(decal.id);
-                  setInteractionMode('drag');
-                }}
-                style={{ cursor: 'move' }}
-              >
-                {decal.type === 'text' ? (
-                  <>
-                    <rect
-                      x={-decal.width / 2}
-                      y={-decal.height / 2}
-                      width={decal.width}
-                      height={decal.height}
-                      fill="transparent"
-                      style={{ pointerEvents: 'all' }}
-                    />
+              setActiveDecalId(decal.id);
+              setInteractionMode('drag');
+            }}
+            style={{ cursor: 'move' }}
+          >
+            {decal.type === 'text' ? (
+              <>
+                <rect
+                  x={-decal.width / 2}
+                  y={-decal.height / 2}
+                  width={decal.width}
+                  height={decal.height}
+                  fill="transparent"
+                  style={{ pointerEvents: 'all' }}
+                />
                 <g transform="scale(0.001)">
                   <foreignObject
                     x={-decal.width * 1000 / 2}
@@ -586,11 +606,11 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                     style={{ pointerEvents: activeDecalId === decal.id ? 'auto' : 'none' }}
                   >
                     <div style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: decal.textAlign === 'left' ? 'flex-start' : decal.textAlign === 'right' ? 'flex-end' : 'center',
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: decal.textAlign === 'left' ? 'flex-start' : decal.textAlign === 'right' ? 'flex-end' : 'center',
                     }}>
                       <EditableText decal={decal} activeDecalId={activeDecalId} setDecals={setDecals} />
                     </div>
@@ -609,32 +629,32 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                 />
                 {decal.shapeType === 'custom-svg' ? (
                   <svg
-                  x={-decal.width / 2}
-                  y={-decal.height / 2}
-                  width={decal.width}
-                  height={decal.height}
-                  viewBox="0 0 24 24"
-                  fill={decal.fillColor || "currentColor"}
-                  color={decal.fillColor || "currentColor"}
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(
-                      (decal.svgString || '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, ''),
-                      { USE_PROFILES: { svg: true } }
-                    )
-                  }}
-                />
-              ) : (() => {
-                const sDash = decal.borderStyle === 'dashed' ? `${((decal.strokeWidth || 5) / 72) * 2},${((decal.strokeWidth || 5) / 72) * 2}` : undefined;
-                if (decal.shapeType === 'rounded-rectangle') return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} rx={(decal.borderRadius || 36) / 72} ry={(decal.borderRadius || 36) / 72} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
-                if (decal.shapeType === 'pill') return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} rx={decal.height / 2} ry={decal.height / 2} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
-                if (['circle', 'oval'].includes(decal.shapeType)) return <ellipse cx={0} cy={0} rx={decal.width / 2} ry={decal.height / 2} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
-                if (['rect', 'square', 'rectangle'].includes(decal.shapeType)) return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} rx={(decal.borderRadius || 0) / 72} ry={(decal.borderRadius || 0) / 72} strokeDasharray={sDash} />;
-                if (decal.shapeType === 'triangle') return <polygon points={`0,${-decal.height / 2} ${-decal.width / 2},${decal.height / 2} ${decal.width / 2},${decal.height / 2}`} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
-                if (decal.shapeType === 'star') return <path d={`M 0 ${-decal.height / 2} L ${decal.width * 0.22} ${-decal.height * 0.15} L ${decal.width / 2} ${-decal.height * 0.15} L ${decal.width * 0.28} ${decal.height * 0.1} L ${decal.width * 0.38} ${decal.height / 2} L 0 ${decal.height * 0.25} L ${-decal.width * 0.38} ${decal.height / 2} L ${-decal.width * 0.28} ${decal.height * 0.1} L ${-decal.width / 2} ${-decal.height * 0.15} L ${-decal.width * 0.22} ${-decal.height * 0.15} Z`} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
-                if (decal.shapeType === 'line') return <line x1={-decal.width / 2} y1={0} x2={decal.width / 2} y2={0} stroke={decal.strokeColor || decal.borderColor || '#000'} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} />;
-                if (decal.shapeType === 'dashed-line') return <line x1={-decal.width / 2} y1={0} x2={decal.width / 2} y2={0} stroke={decal.strokeColor || decal.borderColor || '#000'} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={`${(decal.strokeWidth || 5) / 72 * 2},${(decal.strokeWidth || 5) / 72 * 2}`} />;
-                return null;
-              })()}
+                    x={-decal.width / 2}
+                    y={-decal.height / 2}
+                    width={decal.width}
+                    height={decal.height}
+                    viewBox="0 0 24 24"
+                    fill={decal.fillColor || "currentColor"}
+                    color={decal.fillColor || "currentColor"}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(
+                        (decal.svgString || '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, ''),
+                        { USE_PROFILES: { svg: true } }
+                      )
+                    }}
+                  />
+                ) : (() => {
+                  const sDash = decal.borderStyle === 'dashed' ? `${((decal.strokeWidth || 5) / 72) * 2},${((decal.strokeWidth || 5) / 72) * 2}` : undefined;
+                  if (decal.shapeType === 'rounded-rectangle') return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} rx={(decal.borderRadius || 36) / 72} ry={(decal.borderRadius || 36) / 72} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
+                  if (decal.shapeType === 'pill') return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} rx={decal.height / 2} ry={decal.height / 2} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
+                  if (['circle', 'oval'].includes(decal.shapeType)) return <ellipse cx={0} cy={0} rx={decal.width / 2} ry={decal.height / 2} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
+                  if (['rect', 'square', 'rectangle'].includes(decal.shapeType)) return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} rx={(decal.borderRadius || 0) / 72} ry={(decal.borderRadius || 0) / 72} strokeDasharray={sDash} />;
+                  if (decal.shapeType === 'triangle') return <polygon points={`0,${-decal.height / 2} ${-decal.width / 2},${decal.height / 2} ${decal.width / 2},${decal.height / 2}`} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
+                  if (decal.shapeType === 'star') return <path d={`M 0 ${-decal.height / 2} L ${decal.width * 0.22} ${-decal.height * 0.15} L ${decal.width / 2} ${-decal.height * 0.15} L ${decal.width * 0.28} ${decal.height * 0.1} L ${decal.width * 0.38} ${decal.height / 2} L 0 ${decal.height * 0.25} L ${-decal.width * 0.38} ${decal.height / 2} L ${-decal.width * 0.28} ${decal.height * 0.1} L ${-decal.width / 2} ${-decal.height * 0.15} L ${-decal.width * 0.22} ${-decal.height * 0.15} Z`} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
+                  if (decal.shapeType === 'line') return <line x1={-decal.width / 2} y1={0} x2={decal.width / 2} y2={0} stroke={decal.strokeColor || decal.borderColor || '#000'} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} />;
+                  if (decal.shapeType === 'dashed-line') return <line x1={-decal.width / 2} y1={0} x2={decal.width / 2} y2={0} stroke={decal.strokeColor || decal.borderColor || '#000'} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={`${(decal.strokeWidth || 5) / 72 * 2},${(decal.strokeWidth || 5) / 72 * 2}`} />;
+                  return null;
+                })()}
               </>
             ) : (
               <g clipPath={`url(#clip-decal-${decal.id})`}>

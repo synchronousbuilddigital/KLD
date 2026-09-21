@@ -21,7 +21,7 @@ import { getRscGeometry } from '../geometry';
 import WorkshopPage from './pages/WorkshopPage';
 import AiStudioPage from './pages/AiStudioPage';
 import SignInModal from './components/modals/SignInModal';
-import BoxStudioModal from './pages/BoxStudioModal';
+const BoxStudioModal = React.lazy(() => import('./pages/BoxStudioModal').then(module => ({ default: module.BoxStudioModal })));
 import { useBoxStore } from '../lib/useBoxStore';
 import { uploadService } from '../services/upload';
 
@@ -703,11 +703,18 @@ export default function App() {
       <>
         <AdminDashboardPage onBack={() => navigateTo('landing')} />
         {activeDielineBox.isOpen && (
-          <BoxStudioModal
-            isOpen={activeDielineBox.isOpen}
-            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
-            initialModel={activeDielineBox.model}
-          />
+          <React.Suspense fallback={
+            <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
+              <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading 3D Studio...</h2>
+            </div>
+          }>
+            <BoxStudioModal
+              isOpen={activeDielineBox.isOpen}
+              onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+              initialModel={activeDielineBox.model}
+            />
+          </React.Suspense>
         )}
       </>
     );

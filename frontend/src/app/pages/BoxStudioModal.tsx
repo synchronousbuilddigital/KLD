@@ -129,9 +129,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   const [isPlayingAnim, setIsPlayingAnim] = useState(false);
   const animFrameRef = useRef<number | null>(null);
 
-  // Zoom / Reset Canvas State
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  // Zoom / Reset Canvas State (managed entirely by DielineSVG now)
   const canvasAreaRef = useRef<HTMLElement>(null);
   const isDragging = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
@@ -192,44 +190,10 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   }, [isPlayingAnim]);
 
   // Custom Zoom & Pan Logic
-  useEffect(() => {
-    const el = canvasAreaRef.current;
-    if (!el || !isOpen) return;
+  // Handled entirely by DielineSVG to avoid CSS transform lag
+  // -------------------------------------------------------------
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      if (e.ctrlKey || e.metaKey) {
-        setZoom(prev => Math.min(Math.max(0.1, prev - e.deltaY * 0.01), 10));
-      } else {
-        setPan(prev => ({
-          x: prev.x - e.deltaX,
-          y: prev.y - e.deltaY
-        }));
-      }
-    };
 
-    el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => el.removeEventListener('wheel', handleWheel);
-  }, [isOpen]);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    isDragging.current = true;
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging.current) return;
-    const dx = e.clientX - lastMousePos.current.x;
-    const dy = e.clientY - lastMousePos.current.y;
-    lastMousePos.current = { x: e.clientX, y: e.clientY };
-    setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    isDragging.current = false;
-    e.currentTarget.releasePointerCapture(e.pointerId);
-  };
 
   if (!isOpen) return null;
 
@@ -797,12 +761,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
           <main
             id="dieline-canvas-area"
             ref={canvasAreaRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            style={{ touchAction: 'none' }}
-            className="flex-1 min-w-0 bg-[#fffcf7] relative flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden cursor-grab active:cursor-grabbing"
+            className="flex-1 min-w-0 bg-[#fffcf7] relative flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden"
           >
             {/* Top Legend Bar */}
             <div className="absolute top-4 left-6 flex items-center gap-6 text-xs text-zinc-600 font-semibold z-10">
@@ -822,7 +781,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
 
             {/* Reset View Button Top Right */}
             <button
-              onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+              onClick={() => { 
+                window.dispatchEvent(new CustomEvent('reset-dieline-view'));
+              }}
               className="absolute top-4 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-zinc-300 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 transition-colors z-10 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -855,15 +816,10 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               </div>
             </div>
 
-            {/* 2D Vector CAD Canvas */}
-            <div
+            {/* The 2D Canvas itself */}
+            <div 
               id="dieline-svg-wrapper"
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: "center",
-                transition: "transform 0.15s ease-out"
-              }}
-              className="w-full h-full flex items-center justify-center p-8"
+              className="absolute inset-0 flex items-center justify-center"
             >
               <DielineSVG
                 L={store.L}
@@ -901,7 +857,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               </div>
 
               {/* 3D Viewer Canvas */}
-              <div className="w-full h-56 rounded-xl bg-gradient-to-b from-zinc-100 to-zinc-200 border border-zinc-200 overflow-hidden relative">
+              <div className="w-full h-56 rounded-xl bg-gradient-to-b from-zinc-200 to-zinc-300 border border-zinc-300 overflow-hidden relative">
                 <StudioErrorBoundary>
                   <Box3DViewer
                     boxModelOverride={store.boxModel}
