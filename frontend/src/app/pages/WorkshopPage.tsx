@@ -13,6 +13,7 @@ import { generateDXFString } from "../../lib/exportUtils";
 import { Printer, Sparkles } from "lucide-react";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
 import { setLargeData } from "../../lib/idbStorage";
+import MaterialDropdown from "../../components/dieline/MaterialDropdown";
 
 const themes: Record<string, any> = {
   dark: {
@@ -67,6 +68,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const [isSaved, setIsSaved] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSavingAndExiting, setIsSavingAndExiting] = useState(false);
+  const [customSizeUnit, setCustomSizeUnit] = useState<'in' | 'mm'>('in');
   const [isAiOpen, setIsAiOpen] = useState(false);
 
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -120,7 +122,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       id: targetId,
       _id: targetId,
       name: targetName,
-      type: "DIELINE",
+      type: "MOCKUP",
       category: categoryName,
       boxModel: currentModel,
       variantId: currentModel === "rte" ? 2 : 1,
@@ -166,13 +168,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-              name: targetName,
-              dimensions: savedItem.dimensions,
-              packageColor: savedItem.packageColor,
-              insideColor: savedItem.insideColor,
-              decals: savedItem.decals
-            })
+            body: JSON.stringify(savedItem)
           });
         } else {
           // Create new saved mockup project in MongoDB
@@ -313,7 +309,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
         <div style={{ height: "64px", background: t.bgPanel, borderBottom: `2px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div 
-              style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }} 
+              style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px 12px", borderRadius: "8px", transition: "background 0.2s" }} 
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               onClick={() => {
                 if (store.activeProjectId) {
                   executeNavigation();
@@ -323,14 +321,10 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               }}
               title="Return to Home"
             >
-              {/* Circle K Logo */}
-              <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#000000", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "14px", letterSpacing: "-0.5px" }}>
-                K
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "15px", fontWeight: "700", color: t.textMain, lineHeight: "1.2" }}>Keyline Design</span>
-                <span style={{ fontSize: "11px", fontWeight: "500", color: t.textMuted }}>Mockup Generator</span>
-              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: t.textMuted }}>
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              <span style={{ fontSize: "14px", fontWeight: "700", color: t.textMain }}>Back</span>
             </div>
 
             {/* Editing Project Name Badge (Restored functionality) */}
@@ -354,21 +348,6 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 </span>
               </div>
             )}
-            
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }} title="Menu"><IconNav /></button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }} title="Cloud Storage"><IconCloud /></button>
-
-            <div style={{ width: "1px", height: "24px", backgroundColor: t.border, margin: "0 4px" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", padding: "4px" }} title="Undo">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" /></svg>
-                <span style={{ fontSize: "9px", fontWeight: "500" }}>Undo</span>
-              </button>
-              <button style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, opacity: 0.4, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", padding: "4px" }} title="Redo">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14l5-5-5-5" /><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13" /></svg>
-                <span style={{ fontSize: "9px", fontWeight: "500" }}>Redo</span>
-              </button>
-            </div>
           </div>
 
 
@@ -428,10 +407,10 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
               <button 
                 onClick={handleSaveToWorkspace}
-                style={{ background: t.inputBg, border: `1px solid ${t.border}`, color: t.textMain, padding: "6px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: `0 1px 2px rgba(0,0,0,0.05)` }}
+                style={{ background: "#00c48c", border: "none", color: "#ffffff", padding: "8px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", boxShadow: `0 4px 14px rgba(0, 196, 140, 0.35)`, transition: "all 0.2s ease" }}
               >
                 <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                Save
+                Save Project
               </button>
             <button onClick={() => store.toggleTheme && store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "6px" }} title="Toggle Theme">
               {store.theme === 'dark' ?
@@ -538,14 +517,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                       
                       {/* Custom Material */}
-                      <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom material</span>
-                          <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
-                            {store.materialType || "Corrugated board"}
-                          </span>
-                        </div>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                      <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom material</span>
+                        <MaterialDropdown />
                       </div>
 
                       {/* Custom Size */}
@@ -564,7 +538,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom size</span>
                           <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
-                            {(store.L * 25.4 / 25.4).toFixed(4)} x {(store.W * 25.4 / 25.4).toFixed(4)} x {(store.H * 25.4 / 25.4).toFixed(4)} in
+                            {customSizeUnit === 'mm' 
+                              ? `${(store.L * 25.4).toFixed(2)} x ${(store.W * 25.4).toFixed(2)} x ${(store.H * 25.4).toFixed(2)} mm`
+                              : `${store.L.toFixed(4)} x ${store.W.toFixed(4)} x ${store.H.toFixed(4)} in`}
                           </span>
                         </div>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -754,28 +730,45 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontWeight: "400", fontSize: "17px" }}>Custom size</span>
                       <div style={{ display: "flex", background: "#f5f5f5", borderRadius: "20px", padding: "2px", border: "1px solid #e5e5e5" }}>
-                        <button style={{ border: "none", background: "transparent", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#666" }}>mm</button>
-                        <button style={{ border: "1px solid #d48c70", background: "#ffffff", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#d48c70", fontWeight: "500", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>in</button>
+                        <button 
+                          onClick={() => setCustomSizeUnit('mm')}
+                          style={customSizeUnit === 'mm' ? { border: "1px solid #d48c70", background: "#ffffff", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#d48c70", fontWeight: "500", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", cursor: "pointer" } : { border: "none", background: "transparent", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#666", cursor: "pointer" }}
+                        >
+                          mm
+                        </button>
+                        <button 
+                          onClick={() => setCustomSizeUnit('in')}
+                          style={customSizeUnit === 'in' ? { border: "1px solid #d48c70", background: "#ffffff", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#d48c70", fontWeight: "500", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", cursor: "pointer" } : { border: "none", background: "transparent", padding: "4px 12px", borderRadius: "16px", fontSize: "14px", color: "#666", cursor: "pointer" }}
+                        >
+                          in
+                        </button>
                       </div>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                    <div key={customSizeUnit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         <label style={{ fontSize: "13px", color: "#666" }}>Length</label>
-                        <input type="number" step="0.01" defaultValue={store.L} id="ctxL" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "15px", background: "#e5e7eb" }} />
+                        <input type="number" step="0.01" defaultValue={customSizeUnit === 'in' ? store.L : (store.L * 25.4).toFixed(2)} id="ctxL" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "15px", background: "#e5e7eb" }} />
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         <label style={{ fontSize: "13px", color: "#666" }}>Width</label>
-                        <input type="number" step="0.01" defaultValue={store.W} id="ctxW" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "15px" }} />
+                        <input type="number" step="0.01" defaultValue={customSizeUnit === 'in' ? store.W : (store.W * 25.4).toFixed(2)} id="ctxW" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "15px" }} />
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         <label style={{ fontSize: "13px", color: "#666" }}>Height</label>
-                        <input type="number" step="0.01" defaultValue={store.H} id="ctxH" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "15px" }} />
+                        <input type="number" step="0.01" defaultValue={customSizeUnit === 'in' ? store.H : (store.H * 25.4).toFixed(2)} id="ctxH" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #d1d5db", fontSize: "15px" }} />
                       </div>
                     </div>
                     <button onClick={() => {
-                      const newL = parseFloat((document.getElementById('ctxL') as HTMLInputElement).value);
-                      const newW = parseFloat((document.getElementById('ctxW') as HTMLInputElement).value);
-                      const newH = parseFloat((document.getElementById('ctxH') as HTMLInputElement).value);
+                      let newL = parseFloat((document.getElementById('ctxL') as HTMLInputElement).value);
+                      let newW = parseFloat((document.getElementById('ctxW') as HTMLInputElement).value);
+                      let newH = parseFloat((document.getElementById('ctxH') as HTMLInputElement).value);
+                      
+                      if (customSizeUnit === 'mm') {
+                        newL = newL / 25.4;
+                        newW = newW / 25.4;
+                        newH = newH / 25.4;
+                      }
+
                       if (newL > 0 && store.setDim) store.setDim('L', newL);
                       if (newW > 0 && store.setDim) store.setDim('W', newW);
                       if (newH > 0 && store.setDim) store.setDim('H', newH);
@@ -814,7 +807,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 <button onClick={() => setZoomLevel(Math.min(5, zoomLevel + 0.1))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>+</button>
                 <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
                 <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>
-                <input type="range" min="0" max="1" step="0.01" value={foldProgress} onChange={(e) => { setFoldProgress(parseFloat(e.target.value)); setIsPlaying(false); }} style={{ width: "80px", accentColor: t.cyan }} />
+                <input type="range" min="0" max="1" step="0.01" value={foldProgress} onChange={(e) => { setFoldProgress(parseFloat(e.target.value)); setIsPlaying(false); }} className="slick-slider" style={{ width: "80px" }} />
                 <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Close</span>
                 <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
                 <button onClick={() => setIsPlaying(false)} style={{ background: "none", border: "none", cursor: "pointer", color: !isPlaying ? t.cyan : t.textMuted }}><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4z" /></svg></button>

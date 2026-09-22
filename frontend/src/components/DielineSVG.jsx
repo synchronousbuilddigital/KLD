@@ -277,12 +277,16 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     const svgMouseX = v.x + normalizedMouseX * v.w;
     const svgMouseY = v.y + (mouseY / rect.height) * v.h;
 
-    if (activeDecalId && setDecals && interactionMode === 'drag') {
+    if (activeDecalId && setDecals && interactionMode?.type === 'drag') {
+      const { initialDecal, startX, startY } = interactionMode;
+      const dragDx = svgMouseX - startX;
+      const dragDy = svgMouseY - startY;
+
       setDecals(prev => prev.map(d => {
         if (d.id === activeDecalId) {
           // Use virtual coordinates so it doesn't get permanently stuck in the snap well
-          let vX = ('virtualX' in d ? d.virtualX : d.x) + dx;
-          let vY = ('virtualY' in d ? d.virtualY : d.y) + dy;
+          let vX = initialDecal.x + dragDx;
+          let vY = initialDecal.y + dragDy;
 
           let newX = vX;
           let newY = vY;
@@ -583,7 +587,16 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
             onPointerDown={(e) => {
               e.stopPropagation();
               setActiveDecalId(decal.id);
-              setInteractionMode('drag');
+              
+              const rect = containerRef.current.getBoundingClientRect();
+              const v = viewRef.current;
+              const mouseX = e.clientX - rect.left;
+              const mouseY = e.clientY - rect.top;
+              const normalizedMouseX = activeSurface === 'Inside' ? 1 - (mouseX / rect.width) : (mouseX / rect.width);
+              const svgMouseX = v.x + normalizedMouseX * v.w;
+              const svgMouseY = v.y + (mouseY / rect.height) * v.h;
+              
+              setInteractionMode({ type: 'drag', initialDecal: decal, startX: svgMouseX, startY: svgMouseY });
             }}
             style={{ cursor: 'move' }}
           >
@@ -811,26 +824,27 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                     { cx: -decal.width / 2, cy: 0, handle: 'w', cursor: 'ew-resize', type: 'v-pill' },
                     { cx: decal.width / 2, cy: 0, handle: 'e', cursor: 'ew-resize', type: 'v-pill' }
                   ].map((pos, i) => {
-                    const { key, ...restProps } = {
-                      key: i,
-                      fill: "white",
-                      stroke: "#3b82f6",
-                      strokeWidth: 0.04,
-                      style: { cursor: pos.cursor },
-                      onPointerDown: (e) => {
-                        e.stopPropagation();
-                        setActiveDecalId(decal.id);
-                        setInteractionMode({ type: 'resize', handle: pos.handle, initialDecal: decal });
-                      }
-                    };
-
-                    if (pos.type === 'corner') {
-                      return <circle key={key} cx={pos.cx} cy={pos.cy} r={0.12} {...restProps} />;
-                    } else if (pos.type === 'h-pill') {
-                      return <rect key={key} x={pos.cx - 0.25} y={pos.cy - 0.08} width={0.5} height={0.16} rx={0.08} {...restProps} />;
-                    } else {
-                      return <rect key={key} x={pos.cx - 0.08} y={pos.cy - 0.25} width={0.16} height={0.5} rx={0.08} {...restProps} />;
-                    }
+                    return (
+                      <g
+                        key={i}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          setActiveDecalId(decal.id);
+                          setInteractionMode({ type: 'resize', handle: pos.handle, initialDecal: decal });
+                        }}
+                        style={{ cursor: pos.cursor }}
+                      >
+                        {/* Invisible larger hit area for easier grabbing */}
+                        {pos.type === 'corner' ? <circle cx={pos.cx} cy={pos.cy} r={0.35} fill="transparent" /> : 
+                         pos.type === 'h-pill' ? <rect x={pos.cx - 0.4} y={pos.cy - 0.25} width={0.8} height={0.5} fill="transparent" /> : 
+                         <rect x={pos.cx - 0.25} y={pos.cy - 0.4} width={0.5} height={0.8} fill="transparent" />}
+                        
+                        {/* Visible handle */}
+                        {pos.type === 'corner' ? <circle cx={pos.cx} cy={pos.cy} r={0.12} fill="white" stroke="#3b82f6" strokeWidth={0.04} /> : 
+                         pos.type === 'h-pill' ? <rect x={pos.cx - 0.25} y={pos.cy - 0.08} width={0.5} height={0.16} rx={0.08} fill="white" stroke="#3b82f6" strokeWidth={0.04} /> : 
+                         <rect x={pos.cx - 0.08} y={pos.cy - 0.25} width={0.16} height={0.5} rx={0.08} fill="white" stroke="#3b82f6" strokeWidth={0.04} />}
+                      </g>
+                    );
                   })}
 
                 </>

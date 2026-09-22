@@ -72,8 +72,15 @@ router.put('/saved/:id', authenticate, async (req, res, next) => {
     const design = await SavedDesign.findOne({ _id: req.params.id, user: req.user.id });
     if (!design) return sendError(res, 'Design not found.', 404);
 
-    const { name, dimensions, customColors, tabCategory, isFavorite, isDraft, tags } = req.body;
+    const { name, type, category, boxModel, variantId, packageColor, insideColor, decals, dimensions, customColors, tabCategory, isFavorite, isDraft, tags } = req.body;
     if (name !== undefined) design.name = name;
+    if (type !== undefined) design.type = type;
+    if (category !== undefined) design.category = category;
+    if (boxModel !== undefined) design.boxModel = boxModel;
+    if (variantId !== undefined) design.variantId = variantId;
+    if (packageColor !== undefined) design.packageColor = packageColor;
+    if (insideColor !== undefined) design.insideColor = insideColor;
+    if (decals !== undefined) design.decals = decals;
     if (dimensions !== undefined) design.dimensions = { ...design.dimensions, ...dimensions };
     if (customColors !== undefined) design.customColors = { ...design.customColors, ...customColors };
     if (tabCategory !== undefined) design.tabCategory = tabCategory;

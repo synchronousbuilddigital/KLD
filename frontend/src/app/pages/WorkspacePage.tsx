@@ -76,7 +76,10 @@ const BoxCardPreview: React.FC<{ item: WorkspaceItem; onResume: (item: Workspace
   const strokeColor = isDarkColor ? 'rgba(255, 255, 255, 0.5)' : 'rgba(24, 24, 27, 0.3)';
 
   return (
-    <div className="w-full h-44 bg-gradient-to-br from-zinc-50 via-zinc-100/70 to-amber-50/20 rounded-2xl border border-zinc-200/80 flex items-center justify-center mb-5 group-hover:border-amber-400/60 transition-all relative overflow-hidden shadow-inner group/preview">
+    <div 
+      onClick={() => React.startTransition(() => { onResume(item, item.type === 'MOCKUP' ? 'mockup' : 'dieline'); })}
+      className="cursor-pointer w-full h-44 bg-gradient-to-br from-zinc-50 via-zinc-100/70 to-amber-50/20 rounded-2xl border border-zinc-200/80 flex items-center justify-center mb-5 hover:border-amber-400/60 transition-all relative overflow-hidden shadow-inner group/preview"
+    >
       {/* Background Radial Grid */}
       <div 
         className="absolute inset-0 opacity-15 pointer-events-none"
@@ -212,24 +215,7 @@ const BoxCardPreview: React.FC<{ item: WorkspaceItem; onResume: (item: Workspace
         </span>
       )}
 
-      {/* Dual Hover Overlay: Choose Studio Mode */}
-      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2.5 p-4 z-20 backdrop-blur-[2px]">
-        <span className="text-[10px] uppercase tracking-wider font-extrabold text-white/95 mb-0.5">Open Studio Mode</span>
-        <div className="flex items-center gap-2 w-full max-w-[220px]">
-          <button
-            onClick={(e) => { e.stopPropagation(); onResume(item, 'dieline'); }}
-            className="flex-1 py-2 bg-white hover:bg-zinc-100 text-zinc-900 text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
-          >
-            📐 Dieline
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onResume(item, 'mockup'); }}
-            className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-extrabold rounded-xl shadow-md transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
-          >
-            🎨 3D Mockup
-          </button>
-        </div>
-      </div>
+
     </div>
   );
 };
@@ -1155,20 +1141,25 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                         <Trash2 className="w-4 h-4" />
                       </button>
 
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
-                        title="Open Dieline Vector & DXF Studio"
-                        className="px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-extrabold rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-                      >
-                        📐 Dieline
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
-                        title="Open 3D Interactive Mockup Studio"
-                        className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-extrabold rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
-                      >
-                        🎨 3D Mockup
-                      </button>
+                      {item.type !== 'MOCKUP' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                          title="Open Dieline Vector & DXF Studio"
+                          className="px-2.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-extrabold rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                        >
+                          📐 Dieline
+                        </button>
+                      )}
+                      
+                      {item.type === 'MOCKUP' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
+                          title="Open 3D Interactive Mockup Studio"
+                          className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-extrabold rounded-xl transition-all flex items-center gap-1 shadow-sm cursor-pointer active:scale-95"
+                        >
+                          🎨 3D Mockup
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -1264,19 +1255,23 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                       <Trash2 className="w-5 h-5" />
                     </button>
 
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
-                      className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-extrabold rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-                    >
-                      📐 Dieline
-                    </button>
+                    {item.type !== 'MOCKUP' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'dieline'); }}
+                        className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-extrabold rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                      >
+                        📐 Dieline
+                      </button>
+                    )}
 
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
-                      className="px-4 py-2 bg-zinc-900 text-white text-xs font-extrabold rounded-xl hover:bg-zinc-800 transition-all flex items-center gap-1 shadow-md cursor-pointer active:scale-95"
-                    >
-                      🎨 3D Mockup
-                    </button>
+                    {item.type === 'MOCKUP' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleResumeEditing(item, 'mockup'); }}
+                        className="px-4 py-2 bg-zinc-900 text-white text-xs font-extrabold rounded-xl hover:bg-zinc-800 transition-all flex items-center gap-1 shadow-md cursor-pointer active:scale-95"
+                      >
+                        🎨 3D Mockup
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

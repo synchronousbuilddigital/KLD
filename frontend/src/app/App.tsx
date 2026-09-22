@@ -933,11 +933,18 @@ export default function App() {
           }} 
         />
         {activeDielineBox.isOpen && (
-          <BoxStudioModal
-            isOpen={activeDielineBox.isOpen}
-            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
-            initialModel={activeDielineBox.model}
-          />
+          <React.Suspense fallback={
+            <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
+              <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+              <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading Studio...</h2>
+            </div>
+          }>
+            <BoxStudioModal
+              isOpen={activeDielineBox.isOpen}
+              onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+              initialModel={activeDielineBox.model}
+            />
+          </React.Suspense>
         )}
       </>
     );
@@ -1479,11 +1486,18 @@ export default function App() {
 
       {/* Global Dieline CAD & 3D Studio Modal for Resuming Saved Dieline Projects */}
       {activeDielineBox.isOpen && (
-        <BoxStudioModal
-          isOpen={activeDielineBox.isOpen}
-          onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
-          initialModel={activeDielineBox.model}
-        />
+        <React.Suspense fallback={
+          <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
+            <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading Studio...</h2>
+          </div>
+        }>
+          <BoxStudioModal
+            isOpen={activeDielineBox.isOpen}
+            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+            initialModel={activeDielineBox.model}
+          />
+        </React.Suspense>
       )}
 
       {/* Global Sign In / Create Account Modal */}

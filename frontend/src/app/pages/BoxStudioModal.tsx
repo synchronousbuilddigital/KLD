@@ -492,25 +492,21 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
         
         {/* TOP NAVBAR */}
         <header className="h-14 bg-white border-b border-zinc-200 px-4 md:px-6 flex items-center justify-between shrink-0 shadow-sm z-20">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button 
               onClick={() => onClose()}
-              className="flex items-center gap-2 px-2 py-1.5 -ml-2 rounded-lg hover:bg-zinc-100 text-zinc-900 transition-colors cursor-pointer group"
-              title="Back to Dielines"
+              className="flex items-center gap-1.5 px-2 py-1.5 -ml-2 rounded-lg hover:bg-zinc-100 text-zinc-900 transition-colors cursor-pointer group"
+              title="Back"
             >
-              <ArrowLeft className="w-4 h-4 text-zinc-500 group-hover:text-zinc-900 transition-colors" />
-              <div className="flex items-center justify-center w-6 h-6">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                  <path d="m3.3 7 8.7 5 8.7-5" />
-                  <path d="M12 22V12" />
-                  <path d="m7.5 4.27 9 5.15" />
-                </svg>
-              </div>
-              <span className="font-bold text-sm text-zinc-900 hidden sm:inline">{currentTitle}</span>
+              <ArrowLeft className="w-5 h-5 text-zinc-500 group-hover:text-zinc-900 transition-colors" />
+              <span className="font-bold text-[14px] text-zinc-700 group-hover:text-zinc-900">Back</span>
             </button>
 
-            <div className="relative">
+            <div className="h-4 w-px bg-zinc-300"></div>
+
+            <span className="font-bold text-[14px] text-zinc-900">{currentTitle}</span>
+
+            <div className="relative ml-2">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-700 transition-colors cursor-pointer"
@@ -552,10 +548,8 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
             <button
               onClick={handleSaveProject}
               disabled={isSaving}
-              className={`px-3.5 py-2 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
-                isSaved ? 'bg-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'
-              }`}
-              style={{ backgroundColor: isSaved ? '#047857' : '#10b981' }}
+              className="px-4 py-2 rounded-lg text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer hover:bg-opacity-90 flex items-center gap-1.5"
+              style={{ backgroundColor: isSaved ? '#047857' : '#00c48c' }}
             >
               {isSaved ? (
                 <>
@@ -573,254 +567,26 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
             {/* Print Button */}
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 rounded-lg text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-95 flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
-              style={{ backgroundColor: '#007aff' }}
+              className="px-4 py-2 rounded-lg text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer hover:bg-opacity-90 flex items-center gap-1.5"
+              style={{ backgroundColor: '#2563eb' }}
             >
-              <Printer className="w-3.5 h-3.5 text-white" />
-              <span className="hidden sm:inline">Print</span>
-              <span className="sm:hidden">Print</span>
+              <Printer className="w-4 h-4 text-white" />
+              Print
             </button>
 
           </div>
         </header>
 
-        {/* MAIN THREE-COLUMN STUDIO EDITOR */}
-        <div className="flex-1 flex overflow-hidden relative w-full">
+        {/* MAIN FLOATING STUDIO EDITOR */}
+        <div className="flex-1 overflow-hidden relative w-full bg-[#d1d5db]">
           
-          {/* ========================================================================= */}
-          {/* LEFT SIDEBAR PANEL (Custom Size, Material, Size Mode, Display Options)    */}
-          {/* ========================================================================= */}
-          <aside className="w-[260px] md:w-[280px] bg-white border-r border-zinc-200 p-4 md:p-5 overflow-y-auto shrink-0 flex flex-col gap-6 text-zinc-800 shadow-sm z-10">
-            
-            {/* Custom Size Header & Unit Switcher */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Custom size</h3>
-                <div className="flex bg-zinc-100 p-0.5 rounded-md border border-zinc-200 text-[11px] font-semibold">
-                  <button
-                    onClick={() => { setUnit("mm"); store.setUnit("mm"); }}
-                    className={`px-2 py-0.5 rounded ${unit === "mm" ? "bg-white text-blue-600 shadow-sm font-bold" : "text-zinc-500"}`}
-                  >
-                    mm
-                  </button>
-                  <button
-                    onClick={() => { setUnit("in"); store.setUnit("in"); }}
-                    className={`px-2 py-0.5 rounded ${unit === "in" ? "bg-white text-blue-600 shadow-sm font-bold" : "text-zinc-500"}`}
-                  >
-                    in
-                  </button>
-                </div>
-              </div>
-
-              {/* Length & Width Input Row */}
-              <div className="grid grid-cols-2 gap-2 mb-2.5">
-                <div>
-                  <label className="text-[11px] text-zinc-500 font-medium block mb-1">Length</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={inputL}
-                      onChange={(e) => handleLChange(e.target.value)}
-                      className="w-full bg-white border border-zinc-300 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 font-mono font-medium focus:outline-none focus:border-blue-500 pr-7"
-                    />
-                    <span className="absolute right-2 top-1.5 text-[11px] text-zinc-400 font-mono">{unit}</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] text-zinc-500 font-medium block mb-1">Width</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={inputW}
-                      onChange={(e) => handleWChange(e.target.value)}
-                      className="w-full bg-white border border-zinc-300 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 font-mono font-medium focus:outline-none focus:border-blue-500 pr-7"
-                    />
-                    <span className="absolute right-2 top-1.5 text-[11px] text-zinc-400 font-mono">{unit}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Height Input Row */}
-              <div>
-                <label className="text-[11px] text-zinc-500 font-medium block mb-1">Height</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={inputH}
-                    onChange={(e) => handleHChange(e.target.value)}
-                    className="w-full bg-white border border-zinc-300 rounded-md px-2.5 py-1.5 text-xs text-zinc-800 font-mono font-medium focus:outline-none focus:border-blue-500 pr-7"
-                  />
-                  <span className="absolute right-2 top-1.5 text-[11px] text-zinc-400 font-mono">{unit}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Material Dropdown Selector */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider">Material</span>
-              </div>
-              <MaterialDropdown />
-            </div>
-
-            {/* Size Mode Radio Buttons */}
-            <div>
-              <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Size mode</h3>
-              <div className="space-y-1 bg-zinc-50 p-1.5 rounded-lg border border-zinc-200">
-                <button
-                  onClick={() => store.setSizeMode("manufacture")}
-                  className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    store.sizeMode === "manufacture" ? "bg-amber-100/80 text-amber-900 font-semibold border border-amber-300/60" : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  Manufacture dimensions
-                </button>
-                <button
-                  onClick={() => store.setSizeMode("inner")}
-                  className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    store.sizeMode === "inner" ? "bg-amber-100/80 text-amber-900 font-semibold border border-amber-300/60" : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  Inner dimensions
-                </button>
-                <button
-                  onClick={() => store.setSizeMode("outer")}
-                  className={`w-full text-left px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    store.sizeMode === "outer" ? "bg-amber-100/80 text-amber-900 font-semibold border border-amber-300/60" : "text-zinc-600 hover:bg-zinc-100"
-                  }`}
-                >
-                  Outer dimensions
-                </button>
-              </div>
-            </div>
-
-            {/* Display Options Toggles */}
-            <div className="space-y-3 pt-2 border-t border-zinc-200">
-              <h3 className="text-xs font-bold text-zinc-800 uppercase tracking-wider mb-2">Display options</h3>
-
-              <div className="flex items-center justify-between text-xs text-zinc-700">
-                <span>Overall dimensions</span>
-                <input
-                  type="checkbox"
-                  checked={store.showOverallDims}
-                  onChange={() => store.toggleView("showOverallDims")}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-zinc-700">
-                <span>Basic dimensions</span>
-                <input
-                  type="checkbox"
-                  checked={store.showBasicDims}
-                  onChange={() => store.toggleView("showBasicDims")}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-zinc-700">
-                <span>Bleed contours</span>
-                <input
-                  type="checkbox"
-                  checked={store.showBleedLine}
-                  onChange={() => store.toggleView("showBleedLine")}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-zinc-700">
-                <span>Annotations</span>
-                <input
-                  type="checkbox"
-                  checked={store.showAnnotations}
-                  onChange={() => store.toggleView("showAnnotations")}
-                  className="w-4 h-4 accent-amber-600 rounded cursor-pointer"
-                />
-              </div>
-            </div>
-            
-            {/* Customise Button */}
-            <div className="mt-4 pt-4 border-t border-zinc-200">
-              <button
-                onClick={() => setIsEditorOpen(true)}
-                className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs py-3 rounded-xl transition-colors shadow-sm"
-              >
-                <Palette className="w-4 h-4" />
-                Customise
-              </button>
-            </div>
-
-          </aside>
-
-          {/* ========================================================================= */}
-          {/* CENTER CANVAS AREA (Top Legend + Readout + 2D Dieline Vector Canvas)      */}
-          {/* ========================================================================= */}
+          {/* FULL SCREEN CANVAS */}
           <main
             id="dieline-canvas-area"
             ref={canvasAreaRef}
-            className="flex-1 min-w-0 bg-[#fffcf7] relative flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden"
+            className="absolute inset-0 flex items-center justify-center overflow-hidden"
           >
-            {/* Top Legend Bar */}
-            <div className="absolute top-4 left-6 flex items-center gap-6 text-xs text-zinc-600 font-semibold z-10">
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-0.5 bg-blue-600 inline-block" />
-                <span>Trim</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-0 border-b-2 border-dashed border-red-500 inline-block" />
-                <span>Crease</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-0.5 bg-green-600 inline-block" />
-                <span>Bleed</span>
-              </div>
-            </div>
-
-            {/* Reset View Button Top Right */}
-            <button
-              onClick={() => { 
-                window.dispatchEvent(new CustomEvent('reset-dieline-view'));
-              }}
-              className="absolute top-4 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-zinc-300 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 transition-colors z-10 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset View
-            </button>
-
-            {/* Manufacture & Inner/Outer Dimensions Readout Overlay */}
-            <div className="absolute top-12 left-6 text-xs text-zinc-500 space-y-1 font-mono z-10">
-              <div>
-                <span className="text-blue-600 font-semibold">Manufacture dimensions:</span>{" "}
-                <span className="font-bold">{displayL} × {displayW} × {displayH} {unit}</span>
-              </div>
-              <div>
-                <span className="text-zinc-400">Inner dimensions:</span>{" "}
-                <span>
-                  {unit === 'in' 
-                    ? `${(store.L - 2 * store.T).toFixed(4)} × ${(store.W - 2 * store.T).toFixed(4)} × ${(store.H - 2 * store.T).toFixed(4)} in`
-                    : `${((store.L - 2 * store.T) * 25.4).toFixed(2)} × ${((store.W - 2 * store.T) * 25.4).toFixed(2)} × ${((store.H - 2 * store.T) * 25.4).toFixed(2)} mm`
-                  }
-                </span>
-              </div>
-              <div>
-                <span className="text-zinc-400">Outer dimensions:</span>{" "}
-                <span>
-                  {unit === 'in'
-                    ? `${(store.L + 2 * store.T).toFixed(4)} × ${(store.W + 2 * store.T).toFixed(4)} × ${(store.H + 2 * store.T).toFixed(4)} in`
-                    : `${((store.L + 2 * store.T) * 25.4).toFixed(2)} × ${((store.W + 2 * store.T) * 25.4).toFixed(2)} × ${((store.H + 2 * store.T) * 25.4).toFixed(2)} mm`
-                  }
-                </span>
-              </div>
-            </div>
-
-            {/* The 2D Canvas itself */}
-            <div 
-              id="dieline-svg-wrapper"
-              className="absolute inset-0 flex items-center justify-center"
-            >
+            <div id="dieline-svg-wrapper" className="absolute inset-0 flex items-center justify-center">
               <DielineSVG
                 L={store.L}
                 W={store.W}
@@ -835,29 +601,282 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
             </div>
           </main>
 
-          {/* ========================================================================= */}
-          {/* RIGHT FLOATING PANEL (3D Box Preview + File Formats + You Will Get)       */}
-          {/* ========================================================================= */}
-          <aside className="w-[300px] md:w-[320px] bg-[#fafafa] border-l border-zinc-200 p-4 overflow-y-auto flex flex-col gap-4 shrink-0 text-zinc-900 z-10">
+          {/* FLOATING TOP READOUTS */}
+          <div className="absolute top-6 left-[450px] right-[400px] pointer-events-none flex items-start justify-between z-10">
+            <div className="flex flex-col gap-4 pointer-events-auto">
+              {/* Top Legend Bar */}
+              <div className="flex items-center gap-6 text-xs text-zinc-600 font-semibold bg-white/80 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm border border-white/50">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-0.5 bg-blue-600 inline-block" />
+                  <span>Trim</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-0 border-b-2 border-dashed border-red-500 inline-block" />
+                  <span>Crease</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-0.5 bg-green-600 inline-block" />
+                  <span>Bleed</span>
+                </div>
+              </div>
+
+              {/* Manufacture & Inner/Outer Dimensions Readout Overlay */}
+              <div className="text-xs text-zinc-600 space-y-1 font-mono bg-white/80 backdrop-blur-md px-4 py-3 rounded-xl shadow-sm border border-white/50">
+                <div>
+                  <span className="text-blue-600 font-semibold">Manufacture dimensions:</span>{" "}
+                  <span className="font-bold text-zinc-800">{displayL} × {displayW} × {displayH} {unit}</span>
+                </div>
+                <div>
+                  <span className="text-zinc-500">Inner dimensions:</span>{" "}
+                  <span>
+                    {unit === 'in' 
+                      ? `${(store.L - 2 * store.T).toFixed(4)} × ${(store.W - 2 * store.T).toFixed(4)} × ${(store.H - 2 * store.T).toFixed(4)} in`
+                      : `${((store.L - 2 * store.T) * 25.4).toFixed(2)} × ${((store.W - 2 * store.T) * 25.4).toFixed(2)} × ${((store.H - 2 * store.T) * 25.4).toFixed(2)} mm`
+                    }
+                  </span>
+                </div>
+                <div>
+                  <span className="text-zinc-500">Outer dimensions:</span>{" "}
+                  <span>
+                    {unit === 'in'
+                      ? `${(store.L + 2 * store.T).toFixed(4)} × ${(store.W + 2 * store.T).toFixed(4)} × ${(store.H + 2 * store.T).toFixed(4)} in`
+                      : `${((store.L + 2 * store.T) * 25.4).toFixed(2)} × ${((store.W + 2 * store.T) * 25.4).toFixed(2)} × ${((store.H + 2 * store.T) * 25.4).toFixed(2)} mm`
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reset View Button Top Right */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('reset-dieline-view'))}
+              className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset View
+            </button>
+          </div>
+
+          {/* FLOATING LEFT UI WRAPPER */}
+          <div className="absolute left-6 top-6 bottom-6 z-10 flex gap-4 pointer-events-none">
+            
+            {/* Nav Strip */}
+            <div className="pointer-events-auto flex flex-col gap-3">
+              <div className="bg-white rounded-[32px] px-2 py-3 flex flex-col items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+                {[
+                  { id: 'Edit', icon: <Palette className="w-5 h-5" /> }
+                ].map((item, i) => {
+                  const isActive = true; // Hardcoded active for now
+                  return (
+                    <div 
+                      key={i} 
+                      className={`w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'text-zinc-500 hover:bg-zinc-50'}`}
+                      title={item.id}
+                    >
+                      {item.icon}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Main Configuration Panel */}
+            <div className="pointer-events-auto w-[320px] bg-white rounded-3xl p-6 flex flex-col shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-y-auto scrollbar-hide">
+              
+              {/* Custom Size Header & Unit Switcher */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[14px] font-bold text-zinc-900">Custom size</h3>
+                  <div className="flex bg-zinc-100 rounded-full border border-zinc-200 text-[12px] font-semibold overflow-hidden p-[2px]">
+                    <button
+                      onClick={() => { setUnit("mm"); store.setUnit("mm"); }}
+                      className={`px-3 py-1 rounded-full transition-colors ${unit === "mm" ? "bg-white text-blue-600 shadow-sm font-bold" : "text-zinc-500 hover:text-zinc-700"}`}
+                    >
+                      mm
+                    </button>
+                    <button
+                      onClick={() => { setUnit("in"); store.setUnit("in"); }}
+                      className={`px-3 py-1 rounded-full transition-colors ${unit === "in" ? "bg-white text-blue-600 shadow-sm font-bold" : "text-zinc-500 hover:text-zinc-700"}`}
+                    >
+                      in
+                    </button>
+                  </div>
+                </div>
+
+                {/* Length & Width Input Row */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-[12px] text-zinc-500 block mb-1.5 font-medium">Length</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={inputL}
+                        onChange={(e) => handleLChange(e.target.value)}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-[13px] text-zinc-800 font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-colors pr-8"
+                      />
+                      <span className="absolute right-3 top-2 text-[12px] text-zinc-400 font-mono">{unit}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[12px] text-zinc-500 block mb-1.5 font-medium">Width</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={inputW}
+                        onChange={(e) => handleWChange(e.target.value)}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-[13px] text-zinc-800 font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-colors pr-8"
+                      />
+                      <span className="absolute right-3 top-2 text-[12px] text-zinc-400 font-mono">{unit}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Height Input Row */}
+                <div>
+                  <label className="text-[12px] text-zinc-500 block mb-1.5 font-medium">Height</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={inputH}
+                      onChange={(e) => handleHChange(e.target.value)}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-[13px] text-zinc-800 font-mono focus:outline-none focus:border-blue-500 focus:bg-white transition-colors pr-8"
+                    />
+                    <span className="absolute right-3 top-2 text-[12px] text-zinc-400 font-mono">{unit}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px w-full bg-zinc-100 my-5"></div>
+
+              {/* Material Dropdown Selector */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[14px] font-bold text-zinc-900">Material</h3>
+                </div>
+                <MaterialDropdown />
+              </div>
+
+              <div className="h-px w-full bg-zinc-100 my-5"></div>
+
+              {/* Size Mode Radio Buttons */}
+              <div>
+                <h3 className="text-[14px] font-bold text-zinc-900 mb-3">Size mode</h3>
+                <div className="space-y-1.5 p-1.5 rounded-2xl border border-zinc-200/60 bg-zinc-50/50">
+                  <button
+                    onClick={() => store.setSizeMode("manufacture")}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-[13px] transition-colors ${
+                      store.sizeMode === "manufacture" ? "bg-white text-blue-600 font-semibold shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"
+                    }`}
+                  >
+                    Manufacture dimensions
+                  </button>
+                  <button
+                    onClick={() => store.setSizeMode("inner")}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-[13px] transition-colors ${
+                      store.sizeMode === "inner" ? "bg-white text-blue-600 font-semibold shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"
+                    }`}
+                  >
+                    Inner dimensions
+                  </button>
+                  <button
+                    onClick={() => store.setSizeMode("outer")}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-[13px] transition-colors ${
+                      store.sizeMode === "outer" ? "bg-white text-blue-600 font-semibold shadow-sm" : "text-zinc-600 hover:bg-zinc-100/50"
+                    }`}
+                  >
+                    Outer dimensions
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-px w-full bg-zinc-100 my-5"></div>
+
+              {/* Display Options Toggles */}
+              <div className="space-y-3.5">
+                <h3 className="text-[14px] font-bold text-zinc-900 mb-2">Display options</h3>
+
+                <div className="flex items-center justify-between text-[13px] text-zinc-600">
+                  <span>Overall dimensions</span>
+                  <input
+                    type="checkbox"
+                    checked={store.showOverallDims}
+                    onChange={() => store.toggleView("showOverallDims")}
+                    className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[13px] text-zinc-600">
+                  <span>Basic dimensions</span>
+                  <input
+                    type="checkbox"
+                    checked={store.showBasicDims}
+                    onChange={() => store.toggleView("showBasicDims")}
+                    className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[13px] text-zinc-600">
+                  <span>Bleed contours</span>
+                  <input
+                    type="checkbox"
+                    checked={store.showBleedLine}
+                    onChange={() => store.toggleView("showBleedLine")}
+                    className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-[13px] text-zinc-600">
+                  <span>Annotations</span>
+                  <input
+                    type="checkbox"
+                    checked={store.showAnnotations}
+                    onChange={() => store.toggleView("showAnnotations")}
+                    className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex-1 min-h-[20px]"></div>
+
+              {/* Customise Button */}
+              <div className="mt-4 pt-4 border-t border-zinc-100">
+                <button
+                  onClick={() => setIsEditorOpen(true)}
+                  className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-[14px] py-3.5 rounded-xl transition-all shadow-md active:scale-95"
+                >
+                  Edit Package Artwork
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          {/* FLOATING RIGHT UI WRAPPER */}
+          <div className="absolute right-6 top-6 bottom-6 z-10 w-[340px] pointer-events-none flex flex-col gap-4 overflow-y-auto pb-6 scrollbar-hide">
             
             {/* CARD 1: 3D BOX PREVIEW */}
-            <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col gap-3">
+            <div className="pointer-events-auto bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-zinc-900">3D box preview</h3>
-                <div className="flex items-center gap-2">
+                <h3 className="text-[14px] font-bold text-zinc-900">3D Preview</h3>
+                <div className="flex items-center gap-1.5 bg-zinc-100 p-0.5 rounded-md">
                   <button
                     onClick={() => setIsPlayingAnim(!isPlayingAnim)}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 rounded-md text-[11px] font-semibold text-zinc-700 transition-colors"
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${isPlayingAnim ? 'bg-white shadow-sm text-blue-600' : 'text-zinc-600 hover:text-zinc-800'}`}
                   >
-                    <Play className="w-3 h-3 text-blue-600 fill-blue-600" />
-                    {isPlayingAnim ? "Pause" : "Play"}
+                    <Play className={`w-3 h-3 ${isPlayingAnim ? 'fill-blue-600' : ''}`} />
+                    Play
                   </button>
-                  <span className="text-[10px] font-bold bg-zinc-200 px-2 py-0.5 rounded text-zinc-700">3D</span>
+                  <button className="px-2.5 py-1 rounded text-[11px] font-semibold text-zinc-600 hover:text-zinc-800 transition-colors">
+                    3D
+                  </button>
                 </div>
               </div>
 
               {/* 3D Viewer Canvas */}
-              <div className="w-full h-56 rounded-xl bg-gradient-to-b from-zinc-200 to-zinc-300 border border-zinc-300 overflow-hidden relative">
+              <div className="w-full h-48 rounded-2xl bg-zinc-100 overflow-hidden relative shadow-inner">
                 <StudioErrorBoundary>
                   <Box3DViewer
                     boxModelOverride={store.boxModel}
@@ -872,9 +891,8 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 </StudioErrorBoundary>
               </div>
 
-
               {/* Open -- Fold Slider -- Close */}
-              <div className="flex items-center gap-3 px-2 pt-1 text-xs font-medium text-zinc-500">
+              <div className="flex items-center gap-3 pt-1 text-[11px] font-semibold text-zinc-500">
                 <span>Open</span>
                 <input
                   type="range"
@@ -883,32 +901,32 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                   step="0.01"
                   value={foldProgress}
                   onChange={(e) => setFoldProgress(parseFloat(e.target.value))}
-                  className="w-full accent-amber-600 h-1.5 bg-zinc-200 rounded-lg appearance-none cursor-pointer"
+                  className="w-full slick-slider"
                 />
                 <span>Close</span>
               </div>
             </div>
 
             {/* CARD 2: FILE FORMATS */}
-            <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
-              <h3 className="text-sm font-bold text-zinc-900">File formats</h3>
+            <div className="pointer-events-auto bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col gap-4">
+              <h3 className="text-[14px] font-bold text-zinc-900">Download formats</h3>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleExportAI}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all text-xs font-semibold text-zinc-800 text-left"
+                  className="flex items-center gap-3 p-2 rounded-xl border border-zinc-200 hover:border-blue-300 bg-white hover:bg-blue-50/50 transition-all text-[12px] font-semibold text-zinc-800 text-left"
                 >
-                  <span className="w-6 h-6 rounded bg-amber-500 text-zinc-900 font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-lg bg-[#ff9a00] text-black font-extrabold text-[11px] flex items-center justify-center shrink-0 shadow-sm">
                     Ai
                   </span>
-                  <span>AI dieline</span>
+                  <span>Ai dieline</span>
                 </button>
 
                 <button
                   onClick={handleExportPDF}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all text-xs font-semibold text-zinc-800 text-left"
+                  className="flex items-center gap-3 p-2 rounded-xl border border-zinc-200 hover:border-blue-300 bg-white hover:bg-blue-50/50 transition-all text-[12px] font-semibold text-zinc-800 text-left"
                 >
-                  <span className="w-6 h-6 rounded bg-red-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-lg bg-[#ff0000] text-white font-extrabold text-[11px] flex items-center justify-center shrink-0 shadow-sm">
                     PDF
                   </span>
                   <span>PDF dieline</span>
@@ -916,9 +934,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
 
                 <button
                   onClick={handleExportDXF}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all text-xs font-semibold text-zinc-800 text-left"
+                  className="flex items-center gap-3 p-2 rounded-xl border border-zinc-200 hover:border-blue-300 bg-white hover:bg-blue-50/50 transition-all text-[12px] font-semibold text-zinc-800 text-left"
                 >
-                  <span className="w-6 h-6 rounded bg-zinc-800 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-lg bg-[#333333] text-white font-extrabold text-[11px] flex items-center justify-center shrink-0 shadow-sm">
                     DXF
                   </span>
                   <span>DXF dieline</span>
@@ -926,9 +944,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
 
                 <button
                   onClick={handleExportSVG}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all text-xs font-semibold text-zinc-800 text-left"
+                  className="flex items-center gap-3 p-2 rounded-xl border border-zinc-200 hover:border-blue-300 bg-white hover:bg-blue-50/50 transition-all text-[12px] font-semibold text-zinc-800 text-left"
                 >
-                  <span className="w-6 h-6 rounded bg-emerald-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-lg bg-blue-600 text-white font-extrabold text-[11px] flex items-center justify-center shrink-0 shadow-sm">
                     3D
                   </span>
                   <span>3D mockup</span>
@@ -936,31 +954,20 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               </div>
             </div>
 
-            {/* CARD 3: YOU WILL GET INFO */}
-            <div className="bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2.5 text-xs text-zinc-600">
-              <h3 className="text-sm font-bold text-zinc-900 mb-1">You will get</h3>
-              
-              <ul className="space-y-2 list-disc list-inside text-[11px] leading-relaxed text-zinc-600">
-                <li>All dieline files can be generated and downloaded within a few minutes.</li>
-                <li>All dieline files are rigorously structurally inspected. Dimensions, thickness, and material descriptions are included. Ready for printing.</li>
-                <li>All dieline files are without watermarks and can be locally edited using Adobe Illustrator.</li>
-              </ul>
-            </div>
-
-            {/* CARD 4: MANUFACTURE & INNER CUT SIZE READOUTS */}
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div className="bg-white border border-zinc-200 p-2.5 rounded-xl">
-                <span className="text-zinc-400 font-semibold block uppercase tracking-wider mb-0.5">Manufacture Cut Size</span>
-                <span className="font-mono font-bold text-zinc-800 text-xs">
+            {/* CARD 3: MANUFACTURE & INNER CUT SIZE READOUTS */}
+            <div className="pointer-events-auto grid grid-cols-2 gap-3 mt-auto">
+              <div className="bg-white p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col gap-1.5">
+                <span className="text-zinc-500 font-bold text-[10px] uppercase tracking-wider">Manufacture Cut Size</span>
+                <span className="font-mono font-bold text-zinc-900 text-[12px]">
                   {unit === 'in'
                     ? `${(store.L * 1.0).toFixed(3)} × ${(store.W * 1.01).toFixed(3)} × ${(store.H * 1.31).toFixed(3)} in`
                     : `${(store.L * 25.4).toFixed(1)} × ${(store.W * 1.01 * 25.4).toFixed(1)} × ${(store.H * 1.31 * 25.4).toFixed(1)} mm`
                   }
                 </span>
               </div>
-              <div className="bg-white border border-zinc-200 p-2.5 rounded-xl">
-                <span className="text-zinc-400 font-semibold block uppercase tracking-wider mb-0.5">Inner Cavity Size</span>
-                <span className="font-mono font-bold text-zinc-800 text-xs">
+              <div className="bg-white p-4 rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col gap-1.5">
+                <span className="text-zinc-500 font-bold text-[10px] uppercase tracking-wider">Inner Cavity Size</span>
+                <span className="font-mono font-bold text-zinc-900 text-[12px]">
                   {unit === 'in'
                     ? `${(store.L - 2*store.T).toFixed(3)} × ${(store.W - 2*store.T).toFixed(3)} × ${(store.H - 2*store.T).toFixed(3)} in`
                     : `${((store.L - 2*store.T) * 25.4).toFixed(1)} × ${((store.W - 2*store.T) * 25.4).toFixed(1)} × ${((store.H - 2*store.T) * 25.4).toFixed(1)} mm`
@@ -969,7 +976,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               </div>
             </div>
 
-          </aside>
+          </div>
         </div>
 
         </div>

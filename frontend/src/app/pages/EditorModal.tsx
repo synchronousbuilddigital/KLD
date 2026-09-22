@@ -169,7 +169,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
 
       await mockupService.saveDesign({
         name: `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
-        type: "DIELINE",
+        type: contextType === "mockup" ? "MOCKUP" : "DIELINE",
         category: categoryName,
         boxModel: store.boxModel,
         variantId: store.boxModel === "rte" ? 2 : 1,
@@ -187,6 +187,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         tabCategory: "projects",
         isDraft: false,
       });
+      window.dispatchEvent(new CustomEvent('project-saved'));
     } catch (err) {
       console.error("Failed to save design to backend:", err);
       // Optional: alert(err.message) but we don't want to block them if mongodb is down

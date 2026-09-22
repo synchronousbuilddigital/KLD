@@ -381,7 +381,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                 ) : (
                   /* 2D Structural Dieline */
                   <div 
-                    style={{ width: '100%', height: '100%', background: '#f4f4f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer' }}
+                    style={{ width: '100%', height: '100%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer' }}
                     onDoubleClick={() => setIsEditorOpen(true)}
                   >
                     <div style={{ width: '100%', height: '100%', transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 0.2s ease-out' }}>
