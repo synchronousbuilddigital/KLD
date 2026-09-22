@@ -271,6 +271,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const t = themes[themeKey] || themes.light;
 
   React.useEffect(() => {
+    // Ensure we are operating in the mockup context so we don't accidentally leak changes to the dieline context
+    store.setContextAndModel("mockup", store.boxModel);
+
     let animationFrame: number;
     let lastTime = performance.now();
     

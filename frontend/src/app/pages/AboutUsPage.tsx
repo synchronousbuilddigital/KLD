@@ -25,7 +25,7 @@ export default function AboutUsPage({ onNavigate }: AboutUsPageProps) {
       <BackgroundCanvas position="fixed" zIndex={0} />
       <Header activeNav="about" onNavigate={onNavigate} />
       <div className="relative z-10">
-        <CinematicAbout />
+        <CinematicAbout onNavigate={onNavigate} />
       </div>
       <ElasticFooter />
     </div>

@@ -880,6 +880,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 <StudioErrorBoundary>
                   <Box3DViewer
                     boxModelOverride={store.boxModel}
+                    overrideLayout="single"
                     L={store.L}
                     W={store.W}
                     H={store.H}

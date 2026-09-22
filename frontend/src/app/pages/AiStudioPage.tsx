@@ -64,6 +64,13 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
   // Compositor Layer State
   const currentDecals = store.aiDecalsByModel ? (store.aiDecalsByModel[store.boxModel] || []) : [];
   
+  useEffect(() => {
+    // Ensure we are operating in the mockup context so we don't accidentally leak changes to the dieline context
+    if (store.setContextAndModel) {
+      store.setContextAndModel("mockup", store.boxModel);
+    }
+  }, []);
+  
   // Try to find the existing applied background from the store if one isn't explicitly active
   const initialBgUrl = useMemo(() => {
     const bgDecal = currentDecals.find(d => d.type === 'image' && d.url);
@@ -353,6 +360,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                   >
                     <Box3DViewer
                       boxModelOverride={activeBoxModel}
+                      overrideLayout="single"
                       L={store.L}
                       W={store.W}
                       H={store.H}

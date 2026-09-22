@@ -785,6 +785,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
             <div style={{ width: "100%", height: "240px", backgroundColor: store.theme === 'dark' ? "#202020" : "#f0f0f0", borderRadius: "16px", overflow: "hidden", position: "relative", marginBottom: "24px", border: `1px solid ${t.border}` }}>
               {useMemo(() => (
                 <Box3DViewer 
+                  overrideLayout="single"
                   L={store.L} W={store.W} H={store.H} T={store.T}
                   progress={foldProgress}
                   materialPreset={

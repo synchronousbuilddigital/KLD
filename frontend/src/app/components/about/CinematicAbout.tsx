@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -16,8 +17,19 @@ import type { GiftBoxGLBHandle } from "./GiftBoxGLB";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function CinematicAbout() {
+export default function CinematicAbout({ onNavigate }: { onNavigate?: (view: string) => void }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  
+  const handleStartJourney = () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token');
+    if (isLoggedIn) {
+      if (onNavigate) onNavigate('dielines');
+      else window.location.href = '/?view=dielines';
+    } else {
+      window.dispatchEvent(new CustomEvent('open-sign-in-modal'));
+    }
+  };
+
   const container = useRef<HTMLDivElement>(null);
   const scrollWrapper = useRef<HTMLDivElement>(null);
   const giftBoxRef = useRef<GiftBoxGLBHandle>(null);
@@ -510,7 +522,7 @@ export default function CinematicAbout() {
               <p className="text-[#64748b] text-base md:text-lg max-w-lg mb-8 leading-relaxed">
                 Design photorealistic 3D mockups and export manufacturing-ready vector dielines in seconds.
               </p>
-              <button className="px-10 py-4 bg-[#0f172a] hover:bg-black text-white font-black rounded-2xl text-lg transition-all shadow-[0_10px_25px_rgba(15,23,42,0.25)] hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(15,23,42,0.35)] cursor-pointer inline-flex items-center gap-3">
+              <button onClick={handleStartJourney} className="px-10 py-4 bg-[#0f172a] hover:bg-black text-white font-black rounded-2xl text-lg transition-all shadow-[0_10px_25px_rgba(15,23,42,0.25)] hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(15,23,42,0.35)] cursor-pointer inline-flex items-center gap-3">
                 Start Your Journey Today →
               </button>
             </div>
