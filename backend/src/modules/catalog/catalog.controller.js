@@ -19,6 +19,7 @@ const DEFAULT_CATALOG_ITEMS = [
       { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/images/boxes/auto_white.jpg', whiteImageUrl: '/images/boxes/auto_white.jpg', kraftImageUrl: '/images/boxes/auto_kraft.jpg', boxModelKey: 'auto_lock', gridSize: 'large' },
       { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
       { id: 5, name: 'Cosmetic Box B (Mailer/Tray Style)', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
+      { id: 6, name: 'Button Hole Box', animation: 'Snap lock 1-2-3 bottom and button hole notch', imageUrl: '/images/boxes/button_hole_white.jpg', whiteImageUrl: '/images/boxes/button_hole_white.jpg', kraftImageUrl: '/images/boxes/button_hole_kraft.jpg', boxModelKey: 'button_hole', gridSize: 'large' },
     ],
   },
   {
@@ -425,6 +426,23 @@ const ensureCatalogSeeded = async () => {
           invalidateCatalogCache();
           console.log('🌱 Added Cosmetic Box B (Mailer/Tray Style) to box-mockups in database');
         }
+
+        const hasButtonHole = boxItem.variants && boxItem.variants.some(v => v.boxModelKey === 'button_hole' || (v.name && v.name.includes('Button Hole')));
+        if (!hasButtonHole) {
+          boxItem.variants.push({
+            id: 6,
+            name: 'Button Hole Box',
+            animation: 'Snap lock 1-2-3 bottom and button hole notch',
+            imageUrl: '/images/boxes/button_hole_white.jpg',
+            whiteImageUrl: '/images/boxes/button_hole_white.jpg',
+            kraftImageUrl: '/images/boxes/button_hole_kraft.jpg',
+            boxModelKey: 'button_hole',
+            gridSize: 'large'
+          });
+          await boxItem.save();
+          invalidateCatalogCache();
+          console.log('🌱 Added Button Hole Box to box-mockups in database');
+        }
       }
     }
     isCatalogSeeded = true;
@@ -450,19 +468,33 @@ const getPublicCatalog = async (req, res) => {
 
     const items = await CatalogItem.find({ active: true }).sort({ order: 1, createdAt: 1 }).lean();
     
-    // Ensure box-mockups has cosmetic_b variant
+    // Ensure box-mockups has cosmetic_b and button_hole variants
     const boxMockup = items.find(i => i.itemId === 'box-mockups');
-    if (boxMockup && boxMockup.variants && !boxMockup.variants.some(v => v.boxModelKey === 'cosmetic_b')) {
-      boxMockup.variants.push({
-        id: 5,
-        name: 'Cosmetic Box B (Mailer/Tray Style)',
-        animation: 'Roll end tray and tuck front closure',
-        imageUrl: '/images/boxes/cosmetic_b_white.jpg',
-        whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg',
-        kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg',
-        boxModelKey: 'cosmetic_b',
-        gridSize: 'large'
-      });
+    if (boxMockup && boxMockup.variants) {
+      if (!boxMockup.variants.some(v => v.boxModelKey === 'cosmetic_b')) {
+        boxMockup.variants.push({
+          id: 5,
+          name: 'Cosmetic Box B (Mailer/Tray Style)',
+          animation: 'Roll end tray and tuck front closure',
+          imageUrl: '/images/boxes/cosmetic_b_white.jpg',
+          whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg',
+          kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg',
+          boxModelKey: 'cosmetic_b',
+          gridSize: 'large'
+        });
+      }
+      if (!boxMockup.variants.some(v => v.boxModelKey === 'button_hole')) {
+        boxMockup.variants.push({
+          id: 6,
+          name: 'Button Hole Box',
+          animation: 'Snap lock 1-2-3 bottom and button hole notch',
+          imageUrl: '/images/boxes/button_hole_white.jpg',
+          whiteImageUrl: '/images/boxes/button_hole_white.jpg',
+          kraftImageUrl: '/images/boxes/button_hole_kraft.jpg',
+          boxModelKey: 'button_hole',
+          gridSize: 'large'
+        });
+      }
     }
 
     cachedPublicCatalog = items;

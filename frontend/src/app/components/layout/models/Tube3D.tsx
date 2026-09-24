@@ -1,158 +1,161 @@
 import React, { useMemo } from 'react';
 import './Tube3D.css';
 
-function blendColor(r: number, g: number, b: number, darkness: number, highlight: number) {
-  let rr = r, gg = g, bb = b;
-  if (darkness > 0) {
-    rr *= (1 - darkness); gg *= (1 - darkness); bb *= (1 - darkness);
-  }
-  if (highlight > 0) {
-    rr += (255 - rr) * highlight; gg += (255 - gg) * highlight; bb += (255 - bb) * highlight;
-  }
-  return `rgb(${Math.round(rr)},${Math.round(gg)},${Math.round(bb)})`;
-}
-
 export default function Tube3D() {
-  const facesOuter = 24;
-  const facesInner = 20;
-  const facesDetail = 16;
+  const faces = 24;
+  const radius = 32;
+  const height = 125;
+  const angle = 360 / faces;
+  const faceWidth = (radius * 2 * Math.tan(Math.PI / faces)) + 0.8;
 
-  const createStandardCylinder = (faces: number, diameter: number, height: number, type: string, flip: boolean = false) => {
-    const angle = 360 / faces;
-    const radius = diameter / 2;
-    const faceWidth = (diameter * Math.tan(Math.PI / faces)) + 1.2;
+  // Generate smooth 3D cylinder faces with cosine-based studio lighting
+  const cylinderFaces = useMemo(() => {
     const elements = [];
 
     for (let i = 0; i < faces; i++) {
-      let transform, bg;
-      if (flip) {
-        transform = `rotateY(${i * angle}deg) translateZ(${radius - 1}px) rotateY(180deg)`;
-        bg = '#111';
-      } else {
-        transform = `rotateY(${i * angle}deg) translateZ(${radius}px)`;
-        const angleRad = (i * angle) * Math.PI / 180;
-        const light = Math.cos(angleRad - 0.5);
-        const darkness = light < 0 ? Math.abs(light) * 0.35 : 0;
-        const highlight = light > 0.85 ? (light - 0.85) * 1.5 : 0;
+      const rad = (i * angle * Math.PI) / 180;
+      const light = Math.cos(rad - Math.PI / 4);
+      const intensity = 0.5 + 0.5 * light;
 
-        if (type === 'neck') {
-          const c = blendColor(224, 224, 224, darkness, highlight);
-          bg = `repeating-linear-gradient(-15deg, ${c} 0px, ${c} 2px, #999 3px, #e8e8e8 4px, ${c} 5px)`;
-        } else if (type === 'cap') {
-          bg = blendColor(26, 26, 26, darkness, highlight * 0.4);
-        } else if (type === 'crimp') {
-          const c = blendColor(204, 204, 204, darkness, highlight);
-          bg = `repeating-linear-gradient(to right, ${c} 0px, ${c} 1px, #fff 2px, ${c} 3px)`;
-        }
-      }
+      // Highlights & shadows on satin cosmetic tube (warm peach blush)
+      const baseR = 246, baseG = 236, baseB = 228;
+      const r = Math.round(baseR * (0.65 + 0.35 * intensity));
+      const g = Math.round(baseG * (0.65 + 0.35 * intensity));
+      const b = Math.round(baseB * (0.65 + 0.35 * intensity));
 
       elements.push(
         <div
           key={i}
+          className="tube-body-facet"
           style={{
             position: 'absolute',
-            width: faceWidth,
-            height,
-            left: radius - faceWidth / 2,
-            transform,
-            background: bg,
-            backfaceVisibility: 'hidden'
+            width: `${faceWidth}px`,
+            height: `${height}px`,
+            left: `${radius - faceWidth / 2}px`,
+            transform: `rotateY(${i * angle}deg) translateZ(${radius}px)`,
+            background: `linear-gradient(to bottom, rgb(${r},${g},${b}) 0%, rgb(${Math.round(r * 0.96)},${Math.round(g * 0.96)},${Math.round(b * 0.96)}) 100%)`,
+            backfaceVisibility: 'hidden',
           }}
         />
       );
     }
     return elements;
-  };
+  }, [faces, radius, height, angle, faceWidth]);
 
-  const createTubeBody = (slices: number, faces: number, diameter: number, height: number) => {
-    const heightPerSlice = height / slices;
-    const bodySlices = [];
+  // Curved UV-mapped cosmetic label wrapped flush around the tube
+  const labelSlices = useMemo(() => {
+    const labelFaceCount = 12; // 12 faces = 180 degrees of wrap
+    const labelHeight = 85;
+    const labelWidth = labelFaceCount * faceWidth;
+    const elements = [];
 
-    for (let j = 0; j < slices; j++) {
-      const y = j * heightPerSlice;
-      const progress = j / (slices - 1);
-      const pinch = Math.pow(progress, 0.6);
-      const scaleX = 1 + (1 - pinch) * 0.4;
+    for (let k = 0; k < labelFaceCount; k++) {
+      const sliceAngle = (k - (labelFaceCount - 1) / 2) * angle;
 
-      const angle = 360 / faces;
-      const faceWidth = (diameter * Math.tan(Math.PI / faces)) + 1.2;
-      const radius = diameter / 2;
-
-      const sliceFaces = [];
-      for (let i = 0; i < faces; i++) {
-        const transform = `rotateY(${i * angle}deg) translateZ(${radius}px)`;
-        const angleRad = (i * angle) * Math.PI / 180;
-        const light = Math.cos(angleRad - 0.5);
-        const darkness = light < 0 ? Math.abs(light) * 0.35 : 0;
-        const highlight = light > 0.85 ? (light - 0.85) * 1.5 : 0;
-
-        const isLabel = (progress > 0.25 && progress < 0.75);
-        let r = 253, g = 253, b = 253; // white plastic
-        if (isLabel) { r = 184; g = 149; b = 106; } // gold label
-
-        sliceFaces.push(
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              width: faceWidth,
-              height: heightPerSlice + 0.5,
-              left: radius - faceWidth / 2,
-              transform,
-              backfaceVisibility: 'hidden',
-              background: blendColor(r, g, b, darkness, highlight)
-            }}
-          />
-        );
-      }
-
-      bodySlices.push(
+      elements.push(
         <div
-          key={j}
+          key={`tube-label-slice-${k}`}
+          className="tube-label-slice"
           style={{
-            position: 'absolute',
-            top: y,
-            left: 0,
-            width: diameter,
-            height: heightPerSlice,
-            transformStyle: 'preserve-3d',
-            transform: `scale3d(${scaleX}, 1, ${Math.max(pinch, 0.02)})`
+            width: `${faceWidth}px`,
+            height: `${labelHeight}px`,
+            top: `${(height - labelHeight) / 2 + 5}px`,
+            left: `${radius - faceWidth / 2}px`,
+            transform: `rotateY(${sliceAngle}deg) translateZ(${radius + 0.3}px)`,
           }}
         >
-          {sliceFaces}
+          <div
+            className="tube-label-art"
+            style={{
+              width: `${labelWidth}px`,
+              height: `${labelHeight}px`,
+              left: `${-k * faceWidth}px`,
+            }}
+          >
+            <div className="tube-badge-inner">
+              <span className="tube-brand-sup">KLD DERMA LAB</span>
+              <div className="tube-brand-line" />
+              <h4 className="tube-brand-name">BOTANICAL SERUM</h4>
+              <p className="tube-brand-desc">PEPTIDE REPAIR + HYDRATE</p>
+              <div className="tube-brand-vol">50 ml ℮ 1.7 FL. OZ.</div>
+            </div>
+          </div>
         </div>
       );
     }
-    return bodySlices;
-  };
+    return elements;
+  }, [angle, faceWidth, height, radius]);
 
-  const crimp = useMemo(() => createStandardCylinder(facesDetail, 60, 6, 'crimp'), []);
-  const body = useMemo(() => createTubeBody(15, facesInner, 60, 120), []);
-  const neck = useMemo(() => createStandardCylinder(facesDetail, 30, 15, 'neck'), []);
-  const capOuter = useMemo(() => createStandardCylinder(facesOuter, 50, 35, 'cap'), []);
-  const capInner = useMemo(() => createStandardCylinder(facesInner, 48, 35, 'cap', true), []);
+  // Cap cylinder facets
+  const capFaces = useMemo(() => {
+    const capFacesCount = 20;
+    const capRadius = 26;
+    const capHeight = 28;
+    const capFaceWidth = (capRadius * 2 * Math.tan(Math.PI / capFacesCount)) + 1.2;
+    const angleStep = 360 / capFacesCount;
+    const elements = [];
+
+    for (let i = 0; i < capFacesCount; i++) {
+      const capAngle = i * angleStep;
+      const rad = (capAngle * Math.PI) / 180;
+      const light = Math.cos(rad - Math.PI / 4);
+      const baseR = 195, baseG = 145, baseB = 120;
+      const r = Math.round(baseR * (0.6 + 0.4 * (0.5 + 0.5 * light)));
+      const g = Math.round(baseG * (0.6 + 0.4 * (0.5 + 0.5 * light)));
+      const b = Math.round(baseB * (0.6 + 0.4 * (0.5 + 0.5 * light)));
+
+      elements.push(
+        <div
+          key={`cap-${i}`}
+          style={{
+            position: 'absolute',
+            width: `${capFaceWidth}px`,
+            height: `${capHeight}px`,
+            left: `${capRadius - capFaceWidth / 2}px`,
+            transform: `rotateY(${capAngle}deg) translateZ(${capRadius}px)`,
+            background: `linear-gradient(to bottom, rgb(${r + 20},${g + 15},${b + 10}), rgb(${r},${g},${b}))`,
+            backfaceVisibility: 'hidden',
+          }}
+        />
+      );
+    }
+    return elements;
+  }, []);
 
   return (
     <div className="tube-scene">
       <div className="tube-camera">
         <div className="tube-shadow" />
+        
         <div className="tube-container">
-          {/* Pinched Crimp Seal */}
-          <div style={{ position: 'absolute', top: 14, left: 20, width: 60, height: 6, transformStyle: 'preserve-3d', transform: 'scale3d(1.4,1,0.05)' }}>
-            {crimp}
+          {/* Top Crimped Heat-Seal */}
+          <div className="tube-crimp-seal">
+            <div className="tube-crimp-front">
+              <div className="tube-crimp-texture" />
+              <span className="tube-crimp-lot">LOT 24B • EXP 11/28</span>
+            </div>
+            <div className="tube-crimp-back">
+              <div className="tube-crimp-texture" />
+            </div>
           </div>
 
-          <div className="tube-body">{body}</div>
-          <div className="tube-shoulder-disk disk" />
+          {/* Tube Main Body Cylinder with Curved Label */}
+          <div className="tube-body-wrap">
+            {cylinderFaces}
+            {labelSlices}
+          </div>
 
-          <div className="tube-neck">{neck}</div>
-          <div className="tube-neck-bottom-disk disk" />
+          {/* Curved Shoulder Disk */}
+          <div className="tube-shoulder-disk" />
 
-          <div className="tube-cap">
-            <div className="tube-cap-bottom-disk disk" />
-            <div className="tube-cap-inner-floor disk" />
-            {capOuter}
-            {capInner}
+          {/* Threaded Neck */}
+          <div className="tube-neck-tube" />
+
+          {/* Luxury Screw/Flip Cap with animated unscrew */}
+          <div className="tube-cap-assembly">
+            <div className="tube-cap-top-disk" />
+            {capFaces}
+            <div className="tube-cap-bottom-disk" />
           </div>
         </div>
       </div>

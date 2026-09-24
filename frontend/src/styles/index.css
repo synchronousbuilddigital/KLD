@@ -2,3 +2,27 @@
 @import './tailwind.css';
 @import './theme.css';
 @import './new-home.css';
+
+/* Global Mobile Viewport Safeguards (use overflow-x: clip so scroll container is NOT hijacked from window) */
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+}
+
+/* Hide scrollbars when desired for clean mobile UI */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

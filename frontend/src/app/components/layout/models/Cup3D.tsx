@@ -14,37 +14,34 @@ function blendColor(r: number, g: number, b: number, darkness: number, highlight
 
 export default function Cup3D() {
   const f = 24;
+  const angle = 360 / f;
+  const diameterBot = 50;
+  const radius = diameterBot / 2;
+  const baseWidth = (diameterBot * Math.tan(Math.PI / f)) + 1.2;
 
   const cupBody = useMemo(() => {
     const slices = 15;
     const faces = f;
-    const diameterBot = 50;
     const diameterTop = 70;
     const height = 120;
     
     const heightPerSlice = height / slices;
-    const angle = 360 / faces;
-    const radius = diameterBot / 2;
-    const baseWidth = (diameterBot * Math.tan(Math.PI / faces)) + 1.5;
-    
     const elements = [];
     
-    for(let j=0; j<slices; j++) {
+    for (let j = 0; j < slices; j++) {
       const y = j * heightPerSlice;
       const progress = j / (slices - 1); 
-      let scaleX = 1, scaleZ = 1;
+      const scaleXZ = 1 + ((diameterTop / diameterBot) - 1) * (1 - progress);
+      const isLabel = (progress > 0.28 && progress < 0.68);
       
-      scaleX = scaleZ = 1 + ((diameterTop/diameterBot) - 1) * (1 - progress);
-      const isLabel = (progress > 0.3 && progress < 0.7);
-      
-      for(let i=0; i<faces; i++) {
+      for (let i = 0; i < faces; i++) {
         const angleRad = (i * angle) * Math.PI / 180;
         const light = Math.cos(angleRad - 0.5);
         const darkness = light < 0 ? Math.abs(light) * 0.35 : 0;
         const highlight = light > 0.85 ? (light - 0.85) * 1.5 : 0;
         
-        let r=253, g=253, b=253; 
-        if (isLabel) { r=184; g=149; b=106; } // Coffee Sleeve color
+        let r = 253, g = 253, b = 253; 
+        if (isLabel) { r = 184; g = 149; b = 106; } // Kraft sleeve
         
         elements.push(
           <div
@@ -53,28 +50,68 @@ export default function Cup3D() {
               position: 'absolute',
               width: baseWidth,
               height: heightPerSlice + 0.8,
-              left: radius - baseWidth/2,
-              transform: `translateY(${y}px) scale3d(${scaleX}, 1, ${scaleZ}) rotateY(${i * angle}deg) translateZ(${radius}px)`,
+              left: radius - baseWidth / 2,
+              transform: `translateY(${y}px) scale3d(${scaleXZ}, 1, ${scaleXZ}) rotateY(${i * angle}deg) translateZ(${radius}px)`,
               backfaceVisibility: 'hidden',
-              background: blendColor(r, g, b, darkness, highlight)
+              background: blendColor(r, g, b, darkness, highlight),
             }}
           />
         );
       }
     }
     return elements;
-  }, []);
+  }, [f, angle, diameterBot, radius, baseWidth]);
+
+  // Curved UV-mapped sleeve badge slices flush on the cup
+  const badgeSlices = useMemo(() => {
+    const badgeFaceCount = 10;
+    const badgeHeight = 44;
+    const badgeWidth = badgeFaceCount * (baseWidth * 1.15);
+    const elements = [];
+
+    for (let k = 0; k < badgeFaceCount; k++) {
+      const sliceAngle = (k - (badgeFaceCount - 1) / 2) * angle;
+
+      elements.push(
+        <div
+          key={`cup-badge-slice-${k}`}
+          className="cup-badge-slice"
+          style={{
+            width: `${baseWidth * 1.15}px`,
+            height: `${badgeHeight}px`,
+            top: '52px',
+            left: `${radius - (baseWidth * 1.15) / 2}px`,
+            transform: `rotateY(${sliceAngle}deg) translateZ(${radius * 1.25}px)`,
+          }}
+        >
+          <div
+            className="cup-badge-card"
+            style={{
+              width: `${badgeWidth}px`,
+              height: `${badgeHeight}px`,
+              left: `${-k * (baseWidth * 1.15)}px`,
+            }}
+          >
+            <span className="cup-brand-title">KLD</span>
+            <div className="cup-brand-divider" />
+            <span className="cup-brand-sub">ARTISAN ROAST</span>
+            <span className="cup-brand-extra">100% ORGANIC ARABICA</span>
+          </div>
+        </div>
+      );
+    }
+    return elements;
+  }, [angle, baseWidth, radius]);
 
   const sipSpout = useMemo(() => {
     const faces = f;
     const diameter = 14;
     const height = 8;
-    const angle = 360 / faces;
-    const radius = diameter / 2;
-    const baseWidth = (diameter * Math.tan(Math.PI / faces)) + 1.5;
+    const r = diameter / 2;
+    const bw = (diameter * Math.tan(Math.PI / faces)) + 1.2;
     const elements = [];
     
-    for(let i=0; i<faces; i++) {
+    for (let i = 0; i < faces; i++) {
       const angleRad = (i * angle) * Math.PI / 180;
       const light = Math.cos(angleRad - 0.5);
       const darkness = light < 0 ? Math.abs(light) * 0.35 : 0;
@@ -85,29 +122,28 @@ export default function Cup3D() {
           key={`spout-${i}`}
           style={{
             position: 'absolute',
-            width: baseWidth,
-            height: height,
-            left: radius - baseWidth/2,
-            transform: `rotateY(${i * angle}deg) translateZ(${radius}px)`,
+            width: bw,
+            height,
+            left: r - bw / 2,
+            transform: `rotateY(${i * angle}deg) translateZ(${r}px)`,
             backfaceVisibility: 'hidden',
-            background: blendColor(26, 26, 26, darkness, highlight * 0.4)
+            background: blendColor(26, 26, 26, darkness, highlight * 0.4),
           }}
         />
       );
     }
     return elements;
-  }, []);
+  }, [f, angle]);
 
   const cupLid = useMemo(() => {
     const faces = f;
     const diameter = 74;
     const height = 15;
-    const angle = 360 / faces;
-    const radius = diameter / 2;
-    const baseWidth = (diameter * Math.tan(Math.PI / faces)) + 1.5;
+    const r = diameter / 2;
+    const bw = (diameter * Math.tan(Math.PI / faces)) + 1.5;
     const elements = [];
     
-    for(let i=0; i<faces; i++) {
+    for (let i = 0; i < faces; i++) {
       const angleRad = (i * angle) * Math.PI / 180;
       const light = Math.cos(angleRad - 0.5);
       const darkness = light < 0 ? Math.abs(light) * 0.35 : 0;
@@ -118,68 +154,40 @@ export default function Cup3D() {
           key={`lid-${i}`}
           style={{
             position: 'absolute',
-            width: baseWidth,
-            height: height,
-            left: radius - baseWidth/2,
-            transform: `rotateY(${i * angle}deg) translateZ(${radius}px)`,
+            width: bw,
+            height,
+            left: r - bw / 2,
+            transform: `rotateY(${i * angle}deg) translateZ(${r}px)`,
             backfaceVisibility: 'hidden',
-            background: blendColor(26, 26, 26, darkness, highlight * 0.4)
+            background: blendColor(26, 26, 26, darkness, highlight * 0.4),
           }}
         />
       );
     }
     return elements;
-  }, []);
-
-  const cupLidInner = useMemo(() => {
-    const faces = f;
-    const diameter = 72;
-    const height = 15;
-    const angle = 360 / faces;
-    const radius = diameter / 2;
-    const baseWidth = (diameter * Math.tan(Math.PI / faces)) + 1.5;
-    const elements = [];
-    
-    for(let i=0; i<faces; i++) {
-      elements.push(
-        <div
-          key={`lidinner-${i}`}
-          style={{
-            position: 'absolute',
-            width: baseWidth,
-            height: height,
-            left: radius - baseWidth/2,
-            transform: `rotateY(${i * angle}deg) translateZ(${radius - 1}px) rotateY(180deg)`,
-            background: '#111'
-          }}
-        />
-      );
-    }
-    return elements;
-  }, []);
+  }, [f, angle]);
 
   return (
     <div className="cup-scene">
       <div className="cup-camera">
-        <div className="cup-shadow"></div>
+        <div className="cup-shadow" />
         <div className="cup-container">
-           <div className="cup-body">
-             {cupBody}
-           </div>
-           <div className="cup-disk cup-base-disk"></div>
-           <div className="cup-disk cup-inner-coffee"></div>
-           
-           <div className="cup-lid-wrap">
-               <div className="cup-lid">{cupLid}</div>
-               <div className="cup-lid">{cupLidInner}</div>
-               <div className="cup-disk cup-lid-top-disk"></div>
-               <div className="cup-disk cup-lid-inner-ceiling"></div>
-               
-               <div className="cup-sip-spout">
-                 {sipSpout}
-               </div>
-               <div className="cup-disk cup-spout-top-disk"></div>
-           </div>
+          <div className="cup-body">
+            {cupBody}
+            {badgeSlices}
+          </div>
+          <div className="cup-disk cup-base-disk" />
+          <div className="cup-disk cup-inner-coffee" />
+          
+          <div className="cup-lid-wrap">
+            <div className="cup-lid">{cupLid}</div>
+            <div className="cup-disk cup-lid-top-disk" />
+            
+            <div className="cup-sip-spout">
+              {sipSpout}
+            </div>
+            <div className="cup-disk cup-spout-top-disk" />
+          </div>
         </div>
       </div>
     </div>

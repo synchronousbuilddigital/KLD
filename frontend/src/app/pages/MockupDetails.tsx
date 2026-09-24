@@ -43,6 +43,10 @@ const BOX_MOCKUP_IMAGES: Record<string, { white: string; kraft: string }> = {
     white: '/images/boxes/cosmetic_b_white.jpg',
     kraft: '/images/boxes/cosmetic_b_kraft.jpg',
   },
+  button_hole: {
+    white: '/images/boxes/3_button_hole_box.svg',
+    kraft: '/images/boxes/3_button_hole_box.svg',
+  },
 };
 
 const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVariant }: any) => {
@@ -54,8 +58,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isAuto = variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock';
   const isCosmetic = variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic';
   const isCosmeticB = variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b';
-  const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB;
-  const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isCosmetic ? 'cosmetic' : 'rte');
+  const isButtonHole = variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole';
+  const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
+  const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
   const [material, setMaterial] = useState<'white' | 'kraft'>('white');
 
@@ -67,11 +72,11 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
     const isKraft = material === 'kraft';
     const cleanDefaultState = {
-      L: isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244),
-      W: isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622),
-      H: isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992),
+      L: isButtonHole ? 75 / 25.4 : (isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244)),
+      W: isButtonHole ? 75 / 25.4 : (isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622)),
+      H: isButtonHole ? 60 / 25.4 : (isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992)),
       T: 0.0197,
-      glueFlapWidth: 0.625,
+      glueFlapWidth: isButtonHole ? 16 / 25.4 : 0.625,
       bleed: 2 / 25.4,
       sizeMode: "manufacture",
       materialType: isKraft ? "corrugated" : "paperboard",
@@ -81,10 +86,10 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       materialCategory: isKraft ? "kraft_cardboard" : "white_paperboard",
       packageColor: null,
       insideColor: null,
-      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [] }
+      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [] }
     };
 
-    const targetModel = variant.boxModelKey || (isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isCosmetic ? 'cosmetic' : 'rte');
+    const targetModel = variant.boxModelKey || (isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
     useBoxStore.setState({ 
       boxModel: targetModel, 
@@ -237,7 +242,10 @@ const ensureBoxMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
       const defaultVariants = defaultBoxCategory?.variants || [];
       const currentVariants = [...(cat.variants || [])];
       for (const defV of defaultVariants) {
-        const exists = currentVariants.some(v => v.boxModelKey === defV.boxModelKey || (v.name && v.name.toLowerCase().includes('cosmetic box b')));
+        const exists = currentVariants.some(v => 
+          (v.boxModelKey && defV.boxModelKey && v.boxModelKey === defV.boxModelKey) ||
+          (v.name && defV.name && v.name.toLowerCase().trim() === defV.name.toLowerCase().trim())
+        );
         if (!exists) {
           currentVariants.push(defV);
         }

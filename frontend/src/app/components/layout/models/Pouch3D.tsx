@@ -1,101 +1,73 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import './Pouch3D.css';
 
-function blendColor(r: number, g: number, b: number, darkness: number, highlight: number) {
-  let rr = r, gg = g, bb = b;
-  if (darkness > 0) { rr *= (1 - darkness); gg *= (1 - darkness); bb *= (1 - darkness); }
-  if (highlight > 0) { rr += (255 - rr) * highlight; gg += (255 - gg) * highlight; bb += (255 - bb) * highlight; }
-  return `rgb(${Math.round(rr)},${Math.round(gg)},${Math.round(bb)})`;
-}
-
 export default function Pouch3D() {
-  const f = 24;
-
-  const pouchBody = useMemo(() => {
-    const slices = 15;
-    const faces = f;
-    const width = 100; // Wider base
-    const depth = 45;
-    const height = 130;
-    
-    const heightPerSlice = height / slices;
-    const angle = 360 / faces;
-    const radius = width / 2;
-    const baseWidth = (width * Math.tan(Math.PI / faces)) + 1.5;
-    
-    const elements = [];
-    
-    for(let j=0; j<slices; j++) {
-      const y = j * heightPerSlice;
-      const progress = j / (slices - 1); 
-      
-      // The width stays exactly the same from base to opening (straight left and right edges)
-      const scaleX = 1; 
-      // Pinch Z from `depth / width` down to almost 0 at the top (wide base, flat opening)
-      const scaleZ = (depth / width) * (1 - Math.pow(progress, 1.2) * 0.95);
-      
-      const isLabel = (progress > 0.25 && progress < 0.75);
-      
-      for(let i=0; i<faces; i++) {
-        const angleRad = (i * angle) * Math.PI / 180;
-        const light = Math.cos(angleRad - 0.5);
-        const darkness = light < 0 ? Math.abs(light) * 0.25 : 0;
-        const highlight = light > 0.85 ? (light - 0.85) * 1.5 : 0;
-        
-        // Pouch color: warm kraft/off-white
-        let r=245, g=240, b=232; 
-        if (isLabel) { r=184; g=149; b=106; }
-        
-        elements.push(
-          <div
-            key={`body-${j}-${i}`}
-            style={{
-              position: 'absolute',
-              width: baseWidth,
-              height: heightPerSlice + 1.5,
-              left: radius - baseWidth/2,
-              transform: `translateY(${y}px) scale3d(${scaleX}, 1, ${scaleZ}) rotateY(${i * angle}deg) translateZ(${radius}px)`,
-              backfaceVisibility: 'hidden',
-              background: blendColor(r, g, b, darkness, highlight)
-            }}
-          />
-        );
-      }
-    }
-    return elements;
-  }, []);
-
   return (
     <div className="pouch-scene">
       <div className="pouch-camera">
-        <div className="pouch-shadow"></div>
-        <div className="pouch-container">
-           <div className="pouch-body">
-             {pouchBody}
-             
-             {/* Zipper Seal */}
-             <div style={{ position: 'absolute', top: -4, left: 0, width: 100, height: 8, transformStyle: 'preserve-3d' }}>
-               <div style={{ position: 'absolute', width: 100, height: 8, background: '#555', transform: 'translateZ(2px)' }} />
-               <div style={{ position: 'absolute', width: 100, height: 8, background: '#333', transform: 'translateZ(-2px) rotateY(180deg)' }} />
-               <div style={{ position: 'absolute', width: 100, height: 4, top: -2, background: '#777', transform: 'rotateX(90deg)' }} />
-               
-               {/* Zipper Pull Tab */}
-               <div className="pouch-zipper-pull"></div>
-             </div>
+        <div className="pouch-shadow" />
 
-             {/* Bottom Base Disk to close the hole */}
-             <div style={{
-               position: 'absolute',
-               top: 130 - 50,
-               left: 0,
-               width: 100,
-               height: 100,
-               background: '#d4ceb8',
-               borderRadius: '50%',
-               transform: `rotateX(-90deg) scaleY(${45 / 100})`,
-               backfaceVisibility: 'hidden'
-             }}></div>
-           </div>
+        <div className="pouch-container">
+          {/* Main Stand-up Pouch Assembly */}
+          <div className="pouch-body-wrap">
+            {/* Top Heat-Seal Bar with Tear Notches & Zipper */}
+            <div className="pouch-top-seal">
+              <div className="pouch-tear-notch pouch-tear-left" />
+              <div className="pouch-tear-notch pouch-tear-right" />
+              <div className="pouch-seal-pattern" />
+              <div className="pouch-zipper-track" />
+            </div>
+
+            {/* Front Panel (Curved 3D feel with side heat-seals) */}
+            <div className="pouch-panel pouch-panel-front">
+              <div className="pouch-side-seal pouch-seal-left" />
+              <div className="pouch-side-seal pouch-seal-right" />
+
+              {/* Degassing Valve Indicator */}
+              <div className="pouch-valve">
+                <div className="pouch-valve-core" />
+              </div>
+
+              {/* Front Label Artwork */}
+              <div className="pouch-label-art">
+                <span className="pouch-brand-origin">ORIGIN RESERVE</span>
+                <div className="pouch-brand-divider" />
+                <h3 className="pouch-brand-title">KLD COFFEE</h3>
+                <span className="pouch-brand-sub">SINGLE ORIGIN ETHIOPIA</span>
+                
+                <div className="pouch-notes-box">
+                  <span>JASMINE • BERGAMOT • PEACH</span>
+                </div>
+
+                <div className="pouch-label-bottom">
+                  <span>WHOLE BEAN</span>
+                  <span>250G / 8.8 OZ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Back Panel */}
+            <div className="pouch-panel pouch-panel-back">
+              <div className="pouch-side-seal pouch-seal-left" />
+              <div className="pouch-side-seal pouch-seal-right" />
+
+              <div className="pouch-back-art">
+                <h5 className="pouch-back-heading">ROASTER'S NOTES</h5>
+                <p className="pouch-back-text">
+                  Hand-harvested at 2,000m elevation. Nitrogen-flushed valve packaging preserves maximum aromatics.
+                </p>
+                <div className="pouch-back-cert">
+                  <span>FAIR TRADE CERTIFIED</span>
+                  <span>100% ARABICA</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Gusset (Expands inward, giving the authentic 3D pouch depth) */}
+            <div className="pouch-bottom-gusset">
+              <div className="pouch-gusset-crease" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

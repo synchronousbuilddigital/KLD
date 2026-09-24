@@ -578,12 +578,20 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
   let cx = 0, cy = 0, rotZ = 0, scaleX = 1, scaleY_sign = 1;
   let scaleY = H / manuH;
 
-  // Normalize human-readable panel names to Three.js mesh panel keys
+  // Normalize human-readable and dieline-generator panel names to Three.js mesh panel keys
   let panel = panelInput;
   if (panelInput === "Front") panel = "p1";
   else if (panelInput === "Back") panel = "p3";
   else if (panelInput === "Right") panel = "p2";
   else if (panelInput === "Left") panel = "p4";
+  else if (panelInput === "top-cover") panel = "p1_top_cover";
+  else if (panelInput === "top-tuck") panel = "p1_top_lip";
+  else if (panelInput === "top-dust-1") panel = "p2_top_dust";
+  else if (panelInput === "top-dust-2") panel = "p4_top_dust";
+  else if (panelInput === "bot-lock-1") panel = "p1_bot_auto";
+  else if (panelInput === "bot-lock-2") panel = "p2_bot_auto";
+  else if (panelInput === "bot-lock-3") panel = "p3_bot_auto";
+  else if (panelInput === "bot-lock-4") panel = "p4_bot_auto";
 
   const { x1, x2, x3, x4, x5, yTop, yBot } = dims || {};
   const nT = Math.max(0.015, Number(T) || 0.0197);
@@ -641,8 +649,26 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   else if (normDecalPanel === "Back") normDecalPanel = "p3";
   else if (normDecalPanel === "Right") normDecalPanel = "p2";
   else if (normDecalPanel === "Left") normDecalPanel = "p4";
+  else if (normDecalPanel === "top-cover") normDecalPanel = "p1_top_cover";
+  else if (normDecalPanel === "top-tuck") normDecalPanel = "p1_top_lip";
+  else if (normDecalPanel === "top-dust-1") normDecalPanel = "p2_top_dust";
+  else if (normDecalPanel === "top-dust-2") normDecalPanel = "p4_top_dust";
+  else if (normDecalPanel === "bot-lock-1") normDecalPanel = "p1_bot_auto";
+  else if (normDecalPanel === "bot-lock-2") normDecalPanel = "p2_bot_auto";
+  else if (normDecalPanel === "bot-lock-3") normDecalPanel = "p3_bot_auto";
+  else if (normDecalPanel === "bot-lock-4") normDecalPanel = "p4_bot_auto";
 
-  if (normDecalPanel && normDecalPanel !== panel) {
+  let normPanel = panel;
+  if (normPanel === "top-cover") normPanel = "p1_top_cover";
+  else if (normPanel === "top-tuck") normPanel = "p1_top_lip";
+  else if (normPanel === "top-dust-1") normPanel = "p2_top_dust";
+  else if (normPanel === "top-dust-2") normPanel = "p4_top_dust";
+  else if (normPanel === "bot-lock-1") normPanel = "p1_bot_auto";
+  else if (normPanel === "bot-lock-2") normPanel = "p2_bot_auto";
+  else if (normPanel === "bot-lock-3") normPanel = "p3_bot_auto";
+  else if (normPanel === "bot-lock-4") normPanel = "p4_bot_auto";
+
+  if (normDecalPanel && normDecalPanel !== normPanel) {
     return null;
   }
 
@@ -678,27 +704,48 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   const isInside    = decal.surface === "Inside";
   let   rotY        = 0;
   let   finalDecalW = decalW;
-  if (isInside) { rotY = Math.PI; finalDecalW = -decalW; }
+  if (isInside) {
+    rotY = Math.PI;
+    if (!isFlatGeometry) {
+      finalDecalW = -decalW;
+    }
+  }
 
   const nT = Math.max(0.015, Number(T) || 0.0197);
-  const depth = nT * 0.1; // Restrict projection depth so it only intersects the very surface
-  const zPos  = isFlatGeometry ? (isInside ? -nT : 0) : (isInside ? 0 : nT);
+  const depth = isFlatGeometry ? Math.max(0.015, nT) : nT * 0.1;
+  const zPos  = isFlatGeometry ? 0 : (isInside ? 0 : nT);
 
   return (
-    <Decal position={[cx, cy, zPos]} rotation={[0, rotY, rotZ]} scale={[finalDecalW, decalH, depth]} renderOrder={index + 1}>
+    <Decal
+      position={[cx, cy, zPos]}
+      rotation={[0, rotY, rotZ]}
+      scale={[finalDecalW, decalH, depth]}
+      renderOrder={index + 1}
+      depthTest={true}
+      polygonOffsetFactor={-(index + 1) * 2}
+    >
       <meshStandardMaterial
-        map={texture} transparent depthTest depthWrite={false}
-        roughness={0.4} metalness={0.1}
-        polygonOffset polygonOffsetFactor={-(index + 1)} 
+        map={texture}
+        transparent
+        depthTest={true}
+        depthWrite={false}
+        roughness={0.4}
+        metalness={0.1}
+        polygonOffset={true}
+        polygonOffsetFactor={-(index + 1) * 2}
+        polygonOffsetUnits={-2}
         side={THREE.FrontSide}
+        customProgramCacheKey={() => (clipMask && clipMask.tex ? `clipMask-${clipMask.totalW || 387.9}` : 'no-clipMask')}
         onBeforeCompile={(shader) => {
           if (clipMask && clipMask.tex) {
             shader.uniforms.maskTex = { value: clipMask.tex };
             
-            const u0 = clipMask.sx / 387.9;
-            const u1 = (clipMask.sx + clipMask.sw) / 387.9;
-            const v1 = 1.0 - (clipMask.sy / 295.25);
-            const v0 = 1.0 - ((clipMask.sy + clipMask.sh) / 295.25);
+            const totalW = clipMask.totalW || 387.9;
+            const totalH = clipMask.totalH || 295.25;
+            const u0 = clipMask.sx / totalW;
+            const u1 = (clipMask.sx + clipMask.sw) / totalW;
+            const v1 = 1.0 - (clipMask.sy / totalH);
+            const v0 = 1.0 - ((clipMask.sy + clipMask.sh) / totalH);
             
             shader.uniforms.maskBox = { value: new THREE.Vector4(clipMask.px, clipMask.py, clipMask.w, clipMask.h) };
             shader.uniforms.maskUVBox = { value: new THREE.Vector4(u0, u1, v0, v1) };
@@ -760,20 +807,20 @@ export function getOverlappingDecals(panel, decals, dims, W, T) {
     if (panel === "p2")           return ov(d, x2, x3, yTop, yBot);
     if (panel === "p3")           return ov(d, x3, x4, yTop, yBot);
     if (panel === "p4")           return ov(d, x4, x5, yTop, yBot);
-    if (panel === "p1_top_cover") return ov(d, x1, x2, yTop - coverDepth, yTop);
-    if (panel === "p1_top_lip")   return ov(d, x1, x2, yTop - coverDepth - lipDepth, yTop - coverDepth);
+    if (panel === "p1_top_cover" || panel === "top-cover") return ov(d, x1, x2, yTop - coverDepth, yTop);
+    if (panel === "p1_top_lip"   || panel === "top-tuck")  return ov(d, x1, x2, yTop - coverDepth - lipDepth, yTop - coverDepth);
     if (panel === "p3_top_cover") return ov(d, x3, x4, yTop - coverDepth, yTop);
     if (panel === "p3_top_lip")   return ov(d, x3, x4, yTop - coverDepth - lipDepth, yTop - coverDepth);
     if (panel === "p3_bot_cover") return ov(d, x3, x4, yBot, yBot + coverDepth);
     if (panel === "p3_bot_lip")   return ov(d, x3, x4, yBot + coverDepth, yBot + coverDepth + lipDepth);
-    if (panel === "p2_top_dust")  return ov(d, x2, x3, yTop - dustH, yTop);
+    if (panel === "p2_top_dust"  || panel === "top-dust-1") return ov(d, x2, x3, yTop - dustH, yTop);
     if (panel === "p2_bot_dust")  return ov(d, x2, x3, yBot, yBot + dustH);
-    if (panel === "p4_top_dust")  return ov(d, x4, x5, yTop - dustH, yTop);
+    if (panel === "p4_top_dust"  || panel === "top-dust-2") return ov(d, x4, x5, yTop - dustH, yTop);
     if (panel === "p4_bot_dust")  return ov(d, x4, x5, yBot, yBot + dustH);
-    if (panel === "p1_bot_auto")  return ov(d, x1, x2, yBot, yBot + W * 0.75);
-    if (panel === "p2_bot_auto")  return ov(d, x2, x3, yBot, yBot + W * 0.75);
-    if (panel === "p3_bot_auto")  return ov(d, x3, x4, yBot, yBot + W * 0.75);
-    if (panel === "p4_bot_auto")  return ov(d, x4, x5, yBot, yBot + W * 0.75);
+    if (panel === "p1_bot_auto"  || panel === "bot-lock-1") return ov(d, x1, x2, yBot, yBot + W * 0.75);
+    if (panel === "p2_bot_auto"  || panel === "bot-lock-2") return ov(d, x2, x3, yBot, yBot + W * 0.75);
+    if (panel === "p3_bot_auto"  || panel === "bot-lock-3") return ov(d, x3, x4, yBot, yBot + W * 0.75);
+    if (panel === "p4_bot_auto"  || panel === "bot-lock-4") return ov(d, x4, x5, yBot, yBot + W * 0.75);
     if (panel === "p1_glue")      return ov(d, x1 - W * (16 / 60), x1, yTop, yBot);
 
     if (panel === "p1_top_sec1") return ov(d, x1, x2, yTop - sec1L, yTop);

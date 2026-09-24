@@ -123,12 +123,12 @@ export default function ElasticFooter() {
               </div>
 
               {/* Right Columns (Links) */}
-              <div className="md:col-span-4 grid grid-cols-3 gap-4 lg:gap-6">
+              <div className="md:col-span-4 grid grid-cols-2 sm:grid-cols-3 gap-6 lg:gap-6 mt-6 md:mt-0">
                 
                 {/* Product */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <h4 className="text-zinc-900 font-bold tracking-wider text-xs uppercase">Product</h4>
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-2 sm:gap-2.5">
                     {['3D Generator', 'Dieline Library', 'Folding Studio', 'Material Engine', 'Print Optimizer'].map(link => (
                       <a 
                         key={link} 
@@ -139,7 +139,7 @@ export default function ElasticFooter() {
                             window.dispatchEvent(new CustomEvent('navigate', { detail: 'library' }));
                           }
                         }}
-                        className="text-zinc-500 hover:text-zinc-900 font-normal transition-colors text-sm flex items-center gap-1 group cursor-pointer"
+                        className="text-zinc-500 hover:text-zinc-900 font-normal transition-colors text-xs sm:text-sm flex items-center gap-1 group cursor-pointer"
                       >
                         <span>{link}</span>
                       </a>
@@ -148,9 +148,9 @@ export default function ElasticFooter() {
                 </div>
 
                 {/* Resources */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 sm:gap-4">
                   <h4 className="text-zinc-900 font-bold tracking-wider text-xs uppercase">Resources</h4>
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-2 sm:gap-2.5">
                     {['Help Center', 'Dieline Templates', 'CAD Guidelines', 'Material Specs', 'API Documentation'].map(link => (
                       <a 
                         key={link} 
@@ -161,7 +161,7 @@ export default function ElasticFooter() {
                             window.dispatchEvent(new CustomEvent('navigate', { detail: 'library' }));
                           }
                         }}
-                        className="text-zinc-500 hover:text-zinc-900 font-normal transition-colors text-sm flex items-center gap-1 group cursor-pointer"
+                        className="text-zinc-500 hover:text-zinc-900 font-normal transition-colors text-xs sm:text-sm flex items-center gap-1 group cursor-pointer"
                       >
                         <span>{link}</span>
                       </a>
@@ -170,11 +170,11 @@ export default function ElasticFooter() {
                 </div>
 
                 {/* Company */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 sm:gap-4 col-span-2 sm:col-span-1">
                   <h4 className="text-zinc-900 font-bold tracking-wider text-xs uppercase">Company</h4>
-                  <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-col gap-2 sm:gap-2.5">
                     {['About Us', 'Pricing Plans', 'Careers', 'Privacy Policy', 'Terms of Service'].map(link => (
-                      <a key={link} href="#" className="text-zinc-500 hover:text-zinc-900 font-normal transition-colors text-sm flex items-center gap-1 group">
+                      <a key={link} href="#" className="text-zinc-500 hover:text-zinc-900 font-normal transition-colors text-xs sm:text-sm flex items-center gap-1 group">
                         <span>{link}</span>
                       </a>
                     ))}
@@ -183,17 +183,13 @@ export default function ElasticFooter() {
 
               </div>
             </div>
-                
-
-                
-
 
             {/* Bottom Section */}
-            <div className="border-t border-zinc-200/80 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="border-t border-zinc-200/80 mt-10 sm:mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
               <p className="text-zinc-400 font-normal text-xs">
                 &copy; {new Date().getFullYear()} Keyline Design Inc. All rights reserved. Precision Packaging CAD & Prototyping.
               </p>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
                 {['Security', 'Status', 'Contact Support', 'Cookie Settings'].map(link => (
                   <a key={link} href="#" className="text-zinc-400 hover:text-zinc-700 font-normal transition-colors text-xs">
                     {link}

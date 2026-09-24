@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
-const PackagingModel = require('../models/PackagingModel');
+const CatalogItem = require('../models/CatalogItem');
 
 const initialModels = [
   {
-    modelId: 'box-mockups',
+    itemId: 'box-mockups',
     title: 'Box Mockups',
     subtitle: 'Straight & Reverse Tuck Folding Boxes',
     img: '/images/catalog/box-mockups.png',
@@ -15,7 +15,7 @@ const initialModels = [
     order: 1,
   },
   {
-    modelId: 'pouch-bag-mockups',
+    itemId: 'pouch-bag-mockups',
     title: 'Pouch / Bag Mockups',
     subtitle: 'Stand-Up Foil Pouches & Kraft Bags',
     img: '/images/catalog/pouch-bag-mockups.png',
@@ -26,7 +26,7 @@ const initialModels = [
     order: 2,
   },
   {
-    modelId: 'bottle-mockups',
+    itemId: 'bottle-mockups',
     title: 'Bottle Mockups',
     subtitle: 'Beverage, Essential Oil & Wine Bottles',
     img: '/images/catalog/bottle-mockups.png',
@@ -37,7 +37,7 @@ const initialModels = [
     order: 3,
   },
   {
-    modelId: 'can-mockups',
+    itemId: 'can-mockups',
     title: 'Can Mockups',
     subtitle: 'Sleek & Standard Aluminum Drink Cans',
     img: '/images/catalog/can-mockups.png',
@@ -48,7 +48,7 @@ const initialModels = [
     order: 4,
   },
   {
-    modelId: 'tube-mockups',
+    itemId: 'tube-mockups',
     title: 'Tube Mockups',
     subtitle: 'Cosmetic & Skincare Squeeze Tubes',
     img: '/images/catalog/tube-mockups.png',
@@ -59,7 +59,7 @@ const initialModels = [
     order: 5,
   },
   {
-    modelId: 'cup-container-mockups',
+    itemId: 'cup-container-mockups',
     title: 'Cup / Container Mockups',
     subtitle: 'Eco Paper Coffee Cups & Tubs',
     img: '/images/catalog/cup-container-mockups.png',
@@ -70,7 +70,7 @@ const initialModels = [
     order: 6,
   },
   {
-    modelId: 'food-packaging-mockups',
+    itemId: 'food-packaging-mockups',
     title: 'Food Packaging Mockups',
     subtitle: 'Takeout, Noodle & Fast Food Boxes',
     img: '/images/catalog/food-packaging-mockups.png',
@@ -81,7 +81,7 @@ const initialModels = [
     order: 7,
   },
   {
-    modelId: 'water-bottle-mockups',
+    itemId: 'water-bottle-mockups',
     title: 'Water Bottle Mockups',
     subtitle: 'Sport PET & Mineral Water Bottles',
     img: '/images/catalog/water-bottle-mockups.png',
@@ -92,7 +92,7 @@ const initialModels = [
     order: 8,
   },
   {
-    modelId: 'gift-box-mockups',
+    itemId: 'gift-box-mockups',
     title: 'Gift Box Mockups',
     subtitle: 'Rigid Luxury & Magnetic Lid Boxes',
     img: '/images/catalog/gift-box-mockups.png',
@@ -103,7 +103,7 @@ const initialModels = [
     order: 9,
   },
   {
-    modelId: 'paper-bag-mockups',
+    itemId: 'paper-bag-mockups',
     title: 'Paper Bag Mockups',
     subtitle: 'Retail Shopping Bags with Handles',
     img: '/images/catalog/paper-bag-mockups.png',
@@ -112,28 +112,6 @@ const initialModels = [
     tag: 'Retail & Gift',
     isFeatured: false,
     order: 10,
-  },
-  {
-    modelId: 'pizza-packaging-mockups',
-    title: 'Pizza Packaging Mockups',
-    subtitle: 'E-Flute Corrugated Folding Pizza Boxes',
-    img: '/images/catalog/pizza-packaging-mockups.png',
-    group: 'boxes',
-    badge: '',
-    tag: 'E-Flute Kraft',
-    isFeatured: false,
-    order: 11,
-  },
-  {
-    modelId: 'supplement-bottle-mockups',
-    title: 'Supplement Bottle Mockups',
-    subtitle: 'Pharma & Vitamin Pill Containers',
-    img: '/images/catalog/supplement-bottle-mockups.png',
-    group: 'bottles',
-    badge: '',
-    tag: 'Pharma Grade',
-    isFeatured: false,
-    order: 12,
   },
 ];
 
@@ -149,8 +127,8 @@ async function seedModels() {
     console.log('✅ Connected to MongoDB for seeding models...');
 
     for (const model of initialModels) {
-      await PackagingModel.findOneAndUpdate(
-        { modelId: model.modelId },
+      await CatalogItem.findOneAndUpdate(
+        { itemId: model.itemId },
         model,
         { upsert: true, new: true }
       );

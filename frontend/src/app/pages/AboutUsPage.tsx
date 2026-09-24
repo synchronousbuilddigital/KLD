@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Header from '../components/layout/Header';
 import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import CinematicAbout from '../components/about/CinematicAbout';
@@ -13,15 +14,21 @@ export default function AboutUsPage({ onNavigate }: AboutUsPageProps) {
     window.scrollTo(0, 0);
     document.body.style.zoom = '1';
     document.body.style.width = '100%';
-    document.body.style.overflowX = 'hidden';
+    
+    // Refresh GSAP ScrollTrigger after layout settles
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 150);
+
     return () => {
+      clearTimeout(timer);
       document.body.style.zoom = '';
       document.body.style.width = '';
     };
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#FAF8F4] text-zinc-900 font-sans antialiased overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#FAF8F4] text-zinc-900 font-sans antialiased">
       <BackgroundCanvas position="fixed" zIndex={0} />
       <Header activeNav="about" onNavigate={onNavigate} />
       <div className="relative z-10">

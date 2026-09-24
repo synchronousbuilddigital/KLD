@@ -7,6 +7,13 @@
     overflow-y: visible;
     transform: translateY(-80px);
     z-index: 100;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.marquee-section.is-dragging {
+    cursor: grabbing;
 }
 
 .marquee-container {
@@ -17,18 +24,16 @@
     transform: translateZ(0);
 }
 
+.marquee-section:hover .marquee-container,
 .marquee-container:hover,
 .marquee-container.paused {
-    animation-play-state: paused;
+    animation-play-state: paused !important;
 }
-
-
 
 @keyframes scroll {
     0% {
         transform: translateX(0);
     }
-
     100% {
         transform: translateX(-50%);
     }
@@ -76,7 +81,7 @@
 .marquee-thumb img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

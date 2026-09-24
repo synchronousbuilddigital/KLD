@@ -9,6 +9,7 @@ import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
 import { generateCosmeticBoxBDieline } from "../../lib/cosmeticBoxBDielineGenerator";
+import { generateButtonHoleDieline } from "../../lib/buttonHoleDielineGenerator";
 import { generateDXFString } from "../../lib/exportUtils";
 import { Printer, Sparkles } from "lucide-react";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
@@ -108,6 +109,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       currentModel === 'te' ? 'Straight Tuck End Box' :
       currentModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
       currentModel === 'cosmetic_b' ? 'Cosmetic Box B (Mailer/Tray Style)' :
+      currentModel === 'button_hole' ? 'Button Hole Box' :
       currentModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 
     const dimL_mm = Math.round((store.L || 4.72) * 25.4);
@@ -229,6 +231,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
       else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
       else if (store.boxModel === "cosmetic_b") dielineData = generateCosmeticBoxBDieline(params);
+      else if (store.boxModel === "button_hole") dielineData = generateButtonHoleDieline(params);
       else dielineData = generateRTEDielineDXF(params);
       
       const dxfString = generateDXFString(dielineData);

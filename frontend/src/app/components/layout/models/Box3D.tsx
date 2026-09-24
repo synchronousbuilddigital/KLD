@@ -1,4 +1,5 @@
 import React from 'react';
+import './Box3D.css';
 
 export type BoxState = 'closed' | 'open' | 'flat';
 
@@ -7,169 +8,282 @@ interface Props {
   type: string;
 }
 
-/* Color palette per box type */
-function getColors(type: string) {
-  switch (type) {
-    case 'Gift Box':
-      return { bg: '#2e2e2e', border: '#444', accent: '#B8956A', inner: '#3a3a3a' };
-    case 'Pizza Box':
-      return { bg: '#d4a76a', border: '#b8864a', accent: '#8B4513', inner: '#e8c494' };
-    case 'Paper Bag':
-      return { bg: '#c9a87c', border: '#a88960', accent: '#7a6040', inner: '#ddc4a0' };
-    case 'Pouch':
-      return { bg: '#f5f0e8', border: '#d4c8b4', accent: '#B8956A', inner: '#faf7f2' };
-    case 'Tuck End':
-    default:
-      return { bg: '#C89A63', border: '#B58556', accent: '#8B6A3E', inner: '#ddb882' };
-  }
-}
+export default function Box3D({ boxState }: Props) {
+  // Proportions for Mailer Box (Roll-End Tuck-Top)
+  const W = 160; // Width
+  const D = 120; // Depth
+  const H = 46;  // Height
+  const F = 20;  // Flap depth
+  const E = 20;  // Ear width
 
-export default function Box3D({ boxState, type }: Props) {
-  const W = 200, D = 150, H = 80, F = 25, E = 25;
-  const colors = getColors(type);
+  const isFlat = boxState === 'flat';
+  const isOpen = boxState === 'open';
 
-  const getTransforms = (state: BoxState) => {
-    switch (state) {
-      case 'flat':
-        return {
-          back: 'rotateX(0deg)',
-          topLid: 'rotateX(0deg)',
-          lidFlap: 'rotateX(0deg)',
-          lidLeftEar: 'rotateY(0deg)',
-          lidRightEar: 'rotateY(0deg)',
-          front: 'rotateX(0deg)',
-          frontFlap: 'rotateX(0deg)',
-          left: 'rotateY(0deg)',
-          leftFlapBack: 'rotateX(0deg)',
-          leftFlapFront: 'rotateX(0deg)',
-          right: 'rotateY(0deg)',
-          rightFlapBack: 'rotateX(0deg)',
-          rightFlapFront: 'rotateX(0deg)'
-        };
-      case 'open':
-        return {
-          back: 'rotateX(-90deg)',
-          topLid: 'rotateX(15deg)',
-          lidFlap: 'rotateX(0deg)',
-          lidLeftEar: 'rotateY(0deg)',
-          lidRightEar: 'rotateY(0deg)',
-          front: 'rotateX(90deg)',
-          frontFlap: 'rotateX(90deg)',
-          left: 'rotateY(90deg)',
-          leftFlapBack: 'rotateX(90deg)',
-          leftFlapFront: 'rotateX(90deg)',
-          right: 'rotateY(-90deg)',
-          rightFlapBack: 'rotateX(90deg)',
-          rightFlapFront: 'rotateX(90deg)'
-        };
-      case 'closed':
-      default:
-        return {
-          back: 'rotateX(-90deg)',
-          topLid: 'rotateX(90deg)',
-          lidFlap: 'rotateX(90deg) translateZ(1.5px)',
-          lidLeftEar: 'rotateY(-90deg)',
-          lidRightEar: 'rotateY(90deg)',
-          front: 'rotateX(90deg)',
-          frontFlap: 'rotateX(90deg)',
-          left: 'rotateY(90deg)',
-          leftFlapBack: 'rotateX(90deg)',
-          leftFlapFront: 'rotateX(90deg)',
-          right: 'rotateY(-90deg)',
-          rightFlapBack: 'rotateX(90deg)',
-          rightFlapFront: 'rotateX(90deg)'
-        };
-    }
-  };
-
-  const t = getTransforms(boxState);
-
-  const face = (
-    w: number, h: number,
-    pos: React.CSSProperties,
-    hinge: string,
-    transform: string,
-    isInner?: boolean,
-    children?: React.ReactNode
-  ): React.ReactNode => (
-    <div
-      style={{
-        position: 'absolute',
-        width: w,
-        height: h,
-        transformOrigin: hinge,
-        transform,
-        transformStyle: 'preserve-3d',
-        transition: 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        backgroundColor: isInner ? colors.inner : colors.bg,
-        border: `1px solid ${colors.border}`,
-        boxShadow: `inset 0 0 12px rgba(0,0,0,0.12)`,
-        borderRadius: '2px',
-        ...pos,
-      }}
-    >
-      {children}
-    </div>
-  );
+  // Staggered transitions for realistic physical assembly sequence
+  const wallTransition = 'transform 1.0s cubic-bezier(0.25, 1, 0.5, 1)';
+  const lidTransition = isFlat 
+    ? 'transform 1.0s cubic-bezier(0.25, 1, 0.5, 1) 0.1s' 
+    : 'transform 1.2s cubic-bezier(0.25, 1, 0.5, 1)';
+  const flapTransition = isOpen
+    ? 'transform 1.1s cubic-bezier(0.2, 0.9, 0.3, 1) 0.18s'
+    : 'transform 0.9s cubic-bezier(0.25, 1, 0.5, 1)';
 
   return (
-    <div style={{
-      width: W, height: D,
-      position: 'relative',
-      transformStyle: 'preserve-3d',
-      transform: 'rotateX(60deg) rotateZ(-30deg)',
-      transition: 'transform 0.6s ease'
-    }}>
-      {/* Bottom */}
-      <div style={{
-        position: 'absolute',
-        width: '100%', height: '100%',
-        transformStyle: 'preserve-3d',
-        backgroundColor: colors.inner,
-        border: `1px solid ${colors.border}`,
-        boxShadow: 'inset 0 0 12px rgba(0,0,0,0.12)',
-        borderRadius: '2px',
-      }}>
-        {/* Back wall */}
-        {face(W, H, { top: -H }, 'bottom center', t.back, false,
-          <>
-            {/* Top lid */}
-            {face(W, D, { top: -D }, 'bottom center', t.topLid, false,
-              <>
-                {/* Lid flap */}
-                {face(W, F, { top: -F }, 'bottom center', t.lidFlap, true)}
-                {/* Lid left ear */}
-                {face(E, D, { left: -E, top: 0 }, 'right center', t.lidLeftEar, true)}
-                {/* Lid right ear */}
-                {face(E, D, { right: -E, top: 0 }, 'left center', t.lidRightEar, true)}
-              </>
-            )}
-          </>
-        )}
+    <div className="box3d-scene">
+      <div className="box3d-camera">
+        {/* Soft floor shadow */}
+        <div 
+          className={`box3d-shadow ${isOpen ? 'box3d-shadow--open' : ''} ${isFlat ? 'box3d-shadow--flat' : ''}`} 
+        />
 
-        {/* Front wall */}
-        {face(W, H, { top: D }, 'top center', t.front, false,
-          <>
-            {/* Front flap */}
-            {face(W, F, { top: H }, 'top center', t.frontFlap, true)}
-          </>
-        )}
+        {/* 1. Bottom Floor of Box (Anchor of hierarchy) */}
+        <div
+          className="box3d-face box3d-face--inner"
+          style={{
+            width: `${W}px`,
+            height: `${D}px`,
+            left: 0,
+            top: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* Inner Floor Stamp */}
+          <div className="box3d-inner-stamp">
+            KLD • PACKAGING
+          </div>
 
-        {/* Left wall */}
-        {face(H, D, { left: -H, top: 0 }, 'right center', t.left, false,
-          <>
-            {face(H, F, { top: -F }, 'bottom center', t.leftFlapBack, true)}
-            {face(H, F, { top: D }, 'top center', t.leftFlapFront, true)}
-          </>
-        )}
+          {/* 2. Rear Wall (Hinged at top of bottom floor) */}
+          <div
+            className="box3d-face box3d-face--inner"
+            style={{
+              width: `${W}px`,
+              height: `${H}px`,
+              left: 0,
+              top: `-${H}px`,
+              transformOrigin: 'bottom center',
+              transform: isFlat ? 'rotateX(0deg)' : 'rotateX(-90deg)',
+              transition: wallTransition,
+            }}
+          >
+            {/* 3. Top Hinged Lid (Hinged at top of rear wall) */}
+            <div
+              className="box3d-face"
+              style={{
+                width: `${W}px`,
+                height: `${D}px`,
+                left: 0,
+                top: `-${D}px`,
+                transformOrigin: 'bottom center',
+                transform: isFlat 
+                  ? 'rotateX(0deg)' 
+                  : isOpen 
+                    ? 'rotateX(28deg)' 
+                    : 'rotateX(-90deg)',
+                transition: lidTransition,
+              }}
+            >
+              {/* Outer Lid Branding (Right-side up facing viewer when closed) */}
+              <div className="box3d-lid-art">
+                <div className="box3d-organic-shape" />
+                <div className="box3d-organic-shape-2" />
+                <span className="box3d-brand-logo">KLD</span>
+                <span className="box3d-brand-subtitle">PACKAGING</span>
+                <span className="box3d-brand-detail">SUSTAINABLE MAILER</span>
+              </div>
 
-        {/* Right wall */}
-        {face(H, D, { right: -H, top: 0 }, 'left center', t.right, false,
-          <>
-            {face(H, F, { top: -F }, 'bottom center', t.rightFlapBack, true)}
-            {face(H, F, { top: D }, 'top center', t.rightFlapFront, true)}
-          </>
-        )}
+              {/* Inner Lid Custom Unboxing Greeting (Visible when opened) */}
+              <div className="box3d-lid-inner-art">
+                <span className="box3d-inner-hello">UNBOX THE EXTRAORDINARY</span>
+                <div className="box3d-inner-divider" />
+                <span className="box3d-inner-link">WWW.KLDPACKAGING.COM</span>
+              </div>
+
+              {/* 4. Lid Front Tuck Flap (Hinged at top edge of lid) */}
+              <div
+                className="box3d-face"
+                style={{
+                  width: `${W - 4}px`,
+                  height: `${F}px`,
+                  left: '2px',
+                  top: `-${F}px`,
+                  transformOrigin: 'bottom center',
+                  transform: isFlat 
+                    ? 'rotateX(0deg)' 
+                    : isOpen 
+                      ? 'rotateX(-45deg)' 
+                      : 'rotateX(-90deg) translateZ(1.5px)',
+                  borderRadius: '4px 4px 0 0',
+                  transition: flapTransition,
+                }}
+              />
+
+              {/* 5. Left Cherry Locking Ear (Hinged on left edge of lid) */}
+              <div
+                className="box3d-face"
+                style={{
+                  width: `${E}px`,
+                  height: `${D - 10}px`,
+                  left: `-${E}px`,
+                  top: '5px',
+                  transformOrigin: 'right center',
+                  transform: isFlat 
+                    ? 'rotateY(0deg)' 
+                    : isOpen 
+                      ? 'rotateY(75deg)' 
+                      : 'rotateY(90deg) translateZ(1.5px)',
+                  borderRadius: '8px 0 0 8px',
+                  transition: flapTransition,
+                }}
+              />
+
+              {/* 6. Right Cherry Locking Ear (Hinged on right edge of lid) */}
+              <div
+                className="box3d-face"
+                style={{
+                  width: `${E}px`,
+                  height: `${D - 10}px`,
+                  right: `-${E}px`,
+                  top: '5px',
+                  transformOrigin: 'left center',
+                  transform: isFlat 
+                    ? 'rotateY(0deg)' 
+                    : isOpen 
+                      ? 'rotateY(-75deg)' 
+                      : 'rotateY(-90deg) translateZ(1.5px)',
+                  borderRadius: '0 8px 8px 0',
+                  transition: flapTransition,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 7. Front Wall (Hinged at bottom edge of floor) */}
+          <div
+            className="box3d-face"
+            style={{
+              width: `${W}px`,
+              height: `${H}px`,
+              left: 0,
+              top: `${D}px`,
+              transformOrigin: 'top center',
+              transform: isFlat ? 'rotateX(0deg)' : 'rotateX(90deg)',
+              transition: wallTransition,
+            }}
+          >
+            {/* Front Panel Artwork */}
+            <div className="box3d-front-art">
+              <div className="box3d-organic-shape" />
+              <div className="box3d-organic-shape-2" />
+              <span className="box3d-brand-logo">KLD</span>
+              <span className="box3d-brand-subtitle">PACKAGING</span>
+              <span className="box3d-brand-detail">READY PACK • 100% ECO</span>
+            </div>
+
+            {/* Front Rollover Inner Locking Flap */}
+            <div
+              className="box3d-face box3d-face--inner"
+              style={{
+                width: `${W - 2}px`,
+                height: `${H - 2}px`,
+                left: '1px',
+                top: `${H}px`,
+                transformOrigin: 'top center',
+                transform: isFlat ? 'rotateX(0deg)' : 'rotateX(90deg)',
+                transition: flapTransition,
+              }}
+            />
+          </div>
+
+          {/* 8. Left Wall (Hinged at left edge of floor) */}
+          <div
+            className="box3d-face box3d-face--inner"
+            style={{
+              width: `${H}px`,
+              height: `${D}px`,
+              left: `-${H}px`,
+              top: 0,
+              transformOrigin: 'right center',
+              transform: isFlat ? 'rotateY(0deg)' : 'rotateY(90deg)',
+              transition: wallTransition,
+            }}
+          >
+            {/* Left Back Dust Flap (folds inside behind rear wall) */}
+            <div
+              className="box3d-face box3d-face--inner"
+              style={{
+                width: `${H - 2}px`,
+                height: `${F}px`,
+                left: 0,
+                top: `-${F}px`,
+                transformOrigin: 'bottom center',
+                transform: isFlat ? 'rotateX(0deg)' : 'rotateX(-88deg) translateZ(-1px)',
+                borderRadius: '3px 0 0 0',
+                transition: flapTransition,
+              }}
+            />
+
+            {/* Left Front Dust Flap (folds inside behind front wall) */}
+            <div
+              className="box3d-face box3d-face--inner"
+              style={{
+                width: `${H - 2}px`,
+                height: `${F}px`,
+                left: 0,
+                top: `${D}px`,
+                transformOrigin: 'top center',
+                transform: isFlat ? 'rotateX(0deg)' : 'rotateX(88deg) translateZ(-1px)',
+                borderRadius: '0 0 0 3px',
+                transition: flapTransition,
+              }}
+            />
+          </div>
+
+          {/* 9. Right Wall (Hinged at right edge of floor) */}
+          <div
+            className="box3d-face box3d-face--inner"
+            style={{
+              width: `${H}px`,
+              height: `${D}px`,
+              right: `-${H}px`,
+              top: 0,
+              transformOrigin: 'left center',
+              transform: isFlat ? 'rotateY(0deg)' : 'rotateY(-90deg)',
+              transition: wallTransition,
+            }}
+          >
+            {/* Right Back Dust Flap */}
+            <div
+              className="box3d-face box3d-face--inner"
+              style={{
+                width: `${H - 2}px`,
+                height: `${F}px`,
+                left: 0,
+                top: `-${F}px`,
+                transformOrigin: 'bottom center',
+                transform: isFlat ? 'rotateX(0deg)' : 'rotateX(-88deg) translateZ(-1px)',
+                borderRadius: '0 3px 0 0',
+                transition: flapTransition,
+              }}
+            />
+
+            {/* Right Front Dust Flap */}
+            <div
+              className="box3d-face box3d-face--inner"
+              style={{
+                width: `${H - 2}px`,
+                height: `${F}px`,
+                left: 0,
+                top: `${D}px`,
+                transformOrigin: 'top center',
+                transform: isFlat ? 'rotateX(0deg)' : 'rotateX(88deg) translateZ(-1px)',
+                borderRadius: '0 0 3px 0',
+                transition: flapTransition,
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,90 +1,278 @@
-:root {
-  --white-plastic: #fdfdfd;
-  --label-gold: #B8956A;
-}
-
 .bottle-scene {
-  perspective: 1200px;
+  perspective: 1100px;
   position: relative;
-  width: 200px;
-  height: 400px;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  transform: scale(0.65) translateY(-30px);
+  transform: scale(0.95);
 }
 
 .bottle-camera {
   position: relative;
-  width: 100px;
-  height: 300px;
+  width: 80px;
+  height: 240px;
   transform-style: preserve-3d;
-  transform: rotateX(-15deg) translateY(20px);
+  transform: rotateX(-12deg) translateY(-5px);
 }
 
 .bottle-container {
-  width: 100px;
+  width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  animation: bottleSpin 10s infinite cubic-bezier(0.45, 0, 0.15, 1);
+  animation: bottleShowcaseSpin 11s infinite cubic-bezier(0.45, 0.05, 0.2, 0.95);
   will-change: transform;
 }
 
+/* Contact and diffuse shadow */
 .bottle-shadow {
   position: absolute;
-  top: 175px; left: 5px;
-  width: 90px; height: 90px;
-  background: rgba(0,0,0,0.15);
+  bottom: 5px;
+  left: -20px;
+  width: 120px;
+  height: 55px;
+  background: radial-gradient(ellipse at center, rgba(35, 18, 5, 0.45) 0%, rgba(35, 18, 5, 0.12) 50%, transparent 75%);
   border-radius: 50%;
   transform: rotateX(90deg) translateZ(-5px);
-  filter: blur(12px);
-  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  filter: blur(8px);
+  pointer-events: none;
 }
 
-.bottle-body { position: absolute; top: 100px; left: 5px; width: 90px; height: 120px; transform-style: preserve-3d; }
-.bottle-neck { position: absolute; top: 80px; left: 15px; width: 70px; height: 20px; transform-style: preserve-3d; }
-.bottle-cap { 
-  position: absolute; top: 68px; left: 13px; width: 74px; height: 34px; 
-  transform-style: preserve-3d; 
-  animation: screwCap 10s infinite cubic-bezier(0.45, 0, 0.15, 1); 
+/* Main Body Cylinder Wrap */
+.bottle-body-wrap {
+  position: absolute;
+  top: 55px;
+  left: 5px;
+  width: 70px;
+  height: 115px;
+  transform-style: preserve-3d;
 }
 
-.bottle-disk { 
-  position: absolute; 
-  border-radius: 50%; 
-  transform-style: preserve-3d; 
-  outline: 1px solid transparent; 
+/* Curved UV-Mapped Apothecary Label Slices flush on amber glass */
+.bottle-label-slice {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  pointer-events: none;
 }
 
-.base-disk { top: 175px; left: 5px; width: 90px; height: 90px; transform: rotateX(-90deg); background: var(--white-plastic); }
-.shoulder-disk { top: 55px; left: 5px; width: 90px; height: 90px; transform: rotateX(90deg); background: var(--white-plastic); }
-
-.neck-top-disk { 
-  top: 45px; left: 15px; width: 70px; height: 70px; 
-  transform: rotateX(90deg); 
-  background: #0a0a0a; 
-  border: 5px solid #d5d5d5; 
-  box-sizing: border-box; 
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
-}
-
-.cap-top-disk { top: -37px; left: 0; width: 74px; height: 74px; transform: rotateX(90deg); background: #1a1a1a; }
-
-.cap-inner-ceiling { 
-  top: -35px; left: 1px; width: 72px; height: 72px; 
-  transform: rotateX(-90deg); 
-  background: #111;
-  border: 2px solid #333;
+.bottle-label-card {
+  position: absolute;
+  top: 0;
+  background: #fbf7ee;
+  border-radius: 2px;
+  box-shadow: 
+    0 1px 4px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 1px rgba(90, 50, 15, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
   box-sizing: border-box;
 }
 
-@keyframes bottleSpin {
-  0%, 40% { transform: rotateY(0deg); }
-  60%, 100% { transform: rotateY(360deg); }
+.bottle-brand-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
 }
 
-@keyframes screwCap {
-  0%, 10% { transform: translateY(0) rotateY(0deg); }
-  30%, 70% { transform: translateY(-60px) rotateY(1080deg); } 
-  90%, 100% { transform: translateY(0) rotateY(0deg); }
+.bottle-badge-est {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 3.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #8c5a2b;
+  text-transform: uppercase;
+}
+
+.bottle-badge-brand {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #231407;
+  margin: 2px 0 0 0;
+  text-transform: uppercase;
+}
+
+.bottle-badge-divider {
+  width: 24px;
+  height: 1px;
+  background: #a9753e;
+  margin: 4px auto;
+  opacity: 0.7;
+}
+
+.bottle-badge-product {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #3b220c;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.bottle-badge-sub {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 4px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #6b4e33;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+.bottle-badge-vol {
+  font-family: 'Inter', -apple-system, monospace;
+  font-size: 4.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #422a16;
+  margin-top: 8px;
+}
+
+/* Curved Shoulder Disk */
+.bottle-shoulder-disk {
+  position: absolute;
+  top: 20px;
+  left: 5px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8f4d1c 0%, #683510 70%, #462208 100%);
+  transform: rotateX(90deg);
+  border: 1px solid rgba(255, 180, 100, 0.2);
+  box-shadow: inset 0 0 6px rgba(255, 200, 140, 0.4);
+}
+
+/* Bottom Base Disk */
+.bottle-base-disk {
+  position: absolute;
+  top: 135px;
+  left: 5px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #3d1c05 0%, #200d02 100%);
+  transform: rotateX(90deg);
+}
+
+/* Threaded Glass Neck */
+.bottle-neck-threaded {
+  position: absolute;
+  top: 36px;
+  left: 27px;
+  width: 26px;
+  height: 22px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #7d4216 0px,
+    #7d4216 2px,
+    #53290b 2px,
+    #53290b 4px
+  );
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Dropper Assembly (Lifts and rotates) */
+.bottle-dropper-assembly {
+  position: absolute;
+  top: 15px;
+  left: 23px;
+  width: 34px;
+  height: 50px;
+  transform-style: preserve-3d;
+  animation: bottleDropperAction 11s infinite cubic-bezier(0.45, 0.05, 0.2, 0.95);
+}
+
+/* Matte Black Screw Collar */
+.bottle-dropper-collar {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  width: 34px;
+  height: 20px;
+  background: linear-gradient(135deg, #333 0%, #1a1a1a 60%, #0d0d0d 100%);
+  border-radius: 3px;
+  box-shadow: 
+    0 2px 5px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.bottle-collar-rim {
+  position: absolute;
+  top: -6px;
+  left: 2px;
+  width: 30px;
+  height: 6px;
+  background: #222;
+  border-radius: 2px;
+}
+
+/* Rubber Squeeze Bulb */
+.bottle-dropper-bulb {
+  position: absolute;
+  top: -8px;
+  left: 5px;
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle at 35% 30%, #3a3a3a 0%, #151515 70%, #050505 100%);
+  border-radius: 50% 50% 35% 35%;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 255, 255, 0.25),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Clear Glass Dropper Pipette */
+.bottle-pipette-stem {
+  position: absolute;
+  top: 34px;
+  left: 13px;
+  width: 8px;
+  height: 65px;
+  background: linear-gradient(to right, rgba(255,255,255,0.7), rgba(255,255,255,0.2) 40%, rgba(200,200,200,0.5) 100%);
+  border-radius: 2px 2px 4px 4px;
+  box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+.bottle-pipette-fluid {
+  position: absolute;
+  bottom: 0;
+  left: 1px;
+  width: 6px;
+  height: 25px;
+  background: linear-gradient(to bottom, rgba(215, 140, 50, 0.6), rgba(180, 100, 20, 0.8));
+  border-radius: 0 0 3px 3px;
+}
+
+.bottle-pipette-tip {
+  position: absolute;
+  bottom: -4px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(215, 140, 50, 0.9);
+}
+
+/* Keyframes */
+@keyframes bottleShowcaseSpin {
+  0%, 15% { transform: rotateY(-10deg); }
+  35%, 65% { transform: rotateY(170deg); }
+  85%, 100% { transform: rotateY(350deg); }
+}
+
+@keyframes bottleDropperAction {
+  0%, 25% { transform: translateY(0px) rotateY(0deg); }
+  45%, 75% { transform: translateY(-48px) rotateY(720deg); }
+  90%, 100% { transform: translateY(0px) rotateY(0deg); }
 }

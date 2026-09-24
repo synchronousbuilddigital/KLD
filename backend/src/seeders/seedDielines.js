@@ -62,6 +62,18 @@ const dielineModels = [
     boxModelKey: 'cosmetic_b',
     active: true,
     order: 5,
+  },
+  {
+    itemId: 'button_hole',
+    title: 'Button Hole Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/box.png',
+    dieline2DImg: '/images/boxes/3_button_hole_box.svg',
+    box3DImg: '/images/box.png',
+    group: 'dielines',
+    boxModelKey: 'button_hole',
+    active: true,
+    order: 6,
   }
 ];
 

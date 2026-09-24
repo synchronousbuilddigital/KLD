@@ -416,7 +416,7 @@ export default function App() {
   });
   const [stepIndex, setStepIndex] = useState(0);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' }>({
+  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' }>({
     isOpen: false,
     model: 'rte'
   });
@@ -880,13 +880,14 @@ export default function App() {
           onOpenStudioWithBox={(box, mode = 'dieline') => {
             if (!box) return;
 
-            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | null = box.boxModel || null;
+            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | null = box.boxModel || null;
 
             if (!boxModelKey && box.category) {
               const cat = box.category.toLowerCase();
               if (cat.includes('reverse') || cat.includes('rte')) boxModelKey = 'rte';
               else if (cat.includes('straight') || cat.includes('te')) boxModelKey = 'te';
               else if (cat.includes('auto') || cat.includes('lock')) boxModelKey = 'auto_lock';
+              else if (cat.includes('button') || cat.includes('hole')) boxModelKey = 'button_hole';
               else if (cat.includes('cosmetic b') || cat.includes('mailer') || cat.includes('tray')) boxModelKey = 'cosmetic_b';
               else if (cat.includes('cosmetic')) boxModelKey = 'cosmetic';
             }
@@ -946,6 +947,7 @@ export default function App() {
             />
           </React.Suspense>
         )}
+        {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
       </>
     );
   }
@@ -971,12 +973,12 @@ export default function App() {
         body { background-color: #C89A63; }
       `}</style>
       )}
-      <div className={`relative w-full bg-white text-zinc-900 font-sans z-10 shadow-[0_30px_60px_rgba(0,0,0,0.15)] ${stepIndex >= 7 ? 'min-h-[900px]' : 'h-[900px] overflow-hidden'}`}>
+      <div className={`relative w-full bg-white text-zinc-900 font-sans z-10 shadow-[0_30px_60px_rgba(0,0,0,0.15)] ${stepIndex >= 7 ? 'min-h-[100dvh]' : 'h-[100dvh] overflow-hidden'}`}>
         <BackgroundCanvas />
-        <div className="relative w-full h-[900px] overflow-hidden bg-white">
+        <div className="relative w-full min-h-[100dvh] md:h-[900px] overflow-hidden bg-white">
           <HeroSlideshow visible={stepIndex >= 7} />
           <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0" initial={{ opacity: 1 }} animate={{ opacity: stepIndex >= 7 ? 0 : 1 }} transition={{ duration: 0.6 }}><h1 className="text-[18vw] font-black tracking-[-0.1em] text-zinc-500 select-none uppercase leading-none">KEYLINE DESIGN</h1></motion.div>
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10" style={{ perspective: 'calc(1400px * var(--app-scale, 1))' }}><motion.div variants={containerVariants} initial="initial" animate={steps[stepIndex] || 'initial'} style={{ width: W, height: D, transformStyle: 'preserve-3d' }} className="relative"><motion.div variants={centerVariants} className="absolute inset-0" /><motion.div variants={frontVariants} style={{ top: '100%', left: 0, width: W, height: H, transformOrigin: 'top', transformStyle: 'preserve-3d' }} className="absolute" /><motion.div variants={backVariants} style={{ bottom: '100%', left: 0, width: W, height: H, transformOrigin: 'bottom', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={lidVariants} style={{ bottom: '100%', left: 0, width: W, height: D, transformOrigin: 'bottom', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={tuckVariants} style={{ bottom: '100%', left: 1, width: W - 2, height: 30, transformOrigin: 'bottom' }} className="absolute" /></motion.div></motion.div><motion.div variants={leftVariants} style={{ right: '100%', top: 0, width: H, height: D, transformOrigin: 'right', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={leftDustVariants} style={{ right: '100%', top: 1, width: 60, height: D - 2, transformOrigin: 'right' }} className="absolute" /></motion.div><motion.div variants={rightVariants} style={{ left: '100%', top: 0, width: H, height: D, transformOrigin: 'left', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={rightDustVariants} style={{ left: '100%', top: 1, width: 60, height: D - 2, transformOrigin: 'left' }} className="absolute" /></motion.div></motion.div></div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10" style={{ perspective: 'calc(1400px * var(--app-scale, 1))' }}><motion.div variants={containerVariants} initial="initial" animate={steps[stepIndex] || 'initial'} style={{ width: W, height: D, transformStyle: 'preserve-3d' }} className="relative scale-[0.62] xs:scale-[0.75] sm:scale-90 md:scale-100 origin-center"><motion.div variants={centerVariants} className="absolute inset-0" /><motion.div variants={frontVariants} style={{ top: '100%', left: 0, width: W, height: H, transformOrigin: 'top', transformStyle: 'preserve-3d' }} className="absolute" /><motion.div variants={backVariants} style={{ bottom: '100%', left: 0, width: W, height: H, transformOrigin: 'bottom', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={lidVariants} style={{ bottom: '100%', left: 0, width: W, height: D, transformOrigin: 'bottom', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={tuckVariants} style={{ bottom: '100%', left: 1, width: W - 2, height: 30, transformOrigin: 'bottom' }} className="absolute" /></motion.div></motion.div><motion.div variants={leftVariants} style={{ right: '100%', top: 0, width: H, height: D, transformOrigin: 'right', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={leftDustVariants} style={{ right: '100%', top: 1, width: 60, height: D - 2, transformOrigin: 'right' }} className="absolute" /></motion.div><motion.div variants={rightVariants} style={{ left: '100%', top: 0, width: H, height: D, transformOrigin: 'left', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={rightDustVariants} style={{ left: '100%', top: 1, width: 60, height: D - 2, transformOrigin: 'left' }} className="absolute" /></motion.div></motion.div></div>
           <motion.div className="absolute inset-0 z-50 flex flex-col pointer-events-none" initial={{ opacity: 0 }} animate={{ opacity: stepIndex >= 7 ? 1 : 0 }} transition={{ duration: 0.8 }} style={{ pointerEvents: stepIndex >= 7 ? 'auto' : 'none' }}>
             <div className="w-full h-full bg-white relative"><NewHomeLanding /></div>
           </motion.div>
@@ -984,46 +986,46 @@ export default function App() {
         {stepIndex >= 7 && (
           <>
             {/* Interactive Design Lab Section */}
-            <section id="design-lab" className="bg-zinc-950 text-white py-10 px-6 md:px-8 border-t border-zinc-900">
+            <section id="design-lab" className="bg-zinc-950 text-white py-8 sm:py-10 px-4 sm:px-6 md:px-8 border-t border-zinc-900">
               <motion.div className="max-w-6xl mx-auto mb-6 text-left" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
-                <span className="text-amber-500 font-mono text-sm tracking-wider uppercase">Interactive Design Lab</span>
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mt-2 text-white">
+                <span className="text-amber-500 font-mono text-xs sm:text-sm tracking-wider uppercase">Interactive Design Lab</span>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mt-2 text-white">
                   Prototype in 3D Real-Time
                 </h2>
-                <p className="text-zinc-400 text-lg mt-4 max-w-2xl">
+                <p className="text-zinc-400 text-sm sm:text-base md:text-lg mt-3 sm:mt-4 max-w-2xl">
                   Experiment with dimensions, adjust assembly fold states, switch materials, and apply artwork decals directly in your browser.
                 </p>
               </motion.div>
 
               {/* Design Lab Container */}
-              <motion.div className="w-full max-w-6xl mx-auto bg-zinc-900/40 border border-zinc-800/80 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[460px]" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
+              <motion.div className="w-full max-w-6xl mx-auto bg-zinc-900/40 border border-zinc-800/80 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-12 min-h-[460px]" variants={slideUpVariant} initial="initial" whileInView="whileInView" viewport={{ once: true }}>
 
                 {/* Controls Column (Left) */}
-                <div className="lg:col-span-5 border-r border-zinc-800/80 p-5 md:p-6 flex flex-col justify-between bg-zinc-900/20">
+                <div className="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-zinc-800/80 p-4 sm:p-5 md:p-6 flex flex-col justify-between bg-zinc-900/20">
                   <div className="space-y-6">
 
                     {/* Selector Tabs */}
                     <div className="flex border border-zinc-800 rounded-xl bg-zinc-950/50 p-1 gap-1">
                       <button
                         onClick={() => setActiveTab('dimensions')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'dimensions' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                        className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${activeTab === 'dimensions' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
                           }`}
                       >
-                        <Sliders className="w-3.5 h-3.5" /> Size
+                        <Sliders className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Size
                       </button>
                       <button
                         onClick={() => setActiveTab('folding')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'folding' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                        className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${activeTab === 'folding' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
                           }`}
                       >
-                        <RefreshCw className="w-3.5 h-3.5" /> Fold
+                        <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Fold
                       </button>
                       <button
                         onClick={() => setActiveTab('materials')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'materials' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+                        className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${activeTab === 'materials' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
                           }`}
                       >
-                        <Layers className="w-3.5 h-3.5" /> Finish
+                        <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Finish
                       </button>
                       <button
                         onClick={() => setActiveTab('artwork')}
@@ -1407,10 +1409,10 @@ export default function App() {
                 </div>
 
                 {/* viewport column (Right) */}
-                <div className="lg:col-span-7 flex flex-col items-center justify-center p-5 md:p-6 bg-black/50 relative overflow-hidden min-h-[380px]">
+                <div className="lg:col-span-7 flex flex-col items-center justify-center p-3 sm:p-5 md:p-6 bg-black/50 relative overflow-hidden min-h-[320px] sm:min-h-[380px] w-full">
 
                   {/* Viewport Header Actions (Tape / Blade Seal Toggle) */}
-                  <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex items-center gap-2">
                     <button
                       onClick={() => {
                         const isAnimating = sealState === 'sealing' || sealState === 'cutting';
@@ -1429,17 +1431,17 @@ export default function App() {
                           }, 1500);
                         }
                       }}
-                      className="bg-zinc-900 border border-zinc-800 text-amber-500 w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200"
+                      className="bg-zinc-900 border border-zinc-800 text-amber-500 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-transform duration-200"
                       title={sealState === 'sealed' ? 'Cut Tape to Open' : 'Seal Box'}
                     >
                       {sealState === 'unsealed' || sealState === 'sealing' ? (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 sm:w-5 sm:h-5">
                           <circle cx="12" cy="12" r="7" />
                           <circle cx="12" cy="12" r="2" />
                           <path d="M12 19h8" />
                         </svg>
                       ) : (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 sm:w-5 sm:h-5">
                           <path d="M18.5 3.5l-15 15a2 2 0 0 0 2.8 2.8l15-15a2 2 0 0 0-2.8-2.8z" />
                           <path d="M13 10l-4 4" />
                           <path d="M9 14l-2 2" />
@@ -1453,7 +1455,7 @@ export default function App() {
 
                   {/* 3D Box scene viewport (Enlarged box display) */}
                   <div className="w-full h-full flex-1 flex items-center justify-center absolute inset-0" style={{ perspective: 2000 }}>
-                    <div style={{ transform: 'scale(0.85)', transformOrigin: 'center center', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="w-full h-full flex items-center justify-center scale-[0.68] xs:scale-[0.76] sm:scale-[0.85] origin-center">
                       <RTEBoxPrototype
                         width={width}
                         depth={depth}

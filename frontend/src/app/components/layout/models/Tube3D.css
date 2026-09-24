@@ -1,87 +1,258 @@
-:root {
-  --white-plastic: #fdfdfd;
-  --label-gold: #B8956A;
-}
-
 .tube-scene {
-  perspective: 1200px;
+  perspective: 1100px;
   position: relative;
-  width: 200px;
-  height: 400px;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  transform: scale(0.7) translateY(-30px);
+  transform: scale(0.95);
 }
 
 .tube-camera {
   position: relative;
-  width: 100px;
-  height: 300px;
+  width: 80px;
+  height: 240px;
   transform-style: preserve-3d;
-  transform: rotateX(-15deg) translateY(10px);
+  transform: rotateX(-12deg) translateY(-5px);
 }
 
 .tube-container {
-  width: 100px;
+  width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  animation: tubeSpin 10s infinite;
+  animation: tubeShowcaseSpin 11s infinite cubic-bezier(0.45, 0.05, 0.2, 0.95);
+  will-change: transform;
 }
 
+/* Photorealistic contact & diffuse shadow */
 .tube-shadow {
   position: absolute;
-  top: 195px; left: 25px;
-  width: 50px; height: 50px;
-  background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 70%);
+  bottom: 0px;
+  left: -20px;
+  width: 120px;
+  height: 50px;
+  background: radial-gradient(ellipse at center, rgba(30, 20, 15, 0.38) 0%, rgba(30, 20, 15, 0.1) 50%, transparent 75%);
   border-radius: 50%;
   transform: rotateX(90deg) translateZ(-5px);
+  filter: blur(8px);
+  pointer-events: none;
 }
 
-.tube-body { position: absolute; top: 20px; left: 20px; width: 60px; height: 120px; transform-style: preserve-3d; }
-.tube-neck { position: absolute; top: 140px; left: 35px; width: 30px; height: 15px; transform-style: preserve-3d; }
-
-.tube-cap { 
-  position: absolute; top: 140px; left: 25px; width: 50px; height: 35px; 
-  transform-style: preserve-3d; 
-  animation: tubeScrewCap 10s infinite; 
+/* Top Crimped Heat-Seal */
+.tube-crimp-seal {
+  position: absolute;
+  top: 15px;
+  left: 3px;
+  width: 74px;
+  height: 16px;
+  transform-style: preserve-3d;
 }
 
-.disk { 
-  position: absolute; 
-  border-radius: 50%; 
-  transform-style: preserve-3d; 
-  outline: 1px solid transparent; 
+.tube-crimp-front,
+.tube-crimp-back {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #ecd8cb 0%, #dab8a2 60%, #c49f87 100%);
+  border: 1px solid rgba(160, 110, 80, 0.3);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
 }
 
-.tube-shoulder-disk { top: 110px; left: 20px; width: 60px; height: 60px; transform: rotateX(90deg); background: var(--white-plastic); }
-
-.tube-neck-bottom-disk { 
-  top: 140px; left: 35px; width: 30px; height: 30px; 
-  transform: rotateX(-90deg); 
-  background: #0a0a0a; 
-  border: 4px solid #d5d5d5; 
-  box-sizing: border-box; 
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+.tube-crimp-front {
+  transform: translateZ(1.5px);
 }
 
-.tube-cap-bottom-disk { top: 10px; left: 0; width: 50px; height: 50px; transform: rotateX(-90deg); background: #1a1a1a; }
+.tube-crimp-back {
+  transform: rotateY(180deg) translateZ(1.5px);
+}
 
-.tube-cap-inner-floor { 
-  top: 9px; left: 1px; width: 48px; height: 48px; 
-  transform: rotateX(90deg); 
-  background: #050505; 
-  border: 2px solid #333;
+/* Horizontal knurled crimping lines */
+.tube-crimp-texture {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1.5px,
+    rgba(255, 255, 255, 0.35) 1.5px,
+    rgba(255, 255, 255, 0.35) 3px
+  );
+  pointer-events: none;
+}
+
+.tube-crimp-lot {
+  position: relative;
+  z-index: 2;
+  font-family: 'Inter', -apple-system, monospace;
+  font-size: 5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(90, 55, 35, 0.75);
+}
+
+/* Tube Main Body */
+.tube-body-wrap {
+  position: absolute;
+  top: 29px;
+  left: 8px;
+  width: 64px;
+  height: 125px;
+  transform-style: preserve-3d;
+}
+
+/* Curved UV-Mapped Label Slices flush on tube cylinder */
+.tube-label-slice {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.tube-label-art {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 12px;
   box-sizing: border-box;
 }
 
-@keyframes tubeSpin {
-  0%, 35% { transform: rotateY(0deg); animation-timing-function: ease-in-out; }
-  65%, 100% { transform: rotateY(360deg); }
+.tube-badge-inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-@keyframes tubeScrewCap {
-  0%, 10% { transform: translateY(0) rotateY(0deg); animation-timing-function: ease-in-out; }
-  30%, 70% { transform: translateY(45px) rotateY(1080deg); animation-timing-function: ease-in-out; } 
-  90%, 100% { transform: translateY(0) rotateY(0deg); }
+.tube-brand-sup {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #3b281c;
+  text-transform: uppercase;
+}
+
+.tube-brand-line {
+  width: 22px;
+  height: 1px;
+  background: #a97858;
+  margin: 3px auto;
+  opacity: 0.8;
+}
+
+.tube-brand-name {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #26160d;
+  margin: 2px 0 0 0;
+  line-height: 1.2;
+}
+
+.tube-brand-desc {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 4.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #8c6046;
+  margin: 3px 0 0 0;
+  text-transform: uppercase;
+}
+
+.tube-brand-vol {
+  font-family: 'Inter', -apple-system, monospace;
+  font-size: 4px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #5d3f2e;
+  margin-top: 12px;
+}
+
+/* Curved Shoulder Disk */
+.tube-shoulder-disk {
+  position: absolute;
+  top: 122px;
+  left: 8px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f3e5db 0%, #dab8a2 80%, #b8937b 100%);
+  transform: rotateX(90deg);
+  border: 1px solid rgba(160, 110, 80, 0.2);
+}
+
+/* Neck Tube */
+.tube-neck-tube {
+  position: absolute;
+  top: 154px;
+  left: 28px;
+  width: 24px;
+  height: 10px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #fff 0px,
+    #fff 1.5px,
+    #cfb39e 1.5px,
+    #cfb39e 3px
+  );
+  transform: translateZ(0);
+}
+
+/* Cap Assembly & Screw Animation */
+.tube-cap-assembly {
+  position: absolute;
+  top: 160px;
+  left: 14px;
+  width: 52px;
+  height: 28px;
+  transform-style: preserve-3d;
+  animation: tubeCapAction 11s infinite cubic-bezier(0.45, 0.05, 0.2, 0.95);
+}
+
+.tube-cap-top-disk {
+  position: absolute;
+  top: -26px;
+  left: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #dfaf98 0%, #c48c73 70%, #9e644a 100%);
+  transform: rotateX(90deg);
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+.tube-cap-bottom-disk {
+  position: absolute;
+  bottom: -26px;
+  left: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #8b533b;
+  transform: rotateX(90deg);
+}
+
+/* Keyframes */
+@keyframes tubeShowcaseSpin {
+  0%, 15% { transform: rotateY(-10deg); }
+  35%, 65% { transform: rotateY(170deg); }
+  85%, 100% { transform: rotateY(350deg); }
+}
+
+@keyframes tubeCapAction {
+  0%, 25% { transform: translateY(0px) rotateY(0deg); }
+  45%, 75% { transform: translateY(28px) rotateY(720deg); }
+  90%, 100% { transform: translateY(0px) rotateY(0deg); }
 }

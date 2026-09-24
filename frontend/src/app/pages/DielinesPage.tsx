@@ -42,7 +42,7 @@ const CATEGORY_ITEMS = [
 ];
 
 export default function DielinesPage({ onNavigate }: DielinesPageProps) {
-  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | null>(null);
+  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dielineModels, setDielineModels] = useState<CatalogItemData[]>(() => {
@@ -85,11 +85,13 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
 
-    let targetModel: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' = 'rte';
+    let targetModel: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' = 'rte';
     if (category === 'tuck_end' || category === 'folding' || category === 'rte') {
       targetModel = 'rte';
     } else if (category === 'cosmetic_b' || category === 'mailer' || category === 'tray') {
       targetModel = 'cosmetic_b';
+    } else if (category === 'button_hole' || category === 'snap_lock') {
+      targetModel = 'button_hole';
     } else if (category === 'paper_bag' || category === 'envelope' || category === 'cosmetic') {
       targetModel = 'cosmetic';
     } else if (category === 'box_lid' || category === 'rigid_box' || category === 'auto_lock') {
@@ -125,15 +127,42 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   });
 
   return (
-    <div className="min-h-screen font-sans flex flex-col bg-white text-zinc-900 pt-[72px]">
+    <div className="min-h-screen font-sans flex flex-col bg-white text-zinc-900 pt-[68px] sm:pt-[72px]">
       {/* Navigation Header */}
       <Header activeNav="dielines" onNavigate={onNavigate} />
 
       {/* Main Page Layout with Left Sidebar */}
-      <div className="w-full max-w-[1700px] mx-auto px-4 md:px-8 py-8 flex-1 flex flex-col md:flex-row gap-8">
+      <div className="w-full max-w-[1700px] mx-auto px-3 sm:px-6 md:px-8 py-4 sm:py-8 flex-1 flex flex-col md:flex-row gap-6 md:gap-8">
         
-        {/* LEFT SIDEBAR PANEL FOR CATEGORIES */}
-        <aside className="w-full md:w-72 shrink-0">
+        {/* MOBILE CATEGORY SCROLLER (visible on < md screens) */}
+        <div className="md:hidden flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar pt-1 -mx-3 px-3">
+          {CATEGORY_ITEMS.map((item) => {
+            const IconComponent = item.icon;
+            const isActive = activeCategory === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveCategory(item.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all border ${
+                  isActive
+                    ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
+                    : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200/80'
+                }`}
+              >
+                <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-white' : item.color}`} />
+                <span>{item.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono ${
+                  isActive ? 'bg-zinc-700 text-white' : 'bg-zinc-200/80 text-zinc-600'
+                }`}>
+                  {item.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* DESKTOP LEFT SIDEBAR PANEL FOR CATEGORIES (hidden on mobile) */}
+        <aside className="hidden md:block w-72 shrink-0">
           <div className="sticky top-24 bg-zinc-50 border border-zinc-200/80 rounded-2xl p-5 shadow-sm space-y-4">
             
             <div className="flex items-center justify-between pb-3 border-b border-zinc-200">
@@ -183,13 +212,13 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
         </aside>
 
         {/* RIGHT MAIN CONTENT AREA */}
-        <main className="flex-1 min-w-0 flex flex-col gap-8">
+        <main className="flex-1 min-w-0 flex flex-col gap-6 md:gap-8">
           
           {/* TOP SECTION HEADER WITH SEARCH BAR IN RIGHT CORNER */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-zinc-200">
             <div>
-              <h2 className="text-2xl font-bold text-zinc-900 tracking-tight flex items-center gap-2.5">
-                <Box className="w-6 h-6 text-indigo-600" />
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight flex items-center gap-2 sm:gap-2.5">
+                <Box className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
                 Featured Production Dieline Models
               </h2>
               <p className="text-xs text-zinc-500 mt-1 font-medium">

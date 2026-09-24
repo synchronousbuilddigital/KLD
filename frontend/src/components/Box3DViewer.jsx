@@ -10,4 +10,4 @@
  *   src/components/box3d/index.js            — router (picks viewer by boxModel)
  * ─────────────────────────────────────────────────────────────────────────────
  */
-export { default, RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer } from "./box3d/index";
+export { default, RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer } from "./box3d/index";

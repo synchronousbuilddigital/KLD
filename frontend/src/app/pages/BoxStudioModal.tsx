@@ -13,6 +13,7 @@ import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
 import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
 import { generateCosmeticBoxBDieline } from "../../lib/cosmeticBoxBDielineGenerator";
+import { generateButtonHoleDieline } from "../../lib/buttonHoleDielineGenerator";
 import { API_BASE_URL } from "../../config/api";
 import { exportService } from "../../services/exportService";
 import { setLargeData } from "../../lib/idbStorage";
@@ -20,7 +21,7 @@ import { setLargeData } from "../../lib/idbStorage";
 interface BoxStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b";
+  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole";
   boxTitle?: string;
 }
 
@@ -202,7 +203,8 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     rte: "Reverse Tuck End Box",
     auto_lock: "Auto Lock Bottom Box",
     cosmetic: "Cosmetic Box",
-    cosmetic_b: "Cosmetic Box B (Mailer/Tray Style)"
+    cosmetic_b: "Cosmetic Box B (Mailer/Tray Style)",
+    button_hole: "Button Hole Box"
   };
 
   const currentTitle = modelLabels[store.boxModel] || boxTitle;
@@ -257,6 +259,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
       else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
       else if (store.boxModel === "cosmetic_b") dielineData = generateCosmeticBoxBDieline(params);
+      else if (store.boxModel === "button_hole") dielineData = generateButtonHoleDieline(params);
       else dielineData = generateRTEDielineDXF(params);
       
       const fileName = `${store.boxModel}_dieline.dxf`;
@@ -290,6 +293,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
       else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
       else if (store.boxModel === "cosmetic_b") dielineData = generateCosmeticBoxBDieline(params);
+      else if (store.boxModel === "button_hole") dielineData = generateButtonHoleDieline(params);
       else dielineData = generateRTEDielineDXF(params);
       
       const dxfString = generateDXFString(dielineData);

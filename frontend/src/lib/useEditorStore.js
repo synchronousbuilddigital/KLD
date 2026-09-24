@@ -54,6 +54,24 @@ const createCosmeticDefaultState = () => ({
   insideColor: null
 });
 
+const createButtonHoleDefaultState = () => ({
+  L: 75.0 / 25.4,
+  W: 75.0 / 25.4,
+  H: 60.0 / 25.4,
+  T: 0.5 / 25.4,
+  glueFlapWidth: 16.0 / 25.4,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "paperboard",
+  materialName: "350g white paperboard(0.5mm)",
+  isCustomMaterial: false,
+  materialColor: "#fdfbf7",
+  materialCategory: "white_paperboard",
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
+});
+
 export const useEditorStore = create((set) => ({
   // Default Dimensions & Unit
   unit: "in",
@@ -71,14 +89,16 @@ export const useEditorStore = create((set) => ({
       te: createDefaultState(),
       auto_lock: createDefaultState(),
       cosmetic: createCosmeticDefaultState(),
-      cosmetic_b: createCosmeticBDefaultState()
+      cosmetic_b: createCosmeticBDefaultState(),
+      button_hole: createButtonHoleDefaultState()
     },
     mockup: {
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
       cosmetic: createCosmeticDefaultState(),
-      cosmetic_b: createCosmeticBDefaultState()
+      cosmetic_b: createCosmeticBDefaultState(),
+      button_hole: createButtonHoleDefaultState()
     }
   },
 
@@ -238,7 +258,7 @@ export const useEditorStore = create((set) => ({
   }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];

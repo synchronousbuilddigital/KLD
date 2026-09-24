@@ -14,17 +14,21 @@ const { startCleanupScheduler, stopCleanupScheduler } = require('./utils/cleanup
 const PORT = process.env.PORT || 5000;
 let server;
 
-// Connect to MongoDB first, then start server
-connectDB().then(() => {
-  server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 KLD Backend running on http://localhost:${PORT}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+// Start HTTP server immediately so Vite proxy and clients never encounter ECONNREFUSED
+server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 KLD Backend running on http://localhost:${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
 
-    // Start background cleanup job schedule
-    startCleanupScheduler();
-  });
+  // Start background cleanup job schedule
+  startCleanupScheduler();
 });
+
+// Connect to MongoDB (Mongoose automatically buffers queries until connected)
+connectDB().catch((err) => {
+  console.error('❌ MongoDB connection error:', err.message);
+});
+
 
 /* ─── GRACEFUL SHUTDOWN HANDLERS (SIGTERM / SIGINT) ─────────────── */
 const gracefulShutdown = (signal) => {

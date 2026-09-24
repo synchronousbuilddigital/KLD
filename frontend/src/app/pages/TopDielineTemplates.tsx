@@ -182,16 +182,16 @@ export default function TopDielineTemplates({ onNavigate }: { onNavigate?: (cate
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-3 mb-12"
+          className="flex items-center gap-2.5 sm:gap-3 mb-8 sm:mb-12"
         >
-          <ArrowRight className="w-8 h-8 text-zinc-900" />
-          <h2 className="text-[32px] md:text-[40px] font-semibold tracking-tight text-zinc-900">
+          <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 text-zinc-900 shrink-0" />
+          <h2 className="text-2xl sm:text-[32px] md:text-[40px] font-semibold tracking-tight text-zinc-900">
             Top dieline template categories
           </h2>
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
           variants={staggerContainer}
           initial="initial"
           whileInView="whileInView"
@@ -228,11 +228,11 @@ export default function TopDielineTemplates({ onNavigate }: { onNavigate?: (cate
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-12 flex"
+          className="mt-8 sm:mt-12 flex"
         >
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'library' }))}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[12px] text-[15px] font-semibold transition-all hover:scale-105 duration-200 bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/10 cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-[12px] text-sm sm:text-[15px] font-semibold transition-all hover:scale-105 duration-200 bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/10 cursor-pointer"
           >
             <span>View 3000+ dieline templates</span>
             <ArrowRight className="w-4 h-4" />

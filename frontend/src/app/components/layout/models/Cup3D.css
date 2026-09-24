@@ -1,58 +1,122 @@
 .cup-scene {
-  perspective: 1200px;
+  perspective: 1100px;
   position: relative;
-  width: 200px;
-  height: 400px;
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  transform: scale(0.65) translateY(-30px);
+  transform: scale(0.9);
 }
 
 .cup-camera {
   position: relative;
   width: 100px;
-  height: 300px;
+  height: 220px;
   transform-style: preserve-3d;
-  transform: rotateX(-15deg) translateY(20px);
+  transform: rotateX(-14deg) translateY(10px);
 }
 
 .cup-container {
   width: 100px;
   height: 100%;
   transform-style: preserve-3d;
-  animation: cupObjectSpin 8s ease-in-out infinite;
+  animation: cupObjectSpin 10s infinite cubic-bezier(0.45, 0.05, 0.2, 0.95);
   will-change: transform;
 }
 
 .cup-shadow {
   position: absolute;
-  top: 215px;
-  left: 15px;
-  width: 70px;
-  height: 70px;
-  background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 70%);
+  top: 175px;
+  left: 5px;
+  width: 90px;
+  height: 60px;
+  background: radial-gradient(ellipse at center, rgba(30, 20, 10, 0.45) 0%, rgba(30, 20, 10, 0.12) 55%, transparent 75%);
   border-radius: 50%;
   transform: rotateX(90deg) translateZ(-5px);
+  filter: blur(8px);
+  pointer-events: none;
 }
 
 .cup-body {
   position: absolute;
-  top: 100px;
+  top: 55px;
   left: 25px;
   width: 50px;
   height: 120px;
   transform-style: preserve-3d;
 }
 
+/* Curved UV-Mapped Sleeve Badge Slices flush on cup */
+.cup-badge-slice {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.cup-badge-card {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #c59762 0%, #b3844f 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(80, 45, 15, 0.35);
+  border-radius: 3px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.cup-brand-title {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #2b1809;
+  line-height: 1;
+}
+
+.cup-brand-divider {
+  width: 18px;
+  height: 1px;
+  background: #2b1809;
+  margin: 3px auto;
+  opacity: 0.6;
+}
+
+.cup-brand-sub {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 5px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #3b230f;
+  text-transform: uppercase;
+}
+
+.cup-brand-extra {
+  font-family: 'Inter', -apple-system, monospace;
+  font-size: 3.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #553316;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
 .cup-lid-wrap {
   position: absolute;
-  top: 90px;
+  top: 45px;
   left: 13px;
   width: 74px;
   height: 15px;
   transform-style: preserve-3d;
-  animation: cupCapAction 8s ease-in-out infinite;
+  animation: cupCapAction 10s infinite cubic-bezier(0.45, 0.05, 0.2, 0.95);
 }
 
 .cup-lid {
@@ -61,75 +125,72 @@
   transform-style: preserve-3d;
 }
 
-.cup-sip-spout {
-  position: absolute;
-  top: -5px;
-  left: 30px;
-  width: 14px;
-  height: 8px;
-  transform-style: preserve-3d;
-}
-
 .cup-disk {
   position: absolute;
   border-radius: 50%;
   transform-style: preserve-3d;
-  outline: 1px solid transparent;
 }
 
 .cup-base-disk {
-  top: 195px;
+  top: 175px;
   left: 25px;
   width: 50px;
   height: 50px;
-  transform: rotateX(-90deg);
-  background: #fdfdfd;
+  transform: rotateX(90deg) translateZ(25px);
+  background: #deb786;
+  border: 1px solid #b58b58;
 }
 
 .cup-inner-coffee {
-  top: 65px;
+  top: 60px;
   left: 15px;
   width: 70px;
   height: 70px;
-  transform: rotateX(-90deg);
-  background: #3c2a21;
+  transform: rotateX(90deg) translateZ(35px);
+  background: radial-gradient(circle, #2b1809 0%, #150b04 100%);
 }
 
 .cup-lid-top-disk {
-  top: -22px;
+  top: 0;
   left: 0;
   width: 74px;
   height: 74px;
-  transform: rotateX(90deg);
-  background: #1a1a1a;
+  transform: rotateX(90deg) translateZ(37px);
+  background: radial-gradient(circle, #2b2b2b 0%, #111111 100%);
+  border: 1px solid #333;
 }
 
-.cup-lid-inner-ceiling {
-  top: -21px;
-  left: 1px;
-  width: 72px;
-  height: 72px;
-  transform: rotateX(-90deg);
-  background: #111;
+.cup-sip-spout {
+  position: absolute;
+  top: 0;
+  left: 27px;
+  width: 20px;
+  height: 8px;
+  background: #000;
+  border-radius: 4px;
+  transform: rotateX(90deg) translateZ(38px);
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
 }
 
 .cup-spout-top-disk {
-  top: -3px;
+  position: absolute;
+  top: 0;
   left: 30px;
   width: 14px;
   height: 14px;
-  transform: rotateX(90deg);
-  background: #000;
+  border-radius: 50%;
+  background: #111;
+  transform: rotateX(90deg) translateZ(42px);
 }
 
 @keyframes cupObjectSpin {
-  0%, 25% { transform: rotateY(0deg); }
-  40%, 75% { transform: rotateY(180deg); }
-  90%, 100% { transform: rotateY(360deg); }
+  0%, 15% { transform: rotateY(-15deg); }
+  35%, 65% { transform: rotateY(165deg); }
+  85%, 100% { transform: rotateY(345deg); }
 }
 
 @keyframes cupCapAction {
-  0%, 5% { transform: translateY(0) rotateX(0deg); }
-  15%, 85% { transform: translateY(-35px) rotateX(25deg); } 
-  95%, 100% { transform: translateY(0) rotateX(0deg); }
+  0%, 25% { transform: translateY(0px); }
+  45%, 75% { transform: translateY(-30px) rotateX(-12deg); }
+  90%, 100% { transform: translateY(0px); }
 }

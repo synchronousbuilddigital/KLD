@@ -215,11 +215,11 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
       )}
 
       <main 
-        className="flex-1 flex flex-col items-center px-6 relative z-10" 
-        style={{ paddingTop: (planConfig.promotion && planConfig.promotion.active && !planConfig.promotion.isExpired) ? '30px' : '110px', paddingBottom: '60px' }}
+        className="flex-1 flex flex-col items-center px-4 sm:px-6 relative z-10" 
+        style={{ paddingTop: (planConfig.promotion && planConfig.promotion.active && !planConfig.promotion.isExpired) ? '24px' : '96px', paddingBottom: '60px' }}
       >
 
-        <div className="mb-12 flex items-center justify-center">
+        <div className="mb-8 sm:mb-12 flex items-center justify-center">
           <div className="bg-white/80 backdrop-blur-md border border-zinc-200 rounded-full p-1.5 flex shadow-sm relative w-[280px]">
             <motion.div 
               className="absolute top-1.5 bottom-1.5 left-1.5 w-[130px] bg-zinc-900 rounded-full shadow-md pointer-events-none"
@@ -242,28 +242,28 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
           </div>
         </div>
 
-        <div className="max-w-[1000px] w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="max-w-[1000px] w-full grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
           
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-3xl p-10 border border-zinc-200 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] flex flex-col h-full relative overflow-hidden"
+            className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border border-zinc-200 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] flex flex-col h-full relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
             
-            <h3 className="text-2xl font-bold text-zinc-900 mb-2">{planConfig.baseTitle}</h3>
-            <p className="text-sm text-zinc-500 mb-8">{planConfig.baseDescription}</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 mb-2">{planConfig.baseTitle}</h3>
+            <p className="text-xs sm:text-sm text-zinc-500 mb-6 sm:mb-8">{planConfig.baseDescription}</p>
             
-            <div className="mb-8 flex items-baseline">
-              <span className="text-5xl font-black text-zinc-900">₹{rawBasePrice.toLocaleString('en-IN')}</span>
-              <span className="text-zinc-500 ml-2">/month</span>
+            <div className="mb-6 sm:mb-8 flex items-baseline">
+              <span className="text-4xl sm:text-5xl font-black text-zinc-900">₹{rawBasePrice.toLocaleString('en-IN')}</span>
+              <span className="text-zinc-500 ml-2 text-sm sm:text-base">/month</span>
             </div>
-            {isYearly && <div className="text-sm text-zinc-400 mb-6 -mt-6">Billed ₹{(rawBasePrice * 12).toLocaleString('en-IN')} annually</div>}
+            {isYearly && <div className="text-xs sm:text-sm text-zinc-400 mb-6 -mt-4 sm:-mt-6">Billed ₹{(rawBasePrice * 12).toLocaleString('en-IN')} annually</div>}
 
             <button 
               onClick={() => handleOpenCheckout('BASE')}
-              className="w-full py-4 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 font-semibold rounded-xl transition-colors mb-10"
+              className="w-full py-3.5 sm:py-4 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 font-semibold rounded-xl transition-colors mb-8 sm:mb-10 text-sm"
             >
               Get Base Plan
             </button>
@@ -298,54 +298,54 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-3xl p-10 border-2 border-indigo-500 shadow-[0_30px_60px_-15px_rgba(99,102,241,0.15)] flex flex-col h-full relative"
+            className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border-2 border-indigo-500 shadow-[0_30px_60px_-15px_rgba(99,102,241,0.15)] flex flex-col h-full relative"
           >
             <div className="absolute inset-0 overflow-hidden rounded-[calc(1.5rem-2px)] pointer-events-none">
               <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 translate-x-1/2 -translate-y-1/2"></div>
             </div>
             
-            <div className="absolute top-0 right-10 transform -translate-y-1/2 z-10">
-              <div className="bg-indigo-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+            <div className="absolute top-0 right-6 sm:right-10 transform -translate-y-1/2 z-10">
+              <div className="bg-indigo-500 text-white text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
                 ✦ Commercial Use
               </div>
             </div>
 
-            <h3 className="text-2xl font-bold text-zinc-900 mb-2">{planConfig.proTitle}</h3>
-            <p className="text-sm text-zinc-500 mb-8">{planConfig.proDescription}</p>
+            <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 mb-2">{planConfig.proTitle}</h3>
+            <p className="text-xs sm:text-sm text-zinc-500 mb-6 sm:mb-8">{planConfig.proDescription}</p>
             
-            <div className="mb-8 flex items-baseline">
-              <span className="text-5xl font-black text-zinc-900">₹{rawProPrice.toLocaleString('en-IN')}</span>
-              <span className="text-zinc-500 ml-2">/month</span>
+            <div className="mb-6 sm:mb-8 flex items-baseline">
+              <span className="text-4xl sm:text-5xl font-black text-zinc-900">₹{rawProPrice.toLocaleString('en-IN')}</span>
+              <span className="text-zinc-500 ml-2 text-sm sm:text-base">/month</span>
             </div>
-            {isYearly && <div className="text-sm text-zinc-400 mb-6 -mt-6">Billed ₹{(rawProPrice * 12).toLocaleString('en-IN')} annually</div>}
+            {isYearly && <div className="text-xs sm:text-sm text-zinc-400 mb-6 -mt-4 sm:-mt-6">Billed ₹{(rawProPrice * 12).toLocaleString('en-IN')} annually</div>}
 
             <button 
               onClick={() => handleOpenCheckout('PRO')}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors mb-10 shadow-lg shadow-indigo-200"
+              className="w-full py-3.5 sm:py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors mb-8 sm:mb-10 shadow-lg shadow-indigo-200 text-sm"
             >
               Upgrade to Pro
             </button>
 
             <div className="flex-1">
-              <h4 className="font-semibold text-lg text-zinc-900 mb-4">Includes everything in Base, plus:</h4>
-              <ul className="space-y-4 mb-8">
+              <h4 className="font-semibold text-base sm:text-lg text-zinc-900 mb-4">Includes everything in Base, plus:</h4>
+              <ul className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                 {proFeatures.map((feat, i) => (
                   <li key={i} className="flex items-start gap-3 text-zinc-700">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <span className="text-sm leading-tight flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-xs sm:text-sm leading-tight flex items-center gap-1.5">
                       {feat.text}
-                      {feat.info && <Info className="w-3.5 h-3.5 text-zinc-400" />}
+                      {feat.info && <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-zinc-400" />}
                     </span>
                   </li>
                 ))}
               </ul>
 
-              <h4 className="font-semibold text-lg text-zinc-900 mb-4">AI features</h4>
-              <ul className="space-y-4">
+              <h4 className="font-semibold text-base sm:text-lg text-zinc-900 mb-4">AI features</h4>
+              <ul className="space-y-3 sm:space-y-4">
                 {proAiFeatures.map((feat, i) => (
                   <li key={i} className="flex items-start gap-3 text-zinc-700">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <span className="text-sm leading-tight">{feat.text}</span>
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-xs sm:text-sm leading-tight">{feat.text}</span>
                   </li>
                 ))}
               </ul>
@@ -356,26 +356,26 @@ export default function PricingPage({ onBack, onNavigate }: PricingPageProps) {
 
       <AnimatePresence>
         {checkoutModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-3xl p-8 max-w-[500px] w-full shadow-2xl relative border border-zinc-200 overflow-hidden"
+              className="bg-white rounded-3xl p-5 sm:p-8 max-w-[480px] w-full shadow-2xl relative border border-zinc-200 overflow-hidden my-auto max-h-[92vh] overflow-y-auto"
             >
               <button 
                 onClick={() => setCheckoutModalOpen(false)}
-                className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 transition-colors"
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                  <CreditCard className="w-6 h-6" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+                  <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-zinc-900">Checkout & Payment</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-zinc-900">Checkout & Payment</h3>
                   <p className="text-xs text-zinc-500">Complete your membership subscription</p>
                 </div>
               </div>

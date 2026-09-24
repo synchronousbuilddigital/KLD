@@ -121,6 +121,18 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
     panels.push({ id: "bot-lock-3", name: "Bottom Lock Flap 3", path: rect(x3, yBot, L, lockD) });
     panels.push({ id: "bot-lock-4", name: "Bottom Lock Flap 4", path: rect(x4, yBot, W, lockD) });
     
+  } else if (boxModel === 'button_hole') {
+    // Button Hole / Snap Lock Bottom
+    panels.push({ id: "top-tuck", name: "Top Tuck Flap", path: getTuckFlap(x1, L, true) });
+    panels.push({ id: "top-dust-1", name: "Top Dust Flap", path: getDustFlap(x2, W, true, 'right') });
+    panels.push({ id: "top-dust-2", name: "Top Dust Flap", path: getDustFlap(x4, W, true, 'left') });
+
+    const lockD = W * 0.75; 
+    panels.push({ id: "bot-lock-1", name: "Bottom Lock Flap 1", path: rect(x1, yBot, L, lockD) });
+    panels.push({ id: "bot-lock-2", name: "Bottom Lock Flap 2", path: rect(x2, yBot, W, lockD * 0.6) });
+    panels.push({ id: "bot-lock-3", name: "Bottom Lock Flap 3", path: rect(x3, yBot, L, lockD) });
+    panels.push({ id: "bot-lock-4", name: "Bottom Lock Flap 4", path: rect(x4, yBot, W, lockD * 0.6) });
+    
   } else {
     // Reverse Tuck End (Default)
     panels.push({ id: "top-tuck", name: "Top Tuck Flap", path: getTuckFlap(x1, L, true) });

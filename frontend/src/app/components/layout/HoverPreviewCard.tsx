@@ -14,9 +14,10 @@ const TuckBox3D = lazy(() => import('./models/TuckBox3D'));
 const GiftBox3D = lazy(() => import('./models/GiftBox3D'));
 const PaperBag3D = lazy(() => import('./models/PaperBag3D'));
 const Pouch3D = lazy(() => import('./models/Pouch3D'));
+const SupplementJar3D = lazy(() => import('./models/SupplementJar3D'));
 
 interface Props {
-  item: { label: string; img: string };
+  item: { label: string; img: string; itemId?: string; id?: string };
   hoveredNode: HTMLDivElement;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
@@ -45,7 +46,7 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
       const rect = hoveredNode.getBoundingClientRect();
       
       // Auto-dismiss if scrolled out of visible viewport
-      if (rect.bottom < 60 || rect.top > window.innerHeight - 60) {
+      if (rect.bottom < 60 || rect.top > window.innerHeight - 60 || rect.right < 0 || rect.left > window.innerWidth) {
         onMouseLeave();
         return;
       }
@@ -91,8 +92,16 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
     };
   }, [hoveredNode, onMouseLeave]);
 
-  // The remaining boxes that use the interactive step-by-step Box3D animation
-  const isBox = ['Mailer Box'].includes(item.label);
+  const labelLower = (item?.label || '').toLowerCase();
+  const idLower = (((item as any)?.itemId || (item as any)?.id) || '').toLowerCase();
+  const matches = (...keys: string[]) => keys.some(k => labelLower.includes(k) || idLower.includes(k));
+
+  // Items using the interactive step-by-step folding animation
+  const isPizza = matches('pizza');
+  const isTuck = matches('tuck');
+  const isGift = matches('gift');
+  const isMailerBox = !isTuck && !isPizza && !isGift && (matches('mailer', 'shipping') || labelLower.includes('box') || (idLower.includes('box') && !matches('tuck')));
+  const isBox = isMailerBox || isPizza;
 
   useEffect(() => {
     if (!item) return;
@@ -122,7 +131,6 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
         width: `${CARD_W}px`,
         height: `${CARD_H}px`,
         zIndex: 9999,
-        // left/top will be set by the layout effect
         left: '-9999px',
         top: '-9999px',
       }}
@@ -136,7 +144,7 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
       <div className="hover-preview-card__header">
         <h3 className="hover-preview-card__title">{item.label}</h3>
         <p className="hover-preview-card__subtitle">
-          {isBox ? 'Structural Animation' : '3D Component Preview'}
+          {isBox || isTuck ? 'Structural Animation' : '3D Component Preview'}
         </p>
       </div>
 
@@ -149,38 +157,41 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
           </div>
         }>
           {(() => {
-            if (item.label === 'Pizza Box') {
-              return <div style={{ transform: 'scale(0.55)' }}><PizzaBox3D animState={animState} /></div>;
+            if (isPizza) {
+              return <div style={{ transform: 'scale(0.85)' }}><PizzaBox3D animState={animState} /></div>;
             }
-            if (item.label === 'Supplement') {
-              return <div style={{ transform: 'scale(0.8)' }}><Bottle3D /></div>;
-            }
-            if (item.label === 'Bottle' || item.label === 'Water Bottle') {
-              return <div style={{ transform: 'scale(0.8)' }}><WaterBottle3D /></div>;
-            }
-            if (item.label === 'Can') {
-              return <div style={{ transform: 'scale(0.9)' }}><Can3D /></div>;
-            }
-            if (item.label === 'Tube') {
-              return <div style={{ transform: 'scale(0.9)' }}><Tube3D /></div>;
-            }
-            if (item.label === 'Cup') {
-              return <div style={{ transform: 'scale(0.9)' }}><Cup3D /></div>;
-            }
-            if (item.label === 'Tuck End') {
+            if (isTuck) {
               return <div style={{ transform: 'scale(0.9)' }}><TuckBox3D /></div>;
             }
-            if (item.label === 'Gift Box') {
+            if (isMailerBox) {
+              return <div style={{ transform: 'scale(0.85)' }}><Box3D boxState={animState} type={item.label} /></div>;
+            }
+            if (matches('gift')) {
               return <div style={{ transform: 'scale(0.9)' }}><GiftBox3D /></div>;
             }
-            if (item.label === 'Paper Bag') {
+            if (matches('supplement', 'jar')) {
+              return <div style={{ transform: 'scale(0.85)' }}><SupplementJar3D /></div>;
+            }
+            if (matches('water')) {
+              return <div style={{ transform: 'scale(0.85)' }}><WaterBottle3D /></div>;
+            }
+            if (matches('bottle')) {
+              return <div style={{ transform: 'scale(0.85)' }}><Bottle3D /></div>;
+            }
+            if (matches('can')) {
+              return <div style={{ transform: 'scale(0.9)' }}><Can3D /></div>;
+            }
+            if (matches('tube')) {
+              return <div style={{ transform: 'scale(0.9)' }}><Tube3D /></div>;
+            }
+            if (matches('cup', 'container')) {
+              return <div style={{ transform: 'scale(0.9)' }}><Cup3D /></div>;
+            }
+            if (matches('paper', 'bag') && !matches('pouch')) {
               return <div style={{ transform: 'scale(0.9)' }}><PaperBag3D /></div>;
             }
-            if (item.label === 'Pouch') {
+            if (matches('pouch')) {
               return <div style={{ transform: 'scale(1.0)' }}><Pouch3D /></div>;
-            }
-            if (isBox) {
-              return <div style={{ transform: 'scale(0.55)' }}><Box3D boxState={animState} type={item.label} /></div>;
             }
             return (
               <div className="hover-preview-card__float-container">
@@ -203,7 +214,7 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
               (animState === 'closed' && i === 0) ||
               (animState === 'open' && i === 1) ||
               ((animState === 'flat' || animState === 'rotate') && i === 2) ||
-              (animState === 'open' && i === 3) // Technically this indicator might not perfectly sync if state is duplicated, but let's just highlight based on a timer index if we could. For now this is fine.
+              (animState === 'open' && i === 3)
                 ? 'hover-preview-card__dot--active' : ''
             }`}
           />

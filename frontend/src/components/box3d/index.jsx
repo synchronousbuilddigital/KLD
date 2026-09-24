@@ -21,8 +21,9 @@ import AutoLockBox3DViewer from "./AutoLockBox3DViewer";
 
 import CosmeticBox3DViewer  from "./CosmeticBox3DViewer";
 import CosmeticBBox3DViewer from "./CosmeticBBox3DViewer";
+import ButtonHoleBox3DViewer from "./ButtonHoleBox3DViewer";
 
-export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer };
+export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer };
 
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
@@ -44,5 +45,6 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
   if (model === "auto_lock") return <AutoLockBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "cosmetic") return <CosmeticBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "cosmetic_b") return <CosmeticBBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  if (model === "button_hole") return <ButtonHoleBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   return <RTEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
 }

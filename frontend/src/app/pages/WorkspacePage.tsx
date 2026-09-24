@@ -12,6 +12,7 @@ import { useBoxStore } from '../../lib/useBoxStore';
 import AnimatedLogo from '../components/layout/AnimatedLogo';
 import '../../styles/new-home.css';
 import './UserProfilePage.css';
+import SignInModal from '../components/modals/SignInModal';
 
 export interface WorkspaceItem {
   id: string;
@@ -232,6 +233,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   const [items, setItems] = useState<WorkspaceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token'));
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   // Inline Rename State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -296,11 +298,19 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   };
 
   useEffect(() => {
+    const handleOpenSignIn = () => setIsSignInModalOpen(true);
     const handleAuth = () => {
-      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token'));
+      const loggedIn = localStorage.getItem('isLoggedIn') === 'true' || !!localStorage.getItem('token');
+      setIsLoggedIn(loggedIn);
+      setIsSignInModalOpen(false);
+      fetchWorkspaceItems();
     };
+    window.addEventListener('open-sign-in-modal', handleOpenSignIn);
     window.addEventListener('auth-change', handleAuth);
-    return () => window.removeEventListener('auth-change', handleAuth);
+    return () => {
+      window.removeEventListener('open-sign-in-modal', handleOpenSignIn);
+      window.removeEventListener('auth-change', handleAuth);
+    };
   }, []);
 
   // Hidden File Input Ref for "Upload dieline to model"
@@ -327,8 +337,13 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
   const fetchWorkspaceItems = async () => {
     let mongoItems: WorkspaceItem[] = [];
     const token = localStorage.getItem('token');
-    
-    if (token) {
+    const userIsLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || !!token;
+
+    if (!userIsLoggedIn || !token) {
+      setItems([]);
+      setIsLoading(false);
+      return;
+    }
       try {
         const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
           headers: {
@@ -390,7 +405,6 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
       } catch (err) {
         console.log('MongoDB fetch error, using local workspace items:', err);
       }
-    }
 
     // Local storage items fallback / merge (Filtering out any mock dummy items and auto drafts)
     let localItems: WorkspaceItem[] = [];
@@ -670,11 +684,11 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
   // Sidebar Menu Items definition
   const sidebarItems = [
-    { id: 'recent' as const, label: 'Recent Work', icon: Clock, count: items.length },
-    { id: 'projects' as const, label: 'Projects', icon: Folder, count: items.filter(i => i.tabCategory === 'projects').length },
-    { id: 'prints' as const, label: 'My Prints', icon: Printer, count: items.filter(i => i.tabCategory === 'prints').length },
-    { id: 'ai' as const, label: 'AI Generations', icon: Sparkles, count: items.filter(i => i.tabCategory === 'ai').length },
-    { id: 'favorites' as const, label: 'Favorites', icon: Star, count: items.filter(i => i.isFavorite).length },
+    { id: 'recent' as const, label: 'Recent Work', icon: Clock, count: isLoggedIn ? items.length : 0 },
+    { id: 'projects' as const, label: 'Projects', icon: Folder, count: isLoggedIn ? items.filter(i => i.tabCategory === 'projects').length : 0 },
+    { id: 'prints' as const, label: 'My Prints', icon: Printer, count: isLoggedIn ? items.filter(i => i.tabCategory === 'prints').length : 0 },
+    { id: 'ai' as const, label: 'AI Generations', icon: Sparkles, count: isLoggedIn ? items.filter(i => i.tabCategory === 'ai').length : 0 },
+    { id: 'favorites' as const, label: 'Favorites', icon: Star, count: isLoggedIn ? items.filter(i => i.isFavorite).length : 0 },
   ];
 
   // Dynamic Page Header Title based on active tab
@@ -710,7 +724,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 >
                   <IconComponent className={`w-4 h-4 ${isActive ? 'text-zinc-900' : 'text-zinc-500'}`} />
                   <span className="flex-1 text-left">{item.label}</span>
-                  {item.count > 0 && (
+                  {isLoggedIn && item.count > 0 && (
                     <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
                       isActive ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600'
                     }`}>
@@ -809,62 +823,64 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           )}
         </AnimatePresence>
 
-        {/* CONTROLS ROW */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold px-3 py-1 bg-zinc-200/70 text-zinc-700 rounded-full">
-              {filteredItems.length} items
-            </span>
-          </div>
+        {/* CONTROLS ROW - Only display when user is logged in */}
+        {isLoggedIn && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold px-3 py-1 bg-zinc-200/70 text-zinc-700 rounded-full">
+                {filteredItems.length} items
+              </span>
+            </div>
 
-          {/* Top Right Controls: Search (if not in projects), Sort & Grid/List View Toggles */}
-          <div className="flex items-center gap-3 flex-wrap self-end sm:self-auto">
-            {sidebarTab !== 'projects' && (
-              <div className="relative w-full sm:w-[260px]">
-                <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
-                <input 
-                  type="text" 
-                  placeholder="Search in this section..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-white border border-zinc-200/90 rounded-xl text-xs font-bold outline-none focus:border-zinc-900 shadow-sm transition-all"
-                />
+            {/* Top Right Controls: Search (if not in projects), Sort & Grid/List View Toggles */}
+            <div className="flex items-center gap-3 flex-wrap self-end sm:self-auto">
+              {sidebarTab !== 'projects' && (
+                <div className="relative w-full sm:w-[260px]">
+                  <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                  <input 
+                    type="text" 
+                    placeholder="Search in this section..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-white border border-zinc-200/90 rounded-xl text-xs font-bold outline-none focus:border-zinc-900 shadow-sm transition-all"
+                  />
+                </div>
+              )}
+
+              {/* Sort Selector */}
+              <div className="flex items-center gap-2 bg-white border border-zinc-200/90 rounded-xl px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm">
+                <span className="text-zinc-400 font-medium">Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-transparent outline-none cursor-pointer text-zinc-900 font-bold pr-1"
+                >
+                  <option value="last_saved">Last saved</option>
+                  <option value="newest">Newest first</option>
+                  <option value="name">Alphabetical</option>
+                </select>
               </div>
-            )}
 
-            {/* Sort Selector */}
-            <div className="flex items-center gap-2 bg-white border border-zinc-200/90 rounded-xl px-3.5 py-1.5 text-xs font-bold text-zinc-700 shadow-sm">
-              <span className="text-zinc-400 font-medium">Sort:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="bg-transparent outline-none cursor-pointer text-zinc-900 font-bold pr-1"
-              >
-                <option value="last_saved">Last saved</option>
-                <option value="newest">Newest first</option>
-                <option value="name">Alphabetical</option>
-              </select>
-            </div>
-
-            {/* Grid / List View Toggle Icons */}
-            <div className="bg-white border border-zinc-200/90 p-1 rounded-xl flex items-center shadow-sm">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
-                title="Grid View"
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
-                title="List View"
-              >
-                <List className="w-4 h-4" />
-              </button>
+              {/* Grid / List View Toggle Icons */}
+              <div className="bg-white border border-zinc-200/90 p-1 rounded-xl flex items-center shadow-sm">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
+                  title="Grid View"
+                >
+                  <Grid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-zinc-900 text-white shadow-sm font-bold' : 'text-zinc-400 hover:text-zinc-900'}`}
+                  title="List View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
           {/* ========================================================
               MODEL DISPLAY CONTENT AREA (GRID / LIST / TAILORED EMPTY STATE)
@@ -889,7 +905,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 Log in to your account to save 3D box models, custom dielines, and access your personal workspace across devices.
               </p>
               <button
-                onClick={() => window.dispatchEvent(new CustomEvent('open-sign-in-modal'))}
+                onClick={() => setIsSignInModalOpen(true)}
                 className="px-6 py-3.5 bg-zinc-900 text-white text-xs font-extrabold rounded-2xl shadow-md hover:bg-zinc-800 transition-all flex items-center gap-2.5 cursor-pointer active:scale-95"
               >
                 <User className="w-4 h-4 text-amber-400" /> Sign In / Create Account
@@ -1279,6 +1295,11 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           )}
 
         </main>
-    </div>
-  );
-}
+
+        {/* Sign In / Create Account Modal */}
+        {isSignInModalOpen && (
+          <SignInModal onClose={() => setIsSignInModalOpen(false)} />
+        )}
+      </div>
+    );
+  }

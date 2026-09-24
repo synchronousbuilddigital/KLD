@@ -2,85 +2,128 @@ import React, { useMemo } from 'react';
 import './Bottle3D.css';
 
 export default function Bottle3D() {
-  const resolution = 36; // Reduced from 144 to prevent lag
+  const faces = 24;
+  const radius = 35;
+  const height = 115;
+  const angle = 360 / faces;
+  const faceWidth = (radius * 2 * Math.tan(Math.PI / faces)) + 0.8;
 
-  const createCylinder = (faces: number, diameter: number, height: number, type: string, flip = false) => {
-    const angle = 360 / faces;
-    const faceWidth = (diameter * Math.tan(Math.PI / faces)) + 1.0; 
-    const radius = diameter / 2;
+  // Amber glass cylinder body facets with studio reflection
+  const cylinderFaces = useMemo(() => {
     const elements = [];
-    
-    for(let i = 0; i < faces; i++) {
-      let transform = '';
-      let background = '';
-      
-      if (flip) {
-        transform = `rotateY(${i * angle}deg) translateZ(${radius - 1}px) rotateY(180deg)`;
-        background = '#0a0a0a';
-      } else {
-        transform = `rotateY(${i * angle}deg) translateZ(${radius}px)`;
-        
-        const angleRad = (i * angle) * Math.PI / 180;
-        const light = Math.cos(angleRad - 0.5); 
-        const darkness = light < 0 ? Math.abs(light) * 0.35 : 0;
-        const highlight = light > 0.85 ? (light - 0.85) * 1.5 : 0;
-        
-        let baseDesign = '';
-        if (type === 'body') {
-          baseDesign = 'linear-gradient(to bottom, var(--white-plastic) 25%, var(--label-gold) 25%, var(--label-gold) 75%, var(--white-plastic) 75%)';
-        } else if (type === 'neck') {
-          baseDesign = 'repeating-linear-gradient(-15deg, #e0e0e0 0px, #e0e0e0 2px, #ccc 3px, #e8e8e8 4px, #e0e0e0 5px)';
-        } else if (type === 'cap') {
-          baseDesign = 'linear-gradient(to bottom, #1a1a1a, #1a1a1a)';
-        }
-        
-        const lightingOverlay = `linear-gradient(rgba(255,255,255,${highlight}), rgba(255,255,255,${highlight})), linear-gradient(rgba(0,0,0,${darkness}), rgba(0,0,0,${darkness}))`;
-        background = `${lightingOverlay}, ${baseDesign}`;
-      }
+
+    for (let i = 0; i < faces; i++) {
+      const rad = (i * angle * Math.PI) / 180;
+      const light = Math.cos(rad - Math.PI / 4);
+      const intensity = 0.5 + 0.5 * light;
+
+      // Amber glass: deep rich caramel/brown with warm golden specular highlights
+      const baseR = 120, baseG = 65, baseB = 25;
+      const r = Math.round(baseR * (0.6 + 0.4 * intensity));
+      const g = Math.round(baseG * (0.6 + 0.4 * intensity));
+      const b = Math.round(baseB * (0.6 + 0.4 * intensity));
+
+      const isSpecular = Math.abs(i * angle - 45) < 25;
+      const specularGleam = isSpecular ? 'rgba(255, 200, 120, 0.25)' : 'transparent';
 
       elements.push(
         <div
-          key={`${type}-${i}`}
-          className="bottle-face"
+          key={i}
+          className="bottle-facet"
           style={{
             position: 'absolute',
-            top: 0,
+            width: `${faceWidth}px`,
+            height: `${height}px`,
+            left: `${radius - faceWidth / 2}px`,
+            transform: `rotateY(${i * angle}deg) translateZ(${radius}px)`,
+            background: `linear-gradient(to right, ${specularGleam}, transparent), linear-gradient(to bottom, rgb(${r + 15},${g + 10},${b + 5}) 0%, rgb(${r},${g},${b}) 80%, rgb(${Math.round(r * 0.7)},${Math.round(g * 0.7)},${Math.round(b * 0.7)}) 100%)`,
             backfaceVisibility: 'hidden',
-            width: faceWidth,
-            height: height,
-            left: radius - faceWidth/2,
-            transform,
-            background
           }}
         />
       );
     }
     return elements;
-  };
+  }, [faces, radius, height, angle, faceWidth]);
 
-  const bodyElements = useMemo(() => createCylinder(resolution, 90, 120, 'body', false), [resolution]);
-  const neckElements = useMemo(() => createCylinder(resolution, 70, 20, 'neck', false), [resolution]);
-  const capElements = useMemo(() => createCylinder(resolution, 74, 34, 'cap', false), [resolution]);
-  const capInnerElements = useMemo(() => createCylinder(resolution, 72, 34, 'cap', true), [resolution]);
+  // Curved UV-mapped apothecary label slices wrapped flush against amber glass
+  const labelSlices = useMemo(() => {
+    const labelFaceCount = 12; // 12 faces = 180 degrees of wrap
+    const labelHeight = 85;
+    const labelWidth = labelFaceCount * faceWidth;
+    const elements = [];
+
+    for (let k = 0; k < labelFaceCount; k++) {
+      const sliceAngle = (k - (labelFaceCount - 1) / 2) * angle;
+
+      elements.push(
+        <div
+          key={`bottle-label-slice-${k}`}
+          className="bottle-label-slice"
+          style={{
+            width: `${faceWidth}px`,
+            height: `${labelHeight}px`,
+            top: `${(height - labelHeight) / 2 + 5}px`,
+            left: `${radius - faceWidth / 2}px`,
+            transform: `rotateY(${sliceAngle}deg) translateZ(${radius + 0.3}px)`,
+          }}
+        >
+          <div
+            className="bottle-label-card"
+            style={{
+              width: `${labelWidth}px`,
+              height: `${labelHeight}px`,
+              left: `${-k * faceWidth}px`,
+            }}
+          >
+            <div className="bottle-brand-badge">
+              <span className="bottle-badge-est">EST. 2024 • CRAFT BOTANICALS</span>
+              <h4 className="bottle-badge-brand">KLD LABS</h4>
+              <div className="bottle-badge-divider" />
+              <span className="bottle-badge-product">RADIANCE ELIXIR</span>
+              <span className="bottle-badge-sub">COLD-PRESSED EXTRACT COMPLEX</span>
+              <div className="bottle-badge-vol">30 ML ℮ 1.0 FL. OZ.</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return elements;
+  }, [angle, faceWidth, height, radius]);
 
   return (
     <div className="bottle-scene">
       <div className="bottle-camera">
-        <div className="bottle-shadow"></div>
+        <div className="bottle-shadow" />
+
         <div className="bottle-container">
-           <div className="bottle-body">{bodyElements}</div>
-           <div className="bottle-disk base-disk"></div>
-           <div className="bottle-disk shoulder-disk"></div>
-           
-           <div className="bottle-neck">{neckElements}</div>
-           <div className="bottle-disk neck-top-disk"></div>
-           
-           <div className="bottle-cap">
-               {capElements}
-               {capInnerElements}
-               <div className="bottle-disk cap-top-disk"></div>
-               <div className="bottle-disk cap-inner-ceiling"></div>
-           </div>
+          {/* Amber Glass Body with Curved Label */}
+          <div className="bottle-body-wrap">
+            {cylinderFaces}
+            {labelSlices}
+          </div>
+
+          {/* Rounded Glass Shoulder */}
+          <div className="bottle-shoulder-disk" />
+
+          {/* Threaded Glass Neck */}
+          <div className="bottle-neck-threaded" />
+
+          {/* Bottom Glass Base */}
+          <div className="bottle-base-disk" />
+
+          {/* Dropper Assembly (Collar, Pipette, & Rubber Bulb) */}
+          <div className="bottle-dropper-assembly">
+            <div className="bottle-dropper-collar">
+              <div className="bottle-collar-rim" />
+            </div>
+
+            <div className="bottle-dropper-bulb" />
+
+            <div className="bottle-pipette-stem">
+              <div className="bottle-pipette-fluid" />
+              <div className="bottle-pipette-tip" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
