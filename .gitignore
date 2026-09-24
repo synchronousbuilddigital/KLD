@@ -11,6 +11,8 @@ dist/
 out/
 build/
 **/build/
+public/uploads/
+uploads/
 
 # Environment variables & secrets (CRITICAL: DO NOT PUSH)
 .env
