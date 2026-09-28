@@ -23,8 +23,10 @@ interface Props {
   onMouseLeave: () => void;
 }
 
+export type CardAnimState = BoxState | 'rotate';
+
 export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMouseLeave }: Props) {
-  const [animState, setAnimState] = useState<BoxState>('closed');
+  const [animState, setAnimState] = useState<CardAnimState>('closed');
   const [visible, setVisible] = useState(false);
   const [placement, setPlacement] = useState<'above' | 'below'>('above');
   const cardRef = useRef<HTMLDivElement>(null);
@@ -107,16 +109,16 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
     if (!item) return;
     
     // Non-box items use 'rotate' instead of 'flat' for their 3rd state
-    const sequence: string[] = isBox 
+    const sequence: CardAnimState[] = isBox 
       ? ['closed', 'open', 'flat', 'open']
       : ['closed', 'open', 'rotate', 'open'];
       
     let currentIndex = 0;
-    setAnimState('closed' as any);
+    setAnimState('closed');
     
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % sequence.length;
-      setAnimState(sequence[currentIndex] as any);
+      setAnimState(sequence[currentIndex]);
     }, 2800);
 
     return () => clearInterval(interval);
@@ -158,13 +160,13 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
         }>
           {(() => {
             if (isPizza) {
-              return <div style={{ transform: 'scale(0.85)' }}><PizzaBox3D animState={animState} /></div>;
+              return <div style={{ transform: 'scale(0.85)' }}><PizzaBox3D animState={animState as BoxState} /></div>;
             }
             if (isTuck) {
               return <div style={{ transform: 'scale(0.9)' }}><TuckBox3D /></div>;
             }
             if (isMailerBox) {
-              return <div style={{ transform: 'scale(0.85)' }}><Box3D boxState={animState} type={item.label} /></div>;
+              return <div style={{ transform: 'scale(0.85)' }}><Box3D boxState={animState as BoxState} type={item.label} /></div>;
             }
             if (matches('gift')) {
               return <div style={{ transform: 'scale(0.9)' }}><GiftBox3D /></div>;

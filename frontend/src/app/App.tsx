@@ -551,16 +551,29 @@ export default function App() {
 
   // Design Lab Interactive Workspace States
   const [activeTab, setActiveTab] = useState('dimensions');
-  const [width, setWidth] = useState(305);
-  const [height, setHeight] = useState(305);
-  const [depth, setDepth] = useState(305);
+  const [width, setWidth] = useState(120);
+  const [height, setHeight] = useState(180);
+  const [depth, setDepth] = useState(60);
 
-  const [foldProgress, setFoldProgress] = useState(0);
+  const [foldProgress, setFoldProgress] = useState(100);
   const [material, setMaterial] = useState('kraft');
   const [artwork, setArtwork] = useState('keyline');
   const [customColor, setCustomColor] = useState('#A7F3D0'); // Custom color finish
   const [customLogoUrl, setCustomLogoUrl] = useState<string | ArrayBuffer | null>(null); // Custom brand logo uploader
   const [sealState, setSealState] = useState<SealState>('unsealed');
+  const [isAutoFolding, setIsAutoFolding] = useState(false);
+
+  // Auto-play folding animation loop
+  useEffect(() => {
+    if (!isAutoFolding) return;
+    const timer = setInterval(() => {
+      setFoldProgress(prev => {
+        if (prev >= 100) return 0;
+        return Math.min(100, prev + 1);
+      });
+    }, 45);
+    return () => clearInterval(timer);
+  }, [isAutoFolding]);
 
   // Handle custom navigate events across components
   useEffect(() => {
@@ -1038,15 +1051,31 @@ export default function App() {
 
                     {/* TAB 1: Dimensions Controls */}
                     {activeTab === 'dimensions' && (
-                      <div className="space-y-6">
-                        <div className="space-y-4">
+                      <div className="space-y-5">
+                        {/* Standard Retail Carton Specification */}
+                        <div>
+                          <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider mb-2">Carton Specification</div>
+                          <button
+                            type="button"
+                            onClick={() => { setWidth(120); setDepth(60); setHeight(180); }}
+                            className="w-full p-2.5 rounded-lg border border-amber-500/60 bg-amber-500/10 text-white flex items-center justify-between transition-colors"
+                          >
+                            <div className="text-left">
+                              <div className="font-semibold text-xs text-amber-300">Standard Retail Reverse Tuck Carton</div>
+                              <div className="text-[10px] text-zinc-400 font-mono">120 × 60 × 180 mm (L × W × H)</div>
+                            </div>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30">Active</span>
+                          </button>
+                        </div>
+
+                        <div className="space-y-4 pt-2 border-t border-zinc-800/60">
                           <div>
                             <div className="flex justify-between text-xs mb-1 font-mono">
                               <span className="text-zinc-500">Width (X)</span>
-                              <span className="text-white">{width}px</span>
+                              <span className="text-white">{width}mm</span>
                             </div>
                             <input
-                              type="range" min="50" max="600" value={width}
+                              type="range" min="40" max="250" value={width}
                               onChange={(e) => setWidth(Number(e.target.value))}
                               className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                             />
@@ -1055,10 +1084,10 @@ export default function App() {
                           <div>
                             <div className="flex justify-between text-xs mb-1 font-mono">
                               <span className="text-zinc-500">Depth (Y)</span>
-                              <span className="text-white">{depth}px</span>
+                              <span className="text-white">{depth}mm</span>
                             </div>
                             <input
-                              type="range" min="50" max="600" value={depth}
+                              type="range" min="20" max="150" value={depth}
                               onChange={(e) => setDepth(Number(e.target.value))}
                               className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                             />
@@ -1067,10 +1096,10 @@ export default function App() {
                           <div>
                             <div className="flex justify-between text-xs mb-1 font-mono">
                               <span className="text-zinc-500">Height (Z)</span>
-                              <span className="text-white">{height}px</span>
+                              <span className="text-white">{height}mm</span>
                             </div>
                             <input
-                              type="range" min="50" max="600" value={height}
+                              type="range" min="50" max="300" value={height}
                               onChange={(e) => setHeight(Number(e.target.value))}
                               className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                             />
@@ -1175,15 +1204,29 @@ export default function App() {
                     {/* TAB 2: Folding Scrubber */}
                     {activeTab === 'folding' && (
                       <div className="space-y-6">
-                        <div className="bg-zinc-950/50 p-4 border border-zinc-800 rounded-xl space-y-2">
+                        <div className="bg-zinc-950/50 p-4 border border-zinc-800 rounded-xl space-y-3">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-zinc-500 font-semibold">Assembly Progress</span>
-                            <span className="text-amber-500 font-bold font-mono">{foldProgress}%</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setIsAutoFolding(prev => !prev)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors flex items-center gap-1 ${
+                                  isAutoFolding 
+                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' 
+                                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                                }`}
+                              >
+                                {isAutoFolding ? '⏸ Pause' : '▶ Auto Fold'}
+                              </button>
+                              <span className="text-amber-500 font-bold font-mono w-10 text-right">{foldProgress}%</span>
+                            </div>
                           </div>
                           <input
                             type="range" min="0" max="100" value={foldProgress}
                             onChange={(e) => {
                               if (sealState !== 'unsealed') return;
+                              setIsAutoFolding(false);
                               setFoldProgress(Number(e.target.value));
                             }}
                             disabled={sealState !== 'unsealed'}
@@ -1192,22 +1235,38 @@ export default function App() {
                         </div>
 
                         <div className="space-y-2 text-xs">
-                          <div className={`flex justify-between p-2.5 rounded-lg ${foldProgress < 10 ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}>
+                          <button
+                            type="button"
+                            onClick={() => { setIsAutoFolding(false); setFoldProgress(0); }}
+                            className={`w-full flex justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${foldProgress < 8 ? 'bg-zinc-800 text-white font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'}`}
+                          >
                             <span>1. Flat Dieline Sheet</span>
-                            <span className="font-mono">0% - 10%</span>
-                          </div>
-                          <div className={`flex justify-between p-2.5 rounded-lg ${foldProgress >= 10 && foldProgress < 45 ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}>
-                            <span>2. Dust Flaps Fold In</span>
-                            <span className="font-mono">10% - 45%</span>
-                          </div>
-                          <div className={`flex justify-between p-2.5 rounded-lg ${foldProgress >= 45 && foldProgress < 80 ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}>
-                            <span>3. Side Panels Assemble</span>
-                            <span className="font-mono">45% - 80%</span>
-                          </div>
-                          <div className={`flex justify-between p-2.5 rounded-lg ${foldProgress >= 80 ? 'bg-zinc-800 text-white' : 'text-zinc-500'}`}>
-                            <span>4. Lid Tucks In (Complete)</span>
-                            <span className="font-mono">80% - 100%</span>
-                          </div>
+                            <span className="font-mono">0% - 8%</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setIsAutoFolding(false); setFoldProgress(36); }}
+                            className={`w-full flex justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${foldProgress >= 8 && foldProgress < 36 ? 'bg-zinc-800 text-white font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'}`}
+                          >
+                            <span>2. 3D Body Tube Formation</span>
+                            <span className="font-mono">8% - 36%</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setIsAutoFolding(false); setFoldProgress(68); }}
+                            className={`w-full flex justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${foldProgress >= 36 && foldProgress < 68 ? 'bg-zinc-800 text-white font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'}`}
+                          >
+                            <span>3. Bottom Dust Flaps & Tuck</span>
+                            <span className="font-mono">36% - 68%</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setIsAutoFolding(false); setFoldProgress(100); }}
+                            className={`w-full flex justify-between p-2.5 rounded-lg text-left transition-colors cursor-pointer ${foldProgress >= 68 ? 'bg-zinc-800 text-white font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50'}`}
+                          >
+                            <span>4. Top Lid & Reverse Tuck Closure</span>
+                            <span className="font-mono">68% - 100%</span>
+                          </button>
                         </div>
                       </div>
                     )}
@@ -1454,8 +1513,8 @@ export default function App() {
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f293708_1px,transparent_1px),linear-gradient(to_bottom,#1f293708_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
                   {/* 3D Box scene viewport (Enlarged box display) */}
-                  <div className="w-full h-full flex-1 flex items-center justify-center absolute inset-0" style={{ perspective: 2000 }}>
-                    <div className="w-full h-full flex items-center justify-center scale-[0.68] xs:scale-[0.76] sm:scale-[0.85] origin-center">
+                  <div className="w-full h-full flex-1 flex items-center justify-center absolute inset-0" style={{ perspective: 2000, transformStyle: 'preserve-3d' }}>
+                    <div className="w-full h-full flex items-center justify-center scale-100 sm:scale-105 origin-center" style={{ transformStyle: 'preserve-3d' }}>
                       <RTEBoxPrototype
                         width={width}
                         depth={depth}

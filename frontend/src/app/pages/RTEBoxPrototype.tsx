@@ -64,22 +64,30 @@ export default function RTEBoxPrototype({
     return outMin + p * (outMax - outMin);
   };
 
-  // Stage 2: Dust Flaps Fold In (10-45)
-  const dustTop = mapRange(foldProgress, 10, 45, 0, -90);
-  const dustBot = mapRange(foldProgress, 10, 45, 0, 90);
+  // TRUE REVERSE TUCK END (RTE) PHYSICAL FOLDING KINEMATICS:
+  // 1. Tube Formation (8% - 36%): Body panels fold along creases into 3D rectangular sleeve
+  const bodyL = mapRange(foldProgress, 8, 30, 0, 90);
+  const bodyR = mapRange(foldProgress, 8, 30, 0, -90);
+  const bodyF = mapRange(foldProgress, 14, 36, 0, -90);
+  const bodyG = mapRange(foldProgress, 18, 36, 0, 90);
 
-  // Stage 3: Side Panels Assemble (45-80)
-  const bodyL = mapRange(foldProgress, 45, 80, 0, 90);
-  const bodyR = mapRange(foldProgress, 45, 80, 0, -90);
-  const bodyF = mapRange(foldProgress, 45, 80, 0, -90);
-  const bodyG = mapRange(foldProgress, 45, 80, 0, 90);
-  
-  // Stage 4: Lid Tucks In (80-100)
-  const tuckTop = mapRange(foldProgress, 80, 100, 0, -90);
-  const tuckTopLip = mapRange(foldProgress, 80, 100, 0, -90);
-  
-  const tuckBot = mapRange(foldProgress, 80, 100, 0, 90);
-  const tuckBotLip = mapRange(foldProgress, 80, 100, 0, 90);
+  // 2. Bottom Closure (35% - 65%):
+  // 2a. Bottom dust flaps (hinged to side walls) fold 90° inward across the bottom aperture
+  const dustBot = mapRange(foldProgress, 35, 46, 0, 90);
+  // 2b. Bottom tuck flap (hinged to Front panel) folds 90° inward over dust flaps
+  const tuckBot = mapRange(foldProgress, 44, 56, 0, 90);
+  // 2c. Bottom tuck lip folds 90° and slides inside along the Back wall, locking the bottom
+  const tuckBotLip = mapRange(foldProgress, 50, 65, 0, 90);
+
+  // 3. Top Dust Flaps (65% - 78%):
+  // Top dust flaps (hinged to side walls) fold 90° inward across the top aperture
+  const dustTop = mapRange(foldProgress, 65, 78, 0, -90);
+
+  // 4. Top Lid Closure & Front Reverse Tuck (78% - 100%):
+  // 4a. Top tuck flap (hinged to Back panel) folds 90° forward over top dust flaps
+  const tuckTop = mapRange(foldProgress, 78, 92, 0, -90);
+  // 4b. Top tuck friction lip folds 90° downward and slides cleanly inside behind the Front panel
+  const tuckTopLip = mapRange(foldProgress, 84, 100, 0, -90);
 
   const knownMaterials = ['kraft', 'matte-white', 'slate-black', 'gold-foil'];
   const materialClass = knownMaterials.includes(material) ? material : 'custom';
@@ -109,66 +117,76 @@ export default function RTEBoxPrototype({
       onMouseDown={handleMouseDown}
     >
       <div 
-        className={`rte-box ${materialClass}`} 
-        id="box-root"
-        style={{ transform: `scale(0.45) rotateX(${rotX}deg) rotateY(${rotY}deg)` }}
+        className="rte-pivot"
+        style={{ transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)` }}
       >
-        
-        {/* Base face: Panel 2 (Back) */}
-        <div className="rte-face rte-panel-back">
-            <div className="rte-texture-layer"></div>
+        <div 
+          className={`rte-box ${materialClass}`} 
+          id="box-root"
+        >
+          {/* Base face: Panel 2 (Back) */}
+          <div className="rte-face rte-panel-back">
+            <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
             
             {/* Top Tuck Flap */}
             <div className="rte-face rte-flap rte-tuck-top">
-                <div className="rte-texture-layer"></div>
+                <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                 <div className="rte-face rte-tuck-lip rte-tuck-lip-top">
-                    <div className="rte-texture-layer"></div>
+                    <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                 </div>
             </div>
             
             {/* Panel 1 (Left), attached to Back's left edge */}
             <div className="rte-face rte-panel-left">
-                <div className="rte-texture-layer"></div>
+                <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                 
                 {/* Left Dust Flaps */}
-                <div className="rte-face rte-flap rte-dust-top-left"><div className="rte-texture-layer"></div></div>
-                <div className="rte-face rte-flap rte-dust-bot-left"><div className="rte-texture-layer"></div></div>
+                <div className="rte-face rte-flap rte-dust-top-left"><div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div></div>
+                <div className="rte-face rte-flap rte-dust-bot-left"><div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div></div>
                 
                 {/* Glue Flap, attached to Left's left edge */}
                 <div className="rte-face rte-glue-flap">
-                    <div className="rte-texture-layer"></div>
+                    <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                 </div>
             </div>
 
             {/* Panel 3 (Right), attached to Back's right edge */}
             <div className="rte-face rte-panel-right">
-                <div className="rte-texture-layer"></div>
+                <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                 
                 {/* Right Dust Flaps */}
-                <div className="rte-face rte-flap rte-dust-top-right"><div className="rte-texture-layer"></div></div>
-                <div className="rte-face rte-flap rte-dust-bot-right"><div className="rte-texture-layer"></div></div>
+                <div className="rte-face rte-flap rte-dust-top-right"><div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div></div>
+                <div className="rte-face rte-flap rte-dust-bot-right"><div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div></div>
                 
                 {/* Panel 4 (Front), attached to Right's right edge */}
                 <div className="rte-face rte-panel-front">
-                    <div className="rte-texture-layer"></div>
+                    <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                     
-                    {/* Render User Artwork on Front Panel */}
+                    {/* Render User Artwork on Front Panel (Both flat dieline face and assembled 3D outside face) */}
                     {renderArtwork && (
-                        <div className="rte-artwork-container">
-                            {renderArtwork()}
-                        </div>
+                        <>
+                            {/* Outside 3D Box Face (Faces customer when assembled at 100%) */}
+                            <div className="rte-artwork-container" style={{ transform: 'rotateY(180deg) translateZ(1.5px)' }}>
+                                {renderArtwork()}
+                            </div>
+                            {/* Flat Dieline Face (Faces customer when flat at 0%) */}
+                            <div className="rte-artwork-container" style={{ transform: 'translateZ(1.5px)' }}>
+                                {renderArtwork()}
+                            </div>
+                        </>
                     )}
                     
                     {/* Bottom Tuck Flap */}
                     <div className="rte-face rte-flap rte-tuck-bot">
-                        <div className="rte-texture-layer"></div>
+                        <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                         <div className="rte-face rte-tuck-lip rte-tuck-lip-bot">
-                            <div className="rte-texture-layer"></div>
+                            <div className="rte-texture-layer outside"></div><div className="rte-texture-layer inside"></div><div className="rte-edge"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { rawButtonHolePaths } from './buttonHoleDielineRaw';
+import { rawButtonHolePaths } from './buttonHoleDielineRaw.js';
 
 export function generateButtonHoleDieline({ L, W, H, glueFlapWidth, windowDecals = [] }) {
   const nL = Number(L);

@@ -2994,15 +2994,238 @@
       return { cuts: [outerLoop.map(offset)], folds: folds.map(seg => seg.map(offset)), width: totalW, height: globalTop + bodyH + globalBottom };
     }
     const GLUE_TAB_W = 28;
+    let currentBoxModelKey = 'rte';
+
+    // Box-specific geometry, nesting, and alignment algorithms
+    const BOX_ALGORITHMS = {
+      rte: {
+        key: 'rte',
+        label: 'Reverse Tuck End',
+        computeFlatDimensions(L, W, H, glueTab) {
+          const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
+          const lip = 15;
+          const flatW = 2 * (L + W) + g;
+          const flatH = H + 2 * (W + lip);
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 180, 90, 270] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'row', variantOrder: 'default' },
+            { scanOrder: 'col', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: L, top: { type: 'tuck', depth: W + 15 }, bottom: { type: 'none' } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.45) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.45) } },
+            { w: L, top: { type: 'none' }, bottom: { type: 'tuck', depth: W + 15 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.45) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.45) } },
+            { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }
+          ], H);
+        }
+      },
+      te: {
+        key: 'te',
+        label: 'Straight Tuck End',
+        computeFlatDimensions(L, W, H, glueTab) {
+          const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
+          const lip = 15;
+          const flatW = 2 * (L + W) + g;
+          // In Straight Tuck End, both top tuck and bottom tuck flaps are on Panel 3
+          const flatH = H + 2 * (W + lip);
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 180, 90, 270] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'col', variantOrder: 'default' },
+            { scanOrder: 'row', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: L, top: { type: 'none' }, bottom: { type: 'none' } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.45) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.45) } },
+            { w: L, top: { type: 'tuck', depth: W + 15 }, bottom: { type: 'tuck', depth: W + 15 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.45) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.45) } },
+            { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }
+          ], H);
+        }
+      },
+      auto_lock: {
+        key: 'auto_lock',
+        label: 'Auto Bottom Lock',
+        computeFlatDimensions(L, W, H, glueTab) {
+          const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
+          const lip = 15;
+          const topTuck = W + lip;
+          const bottomLock = W * 0.78;
+          const flatW = 2 * (L + W) + g;
+          const flatH = H + topTuck + bottomLock;
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 180, 90, 270] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'row', variantOrder: 'default' },
+            { scanOrder: 'col', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: L, top: { type: 'tuck', depth: W + 15 }, bottom: { type: 'rect', depth: W * 0.78 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.45) }, bottom: { type: 'rect', depth: W * 0.55 } },
+            { w: L, top: { type: 'none' }, bottom: { type: 'rect', depth: W * 0.78 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.45) }, bottom: { type: 'rect', depth: W * 0.55 } },
+            { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }
+          ], H);
+        }
+      },
+      button_hole: {
+        key: 'button_hole',
+        label: 'Button Hole / Snap Lock',
+        computeFlatDimensions(L, W, H, glueTab) {
+          const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
+          const topHang = W * 1.25;
+          const bottomSnap = W * 0.75;
+          const flatW = 2 * (L + W) + g;
+          const flatH = H + topHang + bottomSnap;
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 180, 90, 270] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'row', variantOrder: 'default' },
+            { scanOrder: 'col', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: L, top: { type: 'tuck', depth: W * 1.25 }, bottom: { type: 'rect', depth: W * 0.75 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.4) }, bottom: { type: 'rect', depth: W * 0.6 } },
+            { w: L, top: { type: 'none' }, bottom: { type: 'rect', depth: W * 0.75 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.4) }, bottom: { type: 'rect', depth: W * 0.6 } },
+            { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }
+          ], H);
+        }
+      },
+      cosmetic: {
+        key: 'cosmetic',
+        label: 'Cosmetic Box',
+        computeFlatDimensions(L, W, H, glueTab) {
+          const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
+          const flapD = W + 12;
+          const flatW = 2 * (L + W) + g;
+          const flatH = H + 2 * flapD;
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 180, 90, 270] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'row', variantOrder: 'default' },
+            { scanOrder: 'col', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: L, top: { type: 'tuck', depth: W + 12 }, bottom: { type: 'none' } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.4) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.4) } },
+            { w: L, top: { type: 'none' }, bottom: { type: 'tuck', depth: W + 12 } },
+            { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.4) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.4) } },
+            { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }
+          ], H);
+        }
+      },
+      cosmetic_b: {
+        key: 'cosmetic_b',
+        label: 'Mailer / Tray & Lid',
+        computeFlatDimensions(L, W, H) {
+          const flatW = L + 4 * H + 20;
+          const flatH = 2 * W + 2 * H + 15;
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 90] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'row', variantOrder: 'default' },
+            { scanOrder: 'col', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: H, top: { type: 'rect', depth: H }, bottom: { type: 'rect', depth: H } },
+            { w: L, top: { type: 'rect', depth: W + H }, bottom: { type: 'rect', depth: W } },
+            { w: H, top: { type: 'rect', depth: H }, bottom: { type: 'rect', depth: H } }
+          ], H);
+        }
+      },
+      rsc: {
+        key: 'rsc',
+        label: 'Regular Slotted Carton',
+        computeFlatDimensions(L, W, H, glueTab) {
+          const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
+          const flapH = W / 2;
+          const flatW = 2 * (L + W) + g;
+          const flatH = H + 2 * flapH;
+          return { flatW, flatH };
+        },
+        getNestingAngles(allowRotation, forcedAngle) {
+          if (forcedAngle !== null) return [forcedAngle];
+          return allowRotation ? [0, 90] : [0];
+        },
+        getPreferredStrategies() {
+          return [
+            { scanOrder: 'row', variantOrder: 'default' },
+            { scanOrder: 'col', variantOrder: 'default' }
+          ];
+        },
+        generateParametric(L, W, H) {
+          return buildStripOuterLoop([
+            { w: W, top: { type: 'rect', depth: W / 2 }, bottom: { type: 'rect', depth: W / 2 } },
+            { w: L, top: { type: 'rect', depth: W / 2 }, bottom: { type: 'rect', depth: W / 2 } },
+            { w: W, top: { type: 'rect', depth: W / 2 }, bottom: { type: 'rect', depth: W / 2 } },
+            { w: L, top: { type: 'rect', depth: W / 2 }, bottom: { type: 'rect', depth: W / 2 } },
+            { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }
+          ], H);
+        }
+      }
+    };
+
     const BOX_TYPE_GENERATORS = {
-      rsc(L, W, H) { return buildStripOuterLoop([{ w: W, top: { type: 'rect', depth: Math.max(10, W / 2 - 8) }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'rect', depth: W / 2 }, bottom: { type: 'rect', depth: W / 2 } }, { w: W, top: { type: 'rect', depth: Math.max(10, W / 2 - 8) }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'rect', depth: W / 2 }, bottom: { type: 'rect', depth: W / 2 } }, { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }], H); },
-      tuck(L, W, H) { return buildStripOuterLoop([{ w: L, top: { type: 'tuck', depth: W * 0.9 }, bottom: { type: 'tuck', depth: W * 0.9 } }, { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.4) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.4) } }, { w: L, top: { type: 'tuck', depth: W * 0.9 }, bottom: { type: 'tuck', depth: W * 0.9 } }, { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.4) }, bottom: { type: 'rect', depth: Math.max(10, W * 0.4) } }, { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }], H); },
-      reverse_tuck(L, W, H) { return buildStripOuterLoop([{ w: L, top: { type: 'tuck', depth: W * 0.9 }, bottom: { type: 'rect', depth: W / 2 } }, { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.35) }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'tuck', depth: W * 0.9 }, bottom: { type: 'rect', depth: W / 2 } }, { w: W, top: { type: 'rect', depth: Math.max(10, W * 0.35) }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }], H); },
-      cosmetic(L, W, H) { return buildStripOuterLoop([{ w: W, top: { type: 'none' }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'none' }, bottom: { type: 'rect', depth: W / 2 } }, { w: W, top: { type: 'none' }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'none' }, bottom: { type: 'rect', depth: W / 2 } }, { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }], H); },
+      rsc(L, W, H) { return BOX_ALGORITHMS.rsc.generateParametric(L, W, H); },
+      tuck(L, W, H) { return BOX_ALGORITHMS.te.generateParametric(L, W, H); },
+      straight_tuck(L, W, H) { return BOX_ALGORITHMS.te.generateParametric(L, W, H); },
+      reverse_tuck(L, W, H) { return BOX_ALGORITHMS.rte.generateParametric(L, W, H); },
+      cosmetic(L, W, H) { return BOX_ALGORITHMS.cosmetic.generateParametric(L, W, H); },
       pizza(L, W, H) { return buildStripOuterLoop([{ w: W, top: { type: 'none' }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'none' }, bottom: { type: 'rect', depth: W / 2 } }, { w: W, top: { type: 'none' }, bottom: { type: 'rect', depth: Math.max(10, W / 2 - 8) } }, { w: L, top: { type: 'rect', depth: W + 18 }, bottom: { type: 'rect', depth: W / 2 } }, { w: GLUE_TAB_W, top: { type: 'none' }, bottom: { type: 'none' } }], H); }
     };
 
     function generateParametricDieline(style, L, W, H) {
+      const key = (style || currentBoxModelKey || 'rte').toLowerCase();
+      const algo = BOX_ALGORITHMS[key] || BOX_ALGORITHMS.rte;
+      if (algo && typeof algo.generateParametric === 'function') {
+        const d = algo.generateParametric(Math.max(10, L), Math.max(10, W), Math.max(10, H));
+        if (d) return { cuts: d.cuts, folds: d.folds, bleeds: [] };
+      }
       const gen = BOX_TYPE_GENERATORS[style];
       if (!gen) return null;
       const d = gen(Math.max(10, L), Math.max(10, W), Math.max(10, H));
@@ -3666,11 +3889,9 @@
     }
 
     function buildVariants(dieline, allowRotation, bleedEnabled, res, gutterMM, bleedMM, forcedAngle) {
-      // forcedAngle (0 or 90), set by the sheet's Horizontal/Vertical buttons,
-      // pins every copy on the sheet to that single orientation -- overriding
-      // "Try rotations" entirely -- so grain/flute direction stays consistent
-      // across the whole sheet instead of the packer mixing rotations per copy.
-      const angles = (forcedAngle === 0 || forcedAngle === 90) ? [forcedAngle] : (allowRotation ? [0, 90, 180, 270] : [0]);
+      // Delegates nesting angles strictly to the active box algorithm
+      const algo = BOX_ALGORITHMS[currentBoxModelKey] || BOX_ALGORITHMS.rte;
+      const angles = algo.getNestingAngles(allowRotation, forcedAngle);
       return angles.map(angleDeg => {
         const t = transformDieline(dieline, angleDeg, bleedEnabled ? bleedMM : 0);
         // Use ALL closed loops from the cut geometry (or bleed geometry, if bleed
@@ -3692,14 +3913,16 @@
         // in the shared strip the way they would on a real touching layout.
         const sourcePolylines = (bleedEnabled && gutterMM > 0 && t.bleeds && t.bleeds.length) ? t.bleeds : t.cuts;
         const collisionLoops = allClosedLoops(sourcePolylines, 1.0);
-        // Fallback: if nothing stitched into a genuinely closed loop (corrupt/
-        // very unusual DXF, or a legitimately open-front profile), use a plain
-        // bounding rectangle rather than an open chain -- an open chain would
-        // fabricate a fake diagonal "closing" edge (see boundingRectLoop) and,
-        // for collision purposes, zero footprint would let the box overlap
-        // everything.
-        const effectiveLoops = collisionLoops.length ? collisionLoops
-          : (isLoopClosed(t.outerCutsLoop, 1.0) ? [t.outerCutsLoop] : [boundingRectLoop(t.cuts.flat())]);
+        const maxArea = collisionLoops.reduce((max, l) => Math.max(max, Math.abs(polygonArea(l))), 0);
+        const bboxArea = t.width * t.height;
+        // Safety check: collisionLoops must contain a loop representing the main outer contour of the box
+        // (at least 20% of the overall bounding box area). If it only found tiny internal slots/holes/notches,
+        // fall back to t.outerCutsLoop (if closed) or the outer bounding rectangle so pieces never overlap!
+        const hasValidOuterLoop = collisionLoops.length > 0 && maxArea >= bboxArea * 0.20;
+        const candidateLoops = hasValidOuterLoop ? collisionLoops
+          : (isLoopClosed(t.outerCutsLoop, 1.5) ? [t.outerCutsLoop] : [boundingRectLoop(t.cuts.flat())]);
+        const effArea = candidateLoops.reduce((sum, l) => sum + Math.abs(polygonArea(l)), 0);
+        const effectiveLoops = effArea >= bboxArea * 0.20 ? candidateLoops : [boundingRectLoop(t.cuts.flat())];
         // Gutter spacing only ever needs to know which packing-grid CELLS a
         // shape grown by half the gutter occupies -- unlike the bleed guide
         // line, it's never drawn on screen, so it never needs an actual offset
@@ -3755,8 +3978,10 @@
 
       let variants = (opts.variantOrder === 'reverse') ? variantsBuilt.slice().reverse() : variantsBuilt;
 
-      const scanCols = opts.scanOrder === 'col' ? rows : cols;
-      const scanRows = opts.scanOrder === 'col' ? cols : rows;
+      // When scanOrder === 'col': sweep column by column (outer: major=ax [0..cols-1], inner: minor=ay [0..rows-1])
+      // When scanOrder !== 'col': sweep row by row (outer: major=ay [0..rows-1], inner: minor=ax [0..cols-1])
+      const majorLimit = opts.scanOrder === 'col' ? cols : rows;
+      const minorLimit = opts.scanOrder === 'col' ? rows : cols;
       const occ = new Uint8Array(cols * rows);
       const placements = [];
 
@@ -3787,8 +4012,8 @@
         }
       }
 
-      for (let major = 0; major < scanCols; major++) {
-        for (let minor = 0; minor < scanRows; minor++) {
+      for (let major = 0; major < majorLimit; major++) {
+        for (let minor = 0; minor < minorLimit; minor++) {
           const { ax, ay } = cellPos(major, minor);
           if (occ[ay * cols + ax]) continue;
           if (opts.variantOrder === 'random') {
@@ -3829,9 +4054,10 @@
     // collides/places pieces. This is what actually drives the sheet toward
     // "fill it with minimum wastage" on every DXF upload.
     function runGridPackerStrategies(dieline, opts) {
-      // Fast strategy path: 2 sweeps (row and col) are sufficient to find optimal nesting without UI lag
+      // Calls ONLY the algorithm function for preferred nesting strategies for the specific box
+      const algo = BOX_ALGORITHMS[currentBoxModelKey] || BOX_ALGORITHMS.rte;
       const strategies = (opts.allowRotation && opts.forcedAngle === null)
-        ? [{ scanOrder: 'row', variantOrder: 'default' }, { scanOrder: 'col', variantOrder: 'default' }]
+        ? (algo.getPreferredStrategies ? algo.getPreferredStrategies() : [{ scanOrder: 'row', variantOrder: 'default' }, { scanOrder: 'col', variantOrder: 'default' }])
         : [{ scanOrder: 'row', variantOrder: 'default' }];
       let best = null;
       for (const strat of strategies) {
@@ -4621,13 +4847,16 @@
       const W = parseFloat(document.getElementById('boxWd').value) || BASE_LWH.W;
       const H = parseFloat(document.getElementById('boxHt').value) || BASE_LWH.H;
 
-      const refFlatW = 2 * (BASE_LWH.L + BASE_LWH.W) + GLUE_TAB_W;
-      const refFlatH = BASE_LWH.H + BASE_LWH.W;
-      const targetFlatW = 2 * (L + W) + GLUE_TAB_W;
-      const targetFlatH = H + W;
+      // Invokes ONLY the algorithm for the specific active box
+      const algo = BOX_ALGORITHMS[currentBoxModelKey] || BOX_ALGORITHMS.rte;
+      const ref = algo.computeFlatDimensions(BASE_LWH.L, BASE_LWH.W, BASE_LWH.H, GLUE_TAB_W);
+      const target = algo.computeFlatDimensions(L, W, H, GLUE_TAB_W);
 
-      const newBoxW = BASE_DIMS.width * (targetFlatW / refFlatW);
-      const newBoxH = BASE_DIMS.height * (targetFlatH / refFlatH);
+      const scaleX = (ref.flatW > 0) ? (target.flatW / ref.flatW) : 1;
+      const scaleY = (ref.flatH > 0) ? (target.flatH / ref.flatH) : 1;
+
+      const newBoxW = BASE_DIMS.width * scaleX;
+      const newBoxH = BASE_DIMS.height * scaleY;
 
       document.getElementById('boxW').value = Math.round(newBoxW * 10) / 10;
       document.getElementById('boxH').value = Math.round(newBoxH * 10) / 10;
@@ -4904,17 +5133,21 @@
             if (p.W_mm) W_mm = p.W_mm;
             if (p.H_mm) H_mm = p.H_mm;
             if (p.boxModel) {
-              const modelLabels = {
-                'reverse-tuck': 'Reverse Tuck End',
-                'straight-tuck': 'Straight Tuck End',
-                'auto-bottom': 'Auto Bottom Lock',
-                'auto_lock': 'Auto Bottom Lock',
-                'cosmetic': 'Cosmetic Box',
-                'rte': 'Reverse Tuck End',
-                'ste': 'Straight Tuck End',
-                'snap-lock': 'Snap Lock / 1-2-3 Bottom'
-              };
-              const name = modelLabels[p.boxModel] || p.boxModel;
+              const raw = String(p.boxModel).toLowerCase().trim();
+              let modelKey = 'rte';
+              if (raw === 'te' || raw === 'ste' || raw.includes('straight')) modelKey = 'te';
+              else if (raw === 'auto_lock' || raw === 'auto-bottom' || raw.includes('auto')) modelKey = 'auto_lock';
+              else if (raw === 'button_hole' || raw.includes('button') || raw.includes('snap')) modelKey = 'button_hole';
+              else if (raw === 'cosmetic_b' || raw.includes('mailer') || raw.includes('tray')) modelKey = 'cosmetic_b';
+              else if (raw === 'cosmetic') modelKey = 'cosmetic';
+              else if (raw === 'rsc' || raw.includes('slotted') || raw.includes('carton')) modelKey = 'rsc';
+              else modelKey = 'rte';
+
+              currentBoxModelKey = modelKey;
+              sessionStorage.setItem('dieline_current_model_key', modelKey);
+
+              const algo = BOX_ALGORITHMS[modelKey] || BOX_ALGORITHMS.rte;
+              const name = algo.label;
               sessionStorage.setItem('dieline_current_model', name);
               const pillText = document.getElementById('modelPillText');
               const pill = document.getElementById('kldModelPill');
@@ -4961,18 +5194,22 @@
         applyLoadedDXFData(syncDXF, syncParams);
       } else {
         // If no DXF in storage yet, check if a box model was requested in session
+        const prevKey = sessionStorage.getItem('dieline_current_model_key');
         const prevModel = sessionStorage.getItem('dieline_current_model');
-        if (prevModel) {
-          const style = prevModel.toLowerCase().includes('auto') ? 'auto_bottom'
-            : prevModel.toLowerCase().includes('cosmetic') ? 'cosmetic'
-              : prevModel.toLowerCase().includes('reverse') ? 'reverse_tuck'
-                : prevModel.toLowerCase().includes('straight') ? 'straight_tuck'
-                  : 'auto_bottom';
-          const d = generateParametricDieline(style, 300, 200, 150);
-          if (d) {
-            DIELINE = d;
-            dxfUploaded = true;
-          }
+        const key = prevKey || (prevModel ? (
+          prevModel.toLowerCase().includes('auto') ? 'auto_lock'
+            : prevModel.toLowerCase().includes('straight') || prevModel.toLowerCase() === 'te' ? 'te'
+              : prevModel.toLowerCase().includes('button') ? 'button_hole'
+                : prevModel.toLowerCase().includes('mailer') || prevModel.toLowerCase().includes('tray') ? 'cosmetic_b'
+                  : prevModel.toLowerCase().includes('cosmetic') ? 'cosmetic'
+                    : prevModel.toLowerCase().includes('carton') || prevModel.toLowerCase().includes('rsc') ? 'rsc'
+                      : 'rte'
+        ) : 'rte');
+        currentBoxModelKey = key;
+        const d = generateParametricDieline(key, 300, 200, 150);
+        if (d) {
+          DIELINE = d;
+          dxfUploaded = true;
         }
       }
     } catch (e) { }
@@ -5189,11 +5426,15 @@
         // its panel entirely, once a vertical/horizontal lock was turned on.
         // Recompute the real 0deg variant on demand instead of ever accepting a
         // rotated stand-in.
-        BASE_VARIANT = nestingResult.variants.find(v => v.angleDeg === 0)
+        const vList = (nestingResult && nestingResult.variants) || [];
+        BASE_VARIANT = vList.find(v => v.angleDeg === 0)
           || (activeDieline ? buildVariants(activeDieline, false, opts.bleedEnabled, 2, opts.gutter, opts.bleedMM, 0)[0] : null)
-          || nestingResult.variants[0];
+          || vList[0]
+          || null;
         window.BASE_VARIANT = BASE_VARIANT; // keep the artwork/panel-detection script's view in sync -- see note above
-        document.getElementById('dimsLabel').textContent = BASE_VARIANT.widthMM.toFixed(1) + ' x ' + BASE_VARIANT.heightMM.toFixed(1) + ' mm';
+        if (BASE_VARIANT && document.getElementById('dimsLabel')) {
+          document.getElementById('dimsLabel').textContent = BASE_VARIANT.widthMM.toFixed(1) + ' x ' + BASE_VARIANT.heightMM.toFixed(1) + ' mm';
+        }
 
         renderDielineCanvas(opts.bleedEnabled);
         renderSheetCanvas(nestingResult, opts.bleedEnabled);
@@ -5631,48 +5872,64 @@
     }
 
     function calculateMinSheetForUps(targetUps, dieline, opts) {
-      if (targetUps <= 0 || !window.BASE_VARIANT) return null;
+      if (targetUps <= 0) return null;
+      const bv = window.BASE_VARIANT || (dieline ? transformDieline(dieline, 0, 0) : null);
+      if (!bv) return null;
 
-      const boxW = window.BASE_VARIANT.widthMM;
-      const boxH = window.BASE_VARIANT.heightMM;
+      const boxW = bv.widthMM || bv.width;
+      const boxH = bv.heightMM || bv.height;
+      if (!boxW || !boxH || isNaN(boxW) || isNaN(boxH)) return null;
 
-      let bestArea = Infinity;
-      let bestSheet = null;
+      const gutter = opts.gutter || 0;
+      const margin = opts.margin || 10;
+      const bleed = (opts.bleedEnabled && opts.bleedMM) ? opts.bleedMM : 0;
+      // Real footprint includes bleed margin and raster cell quantization buffer
+      const pieceW = boxW + bleed * 2 + 4;
+      const pieceH = boxH + bleed * 2 + 4;
 
-      for (let r = 1; r <= targetUps; r++) {
+      const candidates = [];
+      const maxR = Math.min(12, targetUps);
+      for (let r = 1; r <= maxR; r++) {
         const c = Math.ceil(targetUps / r);
+        if (r * c > targetUps * 1.5 && r > 2) continue; // prune inefficient aspect ratios
 
-        // Test unrotated layout
-        let w1 = c * boxW + Math.max(0, c - 1) * opts.gutter + opts.margin * 2;
-        let h1 = r * boxH + Math.max(0, r - 1) * opts.gutter + opts.margin * 2;
-        // Add safety padding proportional to count to prevent floating point/grid quantization drops
-        const safeW1 = c * 5 + 5;
-        const safeH1 = r * 5 + 5;
-        w1 = Math.ceil((Math.ceil(w1) + safeW1) / 5) * 5;
-        h1 = Math.ceil((Math.ceil(h1) + safeH1) / 5) * 5;
+        const orientations = opts.allowRotation ? [
+          { pw: pieceW, ph: pieceH },
+          { pw: pieceH, ph: pieceW }
+        ] : [{ pw: pieceW, ph: pieceH }];
 
-        if (w1 * h1 < bestArea) {
-          bestArea = w1 * h1;
-          bestSheet = { w: w1, h: h1 };
-        }
-
-        // Test rotated layout
-        if (opts.allowRotation) {
-          let w2 = c * boxH + Math.max(0, c - 1) * opts.gutter + opts.margin * 2;
-          let h2 = r * boxW + Math.max(0, r - 1) * opts.gutter + opts.margin * 2;
-          const safeW2 = c * 5 + 5;
-          const safeH2 = r * 5 + 5;
-          w2 = Math.ceil((Math.ceil(w2) + safeW2) / 5) * 5;
-          h2 = Math.ceil((Math.ceil(h2) + safeH2) / 5) * 5;
-
-          if (w2 * h2 < bestArea) {
-            bestArea = w2 * h2;
-            bestSheet = { w: w2, h: h2 };
-          }
+        for (const cfg of orientations) {
+          let w = Math.ceil(c * cfg.pw + Math.max(0, c - 1) * gutter + margin * 2 + 10);
+          let h = Math.ceil(r * cfg.ph + Math.max(0, r - 1) * gutter + margin * 2 + 10);
+          w = Math.ceil(w / 5) * 5;
+          h = Math.ceil(h / 5) * 5;
+          const aspect = Math.max(w, h) / Math.min(w, h);
+          // Prefer realistic print sheet aspect ratios (typically <= 2.2)
+          const aspectPenalty = aspect > 2.2 ? 1.35 : 1.0;
+          candidates.push({ w, h, area: w * h, score: w * h * aspectPenalty });
         }
       }
 
-      return bestSheet;
+      // Sort candidates: prioritize realistic aspect ratios, then smallest sheet area
+      candidates.sort((a, b) => a.score - b.score);
+
+      // Verify candidates in order of score; expand if needed until >= targetUps is confirmed
+      const topCandidates = candidates.slice(0, 6);
+      for (const cand of topCandidates) {
+        let w = cand.w;
+        let h = cand.h;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const testOpts = { ...opts, sheetWidth: w, sheetHeight: h };
+          const ups = quickUpCount(dieline, testOpts);
+          if (ups !== null && ups >= targetUps) {
+            return { w, h };
+          }
+          if (w <= h) w += 15;
+          else h += 15;
+        }
+      }
+
+      return candidates[0] ? { w: candidates[0].w, h: candidates[0].h } : null;
     }
 
     window.addEventListener('resize', debouncedRender);

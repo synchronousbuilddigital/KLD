@@ -1,4 +1,4 @@
-import { dxfTemplate } from "./dxfTemplate";
+import { dxfTemplate } from "./dxfTemplate.js";
 import ClipperLib from "clipper-lib";
 
 /**

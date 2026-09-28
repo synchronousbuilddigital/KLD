@@ -4,12 +4,7 @@ import { useBoxStore } from "../../lib/useBoxStore";
 import EditorModal from "./EditorModal";
 import MockupSignInModal from "../components/modals/MockupSignInModal";
 import { API_BASE_URL } from "../../config/api";
-import { generateRTEDielineDXF } from "../../lib/rteDielineGenerator";
-import { generateTEDielineDXF } from "../../lib/teDielineGenerator";
-import { generateAutoLockDieline } from "../../lib/autoLockDielineGenerator";
-import { generateCosmeticBoxDieline } from "../../lib/cosmeticBoxDielineGenerator";
-import { generateCosmeticBoxBDieline } from "../../lib/cosmeticBoxBDielineGenerator";
-import { generateButtonHoleDieline } from "../../lib/buttonHoleDielineGenerator";
+import { getBoxDieline } from "../../lib/boxDielineDispatcher";
 import { generateDXFString } from "../../lib/exportUtils";
 import { Printer, Sparkles } from "lucide-react";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
@@ -226,36 +221,29 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
         bleed: store.bleed,
         windowDecals: store.windowDecals || []
       };
-      let dielineData;
-      if (store.boxModel === "te") dielineData = generateTEDielineDXF(params);
-      else if (store.boxModel === "auto_lock") dielineData = generateAutoLockDieline(params);
-      else if (store.boxModel === "cosmetic") dielineData = generateCosmeticBoxDieline(params);
-      else if (store.boxModel === "cosmetic_b") dielineData = generateCosmeticBoxBDieline(params);
-      else if (store.boxModel === "button_hole") dielineData = generateButtonHoleDieline(params);
-      else dielineData = generateRTEDielineDXF(params);
-      
+      // Lazily and conditionally calls the algorithm function only for the specific active box model
+      const dielineData = getBoxDieline(store.boxModel, params);
       const dxfString = generateDXFString(dielineData);
+
+      const paramsPayload = {
+        L_mm: Math.round((store.L || 4.7244) * 25.4),
+        W_mm: Math.round((store.W || 2.3622) * 25.4),
+        H_mm: Math.round((store.H || 6.2992) * 25.4),
+        boxModel: store.boxModel,
+        flatWidth_mm: Math.round((dielineData.width || 0) * 25.4 * 10) / 10,
+        flatHeight_mm: Math.round((dielineData.height || 0) * 25.4 * 10) / 10
+      };
       
       try {
         sessionStorage.setItem("autoLoadDXF", dxfString);
-        sessionStorage.setItem("autoLoadParams", JSON.stringify({
-          L_mm: Math.round((store.L || 4.7244) * 25.4),
-          W_mm: Math.round((store.W || 2.3622) * 25.4),
-          H_mm: Math.round((store.H || 6.2992) * 25.4),
-          boxModel: store.boxModel
-        }));
+        sessionStorage.setItem("autoLoadParams", JSON.stringify(paramsPayload));
       } catch (e) {
         console.warn("sessionStorage store error:", e);
       }
 
       try {
         localStorage.setItem("autoLoadDXF", dxfString);
-        localStorage.setItem("autoLoadParams", JSON.stringify({
-          L_mm: Math.round((store.L || 4.7244) * 25.4),
-          W_mm: Math.round((store.W || 2.3622) * 25.4),
-          H_mm: Math.round((store.H || 6.2992) * 25.4),
-          boxModel: store.boxModel
-        }));
+        localStorage.setItem("autoLoadParams", JSON.stringify(paramsPayload));
       } catch (e) {}
 
       try {
