@@ -22,6 +22,7 @@ import WorkshopPage from './pages/WorkshopPage';
 import AiStudioPage from './pages/AiStudioPage';
 import SignInModal from './components/modals/SignInModal';
 const BoxStudioModal = React.lazy(() => import('./pages/BoxStudioModal').then(module => ({ default: module.BoxStudioModal })));
+import MockupGenerator from './MockupGenerator';
 import { useBoxStore } from '../lib/useBoxStore';
 import { uploadService } from '../services/upload';
 
@@ -207,7 +208,8 @@ function AboutKelineTools() {
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="md:col-span-7 rounded-[24px] bg-white overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-300 ease-out flex flex-col"
+            className="md:col-span-7 rounded-[24px] bg-white overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-300 ease-out flex flex-col cursor-pointer"
+            onClick={() => navigateTo('mockups')}
           >
             <div className="h-[400px] overflow-hidden relative">
               <img src="https://images.unsplash.com/photo-1698376621004-70ce754157d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYWNrYWdpbmclMjBtb2NrdXAlMjBib3glMjB0dWJlJTIwY2FufGVufDF8fHx8MTc4MjI5MjM5Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral" alt="Packaging Mockup" className="w-full h-full object-cover" />
@@ -633,6 +635,10 @@ export default function App() {
     return <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />;
   }
 
+  if (currentView === 'mockups') {
+    return <WorkshopPage onBack={() => navigateTo('landing')} />;
+  }
+
   if (currentView === 'models') {
     return <ModelsPage onNavigate={navigateTo} onCategorySelect={(id) => handleCategorySelect(id)} />;
   }
@@ -893,11 +899,12 @@ export default function App() {
           onOpenStudioWithBox={(box, mode = 'dieline') => {
             if (!box) return;
 
-            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | null = box.boxModel || null;
+            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | 'water_bottle' | null = box.boxModel || null;
 
             if (!boxModelKey && box.category) {
               const cat = box.category.toLowerCase();
-              if (cat.includes('reverse') || cat.includes('rte')) boxModelKey = 'rte';
+              if (cat.includes('bottle') || cat.includes('mineral')) boxModelKey = 'water_bottle';
+              else if (cat.includes('reverse') || cat.includes('rte')) boxModelKey = 'rte';
               else if (cat.includes('straight') || cat.includes('te')) boxModelKey = 'te';
               else if (cat.includes('auto') || cat.includes('lock')) boxModelKey = 'auto_lock';
               else if (cat.includes('button') || cat.includes('hole')) boxModelKey = 'button_hole';

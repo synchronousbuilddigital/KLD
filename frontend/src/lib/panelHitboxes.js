@@ -4,6 +4,13 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
   
   const rect = (x, y, w, h) => `M ${x} ${y} L ${x+w} ${y} L ${x+w} ${y+h} L ${x} ${y+h} Z`;
 
+  if (boxModel === 'water_bottle') {
+    return [
+      { id: "p1-label", name: "Bottle Wrap Label", path: rect(x1, yTop, L, W) },
+      { id: "glue-flap", name: "Glue Overlap", path: rect(0, yTop, glueFlapWidth || 0.25, W) }
+    ];
+  }
+
   const panels = [];
   
   // Main Panels

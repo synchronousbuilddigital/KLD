@@ -68,8 +68,9 @@ const DEFAULT_CATALOG_ITEMS = [
     isFeatured: true,
     active: true,
     order: 3,
-    boxModelKey: 'rte',
+    boxModelKey: 'bottle',
     variants: [
+      { id: 101, name: 'Plastic Mineral Water Bottle', animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label', imageUrl: '/images/water_bottle.png', whiteImageUrl: '/images/water_bottle.png', kraftImageUrl: '/images/water_bottle.png', boxModelKey: 'water_bottle', isFeatured: true, gridSize: 'large' },
       { id: 1, name: 'Cosmetic Serum Bottle', animation: 'Pipette extracts liquid', imageUrl: '/images/bottle.png' },
       { id: 2, name: 'Dropper Bottle', animation: 'Dropper lifts and squeezes', imageUrl: '/images/bottle.png' },
       { id: 3, name: 'Pump Bottle', animation: 'Pump depresses and pops up', imageUrl: '/images/bottle.png' },

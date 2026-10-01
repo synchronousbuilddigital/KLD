@@ -475,11 +475,15 @@ function createTextTextureURL(decal) {
 function createShapeTextureURL(decal) {
   if (typeof window === "undefined") return "";
 
-  if (decal.shapeType === 'custom-svg' && decal.svgString) {
-    let cleanSvg = decal.svgString.replace(/fill="currentColor"/g, `fill="${decal.fillColor}"`);
-    cleanSvg = cleanSvg.replace(/(<svg[^>]*?)\s+width="[^"]*"/, '$1');
-    cleanSvg = cleanSvg.replace(/(<svg[^>]*?)\s+height="[^"]*"/, '$1');
-    cleanSvg = cleanSvg.replace(/<svg/, `<svg width="2048" height="2048"`);
+  if ((decal.shapeType === 'custom-svg' || decal.type === 'symbol') && (decal.svgString || decal.svgContent)) {
+    const rawSvg = decal.svgString || decal.svgContent;
+    let cleanSvg = rawSvg.replace(/currentColor/g, decal.fillColor || '#000000');
+    cleanSvg = cleanSvg.replace(/\s+width=["'][^"']*["']/gi, '');
+    cleanSvg = cleanSvg.replace(/\s+height=["'][^"']*["']/gi, '');
+    if (!cleanSvg.includes('viewBox') && !cleanSvg.includes('viewbox')) {
+      cleanSvg = cleanSvg.replace(/<svg/i, '<svg viewBox="0 0 24 24"');
+    }
+    cleanSvg = cleanSvg.replace(/<svg/i, `<svg width="2048" height="2048"`);
     const base64 = btoa(unescape(encodeURIComponent(cleanSvg)));
     return `data:image/svg+xml;base64,${base64}`;
   }

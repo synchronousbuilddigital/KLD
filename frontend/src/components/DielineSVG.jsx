@@ -6,6 +6,7 @@ import { generateAutoLockDieline } from "../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../lib/cosmeticBoxDielineGenerator";
 import { generateCosmeticBoxBDieline } from "../lib/cosmeticBoxBDielineGenerator";
 import { generateButtonHoleDieline } from "../lib/buttonHoleDielineGenerator";
+import { generateWaterBottleDieline } from "../lib/waterBottleDielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
@@ -143,6 +144,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
   // Draw the dieline using the dynamically calculated MANUFACTURE dimensions
   const dieline = useMemo(() => {
+    if (boxModel === 'water_bottle') {
+      return generateWaterBottleDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
+    }
     if (boxModel === 'te') {
       return generateTEDielineDXF({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
     }
@@ -535,7 +539,41 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && (
+        {isEditorMode && boxModel === 'water_bottle' && (
+          <g
+            className="editor-measurements"
+            stroke="#4a90e2"
+            strokeWidth={strokeW * 0.4}
+            fill="#4a90e2"
+            fontSize={fontSizeBasic * 0.55}
+            fontFamily="'Inter', sans-serif"
+            fontWeight="500"
+          >
+            {/* Wrap Length (Circumference) */}
+            <line x1={x1 + 0.1} y1={yBot / 2} x2={(x1 + x2) / 2 - 0.4} y2={yBot / 2} markerStart="url(#arrow-blue-start)" />
+            <line x1={(x1 + x2) / 2 + 0.4} y1={yBot / 2} x2={x2 - 0.1} y2={yBot / 2} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={(x1 + x2) / 2} y={yBot / 2 + 0.05}
+              alignmentBaseline="middle" textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${(x1 + x2) / 2}px ${yBot / 2 + 0.05}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuL.toFixed(4)} in` : `${(manuL * 25.4).toFixed(0)} mm`}
+            </text>
+
+            {/* Label Height */}
+            <line x1={x2 + 0.25} y1={yTop + 0.05} x2={x2 + 0.25} y2={yBot / 2 - 0.2} markerStart="url(#arrow-blue-start)" />
+            <line x1={x2 + 0.25} y1={yBot / 2 + 0.2} x2={x2 + 0.25} y2={yBot - 0.05} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x2 + 0.35} y={yBot / 2}
+              alignmentBaseline="middle" stroke="none"
+              style={{ transformOrigin: `${x2 + 0.35}px ${yBot / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(0)} mm`}
+            </text>
+          </g>
+        )}
+
+        {isEditorMode && boxModel !== 'water_bottle' && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"
@@ -634,7 +672,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                   </foreignObject>
                 </g>
               </>
-            ) : decal.type === 'shape' ? (
+            ) : (decal.type === 'shape' || decal.type === 'symbol') ? (
               <>
                 <rect
                   x={-decal.width / 2}
@@ -644,23 +682,37 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                   fill="transparent"
                   style={{ pointerEvents: 'all' }}
                 />
-                {decal.shapeType === 'custom-svg' ? (
-                  <svg
-                    x={-decal.width / 2}
-                    y={-decal.height / 2}
-                    width={decal.width}
-                    height={decal.height}
-                    viewBox="0 0 24 24"
-                    fill={decal.fillColor || "currentColor"}
-                    color={decal.fillColor || "currentColor"}
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(
-                        (decal.svgString || '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, ''),
-                        { USE_PROFILES: { svg: true } }
-                      )
-                    }}
-                  />
-                ) : (() => {
+                {(decal.shapeType === 'custom-svg' || decal.type === 'symbol' || decal.svgString || decal.svgContent) ? (() => {
+                  const rawSvg = decal.svgString || decal.svgContent || '';
+                  const vbMatch = rawSvg.match(/viewBox=["']([^"']+)["']/i);
+                  const viewBox = vbMatch ? vbMatch[1] : "0 0 24 24";
+                  const fillColor = decal.fillColor || decal.color || "#000000";
+
+                  // Replace currentColor with fillColor
+                  const coloredSvg = rawSvg.replace(/currentColor/g, fillColor);
+                  // Sanitize the full SVG within SVG namespace so all tags are preserved
+                  const cleanSvg = DOMPurify.sanitize(coloredSvg, {
+                    USE_PROFILES: { svg: true, svgFilters: true }
+                  });
+                  // Extract inner content from the sanitized SVG
+                  const innerSvg = cleanSvg
+                    .replace(/<svg[^>]*>/i, '')
+                    .replace(/<\/svg>/i, '');
+
+                  return (
+                    <svg
+                      x={-decal.width / 2}
+                      y={-decal.height / 2}
+                      width={decal.width}
+                      height={decal.height}
+                      viewBox={viewBox}
+                      fill={fillColor}
+                      color={fillColor}
+                      style={{ overflow: 'visible', pointerEvents: 'none' }}
+                      dangerouslySetInnerHTML={{ __html: innerSvg }}
+                    />
+                  );
+                })() : (() => {
                   const sDash = decal.borderStyle === 'dashed' ? `${((decal.strokeWidth || 5) / 72) * 2},${((decal.strokeWidth || 5) / 72) * 2}` : undefined;
                   if (decal.shapeType === 'rounded-rectangle') return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} rx={(decal.borderRadius || 36) / 72} ry={(decal.borderRadius || 36) / 72} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
                   if (decal.shapeType === 'pill') return <rect x={-decal.width / 2} y={-decal.height / 2} width={decal.width} height={decal.height} rx={decal.height / 2} ry={decal.height / 2} fill={decal.fillColor || "transparent"} stroke={decal.strokeColor || decal.borderColor || "transparent"} strokeWidth={(decal.strokeWidth || decal.borderWidth || 0) / 72} strokeDasharray={sDash} />;
@@ -1004,7 +1056,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="6" x2="3" y2="6"></line><line x1="17" y1="12" x2="7" y2="12"></line><line x1="19" y1="18" x2="5" y2="18"></line></svg>}
                 </button>
               </>
-            ) : decal.type === 'shape' ? (
+            ) : (decal.type === 'shape' || decal.type === 'symbol') ? (
               <>
                 {/* Border Width / Style Control */}
                 <div style={{ display: "flex", alignItems: "center", background: "#f1f5f9", borderRadius: "6px", padding: "4px 8px", gap: "8px" }}>

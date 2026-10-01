@@ -77,7 +77,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       // This ensures useEditorStore keeps its own setDecals and doesn't mutate globalStore
       const stateData = JSON.parse(JSON.stringify(useBoxStore.getState()));
       if (isAiMode) {
-        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [] };
+        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] };
       }
       useEditorStore.setState(stateData);
       
@@ -157,10 +157,12 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     setIsSaving(true);
     try {
       const categoryName = 
+        store.boxModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
         store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
         store.boxModel === 'te' ? 'Straight Tuck End Box' :
         store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
         store.boxModel === 'cosmetic_b' ? 'Cosmetic Box B (Mailer/Tray Style)' :
+        store.boxModel === 'button_hole' ? 'Button Hole Box' :
         store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 
       const dimL_mm = Math.round((store.L || 4.72) * 25.4);
@@ -292,8 +294,15 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     { type: "color", value: "#146814" },
   ];
 
-  const defaultCenterX = (store.L * 2 + store.W * 2) / 2 + 0.625;
-  const defaultCenterY = store.H / 2 + store.W + 0.625;
+  const isWaterBottle = store.boxModel === 'water_bottle';
+  const defaultCenterX = isWaterBottle ? (0.25 + (store.L || 9.567) / 2) : (store.L * 2 + store.W * 2) / 2 + 0.625;
+  const defaultCenterY = isWaterBottle ? ((store.W || 1.811) / 2) : store.H / 2 + store.W + 0.625;
+  const defaultDecalW = isWaterBottle ? Math.min(2.5, (store.L || 9.567) * 0.3) : 5;
+  const defaultDecalH = isWaterBottle ? Math.min(1.2, (store.W || 1.811) * 0.75) : 5;
+  const defaultTextW = isWaterBottle ? Math.min(3.0, (store.L || 9.567) * 0.4) : 5;
+  const defaultTextH = isWaterBottle ? Math.min(0.8, (store.W || 1.811) * 0.5) : 2;
+  const defaultTextSize = isWaterBottle ? 0.35 : 0.8;
+  const defaultSymSize = isWaterBottle ? Math.min(1.0, (store.W || 1.811) * 0.6) : 5;
 
   const handleAddDecal = (url) => {
     const newDecals = [...decals, { 
@@ -302,8 +311,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       url, 
       x: defaultCenterX, 
       y: defaultCenterY, 
-      width: 5, 
-      height: 5,
+      width: defaultDecalW, 
+      height: defaultDecalH,
       surface: activeSurface 
     }];
     pushHistory(newDecals);
@@ -315,15 +324,15 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       type: 'text',
       content: 'Your text here',
       fontFamily: 'Inter',
-      fontSize: 0.8,
+      fontSize: defaultTextSize,
       color: '#000000',
       bold: false,
       italic: false,
       textAlign: 'center',
       x: defaultCenterX, 
       y: defaultCenterY, 
-      width: 5, 
-      height: 2, 
+      width: defaultTextW, 
+      height: defaultTextH, 
       surface: activeSurface 
     }];
     pushHistory(newDecals);
@@ -336,8 +345,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       shapeType: shapeType,
       x: defaultCenterX, 
       y: defaultCenterY, 
-      width: 5, 
-      height: 5, 
+      width: defaultDecalW, 
+      height: defaultDecalH, 
       strokeColor: '#000000',
       strokeWidth: 5,
       surface: activeSurface 
@@ -352,8 +361,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       shapeType: shapeType,
       x: defaultCenterX, 
       y: defaultCenterY, 
-      width: 5, 
-      height: 5, 
+      width: defaultDecalW, 
+      height: defaultDecalH, 
       strokeColor: store.trimColor || '#0055ff', // Blue cutline
       strokeWidth: 2,
       fillColor: 'transparent',
@@ -372,8 +381,8 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       fillColor: '#000000',
       x: defaultCenterX, 
       y: defaultCenterY, 
-      width: 5, 
-      height: 5, 
+      width: defaultSymSize, 
+      height: defaultSymSize, 
       surface: activeSurface 
     }];
     pushHistory(newDecals);
@@ -640,7 +649,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                       </div>
                     </div>
 
-                  {activeDecal && (activeDecal.type === 'shape' || activeDecal.type === 'custom-svg') && !activeDecal.isWindow && (
+                  {activeDecal && (activeDecal.type === 'shape' || activeDecal.type === 'custom-svg' || activeDecal.type === 'symbol') && !activeDecal.isWindow && (
                     <div style={{ marginTop: "32px", borderTop: `1px solid ${t.border}`, paddingTop: "20px" }}>
                       <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px" }}>Shape Colors</div>
                       <div style={{ display: "flex", gap: "12px" }}>

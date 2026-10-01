@@ -100,6 +100,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const handleSaveToWorkspace = async () => {
     const currentModel = store.boxModel || 'rte';
     const categoryName = 
+      currentModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
       currentModel === 'rte' ? 'Reverse Tuck End Box' :
       currentModel === 'te' ? 'Straight Tuck End Box' :
       currentModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
@@ -485,19 +486,18 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                     <div style={{ marginBottom: "24px" }}>
                       <div style={{ fontSize: "16px", fontWeight: "700", color: "#111827", marginBottom: "16px" }}>Upload images</div>
                       <div 
-                        style={{ border: "2px dashed #93c5fd", borderRadius: "16px", padding: "32px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", background: "#eff6ff", cursor: "pointer" }}
+                        style={{ border: "2px dashed #93c5fd", borderRadius: "16px", padding: "32px 16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", background: "#eff6ff", cursor: "pointer" }}
                         onClick={() => {
-                          if (!isLoggedIn) {
-                            setIsSignInModalOpen(true);
-                          } else {
-                            setIsStudioOpen(true);
-                          }
+                          setIsStudioOpen(true);
                         }}
                       >
                         <div style={{ color: "#3b82f6" }}><IconUploadLarge /></div>
                         <button style={{ background: "#3b82f6", color: "#ffffff", border: "none", borderRadius: "24px", padding: "10px 32px", fontSize: "15px", fontWeight: "600", cursor: "pointer", width: "100%" }}>
                           Upload
                         </button>
+                        {store.boxModel === "water_bottle" && (
+                          <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>918 × 174 px</span>
+                        )}
                       </div>
                       <div style={{ marginTop: "12px", fontSize: "13px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
                         Download dieline(AI, PDF)
@@ -532,9 +532,11 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom size</span>
                           <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
-                            {customSizeUnit === 'mm' 
-                              ? `${(store.L * 25.4).toFixed(2)} x ${(store.W * 25.4).toFixed(2)} x ${(store.H * 25.4).toFixed(2)} mm`
-                              : `${store.L.toFixed(4)} x ${store.W.toFixed(4)} x ${store.H.toFixed(4)} in`}
+                            {store.boxModel === "water_bottle"
+                              ? (customSizeUnit === 'mm' ? "243.00 × 46.00 mm (Label)" : "9.5670 × 1.8110 in (Label)")
+                              : (customSizeUnit === 'mm' 
+                                  ? `${(store.L * 25.4).toFixed(2)} x ${(store.W * 25.4).toFixed(2)} x ${(store.H * 25.4).toFixed(2)} mm`
+                                  : `${store.L.toFixed(4)} x ${store.W.toFixed(4)} x ${store.H.toFixed(4)} in`)}
                           </span>
                         </div>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -550,7 +552,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                     <div style={{ flex: 1 }} />
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#9ca3af", marginTop: "24px" }}>
-                      <span style={{ fontSize: "13px" }}>Model ID: {store.boxModel === "rte" ? "150010" : "150020"}</span>
+                      <span style={{ fontSize: "13px" }}>
+                        Model ID: {store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
+                      </span>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     </div>
                   </>
@@ -696,11 +700,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                     <button 
                       onClick={() => { 
                         setContextMenu(null); 
-                        if (!isLoggedIn) {
-                          setIsSignInModalOpen(true);
-                        } else {
-                          setIsStudioOpen(true); 
-                        }
+                        setIsStudioOpen(true); 
                       }} 
                       style={{ display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: "12px", cursor: "pointer", fontSize: "15px", fontWeight: "400", borderRadius: "10px", color: "#333", textAlign: "left", transition: "background 0.2s" }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}

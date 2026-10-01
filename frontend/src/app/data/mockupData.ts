@@ -65,6 +65,7 @@ export const mockupCategories: MockupCategory[] = [
     id: 'bottle-mockups',
     name: 'Bottle Mockups',
     variants: [
+      { id: 101, name: 'Plastic Mineral Water Bottle', animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label', imageUrl: '/images/water_bottle.png', whiteImageUrl: '/images/water_bottle.png', kraftImageUrl: '/images/water_bottle.png', boxModelKey: 'water_bottle', isFeatured: true, gridSize: 'large' },
       { id: 1, name: 'Cosmetic Serum Bottle', animation: 'Pipette extracts liquid', imageUrl: '/mockups/generated_box.png' },
       { id: 2, name: 'Dropper Bottle', animation: 'Dropper lifts and squeezes', imageUrl: '/mockups/generated_box.png' },
       { id: 3, name: 'Pump Bottle', animation: 'Pump depresses and pops up', imageUrl: '/mockups/generated_box.png' },
@@ -195,6 +196,7 @@ export const mockupCategories: MockupCategory[] = [
     id: 'water-bottle-mockups',
     name: 'Water Bottle Mockups',
     variants: [
+      { id: 101, name: 'Plastic Mineral Water Bottle', animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label', imageUrl: '/images/water_bottle.png', whiteImageUrl: '/images/water_bottle.png', kraftImageUrl: '/images/water_bottle.png', boxModelKey: 'water_bottle', isFeatured: true, gridSize: 'large' },
       { id: 1, name: 'Sports Bottle', animation: 'Squeeze nozzle pops up', imageUrl: '/mockups/generated_box.png' },
       { id: 2, name: 'Gym Bottle', animation: 'Shaker ball bounces inside', imageUrl: '/mockups/generated_box.png' },
       { id: 3, name: 'Stainless Bottle', animation: 'Metallic reflection sweep', imageUrl: '/mockups/generated_box.png' },

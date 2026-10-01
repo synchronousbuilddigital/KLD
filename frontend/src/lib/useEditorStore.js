@@ -72,6 +72,24 @@ const createButtonHoleDefaultState = () => ({
   insideColor: null
 });
 
+const createWaterBottleDefaultState = () => ({
+  L: 243 / 25.4,
+  W: 46 / 25.4,
+  H: 240 / 25.4,
+  T: 0.005,
+  glueFlapWidth: 0.25,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "plastic_glossy",
+  materialName: "Plastic Glossy (Clear PET)",
+  isCustomMaterial: false,
+  materialColor: "#ffffff",
+  materialCategory: "plastic",
+  generatorMethod: "dxf",
+  packageColor: "#ffffff",
+  insideColor: "#ffffff"
+});
+
 export const useEditorStore = create((set) => ({
   // Default Dimensions & Unit
   unit: "in",
@@ -90,7 +108,8 @@ export const useEditorStore = create((set) => ({
       auto_lock: createDefaultState(),
       cosmetic: createCosmeticDefaultState(),
       cosmetic_b: createCosmeticBDefaultState(),
-      button_hole: createButtonHoleDefaultState()
+      button_hole: createButtonHoleDefaultState(),
+      water_bottle: createWaterBottleDefaultState()
     },
     mockup: {
       rte: createDefaultState(),
@@ -98,7 +117,8 @@ export const useEditorStore = create((set) => ({
       auto_lock: createDefaultState(),
       cosmetic: createCosmeticDefaultState(),
       cosmetic_b: createCosmeticBDefaultState(),
-      button_hole: createButtonHoleDefaultState()
+      button_hole: createButtonHoleDefaultState(),
+      water_bottle: createWaterBottleDefaultState()
     }
   },
 
@@ -258,7 +278,7 @@ export const useEditorStore = create((set) => ({
   }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];

@@ -16,6 +16,7 @@ import HoverPouchAnimation from '../animations/HoverPouchAnimation';
 import HoverBottleAnimation from '../animations/HoverBottleAnimation';
 import HoverCanAnimation from '../animations/HoverCanAnimation';
 import HoverTubeAnimation from '../animations/HoverTubeAnimation';
+import PlasticWaterBottle3D from '../components/3d/PlasticWaterBottle3D';
 
 interface MockupDetailsProps {
   initialCategoryId: string;
@@ -44,8 +45,8 @@ const BOX_MOCKUP_IMAGES: Record<string, { white: string; kraft: string }> = {
     kraft: '/images/boxes/cosmetic_b_kraft.jpg',
   },
   button_hole: {
-    white: '/images/boxes/3_button_hole_box.svg',
-    kraft: '/images/boxes/3_button_hole_box.svg',
+    white: '/images/boxes/button_hole_white.jpg',
+    kraft: '/images/boxes/button_hole_kraft.jpg',
   },
 };
 
@@ -53,22 +54,64 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isHovered = hoveredVariant?.id === variant.id;
   const setBoxModel = useBoxStore((state: any) => state.setBoxModel);
 
-  const isTE = variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te';
-  const isRTE = variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte';
-  const isAuto = variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock';
-  const isCosmetic = variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic';
-  const isCosmeticB = variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b';
-  const isButtonHole = variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole';
+  const isWaterBottle = variant.boxModelKey === 'water_bottle' || variant.name.toLowerCase().includes('water bottle');
+  const isBottle = isWaterBottle || variant.boxModelKey === 'bottle' || variant.name.toLowerCase().includes('bottle') || activeCategoryId?.includes('bottle');
+
+  const isTE = !isBottle && (variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te');
+  const isRTE = !isBottle && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
+  const isAuto = !isBottle && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
+  const isCosmetic = !isBottle && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
+  const isCosmeticB = !isBottle && (variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
+  const isButtonHole = !isBottle && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
   const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
   const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
   const [material, setMaterial] = useState<'white' | 'kraft'>('white');
 
-  const currentImage = material === 'kraft'
-    ? (variant.kraftImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.kraft) || variant.imageUrl || '/mockups/generated_box.png')
-    : (variant.whiteImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.white) || variant.imageUrl || '/mockups/generated_box.png');
+  let defaultImage = variant.imageUrl;
+  if (!defaultImage || defaultImage === '/mockups/generated_box.png' || defaultImage.includes('box')) {
+    if (isWaterBottle) {
+      defaultImage = '/images/water_bottle.png';
+    } else if (isBottle) {
+      defaultImage = '/images/bottle.png';
+    } else {
+      defaultImage = '/images/boxes/rte_white.jpg';
+    }
+  }
+
+  const currentImage = isWaterBottle
+    ? '/images/water_bottle.png'
+    : isBottle
+    ? '/images/bottle.png'
+    : (material === 'kraft'
+      ? (variant.kraftImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.kraft) || defaultImage)
+      : (variant.whiteImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.white) || defaultImage));
 
   const handleClick = () => {
+    if (isWaterBottle || variant.name.toLowerCase().includes('water bottle')) {
+      useBoxStore.setState({
+        boxModel: 'water_bottle',
+        activeProjectId: null,
+        activeProjectName: null,
+        L: 243 / 25.4,
+        W: 46 / 25.4,
+        H: 240 / 25.4,
+        T: 0.005,
+        glueFlapWidth: 0.25,
+        bleed: 2 / 25.4,
+        sizeMode: "manufacture",
+        materialType: "plastic_glossy",
+        materialName: "Plastic Glossy (Clear PET)",
+        isCustomMaterial: false,
+        materialColor: "#ffffff",
+        materialCategory: "plastic",
+        packageColor: "#ffffff",
+        insideColor: "#ffffff",
+        decalsByModel: { ...useBoxStore.getState().decalsByModel, water_bottle: useBoxStore.getState().decalsByModel?.water_bottle || [] }
+      });
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+      return;
+    }
 
     const isKraft = material === 'kraft';
     const cleanDefaultState = {
@@ -86,7 +129,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       materialCategory: isKraft ? "kraft_cardboard" : "white_paperboard",
       packageColor: null,
       insideColor: null,
-      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [] }
+      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
     };
 
     const targetModel = variant.boxModelKey || (isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
@@ -156,10 +199,19 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
           </div>
         </div>
 
-        {/* Box Image / Animation Container */}
+        {/* Box / Bottle Image / Animation Container */}
         <div className="w-full h-[260px] relative flex items-center justify-center overflow-hidden rounded-lg mb-4">
-
-          {isBox ? (
+          {isHovered && isWaterBottle ? (
+            <div className="w-full h-full flex items-center justify-center p-2">
+              <PlasticWaterBottle3D
+                labelColor="#006b2b"
+                autoRotate={true}
+                autoRotateSpeed={1.6}
+                interactive={false}
+                className="w-full h-full pointer-events-none"
+              />
+            </div>
+          ) : isBox ? (
             <motion.div
               className="w-full h-full flex items-center justify-center p-2"
               whileHover={{ scale: 1.05 }}
@@ -184,22 +236,23 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
                 </>
               )}
               {activeCategoryId === 'pouch-bag-mockups' && <HoverPouchAnimation isHovered={true} />}
-              {activeCategoryId === 'bottle-mockups' && <HoverBottleAnimation isHovered={true} />}
+              {(activeCategoryId === 'bottle-mockups' || activeCategoryId === 'bottle' || activeCategoryId?.includes('bottle')) && <HoverBottleAnimation isHovered={true} />}
               {activeCategoryId === 'can-mockups' && <HoverCanAnimation isHovered={true} />}
               {activeCategoryId === 'tube-mockups' && <HoverTubeAnimation isHovered={true} />}
             </div>
           ) : (
-            variant.imageUrl ? (
-              <motion.img
-                src={variant.imageUrl}
+            <motion.div
+              className="w-full h-full flex items-center justify-center p-2"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
+              <img
+                src={currentImage}
                 alt={variant.name}
-                className="w-full h-full object-contain drop-shadow-md mix-blend-multiply"
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="w-full h-full object-contain drop-shadow-md rounded-lg select-none"
+                loading="eager"
               />
-            ) : (
-              <div className="w-16 h-16 bg-black/5 rounded-xl"></div>
-            )
+            </motion.div>
           )}
         </div>
 
@@ -207,6 +260,12 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
         <div className="flex flex-col items-center text-center relative z-10">
           <h4 className={`text-[17px] font-bold transition-colors text-center ${isHovered ? 'text-black' : ''}`} style={!isHovered ? { color: 'var(--ink)' } : {}}>{variant.name}</h4>
           <p className={`text-[13px] mt-1 text-center ${isHovered ? 'text-zinc-600 opacity-100' : 'opacity-60'}`} style={!isHovered ? { color: 'var(--ink)' } : {}}>{variant.animation || 'Standard reveal'}</p>
+
+          {isWaterBottle && (
+            <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-2.5">
+              3D PET Plastic • 243×46mm Wrap Label
+            </span>
+          )}
 
           {/* Color / Material Swatches for boxes */}
           {isBox && (
@@ -235,7 +294,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 };
 
 
-const ensureBoxMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
+const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
   return cats.map((cat) => {
     if (cat.id === 'box-mockups') {
       const defaultBoxCategory = mockupCategories.find(c => c.id === 'box-mockups');
@@ -255,6 +314,52 @@ const ensureBoxMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
         variants: currentVariants
       };
     }
+
+    const isBottleCategory = cat.id === 'bottle-mockups' || cat.id === 'bottle' || cat.name?.toLowerCase().includes('bottle');
+    if (isBottleCategory) {
+      const defaultBottleCat = mockupCategories.find(c => c.id === 'bottle-mockups' || c.id === 'bottle');
+      const currentVariants = [...(cat.variants || (defaultBottleCat?.variants || []))];
+
+      const waterBottleVariant: MockupVariant = {
+        id: 101,
+        name: 'Plastic Mineral Water Bottle',
+        animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label',
+        imageUrl: '/images/water_bottle.png',
+        whiteImageUrl: '/images/water_bottle.png',
+        kraftImageUrl: '/images/water_bottle.png',
+        boxModelKey: 'water_bottle',
+        isFeatured: true,
+        gridSize: 'large'
+      };
+
+      const hasWaterBottle = currentVariants.some(v => 
+        v.boxModelKey === 'water_bottle' || v.name.toLowerCase().includes('mineral water bottle')
+      );
+
+      if (!hasWaterBottle) {
+        currentVariants.unshift(waterBottleVariant);
+      }
+
+      // Ensure proper bottle images instead of generated_box.png
+      const updatedVariants = currentVariants.map(v => {
+        const isW = v.boxModelKey === 'water_bottle' || v.name.toLowerCase().includes('water bottle');
+        if (!v.imageUrl || v.imageUrl.includes('generated_box.png') || v.imageUrl.includes('boxes')) {
+          return {
+            ...v,
+            imageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
+            whiteImageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
+            kraftImageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
+          };
+        }
+        return v;
+      });
+
+      return {
+        ...cat,
+        variants: updatedVariants
+      };
+    }
+
     return cat;
   });
 };
@@ -272,9 +377,9 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
               { id: 1, name: item.title, animation: item.subtitle, imageUrl: item.img }
             ],
       }));
-      return ensureBoxMockupsComplete(mapped);
+      return ensureAllMockupsComplete(mapped);
     }
-    return mockupCategories;
+    return ensureAllMockupsComplete(mockupCategories);
   });
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(initialCategoryId);
@@ -298,7 +403,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
                   { id: 1, name: item.title, animation: item.subtitle, imageUrl: item.img }
                 ],
           }));
-          setCategories(ensureBoxMockupsComplete(mapped));
+          setCategories(ensureAllMockupsComplete(mapped));
         }
       });
     };

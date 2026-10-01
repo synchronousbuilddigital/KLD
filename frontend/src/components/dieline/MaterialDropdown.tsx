@@ -48,6 +48,16 @@ export const materialCategories = [
       { name: "B-flute", thickness: 0.1181, type: "corrugated" },
       { name: "Custom corrugated board", isCustom: true, min: 0.0315, max: 0.1182, type: "corrugated" }
     ]
+  },
+  {
+    id: "plastic",
+    name: "Plastic & PET",
+    color: "#e0f2fe",
+    options: [
+      { name: "Plastic Glossy (Clear PET)", thickness: 0.005, type: "plastic_glossy" },
+      { name: "Frosted Plastic (Matte PET)", thickness: 0.005, type: "frosted" },
+      { name: "Custom plastic film", isCustom: true, min: 0.002, max: 0.02, type: "plastic_glossy" }
+    ]
   }
 ];
 
