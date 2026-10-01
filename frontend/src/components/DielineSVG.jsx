@@ -194,6 +194,8 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
 
   React.useEffect(() => {
+    // Avoid expensive layout queries and re-renders while actively dragging or resizing
+    if (interactionMode) return;
     if (activeDecalId) {
       const el = document.getElementById("active-decal-bbox");
       if (el && containerRef.current) {
@@ -205,7 +207,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         });
       }
     }
-  }, [activeDecalId, decals, isDraggingCanvas, activeSurface]);
+  }, [activeDecalId, decals, isDraggingCanvas, activeSurface, interactionMode]);
 
   // Generate ultra-realistic procedural cardboard texture data URL
   const [textureDataUrl, setTextureDataUrl] = useState("");
@@ -267,14 +269,18 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     return () => container.removeEventListener("wheel", handleWheel);
   }, [baseW, baseH]);
 
+  const cachedContainerRectRef = useRef(null);
+
   const handlePointerDown = (e) => {
     setIsDraggingCanvas(true);
+    cachedContainerRectRef.current = containerRef.current?.getBoundingClientRect() || null;
     if (setActiveDecalId) setActiveDecalId(null);
     e.target.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e) => {
-    const rect = containerRef.current.getBoundingClientRect();
+    const rect = cachedContainerRectRef.current || containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const v = viewRef.current;
     const dx = (e.movementX / rect.width) * v.w * (activeSurface === 'Inside' ? -1 : 1);
     const dy = (e.movementY / rect.height) * v.h;

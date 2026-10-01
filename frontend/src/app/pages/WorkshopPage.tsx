@@ -665,17 +665,19 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
             <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, backgroundImage: `radial-gradient(${t.gridColor} 1.5px, transparent 1.5px)`, backgroundSize: "32px 32px", backgroundPosition: "center" }} />
 
             <div style={{ flex: 1, zIndex: 2 }}>
-              <Box3DViewer
-                L={store.L} W={store.W} H={store.H} T={store.T}
-                progress={foldProgress}
-                zoom={zoomLevel}
-                materialPreset={(store.materialType || "").toLowerCase().includes("corrugated") ? "corrugated-kraft" : (store.materialType || "").toLowerCase().includes("kraft") ? "natural-kraft" : "white-kraft"}
-                lightingPreset="studio"
-                decals={store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : []}
-                overrideLayout={activeSidebarTab === "Layout" ? null : "single"}
-                activeAnimation={activeAnimation}
-                showWatermark={!isLoggedIn}
-              />
+              {!isStudioOpen && (
+                <Box3DViewer
+                  L={store.L} W={store.W} H={store.H} T={store.T}
+                  progress={foldProgress}
+                  zoom={zoomLevel}
+                  materialPreset={(store.materialType || "").toLowerCase().includes("corrugated") ? "corrugated-kraft" : (store.materialType || "").toLowerCase().includes("kraft") ? "natural-kraft" : "white-kraft"}
+                  lightingPreset="studio"
+                  decals={store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : []}
+                  overrideLayout={activeSidebarTab === "Layout" ? null : "single"}
+                  activeAnimation={activeAnimation}
+                  showWatermark={!isLoggedIn}
+                />
+              )}
             </div>
 
             {contextMenu && (

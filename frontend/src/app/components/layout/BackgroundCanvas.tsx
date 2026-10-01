@@ -25,13 +25,23 @@ export default function BackgroundCanvas({ zIndex = -1, position = 'fixed' }: { 
 
     window.addEventListener('mousemove', onMouseMove, { passive: true });
 
+    let isVisible = true;
+    const onVisibilityChange = () => {
+      isVisible = !document.hidden;
+      if (isVisible) {
+        lastTime = performance.now();
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap DPR at 2 for performance
+      // Ambient background doesn't need high-DPI scaling; 1x saves 75% fillrate on retina screens
+      const dpr = 1;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
-      ctx.scale(dpr, dpr);
     };
 
     window.addEventListener('resize', resize, { passive: true });
@@ -51,77 +61,89 @@ export default function BackgroundCanvas({ zIndex = -1, position = 'fixed' }: { 
     }));
 
     let time = 0;
+    let lastTime = performance.now();
 
-    const render = () => {
-      time += 0.003;
+    const render = (now: number) => {
+      if (!isVisible) return;
 
-      mouseX += (targetMouseX - mouseX) * 0.08;
-      mouseY += (targetMouseY - mouseY) * 0.08;
+      // Throttle rendering to ~40fps max when mouse is stationary to conserve GPU
+      const delta = now - lastTime;
+      const mouseDist = Math.abs(targetMouseX - mouseX) + Math.abs(targetMouseY - mouseY);
+      const minInterval = mouseDist > 2 ? 16 : 28; // ~60fps during interaction, ~35fps idle
 
-      ctx.clearRect(0, 0, width, height);
+      if (delta >= minInterval) {
+        lastTime = now - (delta % minInterval);
+        time += 0.004;
 
-      // 1. Soft subtle ambient glow (Single batch)
-      const cx2 = width * 0.8 + Math.cos(time * 0.8) * 100;
-      const cy2 = height * 0.7 + Math.sin(time * 0.6) * 100;
+        mouseX += (targetMouseX - mouseX) * 0.08;
+        mouseY += (targetMouseY - mouseY) * 0.08;
 
-      const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, 400);
-      grad.addColorStop(0, 'rgba(99, 102, 241, 0.03)');
-      grad.addColorStop(1, 'rgba(99, 102, 241, 0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx2, cy2, 400, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.clearRect(0, 0, width, height);
 
-      // 2. Mouse interactive glow (white)
-      if (mouseX > -500) {
-        const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 250);
-        mouseGrad.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
-        mouseGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = mouseGrad;
+        // 1. Soft subtle ambient glow (Single batch)
+        const cx2 = width * 0.8 + Math.cos(time * 0.8) * 100;
+        const cy2 = height * 0.7 + Math.sin(time * 0.6) * 100;
+
+        const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, 400);
+        grad.addColorStop(0, 'rgba(99, 102, 241, 0.03)');
+        grad.addColorStop(1, 'rgba(99, 102, 241, 0)');
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(mouseX, mouseY, 250, 0, Math.PI * 2);
+        ctx.arc(cx2, cy2, 400, 0, Math.PI * 2);
         ctx.fill();
-      }
 
-      // 3. Optimized floating geometric outlines
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
-      ctx.lineWidth = 1;
-
-      shapes.forEach(shape => {
-        shape.x += shape.vx;
-        shape.y += shape.vy;
-        shape.rotation += shape.vRot;
-
-        if (shape.x < -60) shape.x = width + 60;
-        if (shape.x > width + 60) shape.x = -60;
-        if (shape.y < -60) shape.y = height + 60;
-        if (shape.y > height + 60) shape.y = -60;
-
-        const pX = (mouseX - width / 2) * shape.depth * 0.015;
-        const pY = (mouseY - height / 2) * shape.depth * 0.015;
-
-        ctx.save();
-        ctx.translate(shape.x + pX, shape.y + pY);
-        ctx.rotate(shape.rotation);
-        
-        ctx.beginPath();
-        if (shape.type === 'rect') {
-          ctx.rect(-shape.size / 2, -shape.size / 2, shape.size, shape.size);
-        } else {
-          ctx.arc(0, 0, shape.size / 2, 0, Math.PI * 2);
+        // 2. Mouse interactive glow (white)
+        if (mouseX > -500) {
+          const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 250);
+          mouseGrad.addColorStop(0, 'rgba(255, 255, 255, 0.06)');
+          mouseGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = mouseGrad;
+          ctx.beginPath();
+          ctx.arc(mouseX, mouseY, 250, 0, Math.PI * 2);
+          ctx.fill();
         }
-        ctx.stroke();
-        ctx.restore();
-      });
+
+        // 3. Optimized floating geometric outlines
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+        ctx.lineWidth = 1;
+
+        shapes.forEach(shape => {
+          shape.x += shape.vx;
+          shape.y += shape.vy;
+          shape.rotation += shape.vRot;
+
+          if (shape.x < -60) shape.x = width + 60;
+          if (shape.x > width + 60) shape.x = -60;
+          if (shape.y < -60) shape.y = height + 60;
+          if (shape.y > height + 60) shape.y = -60;
+
+          const pX = (mouseX - width / 2) * shape.depth * 0.015;
+          const pY = (mouseY - height / 2) * shape.depth * 0.015;
+
+          ctx.save();
+          ctx.translate(shape.x + pX, shape.y + pY);
+          ctx.rotate(shape.rotation);
+          
+          ctx.beginPath();
+          if (shape.type === 'rect') {
+            ctx.rect(-shape.size / 2, -shape.size / 2, shape.size, shape.size);
+          } else {
+            ctx.arc(0, 0, shape.size / 2, 0, Math.PI * 2);
+          }
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
 
       animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    animationFrameId = requestAnimationFrame(render);
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('resize', resize);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);

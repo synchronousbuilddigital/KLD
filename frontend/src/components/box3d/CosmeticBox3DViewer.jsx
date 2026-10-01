@@ -580,10 +580,11 @@ export default function CosmeticBox3DViewer({
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
       <Canvas
+        frameloop={activeAnimation && activeAnimation !== "none" ? "always" : "demand"}
         camera={{ position: camPos, fov: 38, zoom }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         shadows
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
       >
         <React.Suspense fallback={null}>
           <Environment preset="city" />
@@ -598,6 +599,7 @@ export default function CosmeticBox3DViewer({
         </SceneAnimator>
 
         <OrbitControls
+          makeDefault
           enableZoom={!disableZoom}
           enablePan={false}
           minDistance={W * 1.5}

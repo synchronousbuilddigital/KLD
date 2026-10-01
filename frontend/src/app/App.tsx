@@ -994,7 +994,7 @@ export default function App() {
       `}</style>
       )}
       <div className={`relative w-full bg-white text-zinc-900 font-sans z-10 shadow-[0_30px_60px_rgba(0,0,0,0.15)] ${stepIndex >= 7 ? 'min-h-[100dvh]' : 'h-[100dvh] overflow-hidden'}`}>
-        <BackgroundCanvas />
+        {stepIndex < 7 && <BackgroundCanvas />}
         <div className="relative w-full min-h-[100dvh] md:h-[900px] overflow-hidden bg-white">
           <HeroSlideshow visible={stepIndex >= 7} />
           <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0" initial={{ opacity: 1 }} animate={{ opacity: stepIndex >= 7 ? 0 : 1 }} transition={{ duration: 0.6 }}><h1 className="text-[18vw] font-black tracking-[-0.1em] text-zinc-500 select-none uppercase leading-none">KEYLINE DESIGN</h1></motion.div>

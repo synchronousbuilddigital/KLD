@@ -461,7 +461,13 @@ export default function AutoLockBox3DViewer({
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <Canvas camera={{ position: camPos, fov: 40, zoom }} gl={{ preserveDrawingBuffer: true, antialias: true }} shadows dpr={[1, 2]}>
+      <Canvas
+        frameloop={activeAnimation && activeAnimation !== "none" ? "always" : "demand"}
+        camera={{ position: camPos, fov: 40, zoom }}
+        gl={{ preserveDrawingBuffer: true, antialias: true }}
+        shadows
+        dpr={[1, 1.5]}
+      >
         <React.Suspense fallback={null}>
           <Environment preset="city" />
         </React.Suspense>
@@ -475,6 +481,7 @@ export default function AutoLockBox3DViewer({
         </SceneAnimator>
 
         <OrbitControls
+          makeDefault
           enableZoom={!disableZoom}
           enablePan={false}
           minDistance={W * 1.5}

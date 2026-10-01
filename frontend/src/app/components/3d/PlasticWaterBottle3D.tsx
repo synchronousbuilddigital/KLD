@@ -102,17 +102,22 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
   const svgCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const rafIdRef = useRef<number | null>(null);
 
+  const requestRenderRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     setIsRotating(autoRotate);
     isRotatingRef.current = autoRotate;
+    requestRenderRef.current?.();
   }, [autoRotate]);
 
   useEffect(() => {
     isRotatingRef.current = isRotating;
+    requestRenderRef.current?.();
   }, [isRotating]);
 
   useEffect(() => {
     autoRotateSpeedRef.current = autoRotateSpeed;
+    requestRenderRef.current?.();
   }, [autoRotateSpeed]);
 
   useEffect(() => {
@@ -124,6 +129,7 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
   useEffect(() => {
     if (capMaterialRef.current) {
       capMaterialRef.current.color.set(capColor);
+      requestRenderRef.current?.();
     }
   }, [capColor]);
 
@@ -132,6 +138,7 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
       petMaterialRef.current.color.set(bottleTint);
       petMaterialRef.current.roughness = materialType === 'frosted' ? 0.28 : 0.03;
       petMaterialRef.current.transmission = materialType === 'frosted' ? 0.84 : 0.98;
+      requestRenderRef.current?.();
     }
   }, [bottleTint, materialType]);
 
@@ -428,6 +435,7 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
 
     if (labelTextureRef.current) {
       labelTextureRef.current.needsUpdate = true;
+      requestRenderRef.current?.();
     }
   }, [decals, labelColor]);
 
@@ -474,7 +482,7 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
       preserveDrawingBuffer: true
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.95; // Balanced, natural exposure — no overblown whites
@@ -805,17 +813,38 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
 
     bottleGroup.add(capGroup);
 
-    // Animation Loop
+    // Demand-Driven Animation Loop: only renders when rotating, moving controls, or on update
     let animationFrameId: number;
+    let needsRender = true;
+
+    const requestRender = () => {
+      needsRender = true;
+    };
+    requestRenderRef.current = requestRender;
+    controls.addEventListener('change', requestRender);
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        requestRender();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      if (document.hidden) return;
 
+      let didUpdate = false;
       if (isRotatingRef.current && bottleGroupRef.current) {
         bottleGroupRef.current.rotation.y += 0.008 * autoRotateSpeedRef.current;
+        didUpdate = true;
       }
 
-      controls.update();
-      renderer.render(scene, camera);
+      const controlsDamping = controls.update();
+      if (controlsDamping || didUpdate || needsRender) {
+        renderer.render(scene, camera);
+        needsRender = false;
+      }
     };
     animate();
 
@@ -827,12 +856,16 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      requestRender();
     };
 
     window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      controls.removeEventListener('change', requestRender);
+      requestRenderRef.current = null;
       cancelAnimationFrame(animationFrameId);
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
       controls.dispose();

@@ -484,10 +484,11 @@ export default function ButtonHoleBox3DViewer({
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
       <Canvas
+        frameloop={activeAnimation && activeAnimation !== "none" ? "always" : "demand"}
         camera={{ position: camPos, fov: 40, zoom }}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         shadows
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
       >
         <React.Suspense fallback={null}>
           <Environment preset="city" />
@@ -509,7 +510,7 @@ export default function ButtonHoleBox3DViewer({
           </group>
         </SceneAnimator>
 
-        <OrbitControls enableZoom={!disableZoom} enablePan={false} />
+        <OrbitControls makeDefault enableZoom={!disableZoom} enablePan={false} />
       </Canvas>
     </div>
   );
