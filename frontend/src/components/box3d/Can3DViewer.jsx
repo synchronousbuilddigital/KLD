@@ -1,18 +1,19 @@
 /**
- * WaterBottle3DViewer.jsx
+ * Can3DViewer.jsx
  * ─────────────────────────────────────────────────────────────────────────────
- * 3D viewer component for the Plastic Mineral Water Bottle (PET).
+ * 3D viewer component for the 12 oz Aluminum Beverage Can / Soda Can.
  * Bridges into Box3DViewer router so WorkshopPage and EditorModal preview cards
- * can render the photorealistic Pacdora-quality bottle natively.
+ * can render the photorealistic Pacdora-quality aluminum can natively.
+ * Model ID: 550034
  * ─────────────────────────────────────────────────────────────────────────────
  */
 "use client";
 import React, { useRef, useMemo } from "react";
-import { PlasticWaterBottle3D } from "../../app/components/3d/PlasticWaterBottle3D";
+import { BeverageCan3D } from "../../app/components/3d/BeverageCan3D";
 import { useBoxStore } from "../../lib/useBoxStore";
 import { useDebouncedDecals } from "./sharedUtils";
 
-export default function WaterBottle3DViewer({
+export default function Can3DViewer({
   useStore = useBoxStore,
   decals: propDecals,
   packageColor: propPackageColor,
@@ -21,13 +22,13 @@ export default function WaterBottle3DViewer({
   ...props
 }) {
   const store = useStore();
-  const bottleRef = useRef(null);
+  const canRef = useRef(null);
 
-  // Extract decals specifically for water_bottle model or fall back to passed decals
+  // Extract decals specifically for can model or fall back to passed decals
   const decals = useMemo(() => {
     if (propDecals && propDecals.length > 0) return propDecals;
-    if (store.decalsByModel && store.decalsByModel.water_bottle) {
-      return store.decalsByModel.water_bottle;
+    if (store.decalsByModel && store.decalsByModel.can) {
+      return store.decalsByModel.can;
     }
     return [];
   }, [propDecals, store.decalsByModel]);
@@ -35,24 +36,28 @@ export default function WaterBottle3DViewer({
   // Debounce rapid drag moves by 35ms to ensure buttery smooth dieline interactions
   const debouncedDecals = useDebouncedDecals(decals, 35);
 
-  const labelColor = propPackageColor || store.packageColor || "#ffffff";
-  const capColor = props.capColor || store.capColor || "#ffffff";
-  const materialType = (store.materialType || "").toLowerCase().includes("frosted")
-    ? "frosted"
-    : (store.materialType || "").toLowerCase().includes("tinted")
-    ? "tinted"
-    : "plastic_glossy";
+  const packageColor = propPackageColor || store.packageColor || "#ffffff";
+  const materialType = (store.materialType || "").toLowerCase().includes("gloss")
+    ? "metal_gloss"
+    : "metal_matt";
+
+  const labelWidthInches = Number(props.L || store.L) || (207 / 25.4);
+  const labelHeightInches = Number(props.W || store.W) || (125 / 25.4);
+  const glueFlapWidth = Number(props.glueFlapWidth || store.glueFlapWidth) || 0.25;
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", minHeight: "180px", overflow: "hidden" }}>
-      <PlasticWaterBottle3D
-        ref={bottleRef}
+      <BeverageCan3D
+        ref={canRef}
         decals={debouncedDecals}
-        labelColor={labelColor}
-        capColor={capColor}
+        packageColor={packageColor}
         materialType={materialType}
         autoRotate={activeAnimation === "rotate"}
         interactive={true}
+        showPlaceholder={debouncedDecals.length === 0}
+        labelWidthInches={labelWidthInches}
+        labelHeightInches={labelHeightInches}
+        glueFlapWidth={glueFlapWidth}
         className="w-full h-full"
       />
 
@@ -74,7 +79,7 @@ export default function WaterBottle3DViewer({
             boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
           }}
         >
-          Pacdora Studio PET 530040
+          Pacdora Studio Can 550034
         </div>
       )}
     </div>

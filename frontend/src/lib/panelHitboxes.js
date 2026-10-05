@@ -11,6 +11,13 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
     ];
   }
 
+  if (boxModel === 'can' || boxModel === 'soda_can' || boxModel === 'beverage_can') {
+    return [
+      { id: "p1-label", name: "Can Wrap Label", path: rect(x1, yTop, L, W) },
+      { id: "glue-flap", name: "Glue Overlap", path: rect(0, yTop, glueFlapWidth || 0.25, W) }
+    ];
+  }
+
   const panels = [];
   
   // Main Panels

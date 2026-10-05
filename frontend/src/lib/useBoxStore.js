@@ -87,6 +87,25 @@ const createWaterBottleDefaultState = () => ({
   materialCategory: "plastic",
   generatorMethod: "dxf",
   packageColor: "#ffffff",
+  insideColor: "#ffffff",
+  capColor: "#ffffff"
+});
+
+const createCanDefaultState = () => ({
+  L: 207 / 25.4, // circumference ~8.15 in (784 px aspect)
+  W: 125 / 25.4, // label height ~4.92 in (472 px aspect)
+  H: 122 / 25.4, // total can height ~4.80 in
+  T: 0.008,
+  glueFlapWidth: 0.25,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "metal_matt",
+  materialName: "Metal Matt (Aluminum)",
+  isCustomMaterial: false,
+  materialColor: "#ffffff",
+  materialCategory: "metal",
+  generatorMethod: "dxf",
+  packageColor: "#ffffff",
   insideColor: "#ffffff"
 });
 
@@ -113,7 +132,8 @@ export const useBoxStore = create((set) => ({
       cosmetic: createCosmeticDefaultState(),
       cosmetic_b: createCosmeticBDefaultState(),
       button_hole: createButtonHoleDefaultState(),
-      water_bottle: createWaterBottleDefaultState()
+      water_bottle: createWaterBottleDefaultState(),
+      can: createCanDefaultState()
     },
     mockup: {
       rte: createDefaultState(),
@@ -122,7 +142,8 @@ export const useBoxStore = create((set) => ({
       cosmetic: createCosmeticDefaultState(),
       cosmetic_b: createCosmeticBDefaultState(),
       button_hole: createButtonHoleDefaultState(),
-      water_bottle: createWaterBottleDefaultState()
+      water_bottle: createWaterBottleDefaultState(),
+      can: createCanDefaultState()
     }
   },
 
@@ -268,10 +289,21 @@ export const useBoxStore = create((set) => ({
     };
     return { insideColor: color, savedState: newSaved };
   }),
+  capColor: "#ffffff",
+  setCapColor: (color) => set((state) => {
+    const newSaved = { ...state.savedState };
+    if (newSaved[state.activeContext] && newSaved[state.activeContext][state.boxModel]) {
+      newSaved[state.activeContext][state.boxModel] = {
+        ...newSaved[state.activeContext][state.boxModel],
+        capColor: color
+      };
+    }
+    return { capColor: color, savedState: newSaved };
+  }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] },
-  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [] },
+  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];

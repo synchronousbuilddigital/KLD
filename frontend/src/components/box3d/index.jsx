@@ -23,8 +23,9 @@ import CosmeticBox3DViewer  from "./CosmeticBox3DViewer";
 import CosmeticBBox3DViewer from "./CosmeticBBox3DViewer";
 import ButtonHoleBox3DViewer from "./ButtonHoleBox3DViewer";
 import WaterBottle3DViewer from "./WaterBottle3DViewer";
+import Can3DViewer         from "./Can3DViewer";
 
-export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer };
+export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, Can3DViewer };
 
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
@@ -42,6 +43,7 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
 
   const showWatermark = !isLoggedIn;
 
+  if (model === "can" || model === "soda_can" || model === "beverage_can") return <Can3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "water_bottle") return <WaterBottle3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "te") return <TEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "auto_lock") return <AutoLockBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;

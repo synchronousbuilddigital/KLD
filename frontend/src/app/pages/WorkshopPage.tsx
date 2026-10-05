@@ -100,6 +100,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const handleSaveToWorkspace = async () => {
     const currentModel = store.boxModel || 'rte';
     const categoryName = 
+      currentModel === 'can' || currentModel === 'soda_can' ? '12 oz Aluminum Soda Can' :
       currentModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
       currentModel === 'rte' ? 'Reverse Tuck End Box' :
       currentModel === 'te' ? 'Straight Tuck End Box' :
@@ -127,6 +128,8 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       dimensions: { L: dimL_mm, W: dimW_mm, H: dimH_mm, length: store.L, width: store.W, height: store.H, glueTab: 15, tuck: 18, flapH: 35 },
       packageColor: store.packageColor || null,
       insideColor: store.insideColor || null,
+      capColor: store.capColor || "#ffffff",
+      materialType: store.materialType || "plastic_glossy",
       decals: store.decalsByModel ? store.decalsByModel[currentModel] || [] : [],
       tabCategory: "projects",
       isDraft: false,
@@ -498,6 +501,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         {store.boxModel === "water_bottle" && (
                           <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>918 × 174 px</span>
                         )}
+                        {(store.boxModel === "can" || store.boxModel === "soda_can") && (
+                          <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>784 × 472 px</span>
+                        )}
                       </div>
                       <div style={{ marginTop: "12px", fontSize: "13px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
                         Download dieline(AI, PDF)
@@ -516,6 +522,81 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         <MaterialDropdown />
                       </div>
 
+                      {/* Bottle Cap Color (for Water Bottle) */}
+                      {store.boxModel === "water_bottle" && (
+                        <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "600" }}>Bottle cap color</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: store.capColor || "#ffffff", border: "1px solid #d1d5db" }} />
+                              <span style={{ fontSize: "11px", color: "#4b5563", fontWeight: "700", fontFamily: "monospace" }}>
+                                {(store.capColor || "#ffffff").toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", paddingTop: "2px" }}>
+                            {/* Custom Color Picker Button */}
+                            <label
+                              style={{
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "50%",
+                                cursor: "pointer",
+                                position: "relative",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1.5px solid #d1d5db",
+                                background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                flexShrink: 0
+                              }}
+                              title="Custom Cap Color"
+                            >
+                              <input
+                                type="color"
+                                value={store.capColor || "#ffffff"}
+                                onChange={(e) => store.setCapColor && store.setCapColor(e.target.value)}
+                                style={{ opacity: 0, position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "pointer" }}
+                              />
+                            </label>
+
+                            {/* Preset Swatches */}
+                            {[
+                              { name: "Pure White", color: "#ffffff" },
+                              { name: "Sky Blue", color: "#38bdf8" },
+                              { name: "Royal Blue", color: "#2563eb" },
+                              { name: "Emerald Green", color: "#16a34a" },
+                              { name: "Crimson Red", color: "#dc2626" },
+                              { name: "Bright Yellow", color: "#eab308" },
+                              { name: "Jet Black", color: "#18181b" },
+                            ].map((item) => {
+                              const isSelected = (store.capColor || "#ffffff").toLowerCase() === item.color.toLowerCase();
+                              return (
+                                <div
+                                  key={item.color}
+                                  onClick={() => store.setCapColor && store.setCapColor(item.color)}
+                                  title={item.name}
+                                  style={{
+                                    width: "26px",
+                                    height: "26px",
+                                    borderRadius: "50%",
+                                    backgroundColor: item.color,
+                                    border: item.color === "#ffffff" ? "1.5px solid #d1d5db" : "1.5px solid transparent",
+                                    outline: isSelected ? "2.5px solid #3b82f6" : "none",
+                                    outlineOffset: "2px",
+                                    cursor: "pointer",
+                                    boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+                                    flexShrink: 0
+                                  }}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Custom Size */}
                       <div 
                         style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
@@ -532,7 +613,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom size</span>
                           <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
-                            {store.boxModel === "water_bottle"
+                            {store.boxModel === "can" || store.boxModel === "soda_can"
+                              ? (customSizeUnit === 'mm' ? "207.00 × 125.00 mm (Label)" : "8.1500 × 4.9213 in (Label)")
+                              : store.boxModel === "water_bottle"
                               ? (customSizeUnit === 'mm' ? "243.00 × 46.00 mm (Label)" : "9.5670 × 1.8110 in (Label)")
                               : (customSizeUnit === 'mm' 
                                   ? `${(store.L * 25.4).toFixed(2)} x ${(store.W * 25.4).toFixed(2)} x ${(store.H * 25.4).toFixed(2)} mm`
@@ -553,7 +636,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#9ca3af", marginTop: "24px" }}>
                       <span style={{ fontSize: "13px" }}>
-                        Model ID: {store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
+                        Model ID: {store.boxModel === "can" || store.boxModel === "soda_can" ? "550034 (12 oz Aluminum Can)" : store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
                       </span>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     </div>
@@ -676,6 +759,8 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                   overrideLayout={activeSidebarTab === "Layout" ? null : "single"}
                   activeAnimation={activeAnimation}
                   showWatermark={!isLoggedIn}
+                  packageColor={store.packageColor}
+                  capColor={store.capColor || "#ffffff"}
                 />
               )}
             </div>

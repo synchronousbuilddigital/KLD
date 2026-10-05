@@ -92,7 +92,7 @@ export const mockupCategories: MockupCategory[] = [
     id: 'can-mockups',
     name: 'Can Mockups',
     variants: [
-      { id: 1, name: 'Soda Can', animation: 'Tab pops open', imageUrl: '/mockups/generated_box.png' },
+      { id: 1, name: '12 oz Soda Can', animation: 'Realistic 12 oz aluminum can with metal finish & pull-tab', imageUrl: '/images/can.png', whiteImageUrl: '/images/can.png', kraftImageUrl: '/images/can.png', boxModelKey: 'can', isFeatured: true, gridSize: 'large' },
       { id: 2, name: 'Slim Energy Can', animation: 'Condensation forms', imageUrl: '/mockups/generated_box.png' },
       { id: 3, name: 'Coffee Can', animation: 'Foil seal peels back', imageUrl: '/mockups/generated_box.png' },
       { id: 4, name: 'Beer Can', animation: 'Frosted chill effect', imageUrl: '/mockups/generated_box.png' },

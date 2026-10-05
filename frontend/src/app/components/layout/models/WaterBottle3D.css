@@ -49,6 +49,12 @@
   transform-style: preserve-3d;
 }
 
+.water-facet {
+  position: absolute;
+  box-sizing: border-box;
+  transform-style: preserve-3d;
+}
+
 /* Curved UV-Mapped Label Slices flush on bottle surface */
 .water-label-slice {
   position: absolute;

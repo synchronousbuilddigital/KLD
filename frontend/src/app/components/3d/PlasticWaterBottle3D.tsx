@@ -46,6 +46,8 @@ export interface PlasticWaterBottle3DProps {
   style?: React.CSSProperties;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
   interactive?: boolean;
+  cameraDistance?: number;
+  isMini?: boolean;
 }
 
 export interface PlasticWaterBottle3DRef {
@@ -80,6 +82,8 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
   style = {},
   onCanvasReady,
   interactive = true,
+  cameraDistance,
+  isMini = false,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
@@ -470,8 +474,11 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
+    const dist = cameraDistance || (isMini ? 8.6 : height < 340 ? Math.max(5.0, 5.0 * (480 / height)) : 5.0);
+    const targetY = isMini ? 0.05 : height < 340 ? 0.1 : 0.35;
+
     const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
-    camera.position.set(0, 0.35, 5.0);
+    camera.position.set(0, targetY, dist);
     cameraRef.current = camera;
 
     // 2. WebGL Renderer
@@ -497,8 +504,8 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.minDistance = 2.0;
-    controls.maxDistance = 8.0;
+    controls.minDistance = isMini ? 3.5 : 2.0;
+    controls.maxDistance = isMini ? 16.0 : 9.5;
     controls.maxPolarAngle = Math.PI / 2 + 0.18;
     controls.minPolarAngle = 0.2;
     controls.target.set(0, 0.05, 0);
@@ -603,21 +610,21 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
     // 1. Crystal-Clear Optical PET Transmission Material
     const petMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(bottleTint),
-      roughness: materialType === 'frosted' ? 0.28 : 0.03, // Mirror-smooth gloss!
+      roughness: materialType === 'frosted' ? 0.28 : 0.03, // Mirror-smooth gloss
       metalness: 0.0,
       transmission: materialType === 'frosted' ? 0.84 : 0.98, // 98% crystal transmission
-      ior: 1.52, // Pure PET Polyethylene Terephthalate
-      thickness: 0.35, // Thin, realistic plastic bottle wall
+      ior: 1.46, // Pure PET Polyethylene Terephthalate
+      thickness: 0.04, // Realistic thin PET bottle wall — prevents extreme ray bending and color bleeding
       specularIntensity: 0.9,
       specularColor: new THREE.Color(0xffffff),
       clearcoat: 0.85,
       clearcoatRoughness: 0.02,
-      attenuationDistance: 120,
+      attenuationDistance: 40,
       attenuationColor: new THREE.Color(0xffffff),
       transparent: true,
       opacity: 1.0,
-      depthWrite: false,
-      side: THREE.DoubleSide,
+      depthWrite: true,
+      side: THREE.FrontSide, // FrontSide prevents double-refraction loops and internal bleed artifacts
     });
     petMaterialRef.current = petMaterial;
 
@@ -626,6 +633,8 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
       color: new THREE.Color(capColor),
       roughness: 0.32,
       metalness: 0.02,
+      depthWrite: true,
+      depthTest: true,
     });
     capMaterialRef.current = capMaterial;
 
@@ -753,6 +762,7 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
 
     const bottleMesh = new THREE.Mesh(bottleGeo, petMaterial);
     bottleMesh.castShadow = true;
+    bottleMesh.renderOrder = 1;
     bottleGroup.add(bottleMesh);
 
     // Label Cylinder (flush on bottle surface)
@@ -769,11 +779,13 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
     labelGeo.rotateY(-Math.PI / 2); // align front facing
     const labelMesh = new THREE.Mesh(labelGeo, labelMaterial);
     labelMesh.position.y = 0.09;
+    labelMesh.renderOrder = 2;
     bottleGroup.add(labelMesh);
 
     // 28mm Pure White Ribbed Cap
     const capGroup = new THREE.Group();
     capGroup.position.y = 1.48;
+    capGroup.renderOrder = 2;
 
     const capHeight = 0.22;
     const capRadius = 0.21;

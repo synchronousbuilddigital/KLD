@@ -333,17 +333,12 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
     };
   }, []);
 
-  // Load items from MongoDB on mount (with localStorage fallback & sync)
+  // Load items from MongoDB and localStorage (seamless offline + online hybrid)
   const fetchWorkspaceItems = async () => {
     let mongoItems: WorkspaceItem[] = [];
     const token = localStorage.getItem('token');
-    const userIsLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || !!token;
 
-    if (!userIsLoggedIn || !token) {
-      setItems([]);
-      setIsLoading(false);
-      return;
-    }
+    if (token) {
       try {
         const res = await fetch(`${API_BASE_URL}/mockups/saved`, {
           headers: {
@@ -366,7 +361,9 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
             let boxModel = d.boxModel || d.model;
             if (!boxModel && d.category) {
               const cat = d.category.toLowerCase();
-              if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
+              if (cat.includes('bottle')) boxModel = 'water_bottle';
+              else if (cat.includes('can')) boxModel = 'can';
+              else if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
               else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
               else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
               else if (cat.includes('cosmetic b') || cat.includes('mailer') || cat.includes('tray')) boxModel = 'cosmetic_b';
@@ -376,7 +373,9 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
             let categoryName = d.category;
             if (!categoryName || categoryName === 'BOX' || categoryName === 'Custom Box' || categoryName === 'box' || categoryName === 'DIELINE' || categoryName === 'MOCKUP') {
-              if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
+              if (boxModel === 'water_bottle') categoryName = 'Plastic Mineral Water Bottle';
+              else if (boxModel === 'can' || boxModel === 'soda_can') categoryName = '12 oz Aluminum Soda Can';
+              else if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
               else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
               else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
               else if (boxModel === 'cosmetic_b') categoryName = 'Cosmetic Box B (Mailer/Tray Style)';
@@ -394,6 +393,8 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               dimensions: { L: L || 150, W: W || 70, H: H || 200, glueTab: dim.glueTab || 15, tuck: dim.tuck || 18, flapH: dim.flapH || 35 },
               packageColor: d.packageColor || null,
               insideColor: d.insideColor || null,
+              capColor: d.capColor || '#ffffff',
+              materialType: d.materialType,
               decals: d.decals || [],
               updatedAt: d.updatedAt || new Date().toISOString(),
               isFavorite: !!d.isFavorite,
@@ -403,8 +404,9 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
           });
         }
       } catch (err) {
-        console.log('MongoDB fetch error, using local workspace items:', err);
+        console.log('MongoDB fetch error, falling back to local storage:', err);
       }
+    }
 
     // Local storage items fallback / merge (Filtering out any mock dummy items and auto drafts)
     let localItems: WorkspaceItem[] = [];
@@ -429,7 +431,9 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               let boxModel = item.boxModel || item.model;
               if (!boxModel && item.category) {
                 const cat = item.category.toLowerCase();
-                if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
+                if (cat.includes('bottle')) boxModel = 'water_bottle';
+                else if (cat.includes('can')) boxModel = 'can';
+                else if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
                 else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
                 else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
                 else if (cat.includes('cosmetic b') || cat.includes('mailer') || cat.includes('tray')) boxModel = 'cosmetic_b';
@@ -439,7 +443,9 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
               let categoryName = item.category;
               if (!categoryName || categoryName === 'BOX' || categoryName === 'Custom Box' || categoryName === 'box' || categoryName === 'DIELINE' || categoryName === 'MOCKUP') {
-                if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
+                if (boxModel === 'water_bottle') categoryName = 'Plastic Mineral Water Bottle';
+                else if (boxModel === 'can' || boxModel === 'soda_can') categoryName = '12 oz Aluminum Soda Can';
+                else if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
                 else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
                 else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
                 else if (boxModel === 'cosmetic_b') categoryName = 'Cosmetic Box B (Mailer/Tray Style)';
@@ -454,6 +460,8 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 dimensions: { L: L || 150, W: W || 70, H: H || 200, glueTab: dim.glueTab || 15, tuck: dim.tuck || 18, flapH: dim.flapH || 35 },
                 packageColor: item.packageColor || null,
                 insideColor: item.insideColor || null,
+                capColor: item.capColor || '#ffffff',
+                materialType: item.materialType,
                 decals: item.decals || [],
                 tabCategory: item.tabCategory || 'projects'
               };
@@ -465,12 +473,22 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
       console.log('Local storage parse error:', err);
     }
 
-    // If authenticated, only show MongoDB items. Otherwise, show Local Storage items.
-    let combined = token ? mongoItems : localItems;
+    // Merge both MongoDB items and Local Storage items without losing either
+    const itemMap = new Map<string, WorkspaceItem>();
+    localItems.forEach(item => {
+      const key = item.id || item._id;
+      if (key) itemMap.set(key, item);
+    });
+    mongoItems.forEach(item => {
+      const key = item.id || item._id;
+      if (key) itemMap.set(key, item);
+    });
+
+    let combined = Array.from(itemMap.values());
     combined = combined.filter(i => i.id !== 'active-session-draft');
 
     // Sort by last updated (newest / most recent first)
-    combined.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    combined.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
 
     setItems(combined);
     setIsLoading(false);
@@ -582,6 +600,8 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
         H: dimH,
         packageColor: item.packageColor || null,
         insideColor: item.insideColor || null,
+        capColor: item.capColor || '#ffffff',
+        materialType: item.materialType || 'plastic_glossy',
         decalsByModel: {
           ...currentDecalsByModel,
           [model]: item.decals || []

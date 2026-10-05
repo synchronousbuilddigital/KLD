@@ -15,6 +15,7 @@ const GiftBox3D = lazy(() => import('./models/GiftBox3D'));
 const PaperBag3D = lazy(() => import('./models/PaperBag3D'));
 const Pouch3D = lazy(() => import('./models/Pouch3D'));
 const SupplementJar3D = lazy(() => import('./models/SupplementJar3D'));
+const FrenchFries3D = lazy(() => import('./models/FrenchFries3D'));
 
 interface Props {
   item: { label: string; img: string; itemId?: string; id?: string };
@@ -175,16 +176,16 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
               return <div style={{ transform: 'scale(0.85)' }}><SupplementJar3D /></div>;
             }
             if (matches('water')) {
-              return <div style={{ transform: 'scale(0.85)' }}><WaterBottle3D /></div>;
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WaterBottle3D /></div>;
             }
             if (matches('bottle')) {
-              return <div style={{ transform: 'scale(0.85)' }}><Bottle3D /></div>;
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Bottle3D /></div>;
             }
             if (matches('can')) {
-              return <div style={{ transform: 'scale(0.9)' }}><Can3D /></div>;
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Can3D /></div>;
             }
             if (matches('tube')) {
-              return <div style={{ transform: 'scale(0.9)' }}><Tube3D /></div>;
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Tube3D /></div>;
             }
             if (matches('cup', 'container')) {
               return <div style={{ transform: 'scale(0.9)' }}><Cup3D /></div>;
@@ -193,7 +194,10 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
               return <div style={{ transform: 'scale(0.9)' }}><PaperBag3D /></div>;
             }
             if (matches('pouch')) {
-              return <div style={{ transform: 'scale(1.0)' }}><Pouch3D /></div>;
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pouch3D /></div>;
+            }
+            if (matches('food', 'fries')) {
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FrenchFries3D /></div>;
             }
             return (
               <div className="hover-preview-card__float-container">

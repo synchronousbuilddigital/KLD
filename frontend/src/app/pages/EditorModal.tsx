@@ -77,7 +77,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       // This ensures useEditorStore keeps its own setDecals and doesn't mutate globalStore
       const stateData = JSON.parse(JSON.stringify(useBoxStore.getState()));
       if (isAiMode) {
-        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] };
+        stateData.decalsByModel = stateData.aiDecalsByModel || { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [] };
       }
       useEditorStore.setState(stateData);
       
@@ -157,6 +157,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     setIsSaving(true);
     try {
       const categoryName = 
+        store.boxModel === 'can' || store.boxModel === 'soda_can' ? '12 oz Aluminum Soda Can' :
         store.boxModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
         store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
         store.boxModel === 'te' ? 'Straight Tuck End Box' :
@@ -169,8 +170,13 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       const dimW_mm = Math.round((store.W || 2.36) * 25.4);
       const dimH_mm = Math.round((store.H || 6.29) * 25.4);
 
-      await mockupService.saveDesign({
-        name: `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`,
+      const targetId = store.activeProjectId || ('saved-' + Date.now());
+      const targetName = store.activeProjectName || `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`;
+
+      const savedItem = {
+        id: targetId,
+        _id: targetId,
+        name: targetName,
         type: contextType === "mockup" ? "MOCKUP" : "DIELINE",
         category: categoryName,
         boxModel: store.boxModel,
@@ -182,17 +188,64 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
           length: store.L,
           width: store.W,
           height: store.H,
+          glueTab: 15,
+          tuck: 18,
+          flapH: 35
         },
         packageColor: store.packageColor || null,
         insideColor: store.insideColor || null,
+        capColor: store.capColor || "#ffffff",
+        materialType: store.materialType || "plastic_glossy",
         decals: store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : [],
         tabCategory: "projects",
         isDraft: false,
-      });
-      window.dispatchEvent(new CustomEvent('project-saved'));
+        updatedAt: new Date().toISOString()
+      };
+
+      // 1. Immediately persist to localStorage for instant, offline-resilient workspace display
+      try {
+        const stored = localStorage.getItem('kld_workspace_items');
+        const existing = stored ? JSON.parse(stored) : [];
+        let updatedList = [];
+        if (Array.isArray(existing)) {
+          const index = existing.findIndex((i) => i.id === targetId || i._id === targetId);
+          if (index >= 0) {
+            updatedList = [...existing];
+            updatedList[index] = savedItem;
+          } else {
+            updatedList = [savedItem, ...existing];
+          }
+        } else {
+          updatedList = [savedItem];
+        }
+        localStorage.setItem('kld_workspace_items', JSON.stringify(updatedList));
+      } catch (e) {
+        console.error("Failed to save to local storage:", e);
+      }
+
+      // 2. Also sync to backend API if available
+      try {
+        const res = await mockupService.saveDesign(savedItem);
+        if (res && res.data && res.data.design && res.data.design._id) {
+          const mongoId = res.data.design._id;
+          savedItem.id = mongoId;
+          savedItem._id = mongoId;
+          const stored = localStorage.getItem('kld_workspace_items');
+          if (stored) {
+            const list = JSON.parse(stored);
+            if (Array.isArray(list)) {
+              const updated = list.map((i) => (i.id === targetId || i._id === targetId) ? savedItem : i);
+              localStorage.setItem('kld_workspace_items', JSON.stringify(updated));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Backend save skipped or failed, local copy preserved:", err);
+      }
+
+      window.dispatchEvent(new CustomEvent('project-saved', { detail: savedItem }));
     } catch (err) {
-      console.error("Failed to save design to backend:", err);
-      // Optional: alert(err.message) but we don't want to block them if mongodb is down
+      console.error("Failed to save design to workspace:", err);
     } finally {
       setIsSaving(false);
     }
@@ -294,15 +347,15 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     { type: "color", value: "#146814" },
   ];
 
-  const isWaterBottle = store.boxModel === 'water_bottle';
-  const defaultCenterX = isWaterBottle ? (0.25 + (store.L || 9.567) / 2) : (store.L * 2 + store.W * 2) / 2 + 0.625;
-  const defaultCenterY = isWaterBottle ? ((store.W || 1.811) / 2) : store.H / 2 + store.W + 0.625;
-  const defaultDecalW = isWaterBottle ? Math.min(2.5, (store.L || 9.567) * 0.3) : 5;
-  const defaultDecalH = isWaterBottle ? Math.min(1.2, (store.W || 1.811) * 0.75) : 5;
-  const defaultTextW = isWaterBottle ? Math.min(3.0, (store.L || 9.567) * 0.4) : 5;
-  const defaultTextH = isWaterBottle ? Math.min(0.8, (store.W || 1.811) * 0.5) : 2;
-  const defaultTextSize = isWaterBottle ? 0.35 : 0.8;
-  const defaultSymSize = isWaterBottle ? Math.min(1.0, (store.W || 1.811) * 0.6) : 5;
+  const isCylinder = store.boxModel === 'water_bottle' || store.boxModel === 'can' || store.boxModel === 'soda_can';
+  const defaultCenterX = isCylinder ? (0.25 + (store.L || 8.15) / 2) : (store.L * 2 + store.W * 2) / 2 + 0.625;
+  const defaultCenterY = isCylinder ? ((store.W || 4.92) / 2) : store.H / 2 + store.W + 0.625;
+  const defaultDecalW = isCylinder ? Math.min(3.0, (store.L || 8.15) * 0.4) : 5;
+  const defaultDecalH = isCylinder ? Math.min(3.0, (store.W || 4.92) * 0.6) : 5;
+  const defaultTextW = isCylinder ? Math.min(4.0, (store.L || 8.15) * 0.5) : 5;
+  const defaultTextH = isCylinder ? Math.min(1.0, (store.W || 4.92) * 0.25) : 2;
+  const defaultTextSize = isCylinder ? 0.45 : 0.8;
+  const defaultSymSize = isCylinder ? Math.min(1.5, (store.W || 4.92) * 0.4) : 5;
 
   const handleAddDecal = (url) => {
     const newDecals = [...decals, { 
@@ -803,11 +856,12 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                     "white-kraft"
                   }
                   packageColor={activeColor}
+                  capColor={store.capColor || "#ffffff"}
                   lightingPreset="studio"
                   decals={deferredDecals}
                   useStore={useEditorStore}
                 />
-              ), [store.L, store.W, store.H, store.T, foldProgress, store.materialType, activeColor, deferredDecals])}
+              ), [store.L, store.W, store.H, store.T, foldProgress, store.materialType, activeColor, store.capColor, deferredDecals])}
               <div style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(255,255,255,0.8)", padding: "4px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: "bold", color: "#333" }}>3D</div>
             </div>
 
@@ -903,6 +957,62 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                 ))}
               </div>
             </div>
+
+            {/* Bottle Cap Color (for Water Bottle) */}
+            {store.boxModel === "water_bottle" && (
+              <div style={{ marginTop: "24px" }}>
+                <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "16px", fontFamily: "Georgia, 'Times New Roman', serif" }}>Bottle Cap Color</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                  {/* Custom color picker */}
+                  <div style={{ width: "32px", height: "32px", borderRadius: "50%", border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                    <input 
+                      type="color" 
+                      value={store.capColor || "#ffffff"} 
+                      onChange={(e) => store.setCapColor && store.setCapColor(e.target.value)}
+                      style={{ position: "absolute", opacity: 0, width: "100%", height: "100%", cursor: "pointer" }}
+                    />
+                    <div style={{ width: "26px", height: "26px", borderRadius: "50%", background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }} />
+                  </div>
+
+                  {/* Preset Cap Colors */}
+                  {[
+                    "#ffffff",
+                    "#38bdf8",
+                    "#2563eb",
+                    "#16a34a",
+                    "#dc2626",
+                    "#eab308",
+                    "#18181b"
+                  ].map((hex) => (
+                    <div 
+                      key={hex} 
+                      onClick={() => store.setCapColor && store.setCapColor(hex)}
+                      style={{ 
+                        width: "32px", 
+                        height: "32px", 
+                        borderRadius: "50%", 
+                        border: `1px solid ${t.border}`, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "center", 
+                        cursor: "pointer" 
+                      }}
+                    >
+                      <div 
+                        style={{ 
+                          width: "26px", 
+                          height: "26px", 
+                          borderRadius: "50%", 
+                          backgroundColor: hex, 
+                          outline: (store.capColor || "#ffffff").toLowerCase() === hex.toLowerCase() ? `2px solid ${t.cyan}` : "none", 
+                          outlineOffset: "2px" 
+                        }} 
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
           </div>
         </div>

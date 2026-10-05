@@ -12,6 +12,7 @@ import TuckBox3D from '../models/TuckBox3D';
 import GiftBox3D from '../models/GiftBox3D';
 import PaperBag3D from '../models/PaperBag3D';
 import Pouch3D from '../models/Pouch3D';
+import FrenchFries3D from '../models/FrenchFries3D';
 import './HoverPreviewCard.css';
 
 export interface TargetRect {
@@ -165,6 +166,9 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
           }
           if (lbl.includes('pouch') || grp === 'pouches') {
             return <div style={{ transform: 'scale(0.85)' }}><Pouch3D /></div>;
+          }
+          if (lbl.includes('food') || lbl.includes('fries') || grp === 'food') {
+            return <div style={{ transform: 'scale(0.85)' }}><FrenchFries3D /></div>;
           }
           if (lbl.includes('tuck') || lbl.includes('box') || grp === 'boxes' || key === 'rte' || key === 'te' || key === 'auto_lock' || key === 'cosmetic' || key === 'cosmetic_b') {
             return <div style={{ transform: 'scale(0.8)' }}><TuckBox3D /></div>;

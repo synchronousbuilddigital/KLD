@@ -899,11 +899,12 @@ export default function App() {
           onOpenStudioWithBox={(box, mode = 'dieline') => {
             if (!box) return;
 
-            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | 'water_bottle' | null = box.boxModel || null;
+            let boxModelKey: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | 'water_bottle' | 'can' | null = box.boxModel || null;
 
             if (!boxModelKey && box.category) {
               const cat = box.category.toLowerCase();
-              if (cat.includes('bottle') || cat.includes('mineral')) boxModelKey = 'water_bottle';
+              if (cat.includes('can') || cat.includes('soda')) boxModelKey = 'can';
+              else if (cat.includes('bottle') || cat.includes('mineral')) boxModelKey = 'water_bottle';
               else if (cat.includes('reverse') || cat.includes('rte')) boxModelKey = 'rte';
               else if (cat.includes('straight') || cat.includes('te')) boxModelKey = 'te';
               else if (cat.includes('auto') || cat.includes('lock')) boxModelKey = 'auto_lock';
@@ -978,6 +979,15 @@ export default function App() {
       <AiStudioPage 
         onBack={() => setCurrentView('landing')} 
         onNavigateToWorkshop={() => setCurrentView('workshop')}
+      />
+    );
+  }
+
+  if (currentView === 'mockup-generator' || currentView === 'mockup_generator' || currentView === 'mockupgenerator' || currentView === 'can-mockup') {
+    return (
+      <MockupGenerator 
+        onBack={() => setCurrentView('landing')} 
+        initialModel={useBoxStore.getState().boxModel === 'water_bottle' ? 'water_bottle' : 'can'} 
       />
     );
   }

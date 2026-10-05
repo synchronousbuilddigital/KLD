@@ -56,13 +56,14 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
   const isWaterBottle = variant.boxModelKey === 'water_bottle' || variant.name.toLowerCase().includes('water bottle');
   const isBottle = isWaterBottle || variant.boxModelKey === 'bottle' || variant.name.toLowerCase().includes('bottle') || activeCategoryId?.includes('bottle');
+  const isCan = variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('can') || (activeCategoryId?.includes('can') && variant.id === 1);
 
-  const isTE = !isBottle && (variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te');
-  const isRTE = !isBottle && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
-  const isAuto = !isBottle && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
-  const isCosmetic = !isBottle && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
-  const isCosmeticB = !isBottle && (variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
-  const isButtonHole = !isBottle && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
+  const isTE = !isBottle && !isCan && (variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te');
+  const isRTE = !isBottle && !isCan && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
+  const isAuto = !isBottle && !isCan && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
+  const isCosmetic = !isBottle && !isCan && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
+  const isCosmeticB = !isBottle && !isCan && (variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
+  const isButtonHole = !isBottle && !isCan && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
   const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
   const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
@@ -70,7 +71,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
   let defaultImage = variant.imageUrl;
   if (!defaultImage || defaultImage === '/mockups/generated_box.png' || defaultImage.includes('box')) {
-    if (isWaterBottle) {
+    if (isCan) {
+      defaultImage = '/images/can.png';
+    } else if (isWaterBottle) {
       defaultImage = '/images/water_bottle.png';
     } else if (isBottle) {
       defaultImage = '/images/bottle.png';
@@ -79,7 +82,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
     }
   }
 
-  const currentImage = isWaterBottle
+  const currentImage = isCan
+    ? '/images/can.png'
+    : isWaterBottle
     ? '/images/water_bottle.png'
     : isBottle
     ? '/images/bottle.png'
@@ -88,6 +93,31 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       : (variant.whiteImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.white) || defaultImage));
 
   const handleClick = () => {
+    if (isCan) {
+      useBoxStore.setState({
+        boxModel: 'can',
+        activeProjectId: null,
+        activeProjectName: null,
+        L: 207 / 25.4,
+        W: 125 / 25.4,
+        H: 122 / 25.4,
+        T: 0.008,
+        glueFlapWidth: 0.25,
+        bleed: 2 / 25.4,
+        sizeMode: "manufacture",
+        materialType: "metal_matt",
+        materialName: "Metal Matt (Aluminum)",
+        isCustomMaterial: false,
+        materialColor: "#ffffff",
+        materialCategory: "metal",
+        packageColor: "#ffffff",
+        insideColor: "#ffffff",
+        decalsByModel: { ...useBoxStore.getState().decalsByModel, can: useBoxStore.getState().decalsByModel?.can || [] }
+      });
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+      return;
+    }
+
     if (isWaterBottle || variant.name.toLowerCase().includes('water bottle')) {
       useBoxStore.setState({
         boxModel: 'water_bottle',
@@ -349,6 +379,54 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
             imageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
             whiteImageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
             kraftImageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
+          };
+        }
+        return v;
+      });
+
+      return {
+        ...cat,
+        variants: updatedVariants
+      };
+    }
+
+    const isCanCategory = cat.id === 'can-mockups' || cat.id === 'can' || cat.name?.toLowerCase().includes('can');
+    if (isCanCategory) {
+      const defaultCanCat = mockupCategories.find(c => c.id === 'can-mockups' || c.id === 'can');
+      const currentVariants = [...(cat.variants || (defaultCanCat?.variants || []))];
+
+      const canVariant: MockupVariant = {
+        id: 1,
+        name: '12 oz Soda Can',
+        animation: 'Realistic 12 oz aluminum can with metal finish & pull-tab',
+        imageUrl: '/images/can.png',
+        whiteImageUrl: '/images/can.png',
+        kraftImageUrl: '/images/can.png',
+        boxModelKey: 'can',
+        isFeatured: true,
+        gridSize: 'large'
+      };
+
+      const hasCan = currentVariants.some(v => 
+        v.boxModelKey === 'can' || v.name.toLowerCase().includes('soda can')
+      );
+
+      if (!hasCan) {
+        currentVariants.unshift(canVariant);
+      } else {
+        const idx = currentVariants.findIndex(v => v.boxModelKey === 'can' || v.name.toLowerCase().includes('soda can'));
+        if (idx !== -1) {
+          currentVariants[idx] = { ...currentVariants[idx], ...canVariant };
+        }
+      }
+
+      const updatedVariants = currentVariants.map(v => {
+        if (!v.imageUrl || v.imageUrl.includes('generated_box.png') || v.imageUrl.includes('boxes')) {
+          return {
+            ...v,
+            imageUrl: '/images/can.png',
+            whiteImageUrl: '/images/can.png',
+            kraftImageUrl: '/images/can.png',
           };
         }
         return v;

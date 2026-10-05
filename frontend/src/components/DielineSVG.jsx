@@ -7,6 +7,7 @@ import { generateCosmeticBoxDieline } from "../lib/cosmeticBoxDielineGenerator";
 import { generateCosmeticBoxBDieline } from "../lib/cosmeticBoxBDielineGenerator";
 import { generateButtonHoleDieline } from "../lib/buttonHoleDielineGenerator";
 import { generateWaterBottleDieline } from "../lib/waterBottleDielineGenerator";
+import { generateCanDieline } from "../lib/canDielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
@@ -146,6 +147,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const dieline = useMemo(() => {
     if (boxModel === 'water_bottle') {
       return generateWaterBottleDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
+    }
+    if (boxModel === 'can' || boxModel === 'soda_can' || boxModel === 'beverage_can') {
+      return generateCanDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
     }
     if (boxModel === 'te') {
       return generateTEDielineDXF({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
@@ -545,7 +549,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && boxModel === 'water_bottle' && (
+        {isEditorMode && (boxModel === 'water_bottle' || boxModel === 'can' || boxModel === 'soda_can' || boxModel === 'beverage_can') && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"
@@ -579,7 +583,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && boxModel !== 'water_bottle' && (
+        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"
