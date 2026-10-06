@@ -5,6 +5,10 @@ import { generateCosmeticBoxDieline } from "./cosmeticBoxDielineGenerator.js";
 import { generateCosmeticBoxBDieline } from "./cosmeticBoxBDielineGenerator.js";
 import { generateButtonHoleDieline } from "./buttonHoleDielineGenerator.js";
 import { generateRSCDielineDXF } from "./rscDielineGenerator.js";
+import { generateCanDieline } from "./canDielineGenerator.js";
+import { generateWaterBottleDieline } from "./waterBottleDielineGenerator.js";
+import { generateTubeDieline } from "./tubeDielineGenerator.js";
+import { generateSlimCanDieline } from "./slimCanDielineGenerator.js";
 
 /**
  * Registry of box dieline algorithms.
@@ -17,7 +21,14 @@ export const BOX_GENERATOR_REGISTRY = {
   cosmetic: (params) => generateCosmeticBoxDieline(params),
   cosmetic_b: (params) => generateCosmeticBoxBDieline(params),
   button_hole: (params) => generateButtonHoleDieline(params),
-  rsc: (params) => generateRSCDielineDXF(params)
+  rsc: (params) => generateRSCDielineDXF(params),
+  can: (params) => generateCanDieline(params),
+  soda_can: (params) => generateCanDieline(params),
+  slim_can: (params) => generateSlimCanDieline(params),
+  slim_355ml_can: (params) => generateSlimCanDieline(params),
+  water_bottle: (params) => generateWaterBottleDieline(params),
+  tube: (params) => generateTubeDieline(params),
+  toothpaste_tube: (params) => generateTubeDieline(params)
 };
 
 /**

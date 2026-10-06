@@ -109,6 +109,43 @@ const createCanDefaultState = () => ({
   insideColor: "#ffffff"
 });
 
+const createSlimCanDefaultState = () => ({
+  L: 175 / 25.4, // circumference ~6.89 in (175 mm)
+  W: 145 / 25.4, // label height ~5.71 in (145 mm)
+  H: 156 / 25.4, // total slim can height ~6.14 in (156 mm)
+  T: 0.008,
+  glueFlapWidth: 0.25,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "metal_matt",
+  materialName: "Metal Matt (Aluminum)",
+  isCustomMaterial: false,
+  materialColor: "#ffffff",
+  materialCategory: "metal",
+  generatorMethod: "dxf",
+  packageColor: "#ffffff",
+  insideColor: "#ffffff"
+});
+
+const createTubeDefaultState = () => ({
+  L: 90 / 25.4, // 90 mm total flat width (~3.543 in)
+  W: 133 / 25.4, // 133 mm tube height (~5.236 in)
+  H: 155 / 25.4, // overall height including cap (~6.1 in)
+  T: 0.005,
+  glueFlapWidth: 0.25,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "plastic_glossy",
+  materialName: "Plastic Glossy (Laminate)",
+  isCustomMaterial: false,
+  materialColor: "#ffffff",
+  materialCategory: "plastic",
+  generatorMethod: "dxf",
+  packageColor: "#ffffff",
+  insideColor: "#ffffff",
+  capColor: "#ffffff"
+});
+
 export const useBoxStore = create((set) => ({
   // Default Dimensions & Unit
   unit: "in",
@@ -133,7 +170,11 @@ export const useBoxStore = create((set) => ({
       cosmetic_b: createCosmeticBDefaultState(),
       button_hole: createButtonHoleDefaultState(),
       water_bottle: createWaterBottleDefaultState(),
-      can: createCanDefaultState()
+      can: createCanDefaultState(),
+      slim_can: createSlimCanDefaultState(),
+      slim_355ml_can: createSlimCanDefaultState(),
+      tube: createTubeDefaultState(),
+      toothpaste_tube: createTubeDefaultState()
     },
     mockup: {
       rte: createDefaultState(),
@@ -143,7 +184,11 @@ export const useBoxStore = create((set) => ({
       cosmetic_b: createCosmeticBDefaultState(),
       button_hole: createButtonHoleDefaultState(),
       water_bottle: createWaterBottleDefaultState(),
-      can: createCanDefaultState()
+      can: createCanDefaultState(),
+      slim_can: createSlimCanDefaultState(),
+      slim_355ml_can: createSlimCanDefaultState(),
+      tube: createTubeDefaultState(),
+      toothpaste_tube: createTubeDefaultState()
     }
   },
 
@@ -302,8 +347,8 @@ export const useBoxStore = create((set) => ({
   }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [] },
-  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
+  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];

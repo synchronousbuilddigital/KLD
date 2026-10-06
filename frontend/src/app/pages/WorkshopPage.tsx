@@ -504,6 +504,12 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         {(store.boxModel === "can" || store.boxModel === "soda_can") && (
                           <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>784 × 472 px</span>
                         )}
+                        {(store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can") && (
+                          <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>661 × 548 px</span>
+                        )}
+                        {(store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
+                          <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>170 × 503 px</span>
+                        )}
                       </div>
                       <div style={{ marginTop: "12px", fontSize: "13px", color: "#6b7280", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
                         Download dieline(AI, PDF)
@@ -522,11 +528,13 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         <MaterialDropdown />
                       </div>
 
-                      {/* Bottle Cap Color (for Water Bottle) */}
-                      {store.boxModel === "water_bottle" && (
+                      {/* Bottle Cap Color (for Water Bottle or Tube) */}
+                      {(store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
                         <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "600" }}>Bottle cap color</span>
+                            <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "600" }}>
+                              {store.boxModel === "water_bottle" ? "Bottle cap color" : "Tube cap color"}
+                            </span>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                               <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: store.capColor || "#ffffff", border: "1px solid #d1d5db" }} />
                               <span style={{ fontSize: "11px", color: "#4b5563", fontWeight: "700", fontFamily: "monospace" }}>
@@ -597,10 +605,19 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         </div>
                       )}
 
-                      {/* Custom Size */}
+                      {/* Container / Box Size */}
                       <div 
-                        style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                        style={{ 
+                          background: "#f9fafb", 
+                          borderRadius: "16px", 
+                          padding: "16px", 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "space-between", 
+                          cursor: (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") ? "default" : "pointer" 
+                        }}
                         onClick={(e) => {
+                          if (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") return;
                           e.preventDefault();
                           const rect = e.currentTarget.getBoundingClientRect();
                           setContextMenu({
@@ -611,9 +628,19 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         }}
                       >
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>Custom size</span>
+                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                            {(store.boxModel === "tube" || store.boxModel === "toothpaste_tube" || store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can")
+                              ? "Size"
+                              : (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle")
+                              ? "Container specifications"
+                              : "Custom size"}
+                          </span>
                           <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
-                            {store.boxModel === "can" || store.boxModel === "soda_can"
+                            {store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can"
+                              ? "355 ml (12 oz Slim)"
+                              : store.boxModel === "tube" || store.boxModel === "toothpaste_tube"
+                              ? "75 ml"
+                              : store.boxModel === "can" || store.boxModel === "soda_can"
                               ? (customSizeUnit === 'mm' ? "207.00 × 125.00 mm (Label)" : "8.1500 × 4.9213 in (Label)")
                               : store.boxModel === "water_bottle"
                               ? (customSizeUnit === 'mm' ? "243.00 × 46.00 mm (Label)" : "9.5670 × 1.8110 in (Label)")
@@ -622,7 +649,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                                   : `${store.L.toFixed(4)} x ${store.W.toFixed(4)} x ${store.H.toFixed(4)} in`)}
                           </span>
                         </div>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        {!(store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can" || store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        )}
                       </div>
 
                       {/* Find Similar */}
@@ -636,7 +665,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#9ca3af", marginTop: "24px" }}>
                       <span style={{ fontSize: "13px" }}>
-                        Model ID: {store.boxModel === "can" || store.boxModel === "soda_can" ? "550034 (12 oz Aluminum Can)" : store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
+                        Model ID: {store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can" ? "550035 (355ml Slim Can)" : store.boxModel === "tube" || store.boxModel === "toothpaste_tube" ? "602620" : store.boxModel === "can" || store.boxModel === "soda_can" ? "550034 (12 oz Aluminum Can)" : store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
                       </span>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     </div>
@@ -750,6 +779,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
             <div style={{ flex: 1, zIndex: 2 }}>
               {!isStudioOpen && (
                 <Box3DViewer
+                  boxModelOverride={store.boxModel}
                   L={store.L} W={store.W} H={store.H} T={store.T}
                   progress={foldProgress}
                   zoom={zoomLevel}
@@ -796,15 +826,17 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                       Upload your images
                     </button>
-                    <button 
-                      onClick={() => setContextMenu({ ...contextMenu, view: 'customSize' })} 
-                      style={{ display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: "12px", cursor: "pointer", fontSize: "15px", fontWeight: "400", borderRadius: "10px", color: "#333", textAlign: "left", transition: "background 0.2s" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
-                      onMouseLeave={e => e.currentTarget.style.background = "none"}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                      Custom size
-                    </button>
+                    {!(store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle") && (
+                      <button 
+                        onClick={() => setContextMenu({ ...contextMenu, view: 'customSize' })} 
+                        style={{ display: "flex", alignItems: "center", gap: "12px", background: "none", border: "none", padding: "12px", cursor: "pointer", fontSize: "15px", fontWeight: "400", borderRadius: "10px", color: "#333", textAlign: "left", transition: "background 0.2s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#f5f5f5"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        Custom size
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div style={{ padding: "8px", display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -886,13 +918,29 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               <div style={{ display: "flex", alignItems: "center", gap: "12px", background: t.bgPanel, padding: "8px 24px", borderRadius: "12px", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
                 <button onClick={() => setZoomLevel(Math.max(0.2, zoomLevel - 0.1))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>−</button>
                 <button onClick={() => setZoomLevel(Math.min(5, zoomLevel + 0.1))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>+</button>
-                <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
-                <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>
-                <input type="range" min="0" max="1" step="0.01" value={foldProgress} onChange={(e) => { setFoldProgress(parseFloat(e.target.value)); setIsPlaying(false); }} className="slick-slider" style={{ width: "80px" }} />
-                <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Close</span>
-                <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
-                <button onClick={() => setIsPlaying(false)} style={{ background: "none", border: "none", cursor: "pointer", color: !isPlaying ? t.cyan : t.textMuted }}><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4z" /></svg></button>
-                <button onClick={() => setIsPlaying(true)} style={{ background: "none", border: "none", cursor: "pointer", color: isPlaying ? t.cyan : t.textMuted }}><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M4 22V2l16 10L4 22z" /></svg></button>
+                {!(store.boxModel === 'tube' || store.boxModel === 'toothpaste_tube' || store.boxModel === 'water_bottle' || store.boxModel === 'can' || store.boxModel === 'soda_can' || store.boxModel === 'slim_can' || store.boxModel === 'slim_355ml_can') ? (
+                  <>
+                    <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
+                    <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>
+                    <input type="range" min="0" max="1" step="0.01" value={foldProgress} onChange={(e) => { setFoldProgress(parseFloat(e.target.value)); setIsPlaying(false); }} className="slick-slider" style={{ width: "80px" }} />
+                    <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Close</span>
+                    <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
+                    <button onClick={() => setIsPlaying(false)} style={{ background: "none", border: "none", cursor: "pointer", color: !isPlaying ? t.cyan : t.textMuted }}><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4z" /></svg></button>
+                    <button onClick={() => setIsPlaying(true)} style={{ background: "none", border: "none", cursor: "pointer", color: isPlaying ? t.cyan : t.textMuted }}><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M4 22V2l16 10L4 22z" /></svg></button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
+                    <button
+                      onClick={() => setIsStudioOpen(true)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, display: "flex", alignItems: "center", gap: "6px" }}
+                      title="Unwrap 2D / 3D Design"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    </button>
+                  </>
+                )}
               </div>
               <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "8px 16px", borderRadius: "12px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
                 <span style={{ color: "#eab308" }}>👑</span> Watermark free

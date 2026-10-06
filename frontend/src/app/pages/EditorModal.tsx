@@ -109,6 +109,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   }, []);
 
   const [activeSurface, setActiveSurface] = useState("Outside");
+  const isCylinder = store.boxModel === 'can' || store.boxModel === 'soda_can' || store.boxModel === 'beverage_can' || store.boxModel === 'slim_can' || store.boxModel === 'slim_355ml_can' || store.boxModel === 'water_bottle' || store.boxModel === 'tube' || store.boxModel === 'toothpaste_tube';
   const t = themes[store.theme || 'light'];
 
   const deferredDecals = useDeferredValue(decals);
@@ -347,7 +348,6 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     { type: "color", value: "#146814" },
   ];
 
-  const isCylinder = store.boxModel === 'water_bottle' || store.boxModel === 'can' || store.boxModel === 'soda_can';
   const defaultCenterX = isCylinder ? (0.25 + (store.L || 8.15) / 2) : (store.L * 2 + store.W * 2) / 2 + 0.625;
   const defaultCenterY = isCylinder ? ((store.W || 4.92) / 2) : store.H / 2 + store.W + 0.625;
   const defaultDecalW = isCylinder ? Math.min(3.0, (store.L || 8.15) * 0.4) : 5;
@@ -847,6 +847,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
             <div style={{ width: "100%", height: "240px", backgroundColor: store.theme === 'dark' ? "#202020" : "#f0f0f0", borderRadius: "16px", overflow: "hidden", position: "relative", marginBottom: "24px", border: `1px solid ${t.border}` }}>
               {useMemo(() => (
                 <Box3DViewer 
+                  boxModelOverride={store.boxModel}
                   overrideLayout="single"
                   L={store.L} W={store.W} H={store.H} T={store.T}
                   progress={foldProgress}
@@ -865,68 +866,72 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
               <div style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(255,255,255,0.8)", padding: "4px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: "bold", color: "#333" }}>3D</div>
             </div>
 
-            {/* Fold Slider */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px", background: t.inputBg, border: `1px solid ${t.border}`, padding: "12px", borderRadius: "16px" }}>
-              <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>
-              <input 
-                type="range" min="0" max="1" step="0.01" 
-                value={foldProgress} onChange={(e) => setFoldProgress(parseFloat(e.target.value))}
-                style={{ flex: 1, accentColor: t.cyan }}
-              />
-              <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Close</span>
-            </div>
+            {!isCylinder && (
+              <>
+                {/* Fold Slider */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px", background: t.inputBg, border: `1px solid ${t.border}`, padding: "12px", borderRadius: "16px" }}>
+                  <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>
+                  <input 
+                    type="range" min="0" max="1" step="0.01" 
+                    value={foldProgress} onChange={(e) => setFoldProgress(parseFloat(e.target.value))}
+                    style={{ flex: 1, accentColor: t.cyan }}
+                  />
+                  <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Close</span>
+                </div>
 
-            {/* Dimensions Box */}
-            <div style={{ background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "16px", padding: "16px", marginBottom: "24px" }}>
-              <div style={{ fontSize: "12px", color: t.textMuted, fontWeight: "700", marginBottom: "16px", letterSpacing: "0.5px" }}>DIMENSIONS (IN)</div>
-              
-              <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
-                {[
-                  { label: 'LENGTH', key: 'L', val: store.L },
-                  { label: 'WIDTH', key: 'W', val: store.W },
-                  { label: 'HEIGHT', key: 'H', val: store.H }
-                ].map((dim) => (
-                  <div key={dim.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <input 
-                      type="number" step="0.0001" value={dim.val} 
-                      onChange={(e) => store.setDim(dim.key, e.target.value)}
-                      style={{ 
-                        width: "100%", background: store.theme === 'dark' ? t.bgApp : t.activeBg, border: `1px solid ${t.border}`, 
-                        color: t.textMain, fontSize: "16px", fontWeight: "700", textAlign: "center", 
-                        padding: "10px 4px", borderRadius: "12px", marginBottom: "8px", outline: "none",
-                        fontFamily: "'Inter', sans-serif"
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = t.cyan}
-                      onBlur={(e) => e.target.style.borderColor = t.border}
-                    />
-                    <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "600" }}>{dim.label}</span>
+                {/* Dimensions Box */}
+                <div style={{ background: t.inputBg, border: `1px solid ${t.border}`, borderRadius: "16px", padding: "16px", marginBottom: "24px" }}>
+                  <div style={{ fontSize: "12px", color: t.textMuted, fontWeight: "700", marginBottom: "16px", letterSpacing: "0.5px" }}>DIMENSIONS (IN)</div>
+                  
+                  <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                    {[
+                      { label: 'LENGTH', key: 'L', val: store.L },
+                      { label: 'WIDTH', key: 'W', val: store.W },
+                      { label: 'HEIGHT', key: 'H', val: store.H }
+                    ].map((dim) => (
+                      <div key={dim.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <input 
+                          type="number" step="0.0001" value={dim.val} 
+                          onChange={(e) => store.setDim(dim.key, e.target.value)}
+                          style={{ 
+                            width: "100%", background: store.theme === 'dark' ? t.bgApp : t.activeBg, border: `1px solid ${t.border}`, 
+                            color: t.textMain, fontSize: "16px", fontWeight: "700", textAlign: "center", 
+                            padding: "10px 4px", borderRadius: "12px", marginBottom: "8px", outline: "none",
+                            fontFamily: "'Inter', sans-serif"
+                          }}
+                          onFocus={(e) => e.target.style.borderColor = t.cyan}
+                          onBlur={(e) => e.target.style.borderColor = t.border}
+                        />
+                        <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "600" }}>{dim.label}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", background: store.theme === 'dark' ? t.bgApp : t.activeBg, padding: "16px", borderRadius: "12px", border: `1px solid ${t.border}` }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>VOL (IN³)</span>
-                  <span style={{ fontSize: "18px", color: t.cyan, fontWeight: "700" }}>{(store.L * store.W * store.H).toFixed(1)}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", background: store.theme === 'dark' ? t.bgApp : t.activeBg, padding: "16px", borderRadius: "12px", border: `1px solid ${t.border}` }}>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>VOL (IN³)</span>
+                      <span style={{ fontSize: "18px", color: t.cyan, fontWeight: "700" }}>{(store.L * store.W * store.H).toFixed(1)}</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                      <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>AREA (IN²)</span>
+                      <span style={{ fontSize: "18px", color: t.cyan, fontWeight: "700" }}>{(2 * (store.L * store.W + store.L * store.H + store.W * store.H)).toFixed(1)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                  <span style={{ fontSize: "10px", color: t.textMuted, fontWeight: "700", marginBottom: "4px" }}>AREA (IN²)</span>
-                  <span style={{ fontSize: "18px", color: t.cyan, fontWeight: "700" }}>{(2 * (store.L * store.W + store.L * store.H + store.W * store.H)).toFixed(1)}</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Outside / Inside Toggle */}
-            <div style={{ display: "flex", border: `1px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", marginBottom: "24px", background: t.inputBg }}>
-              <button 
-                onClick={() => setActiveSurface("Outside")}
-                style={{ flex: 1, padding: "12px", border: "none", background: activeSurface === "Outside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Outside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Outside" ? t.textMain : t.textMuted }}
-              >Outside</button>
-              <button 
-                onClick={() => setActiveSurface("Inside")}
-                style={{ flex: 1, padding: "12px", border: "none", background: activeSurface === "Inside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Inside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Inside" ? t.textMain : t.textMuted }}
-              >Inside</button>
-            </div>
+                {/* Outside / Inside Toggle */}
+                <div style={{ display: "flex", border: `1px solid ${t.border}`, borderRadius: "12px", overflow: "hidden", marginBottom: "24px", background: t.inputBg }}>
+                  <button 
+                    onClick={() => setActiveSurface("Outside")}
+                    style={{ flex: 1, padding: "12px", border: "none", background: activeSurface === "Outside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Outside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Outside" ? t.textMain : t.textMuted }}
+                  >Outside</button>
+                  <button 
+                    onClick={() => setActiveSurface("Inside")}
+                    style={{ flex: 1, padding: "12px", border: "none", background: activeSurface === "Inside" ? t.activeBg : "transparent", fontWeight: activeSurface === "Inside" ? "600" : "400", cursor: "pointer", color: activeSurface === "Inside" ? t.textMain : t.textMuted }}
+                  >Inside</button>
+                </div>
+              </>
+            )}
 
             {/* Color Picker */}
             <div>

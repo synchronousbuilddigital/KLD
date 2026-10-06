@@ -8,6 +8,8 @@ import { generateCosmeticBoxBDieline } from "../lib/cosmeticBoxBDielineGenerator
 import { generateButtonHoleDieline } from "../lib/buttonHoleDielineGenerator";
 import { generateWaterBottleDieline } from "../lib/waterBottleDielineGenerator";
 import { generateCanDieline } from "../lib/canDielineGenerator";
+import { generateSlimCanDieline } from "../lib/slimCanDielineGenerator";
+import { generateTubeDieline } from "../lib/tubeDielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
@@ -145,8 +147,14 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
   // Draw the dieline using the dynamically calculated MANUFACTURE dimensions
   const dieline = useMemo(() => {
+    if (boxModel === 'tube' || boxModel === 'toothpaste_tube') {
+      return generateTubeDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
+    }
     if (boxModel === 'water_bottle') {
       return generateWaterBottleDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
+    }
+    if (boxModel === 'slim_can' || boxModel === 'slim_355ml_can') {
+      return generateSlimCanDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
     }
     if (boxModel === 'can' || boxModel === 'soda_can' || boxModel === 'beverage_can') {
       return generateCanDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
@@ -170,6 +178,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   }, [manuL, manuW, manuH, T, glueFlapWidth, bleed, generatorMethod, boxModel, windowDecals]);
 
   const { width, height, cutPaths, bleedPaths, foldLines, dimensions } = dieline;
+  const x0 = dimensions.x0 !== undefined ? dimensions.x0 : 0;
   const { x1, x2, x3, x4, x5, yTop, yBot } = dimensions;
 
   const hitboxes = useMemo(() => {
@@ -583,7 +592,75 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && (
+        {isEditorMode && (boxModel === 'tube' || boxModel === 'toothpaste_tube') && (
+          <g
+            className="editor-measurements"
+            stroke="#4a90e2"
+            strokeWidth={strokeW * 0.4}
+            fill="#4a90e2"
+            fontSize={fontSizeBasic * 0.55}
+            fontFamily="'Inter', sans-serif"
+            fontWeight="500"
+          >
+            {/* Left Height Dimension (133 mm as shown in Screenshot 2) */}
+            <line x1={x0 + 0.35} y1={yTop + 0.1} x2={x0 + 0.35} y2={yBot / 2 - 0.25} markerStart="url(#arrow-blue-start)" />
+            <line x1={x0 + 0.35} y1={yBot / 2 + 0.25} x2={x0 + 0.35} y2={yBot - 0.1} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x0 + 0.45} y={yBot / 2}
+              alignmentBaseline="middle" stroke="none"
+              style={{ transformOrigin: `${x0 + 0.45}px ${yBot / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(0)} mm`}
+            </text>
+
+            {/* Front Half-Width Dimension (45 mm to center dashed line as shown in Screenshot 2) */}
+            <line x1={x0 + 0.05} y1={yBot * 0.72} x2={x1 / 2 - 0.28} y2={yBot * 0.72} markerStart="url(#arrow-blue-start)" />
+            <line x1={x1 / 2 + 0.28} y1={yBot * 0.72} x2={x1 - 0.05} y2={yBot * 0.72} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x1 / 2} y={yBot * 0.72 - 0.08}
+              alignmentBaseline="middle" textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${x1 / 2}px ${yBot * 0.72 - 0.08}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${(manuL / 2).toFixed(4)} in` : `${((manuL / 2) * 25.4).toFixed(0)} mm`}
+            </text>
+          </g>
+        )}
+
+        {isEditorMode && (boxModel === 'slim_can' || boxModel === 'slim_355ml_can') && (
+          <g
+            className="editor-measurements"
+            stroke="#4a90e2"
+            strokeWidth={strokeW * 0.4}
+            fill="#4a90e2"
+            fontSize={fontSizeBasic * 0.55}
+            fontFamily="'Inter', sans-serif"
+            fontWeight="500"
+          >
+            {/* Left Height Dimension (145 mm as shown in Screenshot 4) */}
+            <line x1={x0 + 0.35} y1={yTop + 0.1} x2={x0 + 0.35} y2={yBot / 2 - 0.25} markerStart="url(#arrow-blue-start)" />
+            <line x1={x0 + 0.35} y1={yBot / 2 + 0.25} x2={x0 + 0.35} y2={yBot - 0.1} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x0 + 0.45} y={yBot / 2}
+              alignmentBaseline="middle" stroke="none"
+              style={{ transformOrigin: `${x0 + 0.45}px ${yBot / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(0)} mm`}
+            </text>
+
+            {/* Bottom Total Width Dimension (175 mm spanning across bottom as shown in Screenshot 4) */}
+            <line x1={x0 + 0.1} y1={yBot * 0.8} x2={x2 / 2 - 0.35} y2={yBot * 0.8} markerStart="url(#arrow-blue-start)" />
+            <line x1={x2 / 2 + 0.35} y1={yBot * 0.8} x2={x2 - 0.1} y2={yBot * 0.8} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x2 / 2} y={yBot * 0.8 - 0.08}
+              alignmentBaseline="middle" textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${x2 / 2}px ${yBot * 0.8 - 0.08}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuL.toFixed(4)} in` : `${(manuL * 25.4).toFixed(0)} mm`}
+            </text>
+          </g>
+        )}
+
+        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && boxModel !== 'slim_can' && boxModel !== 'slim_355ml_can' && boxModel !== 'tube' && boxModel !== 'toothpaste_tube' && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"

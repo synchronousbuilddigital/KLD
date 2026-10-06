@@ -93,7 +93,7 @@ export const mockupCategories: MockupCategory[] = [
     name: 'Can Mockups',
     variants: [
       { id: 1, name: '12 oz Soda Can', animation: 'Realistic 12 oz aluminum can with metal finish & pull-tab', imageUrl: '/images/can.png', whiteImageUrl: '/images/can.png', kraftImageUrl: '/images/can.png', boxModelKey: 'can', isFeatured: true, gridSize: 'large' },
-      { id: 2, name: 'Slim Energy Can', animation: 'Condensation forms', imageUrl: '/mockups/generated_box.png' },
+      { id: 2, name: '355mL Slim Can', animation: 'Realistic 355ml aluminum slim can with metal finish & pull-tab', imageUrl: '/images/kld_slim_can_mockup.png', whiteImageUrl: '/images/kld_slim_can_mockup.png', kraftImageUrl: '/images/kld_slim_can_mockup.png', boxModelKey: 'slim_can' },
       { id: 3, name: 'Coffee Can', animation: 'Foil seal peels back', imageUrl: '/mockups/generated_box.png' },
       { id: 4, name: 'Beer Can', animation: 'Frosted chill effect', imageUrl: '/mockups/generated_box.png' },
       { id: 5, name: 'Nitro Can', animation: 'Micro-bubble cascade', imageUrl: '/mockups/generated_box.png' },
@@ -118,7 +118,7 @@ export const mockupCategories: MockupCategory[] = [
     id: 'tube-mockups',
     name: 'Tube Mockups',
     variants: [
-      { id: 1, name: 'Toothpaste Tube', animation: 'Tube squeezes and flexes', imageUrl: '/mockups/generated_box.png' },
+      { id: 1, name: 'Toothpaste Tube', animation: 'Realistic 75ml squeeze tube with ribbed screw cap', imageUrl: '/images/toothpaste_tube_mockup.png', boxModelKey: 'tube' },
       { id: 2, name: 'Cosmetic Cream Tube', animation: 'Metallic shine passes', imageUrl: '/mockups/generated_box.png' },
       { id: 3, name: 'Sunscreen Tube', animation: 'Flip cap snaps open', imageUrl: '/mockups/generated_box.png' },
       { id: 4, name: 'Hand Cream Tube', animation: 'Smooth compression', imageUrl: '/mockups/generated_box.png' },

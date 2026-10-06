@@ -17,6 +17,127 @@ import HoverBottleAnimation from '../animations/HoverBottleAnimation';
 import HoverCanAnimation from '../animations/HoverCanAnimation';
 import HoverTubeAnimation from '../animations/HoverTubeAnimation';
 import PlasticWaterBottle3D from '../components/3d/PlasticWaterBottle3D';
+import { BeverageCan3D, CanvasDecal } from '../components/3d/BeverageCan3D';
+import SlimCan3D from '../components/3d/SlimCan3D';
+import ToothpasteTube3D from '../components/3d/ToothpasteTube3D';
+
+const KLD_CAN_DECALS: CanvasDecal[] = [
+  {
+    id: 'kld_brand',
+    type: 'text',
+    text: 'KLD',
+    fontSize: 56,
+    fontWeight: '800',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#18181b',
+    x: 272,
+    y: 125,
+    width: 240,
+    height: 65,
+    textAlign: 'center',
+  },
+  {
+    id: 'kld_pack',
+    type: 'text',
+    text: 'PACKAGING',
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#71717a',
+    x: 272,
+    y: 190,
+    width: 240,
+    height: 25,
+    textAlign: 'center',
+  },
+  {
+    id: 'kld_prod',
+    type: 'text',
+    text: 'ORGANIC SPARKLING TONIC',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#0f766e',
+    x: 242,
+    y: 240,
+    width: 300,
+    height: 30,
+    textAlign: 'center',
+  },
+  {
+    id: 'kld_tag',
+    type: 'text',
+    text: 'BOTANICAL INFUSION • 12 FL OZ',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#a1a1aa',
+    x: 242,
+    y: 280,
+    width: 300,
+    height: 25,
+    textAlign: 'center',
+  },
+];
+
+const KLD_SLIM_CAN_DECALS: any[] = [
+  {
+    id: 'kld_slim_brand',
+    type: 'text',
+    text: 'KLD',
+    fontSize: 54,
+    fontWeight: '800',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#18181b',
+    x: 180,
+    y: 110,
+    width: 300,
+    height: 60,
+    textAlign: 'center',
+  },
+  {
+    id: 'kld_slim_pack',
+    type: 'text',
+    text: 'PACKAGING',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#71717a',
+    x: 180,
+    y: 175,
+    width: 300,
+    height: 25,
+    textAlign: 'center',
+  },
+  {
+    id: 'kld_slim_prod',
+    type: 'text',
+    text: 'SLIM CANISTER',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#0f766e',
+    x: 180,
+    y: 220,
+    width: 300,
+    height: 30,
+    textAlign: 'center',
+  },
+  {
+    id: 'kld_slim_tag',
+    type: 'text',
+    text: 'ORGANIC INFUSION • 355 mL / 12 FL OZ',
+    fontSize: 10,
+    fontWeight: '600',
+    fontFamily: '"DM Sans", "Inter", sans-serif',
+    color: '#a1a1aa',
+    x: 180,
+    y: 260,
+    width: 300,
+    height: 25,
+    textAlign: 'center',
+  },
+];
 
 interface MockupDetailsProps {
   initialCategoryId: string;
@@ -56,14 +177,18 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
   const isWaterBottle = variant.boxModelKey === 'water_bottle' || variant.name.toLowerCase().includes('water bottle');
   const isBottle = isWaterBottle || variant.boxModelKey === 'bottle' || variant.name.toLowerCase().includes('bottle') || activeCategoryId?.includes('bottle');
-  const isCan = variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('can') || (activeCategoryId?.includes('can') && variant.id === 1);
+  const isSlimCan = variant.boxModelKey === 'slim_can' || variant.boxModelKey === 'slim_355ml_can' || variant.name.toLowerCase().includes('slim can') || (activeCategoryId?.includes('can') && variant.id === 2);
+  const is12ozSodaCan = !isSlimCan && (variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('soda can') || (activeCategoryId?.includes('can') && variant.id === 1));
+  const isCan = isSlimCan || is12ozSodaCan || variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('can');
+  const isTube = variant.boxModelKey === 'tube' || variant.boxModelKey === 'toothpaste_tube' || variant.name.toLowerCase().includes('tube') || activeCategoryId?.includes('tube');
+  const isToothpasteTube = isTube && (variant.id === 1 || variant.name.toLowerCase().includes('toothpaste'));
 
-  const isTE = !isBottle && !isCan && (variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te');
-  const isRTE = !isBottle && !isCan && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
-  const isAuto = !isBottle && !isCan && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
-  const isCosmetic = !isBottle && !isCan && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
-  const isCosmeticB = !isBottle && !isCan && (variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
-  const isButtonHole = !isBottle && !isCan && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
+  const isTE = !isBottle && !isCan && !isTube && (variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te');
+  const isRTE = !isBottle && !isCan && !isTube && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
+  const isAuto = !isBottle && !isCan && !isTube && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
+  const isCosmetic = !isBottle && !isCan && !isTube && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
+  const isCosmeticB = !isBottle && !isCan && !isTube && (variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
+  const isButtonHole = !isBottle && !isCan && !isTube && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
   const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
   const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
@@ -71,7 +196,11 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
   let defaultImage = variant.imageUrl;
   if (!defaultImage || defaultImage === '/mockups/generated_box.png' || defaultImage.includes('box')) {
-    if (isCan) {
+    if (isToothpasteTube || isTube) {
+      defaultImage = '/images/toothpaste_tube_mockup.png';
+    } else if (isSlimCan) {
+      defaultImage = '/images/kld_slim_can_mockup.png';
+    } else if (isCan) {
       defaultImage = '/images/can.png';
     } else if (isWaterBottle) {
       defaultImage = '/images/water_bottle.png';
@@ -82,7 +211,13 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
     }
   }
 
-  const currentImage = isCan
+  const currentImage = isSlimCan
+    ? '/images/kld_slim_can_mockup.png'
+    : is12ozSodaCan
+    ? '/images/kld_can_mockup.png'
+    : (isToothpasteTube || isTube)
+    ? '/images/toothpaste_tube_mockup.png'
+    : isCan
     ? '/images/can.png'
     : isWaterBottle
     ? '/images/water_bottle.png'
@@ -93,6 +228,57 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       : (variant.whiteImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.white) || defaultImage));
 
   const handleClick = () => {
+    if (isSlimCan) {
+      useBoxStore.setState({
+        boxModel: 'slim_can',
+        activeProjectId: null,
+        activeProjectName: null,
+        L: 175 / 25.4,
+        W: 145 / 25.4,
+        H: 156 / 25.4,
+        T: 0.008,
+        glueFlapWidth: 0,
+        bleed: 2 / 25.4,
+        sizeMode: "manufacture",
+        materialType: "metal_matt",
+        materialName: "Metal Matt (Aluminum)",
+        isCustomMaterial: false,
+        materialColor: "#ffffff",
+        materialCategory: "metal",
+        packageColor: "#ffffff",
+        insideColor: "#ffffff",
+        decalsByModel: { ...useBoxStore.getState().decalsByModel, slim_can: useBoxStore.getState().decalsByModel?.slim_can || [] }
+      });
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+      return;
+    }
+
+    if (isTube) {
+      useBoxStore.setState({
+        boxModel: 'tube',
+        activeProjectId: null,
+        activeProjectName: null,
+        L: 90 / 25.4,
+        W: 133 / 25.4,
+        H: 155 / 25.4,
+        T: 0.015,
+        glueFlapWidth: 0,
+        bleed: 2 / 25.4,
+        sizeMode: "manufacture",
+        materialType: "plastic_glossy",
+        materialName: "Plastic Glossy (75 ml)",
+        isCustomMaterial: false,
+        materialColor: "#ffffff",
+        materialCategory: "plastic",
+        packageColor: "#ffffff",
+        insideColor: "#ffffff",
+        capColor: "#ffffff",
+        decalsByModel: { ...useBoxStore.getState().decalsByModel, tube: useBoxStore.getState().decalsByModel?.tube || [] }
+      });
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+      return;
+    }
+
     if (isCan) {
       useBoxStore.setState({
         boxModel: 'can',
@@ -231,7 +417,19 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
         {/* Box / Bottle Image / Animation Container */}
         <div className="w-full h-[260px] relative flex items-center justify-center overflow-hidden rounded-lg mb-4">
-          {isHovered && isWaterBottle ? (
+          {isHovered && isSlimCan ? (
+            <div className="w-full h-full flex items-center justify-center p-2">
+              <SlimCan3D
+                autoRotate={true}
+                autoRotateSpeed={1.6}
+                interactive={false}
+                className="w-full h-full pointer-events-none"
+                showPlaceholder={false}
+                packageColor="#faf8f5"
+                decals={KLD_SLIM_CAN_DECALS}
+              />
+            </div>
+          ) : isHovered && isWaterBottle ? (
             <div className="w-full h-full flex items-center justify-center p-2">
               <PlasticWaterBottle3D
                 labelColor="#006b2b"
@@ -239,6 +437,30 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
                 autoRotateSpeed={1.6}
                 interactive={false}
                 className="w-full h-full pointer-events-none"
+              />
+            </div>
+          ) : isHovered && isCan ? (
+            <div className="w-full h-full flex items-center justify-center p-2">
+              <BeverageCan3D
+                autoRotate={true}
+                autoRotateSpeed={1.6}
+                interactive={false}
+                className="w-full h-full pointer-events-none"
+                showPlaceholder={false}
+                packageColor="#faf8f5"
+                decals={KLD_CAN_DECALS}
+              />
+            </div>
+          ) : isHovered && isTube ? (
+            <div className="w-full h-full flex items-center justify-center p-2">
+              <ToothpasteTube3D
+                autoRotate={true}
+                autoRotateSpeed={1.6}
+                interactive={false}
+                className="w-full h-full pointer-events-none"
+                showPlaceholder={false}
+                packageColor="#ffffff"
+                capColor="#ffffff"
               />
             </div>
           ) : isBox ? (
@@ -267,8 +489,44 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
               )}
               {activeCategoryId === 'pouch-bag-mockups' && <HoverPouchAnimation isHovered={true} />}
               {(activeCategoryId === 'bottle-mockups' || activeCategoryId === 'bottle' || activeCategoryId?.includes('bottle')) && <HoverBottleAnimation isHovered={true} />}
-              {activeCategoryId === 'can-mockups' && <HoverCanAnimation isHovered={true} />}
-              {activeCategoryId === 'tube-mockups' && <HoverTubeAnimation isHovered={true} />}
+              {activeCategoryId === 'can-mockups' && (
+                <div className="w-full h-full flex items-center justify-center p-2">
+                  {isSlimCan ? (
+                    <SlimCan3D
+                      autoRotate={true}
+                      autoRotateSpeed={1.6}
+                      interactive={false}
+                      className="w-full h-full pointer-events-none"
+                      showPlaceholder={false}
+                      packageColor="#faf8f5"
+                      decals={KLD_SLIM_CAN_DECALS}
+                    />
+                  ) : (
+                    <BeverageCan3D
+                      autoRotate={true}
+                      autoRotateSpeed={1.6}
+                      interactive={false}
+                      className="w-full h-full pointer-events-none"
+                      showPlaceholder={false}
+                      packageColor="#faf8f5"
+                      decals={KLD_CAN_DECALS}
+                    />
+                  )}
+                </div>
+              )}
+              {activeCategoryId === 'tube-mockups' && (
+                <div className="w-full h-full flex items-center justify-center p-2">
+                  <ToothpasteTube3D
+                    autoRotate={true}
+                    autoRotateSpeed={1.6}
+                    interactive={false}
+                    className="w-full h-full pointer-events-none"
+                    showPlaceholder={false}
+                    packageColor="#ffffff"
+                    capColor="#ffffff"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <motion.div
@@ -294,6 +552,22 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
           {isWaterBottle && (
             <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-2.5">
               3D PET Plastic • 243×46mm Wrap Label
+            </span>
+          )}
+
+          {isSlimCan ? (
+            <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full mt-2.5">
+              3D Aluminum Can • 175×145mm Wrap Label
+            </span>
+          ) : isCan ? (
+            <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full mt-2.5">
+              3D Aluminum Can • 207×125mm Wrap Label
+            </span>
+          ) : null}
+
+          {isTube && (
+            <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full mt-2.5">
+              3D Squeeze Tube • 75ml • 90×133mm Wrap Label
             </span>
           )}
 
@@ -399,34 +673,115 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
         id: 1,
         name: '12 oz Soda Can',
         animation: 'Realistic 12 oz aluminum can with metal finish & pull-tab',
-        imageUrl: '/images/can.png',
-        whiteImageUrl: '/images/can.png',
-        kraftImageUrl: '/images/can.png',
+        imageUrl: '/images/kld_can_mockup.png',
+        whiteImageUrl: '/images/kld_can_mockup.png',
+        kraftImageUrl: '/images/kld_can_mockup.png',
         boxModelKey: 'can',
         isFeatured: true,
         gridSize: 'large'
       };
 
+      const slimCanVariant: MockupVariant = {
+        id: 2,
+        name: '355mL Slim Can',
+        animation: 'Realistic 355ml aluminum slim can with metal finish & pull-tab',
+        imageUrl: '/images/kld_slim_can_mockup.png',
+        whiteImageUrl: '/images/kld_slim_can_mockup.png',
+        kraftImageUrl: '/images/kld_slim_can_mockup.png',
+        boxModelKey: 'slim_can',
+        isFeatured: true,
+        gridSize: 'large'
+      };
+
       const hasCan = currentVariants.some(v => 
-        v.boxModelKey === 'can' || v.name.toLowerCase().includes('soda can')
+        v.boxModelKey === 'can' || v.name.toLowerCase().includes('soda can') || v.id === 1
       );
 
       if (!hasCan) {
         currentVariants.unshift(canVariant);
       } else {
-        const idx = currentVariants.findIndex(v => v.boxModelKey === 'can' || v.name.toLowerCase().includes('soda can'));
+        const idx = currentVariants.findIndex(v => v.boxModelKey === 'can' || v.name.toLowerCase().includes('soda can') || v.id === 1);
         if (idx !== -1) {
           currentVariants[idx] = { ...currentVariants[idx], ...canVariant };
         }
       }
 
+      const hasSlimCan = currentVariants.some(v => 
+        v.boxModelKey === 'slim_can' || v.name.toLowerCase().includes('slim') || v.id === 2
+      );
+
+      if (!hasSlimCan) {
+        currentVariants.splice(1, 0, slimCanVariant);
+      } else {
+        const idx = currentVariants.findIndex(v => v.boxModelKey === 'slim_can' || v.name.toLowerCase().includes('slim') || v.id === 2);
+        if (idx !== -1) {
+          currentVariants[idx] = { ...currentVariants[idx], ...slimCanVariant };
+        }
+      }
+
       const updatedVariants = currentVariants.map(v => {
+        if (v.boxModelKey === 'slim_can' || v.id === 2 || v.name.toLowerCase().includes('slim')) {
+          return { ...v, ...slimCanVariant };
+        }
+        if (v.boxModelKey === 'can' || v.id === 1) {
+          return { ...v, ...canVariant };
+        }
         if (!v.imageUrl || v.imageUrl.includes('generated_box.png') || v.imageUrl.includes('boxes')) {
           return {
             ...v,
             imageUrl: '/images/can.png',
             whiteImageUrl: '/images/can.png',
             kraftImageUrl: '/images/can.png',
+          };
+        }
+        return v;
+      });
+
+      return {
+        ...cat,
+        variants: updatedVariants
+      };
+    }
+
+    const isTubeCategory = cat.id === 'tube-mockups' || cat.id === 'tube' || cat.name?.toLowerCase().includes('tube');
+    if (isTubeCategory) {
+      const defaultTubeCat = mockupCategories.find(c => c.id === 'tube-mockups' || c.id === 'tube');
+      const currentVariants = [...(cat.variants || (defaultTubeCat?.variants || []))];
+
+      const toothpasteVariant: MockupVariant = {
+        id: 1,
+        name: 'Toothpaste Tube',
+        animation: 'Realistic 75ml squeeze tube with ribbed screw cap',
+        imageUrl: '/images/toothpaste_tube_mockup.png',
+        whiteImageUrl: '/images/toothpaste_tube_mockup.png',
+        kraftImageUrl: '/images/toothpaste_tube_mockup.png',
+        boxModelKey: 'tube',
+        isFeatured: true,
+        gridSize: 'large'
+      };
+
+      const hasToothpaste = currentVariants.some(v => 
+        v.boxModelKey === 'tube' || v.name.toLowerCase().includes('toothpaste')
+      );
+
+      if (!hasToothpaste) {
+        currentVariants.unshift(toothpasteVariant);
+      } else {
+        const idx = currentVariants.findIndex(v => v.boxModelKey === 'tube' || v.name.toLowerCase().includes('toothpaste'));
+        if (idx !== -1) {
+          currentVariants[idx] = { ...currentVariants[idx], ...toothpasteVariant };
+        }
+      }
+
+      const updatedVariants = currentVariants.map(v => {
+        const isTP = v.boxModelKey === 'tube' || v.name.toLowerCase().includes('toothpaste');
+        if (isTP) return { ...v, ...toothpasteVariant };
+        if (!v.imageUrl || v.imageUrl.includes('generated_box.png') || v.imageUrl.includes('boxes')) {
+          return {
+            ...v,
+            imageUrl: '/images/toothpaste_tube_mockup.png',
+            whiteImageUrl: '/images/toothpaste_tube_mockup.png',
+            kraftImageUrl: '/images/toothpaste_tube_mockup.png',
           };
         }
         return v;

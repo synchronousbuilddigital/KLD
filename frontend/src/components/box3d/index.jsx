@@ -24,12 +24,14 @@ import CosmeticBBox3DViewer from "./CosmeticBBox3DViewer";
 import ButtonHoleBox3DViewer from "./ButtonHoleBox3DViewer";
 import WaterBottle3DViewer from "./WaterBottle3DViewer";
 import Can3DViewer         from "./Can3DViewer";
+import SlimCan3DViewer     from "./SlimCan3DViewer";
+import Tube3DViewer        from "./Tube3DViewer";
 
-export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, Can3DViewer };
+export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, Can3DViewer, SlimCan3DViewer, Tube3DViewer };
 
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
-  const model = boxModelOverride || store.boxModel || "rte";
+  const model = boxModelOverride || props.boxModel || store?.boxModel || "rte";
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('isLoggedIn') === 'true';
     return false;
@@ -43,8 +45,10 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
 
   const showWatermark = !isLoggedIn;
 
+  if (model === "slim_can" || model === "slim_355ml_can") return <SlimCan3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "can" || model === "soda_can" || model === "beverage_can") return <Can3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "water_bottle") return <WaterBottle3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  if (model === "tube" || model === "toothpaste_tube") return <Tube3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "te") return <TEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "auto_lock") return <AutoLockBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "cosmetic") return <CosmeticBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;

@@ -96,6 +96,10 @@
     letter-spacing: 1px;
     color: #57534E;
     transition: color 0.3s;
+    text-align: center;
+    width: 100%;
+    display: block;
+    line-height: 1.35;
 }
 
 .marquee-item:hover .marquee-label {
