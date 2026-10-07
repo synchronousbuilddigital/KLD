@@ -66,19 +66,19 @@ function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.WebGLRend
   envCanvas.height = 512;
   const ctx = envCanvas.getContext('2d')!;
 
-  // Smooth studio background gradient
+  // Neutral studio background gradient
   const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
-  bgGrad.addColorStop(0, '#f1f5f9');
-  bgGrad.addColorStop(0.5, '#e2e8f0');
-  bgGrad.addColorStop(1, '#94a3b8');
+  bgGrad.addColorStop(0, '#717d8e');
+  bgGrad.addColorStop(0.5, '#a8b2c0');
+  bgGrad.addColorStop(1, '#555f6e');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, 1024, 512);
 
-  // Left studio strip softbox (produces the signature vertical highlight in Pacdora)
+  // Left studio strip softbox (gentle specular sheen, non-glaring)
   const leftSoftbox = ctx.createLinearGradient(160, 0, 310, 0);
   leftSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0)');
-  leftSoftbox.addColorStop(0.45, 'rgba(255, 255, 255, 0.98)');
-  leftSoftbox.addColorStop(0.55, 'rgba(255, 255, 255, 0.98)');
+  leftSoftbox.addColorStop(0.45, 'rgba(255, 255, 255, 0.30)');
+  leftSoftbox.addColorStop(0.55, 'rgba(255, 255, 255, 0.30)');
   leftSoftbox.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = leftSoftbox;
   ctx.fillRect(160, 40, 150, 440);
@@ -86,15 +86,15 @@ function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.WebGLRend
   // Right edge rim softbox
   const rightSoftbox = ctx.createLinearGradient(720, 0, 860, 0);
   rightSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0)');
-  rightSoftbox.addColorStop(0.5, 'rgba(255, 255, 255, 0.85)');
+  rightSoftbox.addColorStop(0.5, 'rgba(255, 255, 255, 0.20)');
   rightSoftbox.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = rightSoftbox;
   ctx.fillRect(720, 60, 140, 400);
 
   // Overhead softbox for top seal & shoulder sheen
   const topSoftbox = ctx.createRadialGradient(512, 110, 10, 512, 110, 240);
-  topSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-  topSoftbox.addColorStop(0.6, 'rgba(255, 255, 255, 0.45)');
+  topSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+  topSoftbox.addColorStop(0.6, 'rgba(255, 255, 255, 0.08)');
   topSoftbox.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = topSoftbox;
   ctx.fillRect(250, 0, 524, 240);
@@ -116,7 +116,7 @@ function createCrimpTexture(): THREE.CanvasTexture {
   canvas.height = 128;
   const ctx = canvas.getContext('2d')!;
 
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = '#eaedf2';
   ctx.fillRect(0, 0, 512, 128);
 
   // Fine vertical corrugated seal teeth
@@ -125,18 +125,18 @@ function createCrimpTexture(): THREE.CanvasTexture {
   for (let i = 0; i < numTeeth; i++) {
     const rx = i * toothW;
     const grad = ctx.createLinearGradient(rx, 0, rx + toothW, 0);
-    grad.addColorStop(0, 'rgba(0, 0, 0, 0.08)');
-    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.92)');
-    grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.92)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0.12)');
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0.14)');
+    grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.65)');
+    grad.addColorStop(0.65, 'rgba(255, 255, 255, 0.65)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0.18)');
     ctx.fillStyle = grad;
     ctx.fillRect(rx, 0, toothW, 128);
   }
 
   // Ultrasonic sealer indentation crease line near bottom of crimp band
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.10)';
   ctx.fillRect(0, 102, 512, 6);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
   ctx.fillRect(0, 108, 512, 3);
 
   const tex = new THREE.CanvasTexture(canvas);
@@ -225,19 +225,19 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   useEffect(() => {
     if (bodyMaterialRef.current) {
       if (materialType === 'matte') {
-        bodyMaterialRef.current.roughness = 0.48;
-        bodyMaterialRef.current.metalness = 0.02;
-        bodyMaterialRef.current.clearcoat = 0.08;
+        bodyMaterialRef.current.roughness = 0.52;
+        bodyMaterialRef.current.metalness = 0.01;
+        bodyMaterialRef.current.clearcoat = 0.05;
       } else if (materialType === 'metallic') {
-        bodyMaterialRef.current.roughness = 0.20;
-        bodyMaterialRef.current.metalness = 0.72;
-        bodyMaterialRef.current.clearcoat = 0.45;
+        bodyMaterialRef.current.roughness = 0.22;
+        bodyMaterialRef.current.metalness = 0.70;
+        bodyMaterialRef.current.clearcoat = 0.40;
       } else {
-        // Plastic glossy (Default Pacdora tube finish)
-        bodyMaterialRef.current.roughness = 0.14;
-        bodyMaterialRef.current.metalness = 0.02;
-        bodyMaterialRef.current.clearcoat = 0.55;
-        bodyMaterialRef.current.clearcoatRoughness = 0.08;
+        // Plastic glossy (Default Pacdora tube finish - smooth satin sheen without glare)
+        bodyMaterialRef.current.roughness = 0.22;
+        bodyMaterialRef.current.metalness = 0.01;
+        bodyMaterialRef.current.clearcoat = 0.35;
+        bodyMaterialRef.current.clearcoatRoughness = 0.16;
       }
       bodyMaterialRef.current.needsUpdate = true;
       requestRenderRef.current?.();
@@ -247,7 +247,8 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   // Cap color updates
   useEffect(() => {
     if (capMaterialRef.current) {
-      capMaterialRef.current.color.set(capColor || '#ffffff');
+      const isPureWhite = !capColor || capColor.toLowerCase() === '#ffffff' || capColor.toLowerCase() === '#fff';
+      capMaterialRef.current.color.set(isPureWhite ? '#edf0f4' : capColor);
       capMaterialRef.current.needsUpdate = true;
       requestRenderRef.current?.();
     }
@@ -310,7 +311,9 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
 
     const isTransparent = packageColor === 'transparent';
     if (!isTransparent) {
-      ctx.fillStyle = packageColor || '#ffffff';
+      const isPureWhite = !packageColor || packageColor.toLowerCase() === '#ffffff' || packageColor.toLowerCase() === '#fff';
+      // In PBR physics, real white plastic has ~85% albedo (#f3f4f6), preserving dynamic range for specular highlights
+      ctx.fillStyle = isPureWhite ? '#f3f4f6' : (packageColor || '#ffffff');
       ctx.fillRect(0, 0, w, h);
     } else {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
@@ -524,7 +527,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
+    renderer.toneMappingExposure = 0.88; // Balanced studio exposure — no blinding blown-out highlights
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
@@ -544,32 +547,32 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     controls.target.set(0, 0.06, 0);
     controlsRef.current = controls;
 
-    // 5. Studio Lighting Rig
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.42);
+    // 5. Studio Lighting Rig (Calibrated photography intensities for realistic 3D form shading)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.16); // Gentle ambient allows flanks to roll into soft shade
     scene.add(ambientLight);
 
     // Front-right key light
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
-    keyLight.position.set(3.2, 4.2, 3.8);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.70);
+    keyLight.position.set(2.8, 3.8, 3.2);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 1024;
     keyLight.shadow.mapSize.height = 1024;
     keyLight.shadow.bias = -0.0001;
     scene.add(keyLight);
 
-    // Left vertical strip light (creates the crisp reflection highlight on the left)
-    const leftStripLight = new THREE.DirectionalLight(0xffffff, 1.15);
-    leftStripLight.position.set(-3.2, 1.2, 3.0);
+    // Left vertical strip light (creates elegant specular sheen on the left curvature)
+    const leftStripLight = new THREE.DirectionalLight(0xffffff, 0.35);
+    leftStripLight.position.set(-3.0, 1.2, 2.5);
     scene.add(leftStripLight);
 
-    // Right rim light for crisp contour separation
-    const rightRimLight = new THREE.DirectionalLight(0xffffff, 0.95);
-    rightRimLight.position.set(3.0, 2.0, -3.2);
+    // Right rim light for crisp contour edge separation
+    const rightRimLight = new THREE.DirectionalLight(0xffffff, 0.28);
+    rightRimLight.position.set(3.0, 2.0, -3.0);
     scene.add(rightRimLight);
 
     // Subtle bottom bounce light
-    const bottomReflect = new THREE.DirectionalLight(0xffffff, 0.35);
-    bottomReflect.position.set(0, -3, 2);
+    const bottomReflect = new THREE.DirectionalLight(0xffffff, 0.10);
+    bottomReflect.position.set(0, -3.0, 1.5);
     scene.add(bottomReflect);
 
     // 6. Contact Shadow underneath cap base at y = -1.44
@@ -613,11 +616,11 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
 
     const bodyMaterial = new THREE.MeshPhysicalMaterial({
       map: bodyTex,
-      roughness: 0.14,
-      metalness: 0.02,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.08,
-      reflectivity: 0.6,
+      roughness: 0.22,
+      metalness: 0.01,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.16,
+      reflectivity: 0.5,
       side: THREE.FrontSide,
     });
     bodyMaterialRef.current = bodyMaterial;
@@ -732,11 +735,11 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     const crimpTexture = createCrimpTexture();
     const crimpMat = new THREE.MeshPhysicalMaterial({
       map: crimpTexture,
-      color: 0xfcfcfc,
-      roughness: 0.22,
-      metalness: 0.02,
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.12,
+      color: 0xebedf1,
+      roughness: 0.30,
+      metalness: 0.01,
+      clearcoat: 0.20,
+      clearcoatRoughness: 0.20,
     });
     const crimpMesh = new THREE.Mesh(crimpGeo, crimpMat);
     crimpMesh.position.y = yEnd + crimpH / 2 - 0.004;
@@ -761,11 +764,11 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     shoulderGeo.computeVertexNormals();
 
     const shoulderMat = new THREE.MeshPhysicalMaterial({
-      color: 0xf4f6f8,
-      roughness: 0.16,
-      metalness: 0.15,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.08,
+      color: 0xe8ecf0,
+      roughness: 0.25,
+      metalness: 0.04,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.15,
     });
     const shoulderMesh = new THREE.Mesh(shoulderGeo, shoulderMat);
     shoulderMesh.castShadow = true;
@@ -803,12 +806,13 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     }
     capGeo.computeVertexNormals();
 
+    const isWhiteCap = !capColor || capColor.toLowerCase() === '#ffffff' || capColor.toLowerCase() === '#fff';
     const capMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(capColor || '#ffffff'),
-      roughness: 0.20,
-      metalness: 0.02,
-      clearcoat: 0.40,
-      clearcoatRoughness: 0.12,
+      color: new THREE.Color(isWhiteCap ? '#edf0f4' : capColor),
+      roughness: 0.28,
+      metalness: 0.01,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.18,
     });
     capMaterialRef.current = capMaterial;
 

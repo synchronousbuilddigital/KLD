@@ -26,7 +26,7 @@ const themes: Record<string, any> = {
   },
   light: {
     bgApp: "#f4f4f5", // zinc-100
-    bgCanvas: "linear-gradient(180deg, #c5cad0 0%, #e2e5e9 42%, #d7dbdf 75%, #cfd4d9 100%)",
+    bgCanvas: "linear-gradient(180deg, #9da4ad 0%, #b2b8c2 35%, #c5cbd4 65%, #abb1bb 100%)",
     bgPanel: "#ffffff",
     border: "rgba(0, 0, 0, 0.1)",
     textMain: "#18181b", // zinc-900
@@ -434,7 +434,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
           </div>
         </div>
 
-        <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", background: "#d1d5db" }}>
+        <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative", background: t.bgCanvas }}>
 
           {/* FLOATING SIDEBAR WRAPPER */}
           <div style={{ position: "absolute", left: "24px", top: "24px", bottom: "24px", zIndex: 10, display: "flex", gap: "16px", pointerEvents: "none" }}>
@@ -786,9 +786,6 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               if (contextMenu) setContextMenu(null);
             }}
           >
-            {t.gridColor && t.gridColor !== "transparent" && (
-              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, backgroundImage: `radial-gradient(${t.gridColor} 1.5px, transparent 1.5px)`, backgroundSize: "32px 32px", backgroundPosition: "center" }} />
-            )}
 
             <div style={{ flex: 1, zIndex: 2 }}>
               {!isStudioOpen && (
