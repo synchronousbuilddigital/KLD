@@ -14,26 +14,26 @@ import MaterialDropdown from "../../components/dieline/MaterialDropdown";
 const themes: Record<string, any> = {
   dark: {
     bgApp: "#18181b",
-    bgCanvas: "#09090b",
+    bgCanvas: "linear-gradient(180deg, #1e2229 0%, #15181f 45%, #0f1115 100%)",
     bgPanel: "#18181b",
     border: "rgba(255, 255, 255, 0.1)",
     textMain: "#ffffff",
     textMuted: "#a1a1aa",
     cyan: "#3b82f6", // blue-500
     inputBg: "#27272a",
-    gridColor: "rgba(255, 255, 255, 0.05)",
+    gridColor: "transparent",
     activeBg: "rgba(59, 130, 246, 0.12)"
   },
   light: {
     bgApp: "#f4f4f5", // zinc-100
-    bgCanvas: "#fafafa", // zinc-50
+    bgCanvas: "linear-gradient(180deg, #c5cad0 0%, #e2e5e9 42%, #d7dbdf 75%, #cfd4d9 100%)",
     bgPanel: "#ffffff",
     border: "rgba(0, 0, 0, 0.1)",
     textMain: "#18181b", // zinc-900
     textMuted: "#71717a", // zinc-500
     cyan: "#2563eb", // blue-600
     inputBg: "#ffffff",
-    gridColor: "rgba(37, 99, 235, 0.08)",
+    gridColor: "transparent",
     activeBg: "rgba(37, 99, 235, 0.12)"
   }
 };
@@ -314,7 +314,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
         * { box-sizing: border-box; }
       `}} />
 
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", backgroundColor: t.bgCanvas, color: t.textMain, fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", backgroundColor: t.bgApp, color: t.textMain, fontFamily: "'Inter', sans-serif" }}>
         {/* --- TOP NAV --- */}
         <div style={{ height: "64px", background: t.bgPanel, borderBottom: `2px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -772,7 +772,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
           {/* --- MAIN CANVAS --- */}
           <div 
-            style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column" }}
+            style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", background: t.bgCanvas, overflow: "hidden" }}
             onContextMenu={(e) => {
               e.preventDefault();
               const rect = e.currentTarget.getBoundingClientRect();
@@ -786,7 +786,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               if (contextMenu) setContextMenu(null);
             }}
           >
-            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, backgroundImage: `radial-gradient(${t.gridColor} 1.5px, transparent 1.5px)`, backgroundSize: "32px 32px", backgroundPosition: "center" }} />
+            {t.gridColor && t.gridColor !== "transparent" && (
+              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, backgroundImage: `radial-gradient(${t.gridColor} 1.5px, transparent 1.5px)`, backgroundSize: "32px 32px", backgroundPosition: "center" }} />
+            )}
 
             <div style={{ flex: 1, zIndex: 2 }}>
               {!isStudioOpen && (
