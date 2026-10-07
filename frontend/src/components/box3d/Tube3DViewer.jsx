@@ -54,6 +54,7 @@ export default function Tube3DViewer({
         materialType={materialType}
         autoRotate={activeAnimation === "rotate"}
         interactive={true}
+        cameraDistance={props.cameraDistance}
         showPlaceholder={debouncedDecals.length === 0}
         showWatermark={showWatermark}
         className="w-full h-full"

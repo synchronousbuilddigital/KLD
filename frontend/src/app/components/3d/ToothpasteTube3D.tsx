@@ -156,7 +156,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   className = '',
   style = {},
   interactive = true,
-  cameraDistance = 4.2,
+  cameraDistance,
   showPlaceholder = true,
   showWatermark,
   onCanvasReady,
@@ -272,7 +272,9 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     },
     resetCamera: () => {
       if (cameraRef.current && controlsRef.current) {
-        cameraRef.current.position.set(0, 0.18, cameraDistance || 4.2);
+        const h = containerRef.current?.clientHeight || 420;
+        const resetDist = cameraDistance || (h <= 320 ? 8.2 : 6.8);
+        cameraRef.current.position.set(0, 0.05, resetDist);
         controlsRef.current.target.set(0, 0.05, 0);
         controlsRef.current.update();
         requestRenderRef.current?.();
@@ -508,12 +510,13 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     const width = container.clientWidth || 320;
     const height = container.clientHeight || 420;
 
-    // 1. Scene & Camera (24° product telephoto lens matching Pacdora framing)
+    // 1. Scene & Camera (28° telephoto lens framed so entire tube from crimp to cap base fits comfortably)
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(24, width / height, 0.1, 100);
-    camera.position.set(0, 0.16, 4.2);
+    const targetDist = cameraDistance || (height <= 320 ? 8.2 : 6.8);
+    const camera = new THREE.PerspectiveCamera(28, width / height, 0.1, 100);
+    camera.position.set(0, 0.05, targetDist);
     cameraRef.current = camera;
 
     // 2. WebGL Renderer
@@ -542,9 +545,9 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.enabled = interactive;
-    controls.minDistance = 2.0;
-    controls.maxDistance = 8.0;
-    controls.target.set(0, 0.06, 0);
+    controls.minDistance = 2.5;
+    controls.maxDistance = 14.0;
+    controls.target.set(0, 0.05, 0);
     controlsRef.current = controls;
 
     // 5. Studio Lighting Rig (Calibrated photography intensities for realistic 3D form shading)
