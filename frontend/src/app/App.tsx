@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Package, ChevronRight, ChevronDown, Check, Sliders, RefreshCw, Layers, Image as ImageIcon, Printer, Save, Bookmark } from 'lucide-react';
+import { ArrowRight, Package, ChevronRight, ChevronDown, Check, Sliders, RefreshCw, Printer, Save, Bookmark } from 'lucide-react';
 import NewHomeLanding from './pages/NewHomeLanding';
 import PackagingCollections from './pages/PackagingCollections';
 import MockupDetails from './pages/MockupDetails';
@@ -834,6 +834,7 @@ export default function App() {
           <div className="text-[9px] opacity-40 select-none">No logo uploaded</div>
         );
       case 'keyline':
+      default:
         return (
           <div className={`flex flex-col items-center justify-center h-full ${colorClass} p-2 text-center select-none`}>
             <Package className="w-5 h-5 mb-1.5 opacity-90" />
@@ -841,36 +842,6 @@ export default function App() {
             <div className="text-[6px] tracking-wider mt-1 opacity-70">3D DESIGN STUDIO</div>
           </div>
         );
-      case 'coffee':
-        return (
-          <div className={`flex flex-col items-center justify-center h-full ${colorClass} p-2 text-center select-none`}>
-            <div className="border rounded-full p-1 mb-1 flex items-center justify-center">
-              <span className="text-[10px]">☕</span>
-            </div>
-            <div className="text-[9px] uppercase tracking-widest font-black leading-none">Roast & Co.</div>
-            <div className="text-[6px] tracking-wider mt-0.5 opacity-70">ORGANIC BEANS</div>
-          </div>
-        );
-      case 'tech':
-        return (
-          <div className={`flex flex-col items-start justify-between h-full ${colorClass} p-2.5 text-left w-full select-none`}>
-            <span className="text-[10px] font-bold leading-none">❖</span>
-            <div className="mt-auto">
-              <div className="text-[9px] font-mono leading-none tracking-tight font-black">NEXUS v.4</div>
-              <div className="text-[5px] tracking-wide mt-0.5 opacity-60">MINIMAL CONTROLLER</div>
-            </div>
-          </div>
-        );
-      case 'eco':
-        return (
-          <div className={`flex flex-col items-center justify-center h-full ${colorClass} p-2 text-center select-none`}>
-            <div className="text-xs leading-none mb-0.5">🌿</div>
-            <div className="text-[8px] font-sans font-bold tracking-tight uppercase">PURE EARTH</div>
-            <div className="text-[5px] italic opacity-80 mt-0.5">Biodegradable</div>
-          </div>
-        );
-      default:
-        return null;
     }
   };
 
@@ -1023,7 +994,7 @@ export default function App() {
                   Prototype in 3D Real-Time
                 </h2>
                 <p className="text-zinc-400 text-sm sm:text-base md:text-lg mt-3 sm:mt-4 max-w-2xl">
-                  Experiment with dimensions, adjust assembly fold states, switch materials, and apply artwork decals directly in your browser.
+                  Experiment with dimensions and adjust assembly fold states directly in your browser.
                 </p>
               </motion.div>
 
@@ -1049,20 +1020,6 @@ export default function App() {
                           }`}
                       >
                         <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Fold
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('materials')}
-                        className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${activeTab === 'materials' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                      >
-                        <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Finish
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('artwork')}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'artwork' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-                          }`}
-                      >
-                        <ImageIcon className="w-3.5 h-3.5" /> Brand
                       </button>
                     </div>
 
@@ -1094,7 +1051,7 @@ export default function App() {
                             <input
                               type="range" min="40" max="250" value={width}
                               onChange={(e) => setWidth(Number(e.target.value))}
-                              className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                              className="w-full lab-slider"
                             />
                           </div>
 
@@ -1106,7 +1063,7 @@ export default function App() {
                             <input
                               type="range" min="20" max="150" value={depth}
                               onChange={(e) => setDepth(Number(e.target.value))}
-                              className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                              className="w-full lab-slider"
                             />
                           </div>
 
@@ -1118,7 +1075,7 @@ export default function App() {
                             <input
                               type="range" min="50" max="300" value={height}
                               onChange={(e) => setHeight(Number(e.target.value))}
-                              className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                              className="w-full lab-slider"
                             />
                           </div>
                         </div>
@@ -1247,7 +1204,7 @@ export default function App() {
                               setFoldProgress(Number(e.target.value));
                             }}
                             disabled={sealState !== 'unsealed'}
-                            className={`w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500 ${sealState !== 'unsealed' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                            className={`w-full lab-slider ${sealState !== 'unsealed' ? 'opacity-40 cursor-not-allowed' : ''}`}
                           />
                         </div>
 
@@ -1284,198 +1241,6 @@ export default function App() {
                             <span>4. Top Lid & Reverse Tuck Closure</span>
                             <span className="font-mono">68% - 100%</span>
                           </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAB 3: Material & Finish Simulator */}
-                    {activeTab === 'materials' && (
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            onClick={() => setMaterial('kraft')}
-                            className={`p-3 rounded-xl border flex flex-col items-start gap-2 transition-all ${material === 'kraft' ? 'border-amber-500 bg-amber-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/30'
-                              }`}
-                          >
-                            <span className="w-5 h-5 rounded-full bg-[#C89A63] border border-[#B58556]"></span>
-                            <div className="text-left">
-                              <div className="text-xs font-bold">Kraft Cardboard</div>
-                              <div className="text-[10px] text-zinc-500">Natural Eco-kraft</div>
-                            </div>
-                          </button>
-
-                          <button
-                            onClick={() => setMaterial('white')}
-                            className={`p-3 rounded-xl border flex flex-col items-start gap-2 transition-all ${material === 'white' ? 'border-amber-500 bg-amber-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/30'
-                              }`}
-                          >
-                            <span className="w-5 h-5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0]"></span>
-                            <div className="text-left">
-                              <div className="text-xs font-bold">Matte White</div>
-                              <div className="text-[10px] text-zinc-500">Bleached Minimalism</div>
-                            </div>
-                          </button>
-
-                          <button
-                            onClick={() => setMaterial('black')}
-                            className={`p-3 rounded-xl border flex flex-col items-start gap-2 transition-all ${material === 'black' ? 'border-amber-500 bg-amber-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/30'
-                              }`}
-                          >
-                            <span className="w-5 h-5 rounded-full bg-[#1E293B] border border-[#0F172A]"></span>
-                            <div className="text-left">
-                              <div className="text-xs font-bold">Slate Black</div>
-                              <div className="text-[10px] text-zinc-500">Premium Finish</div>
-                            </div>
-                          </button>
-
-                          <button
-                            onClick={() => setMaterial('gold')}
-                            className={`p-3 rounded-xl border flex flex-col items-start gap-2 transition-all ${material === 'gold' ? 'border-amber-500 bg-amber-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/30'
-                              }`}
-                          >
-                            <span className="w-5 h-5 rounded-full bg-[#D4AF37] border border-[#AA7C11]"></span>
-                            <div className="text-left">
-                              <div className="text-xs font-bold">Gold Foil</div>
-                              <div className="text-[10px] text-zinc-500">Reflective Coating</div>
-                            </div>
-                          </button>
-                        </div>
-
-                        {/* Custom Color Selector */}
-                        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-9 h-9 rounded-full border border-zinc-700 relative overflow-hidden cursor-pointer shadow-inner flex items-center justify-center"
-                              style={{ backgroundColor: customColor }}
-                              onClick={() => {
-                                setMaterial('custom');
-                                document.getElementById('custom-color-picker')?.click();
-                              }}
-                            >
-                              <input
-                                type="color"
-                                id="custom-color-picker"
-                                value={customColor}
-                                onChange={(e) => {
-                                  setCustomColor(e.target.value);
-                                  setMaterial('custom');
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
-                              />
-                              <div className="w-2.5 h-2.5 rounded-full bg-white/40 pointer-events-none"></div>
-                            </div>
-                            <div className="text-left">
-                              <div className="text-xs font-bold">Custom Finish Color</div>
-                              <div className="text-[10px] text-zinc-500">Pick any custom shade</div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setMaterial('custom')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${material === 'custom' ? 'bg-white text-black border-white' : 'border-zinc-800 hover:border-zinc-700 text-zinc-400'
-                              }`}
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAB 4: Artwork Decals */}
-                    {activeTab === 'artwork' && (
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">Decal Branding Designs</span>
-                          <div className="space-y-2">
-                            <button
-                              onClick={() => setArtwork('keyline')}
-                              className={`w-full p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${artwork === 'keyline' ? 'border-amber-500 bg-amber-500/10 text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                                }`}
-                            >
-                              <span>📦 KEYLINE Design (Site Logo)</span>
-                              {artwork === 'keyline' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>}
-                            </button>
-
-                            <button
-                              onClick={() => setArtwork('coffee')}
-                              className={`w-full p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${artwork === 'coffee' ? 'border-amber-500 bg-amber-500/10 text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                                }`}
-                            >
-                              <span>☕ Roast & Co. Label</span>
-                              {artwork === 'coffee' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>}
-                            </button>
-
-                            <button
-                              onClick={() => setArtwork('tech')}
-                              className={`w-full p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${artwork === 'tech' ? 'border-amber-500 bg-amber-500/10 text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                                }`}
-                            >
-                              <span>❖ Nexus IoT Plate</span>
-                              {artwork === 'tech' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>}
-                            </button>
-
-                            <button
-                              onClick={() => setArtwork('eco')}
-                              className={`w-full p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${artwork === 'eco' ? 'border-amber-500 bg-amber-500/10 text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                                }`}
-                            >
-                              <span>🌿 Pure Earth Label</span>
-                              {artwork === 'eco' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Custom Logo Upload Section */}
-                        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 space-y-3">
-                          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">Or Upload Custom Logo</span>
-                          <div className="flex items-center gap-3">
-                            <label
-                              htmlFor="logo-uploader"
-                              className="flex-1 flex flex-col items-center justify-center border border-dashed border-zinc-800 hover:border-zinc-700 bg-zinc-950/50 hover:bg-zinc-950/80 rounded-xl p-4 cursor-pointer transition-all"
-                            >
-                              <span className="text-zinc-500 text-xs font-medium">Click to upload JPG/PNG</span>
-                              <input
-                                type="file"
-                                id="logo-uploader"
-                                accept="image/*"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  try {
-                                    const res = await uploadService.uploadLogo(file);
-                                    if (res.success && res.data?.url) {
-                                      setCustomLogoUrl(res.data.url);
-                                      setArtwork('custom');
-                                    }
-                                  } catch (err) {
-                                    console.warn("Cloudinary upload fallback to FileReader:", err);
-                                    const reader = new FileReader();
-                                    reader.onload = (event) => {
-                                      if (event.target && event.target.result) {
-                                        setCustomLogoUrl(event.target.result);
-                                        setArtwork('custom');
-                                      }
-                                    };
-                                    reader.readAsDataURL(file);
-                                  }
-                                }}
-                                className="hidden"
-                              />
-                            </label>
-                          </div>
-                          {customLogoUrl && (
-                            <div className="flex items-center justify-between text-xs p-2 bg-zinc-950/40 border border-zinc-800/80 rounded-lg">
-                              <span className="text-zinc-400 truncate max-w-[150px]">Custom logo loaded</span>
-                              <button
-                                onClick={() => {
-                                  setCustomLogoUrl(null);
-                                  setArtwork('keyline');
-                                }}
-                                className="text-red-500 hover:text-red-400 font-semibold"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}

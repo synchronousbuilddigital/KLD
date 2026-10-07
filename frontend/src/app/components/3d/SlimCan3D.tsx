@@ -65,6 +65,72 @@ export interface SlimCan3DRef {
   toggleAutoRotate: () => boolean;
 }
 
+// Procedural seamless vertical brushed aluminum texture (cylindrical anisotropic grain)
+function createBrushedMetalTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.fillStyle = '#808080';
+  ctx.fillRect(0, 0, 512, 512);
+
+  const imgData = ctx.getImageData(0, 0, 512, 512);
+  const data = imgData.data;
+
+  // Vertical streaks: random column offsets that run down the cylinder
+  const columns = new Float32Array(512);
+  for (let x = 0; x < 512; x++) {
+    columns[x] = (Math.random() - 0.5) * 46;
+  }
+
+  for (let y = 0; y < 512; y++) {
+    for (let x = 0; x < 512; x++) {
+      const idx = (y * 512 + x) * 4;
+      const grain = (Math.random() - 0.5) * 12;
+      const val = Math.min(255, Math.max(0, 128 + columns[x] + grain));
+      data[idx] = val;
+      data[idx + 1] = val;
+      data[idx + 2] = val;
+      data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(6, 2);
+  return texture;
+}
+
+// Procedural concentric radial brushed grain for stamped can lid
+function createRadialBrushedTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.fillStyle = '#808080';
+  ctx.fillRect(0, 0, 512, 512);
+
+  const cx = 256;
+  const cy = 256;
+  for (let r = 2; r < 254; r += 2) {
+    const alpha = 0.04 + Math.random() * 0.08;
+    ctx.strokeStyle = Math.random() > 0.5 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`;
+    ctx.lineWidth = 1.0 + Math.random();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+}
+
 export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
   decals = [],
   packageColor = '#ffffff',
@@ -91,6 +157,7 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
 
   const metalMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
   const lidMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const labelMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
   const [isRotating, setIsRotating] = useState(autoRotate);
   const isRotatingRef = useRef(autoRotate);
@@ -124,13 +191,18 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
 
   // Update material finish
   useEffect(() => {
+    const isGloss = materialType === 'metal_gloss';
     if (metalMaterialRef.current) {
-      const isGloss = materialType === 'metal_gloss';
-      metalMaterialRef.current.roughness = isGloss ? 0.10 : 0.22;
-      metalMaterialRef.current.metalness = isGloss ? 0.85 : 0.80;
+      metalMaterialRef.current.roughness = isGloss ? 0.12 : 0.25;
+      metalMaterialRef.current.metalness = isGloss ? 0.98 : 0.95;
       metalMaterialRef.current.needsUpdate = true;
-      requestRenderRef.current?.();
     }
+    if (labelMaterialRef.current) {
+      labelMaterialRef.current.roughness = isGloss ? 0.12 : 0.25;
+      labelMaterialRef.current.metalness = isGloss ? 0.96 : 0.92;
+      labelMaterialRef.current.needsUpdate = true;
+    }
+    requestRenderRef.current?.();
   }, [materialType]);
 
   useImperativeHandle(ref, () => ({
@@ -187,21 +259,27 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
 
     ctx.clearRect(0, 0, w, h);
 
-    const isTransparent = packageColor === 'transparent';
-    if (!isTransparent) {
-      ctx.fillStyle = packageColor || '#ffffff';
+    const isCustomTint = Boolean(
+      packageColor &&
+      packageColor !== '#ffffff' &&
+      packageColor !== 'transparent' &&
+      packageColor.toLowerCase() !== '#fff'
+    );
+
+    if (isCustomTint) {
+      ctx.fillStyle = packageColor;
       ctx.fillRect(0, 0, w, h);
     } else {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.fillRect(0, 0, w, h);
+      // For aluminum cans, default is transparent so raw brushed aluminum shines through!
+      ctx.clearRect(0, 0, w, h);
     }
 
     const hasDecals = decals && decals.length > 0;
     if (!hasDecals && showPlaceholder) {
-      // 1. Subtle watermark diamond grid lines matching Pacdora (Screenshot 3 & 4)
+      // 1. Subtle watermark diamond grid lines matching Pacdora (Screenshot 3)
       ctx.save();
-      ctx.strokeStyle = 'rgba(160, 174, 192, 0.22)';
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = 'rgba(100, 116, 139, 0.22)';
+      ctx.lineWidth = 1.6;
 
       const step = 88;
       for (let x = -h; x < w + h; x += step) {
@@ -218,7 +296,7 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
 
       // Repeated subtle watermark text "Pacdora"
       ctx.font = 'italic 500 22px "Inter", sans-serif';
-      ctx.fillStyle = 'rgba(148, 163, 184, 0.24)';
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.20)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let gy = 70; gy < h; gy += 150) {
@@ -238,10 +316,10 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
       // Heading
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 44px "Inter", -apple-system, sans-serif';
-      ctx.fillText('Upload your images', centerX, centerY - 36);
+      ctx.fillText('Upload your image', centerX, centerY - 36);
 
       // Subtitle
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = '#475569';
       ctx.font = '500 28px "Inter", -apple-system, sans-serif';
       ctx.fillText('or create with AI', centerX, centerY + 8);
 
@@ -380,8 +458,8 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
     const width = container.clientWidth || 400;
     const height = container.clientHeight || 450;
     const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
-    // Authentic 3/4 Pacdora perspective matching Screenshot 3 with full-body framing
-    camera.position.set(0.70, 1.25, 5.25);
+    // Authentic Pacdora perspective matching Image 3 with clean vertical framing
+    camera.position.set(0.40, 0.65, 5.0);
     cameraRef.current = camera;
 
     // 2. WebGL Renderer with High-DPI & Tone Mapping
@@ -394,7 +472,7 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.04;
+    renderer.toneMappingExposure = 1.0;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -407,7 +485,7 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
       onCanvasReady(renderer.domElement);
     }
 
-    // 3. Orbit Controls (Allow full top-down inspection matching Screenshot 4)
+    // 3. Orbit Controls (Allow full top-down inspection matching Screenshot 2)
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
@@ -415,73 +493,90 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
     controls.maxDistance = 8.5;
     controls.maxPolarAngle = Math.PI / 2 + 0.35;
     controls.minPolarAngle = 0.02; // Allows looking straight down at lid
-    controls.target.set(0, -0.05, 0);
+    controls.target.set(0, 0.05, 0);
     controls.enabled = interactive;
     controlsRef.current = controls;
 
-    // 4. Studio Environment Softboxes for Natural Satin Specular Highlights
+    // 4. Studio Environment for Natural Satin Specular Highlights & High-End Reflections
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     const envScene = new THREE.Scene();
-    envScene.background = new THREE.Color(0xedf1f5);
 
-    // Left vertical strip softbox (subtle cylindrical metallic edge highlight)
+    // Studio backdrop gradient dome
+    const envBgGeo = new THREE.SphereGeometry(20, 32, 16);
+    const envBgCanvas = document.createElement('canvas');
+    envBgCanvas.width = 256;
+    envBgCanvas.height = 256;
+    const envBgCtx = envBgCanvas.getContext('2d');
+    if (envBgCtx) {
+      const grad = envBgCtx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, '#e8eef6');   // soft sky light
+      grad.addColorStop(0.5, '#848f9e'); // neutral horizon
+      grad.addColorStop(1, '#535b67');   // floor tone
+      envBgCtx.fillStyle = grad;
+      envBgCtx.fillRect(0, 0, 256, 256);
+    }
+    const envBgTexture = new THREE.CanvasTexture(envBgCanvas);
+    const envBgMat = new THREE.MeshBasicMaterial({ map: envBgTexture, side: THREE.BackSide });
+    envScene.add(new THREE.Mesh(envBgGeo, envBgMat));
+
+    // Left vertical strip softbox (creates the left specular vertical band seen in Image 3)
     const leftSoftbox = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.8, 18),
+      new THREE.PlaneGeometry(1.6, 20),
       new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
     );
-    leftSoftbox.position.set(-4.5, 1.5, 3.5);
+    leftSoftbox.position.set(-5.0, 1.0, 3.2);
     leftSoftbox.lookAt(0, 0, 0);
     envScene.add(leftSoftbox);
 
-    // Right vertical strip softbox (right specular edge highlight)
+    // Right primary vertical strip softbox (creates the main specular bar on the right in Image 3)
     const rightSoftbox = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.8, 18),
+      new THREE.PlaneGeometry(2.4, 20),
       new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
     );
-    rightSoftbox.position.set(4.5, 1.5, 3.5);
+    rightSoftbox.position.set(4.8, 1.2, 3.5);
     rightSoftbox.lookAt(0, 0, 0);
     envScene.add(rightSoftbox);
 
-    // Top ceiling softbox (soft top rim and lid illumination)
+    // Top ceiling softbox (soft illumination for rolled rim and pull tab in Image 2)
     const topSoftbox = new THREE.Mesh(
-      new THREE.PlaneGeometry(8, 6),
-      new THREE.MeshBasicMaterial({ color: 0xf1f5f9, side: THREE.DoubleSide })
+      new THREE.PlaneGeometry(8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xf4f7fa, side: THREE.DoubleSide })
     );
-    topSoftbox.position.set(0, 7.5, 2.0);
+    topSoftbox.position.set(0, 8.0, 1.5);
     topSoftbox.lookAt(0, 1.2, 0);
     envScene.add(topSoftbox);
 
     const envMap = pmremGenerator.fromScene(envScene).texture;
     scene.environment = envMap;
 
-    // Studio Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.82);
+    // Studio Lights - Tuned for realistic metallic reflection without blowing out highlights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.35); // Soft fill ambient
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.25);
-    keyLight.position.set(3.5, 4.5, 3.5);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.85); // Main key light
+    keyLight.position.set(3.0, 4.0, 3.5);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 2048;
     keyLight.shadow.mapSize.height = 2048;
-    keyLight.shadow.bias = -0.0003;
+    keyLight.shadow.bias = -0.0002;
     scene.add(keyLight);
 
-    const lidLight = new THREE.DirectionalLight(0xffffff, 0.85);
-    lidLight.position.set(-2.5, 5.0, 3.0);
-    scene.add(lidLight);
-
-    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 0.65);
-    fillLight.position.set(-3.5, 2.5, 3.0);
+    const fillLight = new THREE.DirectionalLight(0xe8edf4, 0.40); // Left fill
+    fillLight.position.set(-3.5, 2.0, 3.0);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.90);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.65); // Back edge rim
     rimLight.position.set(0, 3.5, -4.0);
     scene.add(rimLight);
 
-    const bottomReflect = new THREE.DirectionalLight(0xffffff, 0.35);
-    bottomReflect.position.set(0, -3.0, 2.0);
-    scene.add(bottomReflect);
+    const lidGlint = new THREE.DirectionalLight(0xffffff, 0.38); // Soft angled lid glint
+    lidGlint.position.set(-1.5, 4.5, 2.0);
+    scene.add(lidGlint);
+
+    const bottomBounce = new THREE.DirectionalLight(0xd4dce6, 0.25); // Subtle ground bounce
+    bottomBounce.position.set(0, -3.0, 1.5);
+    scene.add(bottomBounce);
 
     // Soft Contact Ground Shadow
     const shadowGeo = new THREE.PlaneGeometry(2.6, 2.6);
@@ -517,30 +612,38 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
     scene.add(canGroup);
     canGroup.position.y = 0.0;
 
+    // Procedural brushed textures
+    const brushedTexture = createBrushedMetalTexture();
+    const radialBrushedTexture = createRadialBrushedTexture();
+
     // 1. Brushed Aluminum Metal Material (Satin Silver Aluminum)
     const isGloss = materialType === 'metal_gloss';
     const metalMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0xd4dae2),
-      roughness: isGloss ? 0.14 : 0.26,
-      metalness: 0.82,
+      color: new THREE.Color(0xd0d5dc), // Authentic aluminum alloy
+      roughness: isGloss ? 0.12 : 0.25,
+      metalness: isGloss ? 0.98 : 0.95,
+      bumpMap: brushedTexture,
+      bumpScale: 0.003,
       side: THREE.FrontSide,
     });
     metalMaterialRef.current = metalMaterial;
 
-    // 2. Can Lid & Tab Aluminum Material
+    // 2. Can Lid & Rim Aluminum Material (Radial grain)
     const lidMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0xcfd6df),
+      color: new THREE.Color(0xcbd1d8),
       roughness: 0.22,
-      metalness: 0.85,
+      metalness: 0.94,
+      bumpMap: radialBrushedTexture,
+      bumpScale: 0.002,
       side: THREE.DoubleSide,
     });
     lidMaterialRef.current = lidMaterial;
 
     // 3. Stamped Deboss Material for Beads and Score Line
     const debossMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0xa2adbd),
-      roughness: 0.44,
-      metalness: 0.72,
+      color: new THREE.Color(0x9aa4b2),
+      roughness: 0.38,
+      metalness: 0.88,
       side: THREE.DoubleSide,
     });
 
@@ -548,11 +651,11 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
     const tabMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color(0xdce2ec),
       roughness: 0.16,
-      metalness: 0.88,
+      metalness: 0.94,
       side: THREE.DoubleSide,
     });
 
-    // 5. Label Material with Canvas Texture
+    // 5. Label Material with Canvas Texture (Metallic so brushed aluminum shows through!)
     renderCanvasNow();
     const labelTexture = new THREE.CanvasTexture(offscreenCanvasRef.current!);
     labelTexture.colorSpace = THREE.SRGBColorSpace;
@@ -565,12 +668,15 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
 
     const labelMaterial = new THREE.MeshStandardMaterial({
       map: labelTexture,
-      roughness: 0.32,
-      metalness: 0.04,
+      roughness: isGloss ? 0.12 : 0.25,
+      metalness: isGloss ? 0.96 : 0.92,
+      bumpMap: brushedTexture,
+      bumpScale: 0.003,
       side: THREE.FrontSide,
       transparent: true,
       depthWrite: true,
     });
+    labelMaterialRef.current = labelMaterial;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Authentic Lathe Profile for 355 mL Slim Can (Matching Screenshot 3)
@@ -876,6 +982,8 @@ export const SlimCan3D = forwardRef<SlimCan3DRef, SlimCan3DProps>(({
       shadowMat.dispose();
       labelTexture.dispose();
       shadowTexture.dispose();
+      brushedTexture.dispose();
+      radialBrushedTexture.dispose();
       if (container && renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
