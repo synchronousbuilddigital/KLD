@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Box3DViewer from "../../components/Box3DViewer";
 import { useBoxStore } from "../../lib/useBoxStore";
 import EditorModal from "./EditorModal";
