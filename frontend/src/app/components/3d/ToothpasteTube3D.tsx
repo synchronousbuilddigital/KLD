@@ -56,6 +56,96 @@ export interface ToothpasteTube3DRef {
   toggleAutoRotate: () => boolean;
 }
 
+// Procedural studio environment map for photorealistic softbox reflections
+function createStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.WebGLRenderTarget {
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileEquirectangularShader();
+
+  const envCanvas = document.createElement('canvas');
+  envCanvas.width = 1024;
+  envCanvas.height = 512;
+  const ctx = envCanvas.getContext('2d')!;
+
+  // Smooth studio background gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+  bgGrad.addColorStop(0, '#f1f5f9');
+  bgGrad.addColorStop(0.5, '#e2e8f0');
+  bgGrad.addColorStop(1, '#94a3b8');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 1024, 512);
+
+  // Left studio strip softbox (produces the signature vertical highlight in Pacdora)
+  const leftSoftbox = ctx.createLinearGradient(160, 0, 310, 0);
+  leftSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  leftSoftbox.addColorStop(0.45, 'rgba(255, 255, 255, 0.98)');
+  leftSoftbox.addColorStop(0.55, 'rgba(255, 255, 255, 0.98)');
+  leftSoftbox.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = leftSoftbox;
+  ctx.fillRect(160, 40, 150, 440);
+
+  // Right edge rim softbox
+  const rightSoftbox = ctx.createLinearGradient(720, 0, 860, 0);
+  rightSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  rightSoftbox.addColorStop(0.5, 'rgba(255, 255, 255, 0.85)');
+  rightSoftbox.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = rightSoftbox;
+  ctx.fillRect(720, 60, 140, 400);
+
+  // Overhead softbox for top seal & shoulder sheen
+  const topSoftbox = ctx.createRadialGradient(512, 110, 10, 512, 110, 240);
+  topSoftbox.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+  topSoftbox.addColorStop(0.6, 'rgba(255, 255, 255, 0.45)');
+  topSoftbox.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = topSoftbox;
+  ctx.fillRect(250, 0, 524, 240);
+
+  const envTex = new THREE.CanvasTexture(envCanvas);
+  envTex.mapping = THREE.EquirectangularReflectionMapping;
+  const envTarget = pmremGenerator.fromEquirectangular(envTex);
+
+  envTex.dispose();
+  pmremGenerator.dispose();
+
+  return envTarget;
+}
+
+// Procedural texture for the corrugated heat-sealed crimp band
+function createCrimpTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, 512, 128);
+
+  // Fine vertical corrugated seal teeth
+  const numTeeth = 52;
+  const toothW = 512 / numTeeth;
+  for (let i = 0; i < numTeeth; i++) {
+    const rx = i * toothW;
+    const grad = ctx.createLinearGradient(rx, 0, rx + toothW, 0);
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0.08)');
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.92)');
+    grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.92)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0.12)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(rx, 0, toothW, 128);
+  }
+
+  // Ultrasonic sealer indentation crease line near bottom of crimp band
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.fillRect(0, 102, 512, 6);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.fillRect(0, 108, 512, 3);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
 export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3DProps>(({
   decals = [],
   packageColor = '#ffffff',
@@ -66,7 +156,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   className = '',
   style = {},
   interactive = true,
-  cameraDistance = 4.3,
+  cameraDistance = 4.2,
   showPlaceholder = true,
   showWatermark,
   onCanvasReady,
@@ -98,8 +188,8 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   const bodyTextureRef = useRef<THREE.CanvasTexture | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const bodyMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
-  const capMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const bodyMaterialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const capMaterialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
 
   const [isRotating, setIsRotating] = useState(autoRotate);
   const isRotatingRef = useRef(autoRotate);
@@ -135,15 +225,19 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   useEffect(() => {
     if (bodyMaterialRef.current) {
       if (materialType === 'matte') {
-        bodyMaterialRef.current.roughness = 0.55;
+        bodyMaterialRef.current.roughness = 0.48;
         bodyMaterialRef.current.metalness = 0.02;
+        bodyMaterialRef.current.clearcoat = 0.08;
       } else if (materialType === 'metallic') {
-        bodyMaterialRef.current.roughness = 0.22;
-        bodyMaterialRef.current.metalness = 0.65;
+        bodyMaterialRef.current.roughness = 0.20;
+        bodyMaterialRef.current.metalness = 0.72;
+        bodyMaterialRef.current.clearcoat = 0.45;
       } else {
-        // Plastic glossy (Default - matching Model 602620)
-        bodyMaterialRef.current.roughness = 0.16;
-        bodyMaterialRef.current.metalness = 0.03;
+        // Plastic glossy (Default Pacdora tube finish)
+        bodyMaterialRef.current.roughness = 0.14;
+        bodyMaterialRef.current.metalness = 0.02;
+        bodyMaterialRef.current.clearcoat = 0.55;
+        bodyMaterialRef.current.clearcoatRoughness = 0.08;
       }
       bodyMaterialRef.current.needsUpdate = true;
       requestRenderRef.current?.();
@@ -177,7 +271,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     },
     resetCamera: () => {
       if (cameraRef.current && controlsRef.current) {
-        cameraRef.current.position.set(0, 0.25, cameraDistance || 4.3);
+        cameraRef.current.position.set(0, 0.18, cameraDistance || 4.2);
         controlsRef.current.target.set(0, 0.05, 0);
         controlsRef.current.update();
         requestRenderRef.current?.();
@@ -255,12 +349,10 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
       ctx.restore();
     }
 
-    // 2. Default placeholder guide when no decals are present
+    // 2. Default placeholder guide when no decals are present (Matching Pacdora reference)
     const hasDecals = decals && decals.length > 0;
     if (!hasDecals && showPlaceholder) {
       ctx.save();
-      // Centered front-panel guide:
-      // In 360 wrap texture (w x h), Front panel is u: 0 to 0.5, centered at w * 0.25
       const centerX = w * 0.25;
       const centerY = h * 0.51;
 
@@ -304,7 +396,6 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
         let cy = 0;
 
         if (isPixelCoord) {
-          // Pixel coords from 170 x 503 canvas mapped onto front panel (u: 0 to 0.5)
           const scaleX = (w * 0.5) / 170;
           const scaleY = h / 503;
           dw = (decal.width || 60) * scaleX;
@@ -314,9 +405,8 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
           cx = x + dw / 2;
           cy = y + dh / 2;
         } else {
-          // Physical inch coordinates from DielineSVG (90mm x 133mm flat label)
-          const labelL = 90 / 25.4;  // ~3.543 in
-          const labelW = 133 / 25.4; // ~5.236 in
+          const labelL = 90 / 25.4;
+          const labelW = 133 / 25.4;
 
           const normCx = (decal.x ?? 0) / labelL;
           const normCy = (decal.y ?? 0) / labelW;
@@ -349,45 +439,41 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
             img.onload = () => {
               imageCacheRef.current.set(decal.url!, img);
               drawTubeTexture();
+              if (bodyTextureRef.current) {
+                bodyTextureRef.current.needsUpdate = true;
+              }
               requestRenderRef.current?.();
             };
             img.src = decal.url;
-            imageCacheRef.current.set(decal.url, img);
           }
-        } else if (decal.type === 'text' || decal.content) {
-          const textContent = decal.text || decal.content || '';
-          const textColor = decal.color || decal.fillColor || '#000000';
-          const fontSz = isPixelCoord
-            ? (decal.fontSize || 24) * 3
-            : Math.max(22, (decal.fontSize || 0.4) * (h / (133 / 25.4)));
-          const fWeight = decal.bold ? 'bold' : (decal.fontWeight || 'normal');
-          const fStyle = decal.italic ? 'italic' : (decal.fontStyle || 'normal');
-
-          ctx.font = `${fStyle} ${fWeight} ${Math.round(fontSz)}px "${decal.fontFamily || 'Inter'}", sans-serif`;
-          ctx.fillStyle = textColor;
+        } else if (decal.type === 'text') {
+          const fontSz = (decal.fontSize || 28) * ((w * 0.5) / 170);
+          ctx.font = `${decal.bold ? 'bold ' : ''}${decal.italic ? 'italic ' : ''}${fontSz}px ${decal.fontFamily || 'Inter, sans-serif'}`;
+          ctx.fillStyle = decal.color || decal.fillColor || '#1e293b';
           ctx.textAlign = (decal.textAlign as CanvasTextAlign) || 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(textContent, cx, cy);
+          ctx.fillText(decal.text || decal.content || '', cx, cy);
         } else if (decal.type === 'shape') {
-          ctx.fillStyle = decal.fillColor || '#3b82f6';
-          if (decal.strokeColor) {
+          ctx.fillStyle = decal.fillColor || decal.color || '#3b82f6';
+          if (decal.strokeColor && decal.strokeWidth) {
             ctx.strokeStyle = decal.strokeColor;
-            ctx.lineWidth = (decal.strokeWidth || 1) * 3;
+            ctx.lineWidth = decal.strokeWidth * ((w * 0.5) / 170);
           }
+
           if (decal.shapeType === 'circle') {
             ctx.beginPath();
             ctx.arc(cx, cy, Math.min(dw, dh) / 2, 0, Math.PI * 2);
             ctx.fill();
-            if (decal.strokeColor) ctx.stroke();
-          } else if (decal.shapeType === 'rounded-rectangle') {
-            const radius = 16;
+            if (decal.strokeColor && decal.strokeWidth) ctx.stroke();
+          } else if (decal.shapeType === 'pill') {
+            const rad = Math.min(dw, dh) / 2;
             ctx.beginPath();
-            ctx.roundRect(x, y, dw, dh, radius);
+            ctx.roundRect(x, y, dw, dh, rad);
             ctx.fill();
-            if (decal.strokeColor) ctx.stroke();
+            if (decal.strokeColor && decal.strokeWidth) ctx.stroke();
           } else {
             ctx.fillRect(x, y, dw, dh);
-            if (decal.strokeColor) ctx.strokeRect(x, y, dw, dh);
+            if (decal.strokeColor && decal.strokeWidth) ctx.strokeRect(x, y, dw, dh);
           }
         }
 
@@ -419,12 +505,12 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     const width = container.clientWidth || 320;
     const height = container.clientHeight || 420;
 
-    // 1. Scene & Camera (Slender vertical framing matching Image 2)
+    // 1. Scene & Camera (24° product telephoto lens matching Pacdora framing)
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(25, width / height, 0.1, 100);
-    camera.position.set(0, 0.25, 4.3);
+    const camera = new THREE.PerspectiveCamera(24, width / height, 0.1, 100);
+    camera.position.set(0, 0.16, 4.2);
     cameraRef.current = camera;
 
     // 2. WebGL Renderer
@@ -438,56 +524,65 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 3. OrbitControls
+    // 3. Studio Environment Map for glossy photorealistic reflections
+    const envTarget = createStudioEnvironment(renderer);
+    scene.environment = envTarget.texture;
+
+    // 4. OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.enabled = interactive;
     controls.minDistance = 2.0;
     controls.maxDistance = 8.0;
-    controls.target.set(0, 0.05, 0);
+    controls.target.set(0, 0.06, 0);
     controlsRef.current = controls;
 
-    // 4. Studio Lighting Rig (Glossy highlights along left/right shoulders)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.84);
+    // 5. Studio Lighting Rig
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.42);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.45);
-    keyLight.position.set(3, 4, 3.5);
+    // Front-right key light
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
+    keyLight.position.set(3.2, 4.2, 3.8);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 1024;
     keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.bias = -0.0001;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xf1f5f9, 0.8);
-    fillLight.position.set(-3.5, 1.5, 2.5);
-    scene.add(fillLight);
+    // Left vertical strip light (creates the crisp reflection highlight on the left)
+    const leftStripLight = new THREE.DirectionalLight(0xffffff, 1.15);
+    leftStripLight.position.set(-3.2, 1.2, 3.0);
+    scene.add(leftStripLight);
 
-    const backRimLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    backRimLight.position.set(0, 3.5, -3.5);
-    scene.add(backRimLight);
+    // Right rim light for crisp contour separation
+    const rightRimLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    rightRimLight.position.set(3.0, 2.0, -3.2);
+    scene.add(rightRimLight);
 
-    const bottomReflect = new THREE.DirectionalLight(0xffffff, 0.45);
+    // Subtle bottom bounce light
+    const bottomReflect = new THREE.DirectionalLight(0xffffff, 0.35);
     bottomReflect.position.set(0, -3, 2);
     scene.add(bottomReflect);
 
-    // 5. Ground Contact Shadow underneath cap base at y = -1.43
+    // 6. Contact Shadow underneath cap base at y = -1.44
     const shadowGeo = new THREE.PlaneGeometry(2.4, 2.4);
     const shadowCanvas = document.createElement('canvas');
     shadowCanvas.width = 256;
     shadowCanvas.height = 256;
     const sCtx = shadowCanvas.getContext('2d');
     if (sCtx) {
-      const grad = sCtx.createRadialGradient(128, 128, 12, 128, 128, 110);
-      grad.addColorStop(0, 'rgba(15, 23, 42, 0.45)');
-      grad.addColorStop(0.35, 'rgba(15, 23, 42, 0.20)');
-      grad.addColorStop(0.7, 'rgba(15, 23, 42, 0.04)');
+      const grad = sCtx.createRadialGradient(128, 128, 12, 128, 128, 115);
+      grad.addColorStop(0, 'rgba(15, 23, 42, 0.48)');
+      grad.addColorStop(0.35, 'rgba(15, 23, 42, 0.22)');
+      grad.addColorStop(0.7, 'rgba(15, 23, 42, 0.05)');
       grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
       sCtx.fillStyle = grad;
       sCtx.fillRect(0, 0, 256, 256);
@@ -496,16 +591,16 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
     const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
     shadowMesh.rotation.x = -Math.PI / 2;
-    shadowMesh.position.y = -1.44;
+    shadowMesh.position.y = -1.45;
     scene.add(shadowMesh);
 
-    // 6. Toothpaste Tube Group (standing upright on cap base)
+    // 7. Toothpaste Tube Group (standing upright on cap base)
     const tubeGroup = new THREE.Group();
     tubeGroup.position.y = 0;
     scene.add(tubeGroup);
     tubeGroupRef.current = tubeGroup;
 
-    // Body Texture & Material
+    // Body Texture & Physical Material
     drawTubeTexture();
     const bodyTex = new THREE.CanvasTexture(offscreenCanvasRef.current!);
     bodyTex.colorSpace = THREE.SRGBColorSpace;
@@ -516,49 +611,69 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     bodyTex.magFilter = THREE.LinearFilter;
     bodyTextureRef.current = bodyTex;
 
-    const bodyMaterial = new THREE.MeshStandardMaterial({
+    const bodyMaterial = new THREE.MeshPhysicalMaterial({
       map: bodyTex,
-      roughness: 0.16,
+      roughness: 0.14,
       metalness: 0.02,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.08,
+      reflectivity: 0.6,
       side: THREE.FrontSide,
     });
     bodyMaterialRef.current = bodyMaterial;
 
-    // 7. Lofted Squeeze Tube Body Geometry (Model 602620: 75 ml upright tube)
-    // Standing upright matching user's Image 2:
-    // Cap at bottom: y = -1.41 to y = -0.92
-    // Shoulder neck: y = -0.92 to y = -0.78
+    // 8. Lofted Squeeze Tube Body Geometry (Organic Squeeze Loft matching Pacdora)
+    // Standing upright:
+    // Cap at bottom: y = -1.43 to y = -0.95
+    // Shoulder dome: y = -0.95 to y = -0.78
     // Body morphs from round base (y = -0.78) to wide flat crimp (y = 1.32)
-    // Crimp top bar: y = 1.32 to y = 1.50
-    const rings = 60;
-    const segments = 64;
+    // Crimp top bar: y = 1.32 to y = 1.49
+    const rings = 80;
+    const segments = 80;
     const bodyPositions: number[] = [];
     const bodyUvs: number[] = [];
     const bodyIndices: number[] = [];
 
     const yStart = -0.78;
     const yEnd = 1.32;
-    const totalH = yEnd - yStart; // 2.10 slender height!
-    const baseR = 0.215; // 75ml tube base radius
+    const totalH = yEnd - yStart; // 2.10 slender height
+    const baseR = 0.222; // 75ml tube base radius
 
     for (let r = 0; r <= rings; r++) {
       const t = r / rings; // 0 (bottom near shoulder) to 1 (top crimp)
       const y = yStart + t * totalH;
 
-      // Morphing profile:
-      // Cylindrical at bottom, expanding horizontally (xRadius) and flattening (zRadius) towards crimp
-      const flattenFactor = Math.pow(Math.max(0, (t - 0.12) / 0.88), 1.25);
-      const xRadius = baseR * (1.0 + 0.82 * Math.pow(t, 1.15));
-      const zRadius = Math.max(0.015, baseR * (1.0 - 0.93 * flattenFactor));
+      // Realistic volumetric squeeze tube loft:
+      // Width expands horizontally, depth flattens while preserving natural cushion volume
+      const xRadius = baseR * (1.0 + 0.88 * Math.pow(t, 1.12));
+      const flattenFactor = Math.pow(Math.max(0, (t - 0.10) / 0.90), 1.25);
+      const zRadius = Math.max(0.018, baseR * (1.0 - 0.92 * flattenFactor));
+
+      // Superellipse exponent p morphs from 2.0 (round cylinder at base) to ~2.75 (plump cushion at top)
+      // This eliminates sharp knife-edges and gives the organic filled-tube curvature!
+      const p = 2.0 + 0.75 * Math.pow(t, 1.15);
 
       for (let s = 0; s <= segments; s++) {
         const u = s / segments;
-        // u = 0.25 is front center (facing camera at +z)
-        // u increases -> x goes left to right (no mirroring!)
+        // u = 0.25 is front center facing camera (+z)
         const angle = (u - 0.25) * Math.PI * 2;
 
-        const x = xRadius * Math.sin(angle);
-        const z = zRadius * Math.cos(angle);
+        const cosA = Math.cos(angle);
+        const sinA = Math.sin(angle);
+        const signCos = Math.sign(cosA) || 1;
+        const signSin = Math.sign(sinA) || 1;
+        const absCos = Math.pow(Math.abs(cosA), 2 / p);
+        const absSin = Math.pow(Math.abs(sinA), 2 / p);
+
+        let x = xRadius * signSin * absSin;
+        let z = zRadius * signCos * absCos;
+
+        // Subtle organic heat-seal crinkle impression right beneath the crimp bar (t in [0.82, 0.98])
+        if (t > 0.82) {
+          const crimpTransition = (t - 0.82) / 0.18;
+          const crinkle = Math.sin(x * 50) * 0.0032 * Math.sin(crimpTransition * Math.PI);
+          z += crinkle;
+        }
 
         bodyPositions.push(x, y, z);
         bodyUvs.push(u, t);
@@ -588,61 +703,98 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     bodyMesh.receiveShadow = true;
     tubeGroup.add(bodyMesh);
 
-    // 8. Top Heat-Sealed Crimp Seal Bar (with fine vertical ridges matching Image 2)
-    const crimpH = 0.18;
-    const crimpW = baseR * 1.82 * 2; // ~0.783 width
-    const crimpD = 0.024;
-    const crimpGeo = new THREE.BoxGeometry(crimpW, crimpH, crimpD, 48, 4, 1);
+    // 9. Top Heat-Sealed Crimp Seal Bar (with fine vertical ridges matching Pacdora)
+    const crimpH = 0.175;
+    const crimpW = baseR * 1.88 * 2; // ~0.835 width
+    const crimpD = 0.026;
+    const crimpGeo = new THREE.BoxGeometry(crimpW, crimpH, crimpD, 80, 6, 1);
 
     const cPos = crimpGeo.attributes.position;
     for (let i = 0; i < cPos.count; i++) {
       const cz = cPos.getZ(i);
+      const cx = cPos.getX(i);
+      const cy = cPos.getY(i);
+
       if (Math.abs(cz) > 0.004) {
-        const cx = cPos.getX(i);
-        const rib = Math.sin(cx * 150) * 0.0028;
+        // Deep corrugated heat-seal ridges
+        const rib = Math.sin(cx * 165) * 0.0042;
         cPos.setZ(i, cz + rib);
+      }
+
+      // Slightly round / chamfer top left and right corners of the seal
+      if (cy > crimpH * 0.25 && Math.abs(cx) > crimpW * 0.44) {
+        const cornerInset = (Math.abs(cx) - crimpW * 0.44) * 0.6;
+        cPos.setY(i, cy - cornerInset);
       }
     }
     crimpGeo.computeVertexNormals();
 
-    const crimpMat = new THREE.MeshStandardMaterial({
+    const crimpTexture = createCrimpTexture();
+    const crimpMat = new THREE.MeshPhysicalMaterial({
+      map: crimpTexture,
       color: 0xfcfcfc,
       roughness: 0.22,
-      metalness: 0.03,
+      metalness: 0.02,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.12,
     });
     const crimpMesh = new THREE.Mesh(crimpGeo, crimpMat);
-    crimpMesh.position.y = yEnd + crimpH / 2 - 0.005;
+    crimpMesh.position.y = yEnd + crimpH / 2 - 0.004;
     crimpMesh.castShadow = true;
     tubeGroup.add(crimpMesh);
 
-    // 9. Conical Shoulder Neck Transition (above the cap)
-    const shoulderGeo = new THREE.CylinderGeometry(baseR, baseR * 0.68, 0.14, 48);
-    const shoulderMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
+    // 10. Smooth Curved Dome Shoulder Transition (between body base and cap neck)
+    const shoulderPts: THREE.Vector2[] = [];
+    const shoulderSteps = 16;
+    const neckR = baseR * 0.64; // ~0.142
+    for (let i = 0; i <= shoulderSteps; i++) {
+      const s = i / shoulderSteps;
+      // Smooth convex curve from baseR down to neckR
+      const sy = yStart - s * 0.14;
+      const sr = baseR - (baseR - neckR) * Math.sin((s * Math.PI) / 2);
+      shoulderPts.push(new THREE.Vector2(sr, sy));
+    }
+    // Neck collar ring
+    shoulderPts.push(new THREE.Vector2(neckR * 0.98, yStart - 0.165));
+
+    const shoulderGeo = new THREE.LatheGeometry(shoulderPts, 64);
+    shoulderGeo.computeVertexNormals();
+
+    const shoulderMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf4f6f8,
       roughness: 0.16,
-      metalness: 0.02,
+      metalness: 0.15,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.08,
     });
     const shoulderMesh = new THREE.Mesh(shoulderGeo, shoulderMat);
-    shoulderMesh.position.y = yStart - 0.07;
+    shoulderMesh.castShadow = true;
+    shoulderMesh.receiveShadow = true;
     tubeGroup.add(shoulderMesh);
 
-    // 10. Ribbed White Screw Cap Assembly (standing upright on table matching Image 2)
+    // 11. Ribbed Screw Cap Assembly (Pacdora-style fluted tapered cap)
     const capGroup = new THREE.Group();
-    const capH = 0.48;
-    const capRTop = baseR * 0.68; // ~0.146
-    const capRBot = baseR * 0.72; // ~0.155
-    capGroup.position.y = yStart - 0.14; // Base of shoulder
+    const capH = 0.46;
+    // Cap in Pacdora: slightly wider at the top near shoulder (~0.156) and gently tapers to base (~0.138)
+    const capRTop = baseR * 0.70; // ~0.155
+    const capRBot = baseR * 0.62; // ~0.138
+    capGroup.position.y = yStart - 0.165; // Base of neck
 
-    // Ribbed fluted cylinder for the cap (28 sharp vertical ribs)
-    const capGeo = new THREE.CylinderGeometry(capRTop, capRBot, capH, 64, 8);
+    // 24 sharp, deeply-fluted vertical ribs
+    const capGeo = new THREE.CylinderGeometry(capRTop, capRBot, capH, 96, 12, false);
     const capPos = capGeo.attributes.position;
     for (let i = 0; i < capPos.count; i++) {
       const cy = capPos.getY(i);
-      if (Math.abs(cy) < capH * 0.46) {
+      // Exclude top and bottom edge seams from fluting to maintain clean bevels
+      if (Math.abs(cy) < capH * 0.47) {
         const cx = capPos.getX(i);
         const cz = capPos.getZ(i);
         const angle = Math.atan2(cz, cx);
-        const flute = Math.sin(angle * 28) * 0.0065;
+
+        // Trapezoidal rib profile with crisp crests and shadow grooves
+        const cosWave = Math.cos(angle * 24);
+        const flute = Math.sign(cosWave) * Math.pow(Math.abs(cosWave), 0.65) * 0.015;
+
         const currentR = Math.sqrt(cx * cx + cz * cz);
         const newR = currentR + flute;
         capPos.setX(i, Math.cos(angle) * newR);
@@ -651,22 +803,25 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     }
     capGeo.computeVertexNormals();
 
-    const capMaterial = new THREE.MeshStandardMaterial({
+    const capMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(capColor || '#ffffff'),
-      roughness: 0.28,
-      metalness: 0.03,
+      roughness: 0.20,
+      metalness: 0.02,
+      clearcoat: 0.40,
+      clearcoatRoughness: 0.12,
     });
     capMaterialRef.current = capMaterial;
 
     const capMesh = new THREE.Mesh(capGeo, capMaterial);
     capMesh.position.y = -capH / 2;
     capMesh.castShadow = true;
+    capMesh.receiveShadow = true;
     capGroup.add(capMesh);
 
-    // Cap bottom rim base sitting flat on ground
-    const capBaseGeo = new THREE.CylinderGeometry(capRBot, capRBot * 0.98, 0.03, 48);
+    // Cap bottom flat base disk (anchors the tube stably on table)
+    const capBaseGeo = new THREE.CylinderGeometry(capRBot, capRBot * 0.98, 0.025, 48);
     const capBase = new THREE.Mesh(capBaseGeo, capMaterial);
-    capBase.position.y = -capH - 0.015;
+    capBase.position.y = -capH - 0.012;
     capBase.castShadow = true;
     capGroup.add(capBase);
 
@@ -707,6 +862,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
+      envTarget.dispose();
       bodyGeo.dispose();
       crimpGeo.dispose();
       shoulderGeo.dispose();
@@ -719,6 +875,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
       capMaterial.dispose();
       shadowMat.dispose();
       bodyTex.dispose();
+      crimpTexture.dispose();
       shadowTex.dispose();
       if (container && renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
