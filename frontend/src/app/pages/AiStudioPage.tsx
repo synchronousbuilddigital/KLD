@@ -287,7 +287,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
       {/* --- AI STUDIO TOOLBAR --- */}
       <div className="ai-studio-topbar" style={{ marginTop: '10px' }}>
         <div className="ai-topbar-left">
-          <span className="ai-project-name" style={{ marginLeft: '12px' }}>Untitled Pacdora AI Design</span>
+          <span className="ai-project-name" style={{ marginLeft: '12px' }}>Untitled KLD AI Design</span>
         </div>
       </div>
 

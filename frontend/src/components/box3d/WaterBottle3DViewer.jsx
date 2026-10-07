@@ -53,6 +53,7 @@ export default function WaterBottle3DViewer({
         materialType={materialType}
         autoRotate={activeAnimation === "rotate"}
         interactive={true}
+        showWatermark={showWatermark}
         className="w-full h-full"
       />
 
@@ -74,7 +75,7 @@ export default function WaterBottle3DViewer({
             boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
           }}
         >
-          Pacdora Studio PET 530040
+          KLD Studio PET 530040
         </div>
       )}
     </div>

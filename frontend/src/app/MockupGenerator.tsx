@@ -260,7 +260,7 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
 
     if (screenshot) {
       const link = document.createElement('a');
-      link.download = isCan ? 'pacdora_12oz_soda_can.png' : 'pacdora_water_bottle.png';
+      link.download = isCan ? 'kld_12oz_soda_can.png' : 'kld_water_bottle.png';
       link.href = screenshot;
       link.click();
     }

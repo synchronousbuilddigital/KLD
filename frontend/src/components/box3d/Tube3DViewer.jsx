@@ -55,6 +55,7 @@ export default function Tube3DViewer({
         autoRotate={activeAnimation === "rotate"}
         interactive={true}
         showPlaceholder={debouncedDecals.length === 0}
+        showWatermark={showWatermark}
         className="w-full h-full"
       />
 
@@ -76,7 +77,7 @@ export default function Tube3DViewer({
             boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
           }}
         >
-          Pacdora Studio Tube 602620
+          KLD Studio Tube 602620
         </div>
       )}
     </div>

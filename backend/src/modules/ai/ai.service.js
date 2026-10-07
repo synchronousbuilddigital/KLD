@@ -94,7 +94,7 @@ async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1
  * Extracts structured layout data for the 3-Layer compositor approach.
  */
 const SYSTEM_PACKAGING_PROMPT = `
-You are Pacdora AI — an expert Digital Automated Packaging Designer.
+You are KLD AI — an expert Digital Automated Packaging Designer.
 Your task is to analyze user prompts and orchestrate a 3-layer design system.
 
 Always return a valid JSON object matching this exact schema:
@@ -413,7 +413,7 @@ async function generateArtworkTexture(prompt, style = 'vibrant') {
 
 
 const SYSTEM_PACKAGING_PROMPT_V2 = `
-You are Pacdora AI — an expert Digital Automated Packaging Designer.
+You are KLD AI — an expert Digital Automated Packaging Designer.
 Your task is to analyze user prompts and orchestrate a highly precise, multi-panel structural layout for 3D packaging.
 
 Always return a valid JSON object matching this exact schema:

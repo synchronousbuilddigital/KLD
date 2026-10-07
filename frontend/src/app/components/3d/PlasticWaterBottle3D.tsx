@@ -46,6 +46,7 @@ export interface PlasticWaterBottle3DProps {
   style?: React.CSSProperties;
   onCanvasReady?: (canvas: HTMLCanvasElement) => void;
   interactive?: boolean;
+  showWatermark?: boolean;
   cameraDistance?: number;
   isMini?: boolean;
 }
@@ -82,9 +83,28 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
   style = {},
   onCanvasReady,
   interactive = true,
+  showWatermark,
   cameraDistance,
   isMini = false,
 }, ref) => {
+  const [authLoggedIn, setAuthLoggedIn] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('isLoggedIn') === 'true';
+    return false;
+  });
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setAuthLoggedIn(typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+    };
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
+
+  const effectiveShowWatermark = showWatermark !== undefined ? showWatermark : !authLoggedIn;
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -213,12 +233,10 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
       ctx.fillRect(0, 0, w, h);
     }
 
-    // Default Pacdora placeholder when empty
-    if (decals.length === 0 && (!labelColor || labelColor === '#ffffff' || labelColor === 'transparent')) {
+    // 1. Subtle watermark lines & "KLD" text (Visible ONLY when not logged in)
+    if (effectiveShowWatermark) {
       ctx.save();
-
-      // Subtle diagonal Pacdora-style watermark lines
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.035)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)';
       ctx.lineWidth = 1;
       for (let x = -w; x < w * 2; x += 120) {
         ctx.beginPath();
@@ -227,15 +245,19 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
         ctx.stroke();
       }
 
-      // Subtle repeating brand watermarks
-      ctx.font = 'italic 16px "Inter", sans-serif';
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.font = 'italic 700 16px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
       ctx.textAlign = 'center';
-      for (let x = 120; x < w; x += 340) {
-        ctx.fillText('Keyline Design', x, 40);
-        ctx.fillText('Pacdora Style', x + 170, h - 30);
+      for (let x = 120; x < w; x += 240) {
+        ctx.fillText('KLD', x, 40);
+        ctx.fillText('KLD', x + 120, h - 30);
       }
+      ctx.restore();
+    }
 
+    // 2. Default placeholder guide when empty
+    if (decals.length === 0 && (!labelColor || labelColor === '#ffffff' || labelColor === 'transparent')) {
+      ctx.save();
       // Front Center Guide (centered at 50% width)
       const cx = w * 0.5;
       const cy = h * 0.5;
@@ -441,7 +463,7 @@ export const PlasticWaterBottle3D = forwardRef<PlasticWaterBottle3DRef, PlasticW
       labelTextureRef.current.needsUpdate = true;
       requestRenderRef.current?.();
     }
-  }, [decals, labelColor]);
+  }, [decals, labelColor, effectiveShowWatermark]);
 
   // RequestAnimationFrame throttled scheduler — eliminates lag and stutter
   const scheduleCanvasRedraw = useCallback(() => {

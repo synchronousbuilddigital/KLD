@@ -55,6 +55,7 @@ export default function Can3DViewer({
         autoRotate={activeAnimation === "rotate"}
         interactive={true}
         showPlaceholder={debouncedDecals.length === 0}
+        showWatermark={showWatermark}
         labelWidthInches={labelWidthInches}
         labelHeightInches={labelHeightInches}
         glueFlapWidth={glueFlapWidth}
@@ -79,7 +80,7 @@ export default function Can3DViewer({
             boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
           }}
         >
-          Pacdora Studio Can 550034
+          KLD Studio Can 550034
         </div>
       )}
     </div>

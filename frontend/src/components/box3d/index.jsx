@@ -40,10 +40,14 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
   useEffect(() => {
     const handleAuthChange = () => setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
     window.addEventListener('auth-change', handleAuthChange);
-    return () => window.removeEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
   }, []);
 
-  const showWatermark = !isLoggedIn;
+  const showWatermark = props.showWatermark !== undefined ? props.showWatermark : !isLoggedIn;
 
   if (model === "slim_can" || model === "slim_355ml_can") return <SlimCan3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "can" || model === "soda_can" || model === "beverage_can") return <Can3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;

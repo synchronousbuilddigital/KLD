@@ -46,6 +46,7 @@ export interface BeverageCan3DProps {
   style?: React.CSSProperties;
   interactive?: boolean;
   showPlaceholder?: boolean;
+  showWatermark?: boolean;
   labelWidthInches?: number;
   labelHeightInches?: number;
   glueFlapWidth?: number;
@@ -145,11 +146,30 @@ export const BeverageCan3D = forwardRef<BeverageCan3DRef, BeverageCan3DProps>(({
   style = {},
   interactive = true,
   showPlaceholder = true,
+  showWatermark,
   labelWidthInches = 207 / 25.4,
   labelHeightInches = 125 / 25.4,
   glueFlapWidth = 0.25,
   onCanvasReady,
 }, ref) => {
+  const [authLoggedIn, setAuthLoggedIn] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('isLoggedIn') === 'true';
+    return false;
+  });
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setAuthLoggedIn(typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+    };
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
+
+  const effectiveShowWatermark = showWatermark !== undefined ? showWatermark : !authLoggedIn;
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -281,10 +301,8 @@ export const BeverageCan3D = forwardRef<BeverageCan3DRef, BeverageCan3DProps>(({
       ctx.clearRect(0, 0, w, h);
     }
 
-    // Default Pacdora placeholder when no decals are present
-    const hasDecals = decals && decals.length > 0;
-    if (!hasDecals && showPlaceholder) {
-      // 1. Subtle watermark diamond grid lines matching Pacdora (Screenshot 3)
+    // 1. Subtle watermark diamond grid lines & repeated "KLD" text (Visible ONLY when not logged in)
+    if (effectiveShowWatermark) {
       ctx.save();
       ctx.strokeStyle = 'rgba(100, 116, 139, 0.22)';
       ctx.lineWidth = 1.6;
@@ -302,18 +320,24 @@ export const BeverageCan3D = forwardRef<BeverageCan3DRef, BeverageCan3DProps>(({
         ctx.stroke();
       }
 
-      // Repeated subtle watermark text "Pacdora"
-      ctx.font = 'italic 500 22px "Inter", sans-serif';
-      ctx.fillStyle = 'rgba(100, 116, 139, 0.20)';
+      // Repeated subtle watermark text "KLD"
+      ctx.font = 'italic 700 24px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.22)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let gy = 70; gy < h; gy += 150) {
         for (let gx = 60; gx < w; gx += 190) {
-          ctx.fillText('Pacdora', gx, gy);
+          ctx.fillText('KLD', gx, gy);
         }
       }
+      ctx.restore();
+    }
 
-      // 2. Centered front-panel guide matching Screenshot 3
+    // 2. Default placeholder guide when no decals are present
+    const hasDecals = decals && decals.length > 0;
+    if (!hasDecals && showPlaceholder) {
+      ctx.save();
+      // Centered front-panel guide
       const centerX = w * 0.50;
       const centerY = h * 0.50;
 
@@ -534,7 +558,7 @@ export const BeverageCan3D = forwardRef<BeverageCan3DRef, BeverageCan3DProps>(({
       labelTextureRef.current.needsUpdate = true;
       requestRenderRef.current?.();
     }
-  }, [decals, packageColor, showPlaceholder, labelWidthInches, labelHeightInches, glueFlapWidth]);
+  }, [decals, packageColor, showPlaceholder, labelWidthInches, labelHeightInches, glueFlapWidth, effectiveShowWatermark]);
 
   // RequestAnimationFrame throttled scheduler
   const scheduleCanvasRedraw = useCallback(() => {

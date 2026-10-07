@@ -477,7 +477,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         <div className="ai-input-wrapper">
           <textarea
             className="ai-textarea"
-            placeholder="Describe your product, brand, and style. e.g., a fun, vibrant juice for Pacdora."
+            placeholder="Describe your product, brand, and style. e.g., a fun, vibrant juice for KLD."
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             onKeyDown={(e) => {

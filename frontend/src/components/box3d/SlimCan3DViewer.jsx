@@ -55,6 +55,7 @@ export default function SlimCan3DViewer({
         autoRotate={activeAnimation === "rotate"}
         interactive={true}
         showPlaceholder={debouncedDecals.length === 0}
+        showWatermark={showWatermark}
         labelWidthInches={labelWidthInches}
         labelHeightInches={labelHeightInches}
         glueFlapWidth={glueFlapWidth}

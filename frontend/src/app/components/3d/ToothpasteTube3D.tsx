@@ -45,6 +45,7 @@ export interface ToothpasteTube3DProps {
   interactive?: boolean;
   cameraDistance?: number;
   showPlaceholder?: boolean;
+  showWatermark?: boolean;
 }
 
 export interface ToothpasteTube3DRef {
@@ -67,8 +68,27 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
   interactive = true,
   cameraDistance = 4.3,
   showPlaceholder = true,
+  showWatermark,
   onCanvasReady,
 }, ref) => {
+  const [authLoggedIn, setAuthLoggedIn] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('isLoggedIn') === 'true';
+    return false;
+  });
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setAuthLoggedIn(typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true');
+    };
+    window.addEventListener('auth-change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, []);
+
+  const effectiveShowWatermark = showWatermark !== undefined ? showWatermark : !authLoggedIn;
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -203,9 +223,8 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
       ctx.fillRect(0, 0, w, h);
     }
 
-    const hasDecals = decals && decals.length > 0;
-    if (!hasDecals && showPlaceholder) {
-      // 1. Subtle watermark diamond grid lines matching Image 2
+    // 1. Subtle watermark diamond grid lines & repeated "KLD" text (Visible ONLY when not logged in)
+    if (effectiveShowWatermark) {
       ctx.save();
       ctx.strokeStyle = 'rgba(160, 174, 192, 0.22)';
       ctx.lineWidth = 1.8;
@@ -223,18 +242,24 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
         ctx.stroke();
       }
 
-      // Repeated subtle watermark text "Pacdora" matching Image 2
-      ctx.font = 'italic 500 20px "Inter", sans-serif';
+      // Repeated subtle watermark text "KLD"
+      ctx.font = 'italic 700 22px "Inter", sans-serif';
       ctx.fillStyle = 'rgba(148, 163, 184, 0.26)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (let gy = 60; gy < h; gy += 140) {
         for (let gx = 45; gx < w; gx += 170) {
-          ctx.fillText('Pacdora', gx, gy);
+          ctx.fillText('KLD', gx, gy);
         }
       }
+      ctx.restore();
+    }
 
-      // 2. Centered front-panel guide matching Screenshot 1 & 2:
+    // 2. Default placeholder guide when no decals are present
+    const hasDecals = decals && decals.length > 0;
+    if (!hasDecals && showPlaceholder) {
+      ctx.save();
+      // Centered front-panel guide:
       // In 360 wrap texture (w x h), Front panel is u: 0 to 0.5, centered at w * 0.25
       const centerX = w * 0.25;
       const centerY = h * 0.51;
@@ -375,7 +400,7 @@ export const ToothpasteTube3D = forwardRef<ToothpasteTube3DRef, ToothpasteTube3D
     }
 
     onCanvasReady?.(canvas);
-  }, [decals, packageColor, showPlaceholder, onCanvasReady]);
+  }, [decals, packageColor, showPlaceholder, onCanvasReady, effectiveShowWatermark]);
 
   useEffect(() => {
     drawTubeTexture();

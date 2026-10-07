@@ -68,7 +68,19 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   const [isAiOpen, setIsAiOpen] = useState(false);
 
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const [isLoggedIn, setIsLoggedIn] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem("isLoggedIn") === "true" || !!localStorage.getItem("token") : false));
+
+  useEffect(() => {
+    const handleAuth = () => {
+      setIsLoggedIn(typeof window !== 'undefined' ? localStorage.getItem("isLoggedIn") === "true" || !!localStorage.getItem("token") : false);
+    };
+    window.addEventListener("auth-change", handleAuth);
+    window.addEventListener("storage", handleAuth);
+    return () => {
+      window.removeEventListener("auth-change", handleAuth);
+      window.removeEventListener("storage", handleAuth);
+    };
+  }, []);
 
   const executeNavigation = () => {
     if (onBack) {
@@ -382,7 +394,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
             <button
               onClick={() => setIsAiOpen(!isAiOpen)}
-              title="Open Pacdora AI Packaging Assistant"
+              title="Open KLD AI Packaging Assistant"
               style={{
                 background: isAiOpen ? "linear-gradient(135deg, #2563eb, #7c3aed)" : t.inputBg,
                 color: isAiOpen ? "#ffffff" : t.textMain,

@@ -1971,21 +1971,39 @@
       </div>
 
       <div id="manualControls" style="display: none; padding-top: 10px;">
-        <button class="secondary-btn" id="addDielineBtn">+ Add Instance</button>
-        <div class="row2" style="margin-top:8px;">
-          <button class="icon-btn tip" data-tip="Rotate Selected" id="rotateSelectedBtn" disabled><svg width="14"
-              height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="secondary-btn" id="addDielineBtn" style="margin-bottom: 8px;">+ Add Instance</button>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px;">
+          <button class="icon-btn tip" data-tip="Rotate Selected (90°)" id="rotateSelectedBtn" disabled style="width: 100%;"><svg width="15"
+              height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
               <path d="M21 3v5h-5"></path>
             </svg></button>
-          <button class="icon-btn tip" data-tip="Clear All" id="clearDielinesBtn" style="color: var(--red);"><svg
-              width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="icon-btn tip" data-tip="Delete Selected (Del)" id="deleteSelectedBtn" disabled style="width: 100%; color: #ef4444;"><svg
+              width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path d="M3 6h18"></path>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg></button>
+          <button class="icon-btn tip" data-tip="Undo (Ctrl+Z)" id="undoManualBtn" disabled style="width: 100%;"><svg width="15"
+              height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M3 7v6h6"></path>
+              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+            </svg></button>
+          <button class="icon-btn tip" data-tip="Redo (Ctrl+Y)" id="redoManualBtn" disabled style="width: 100%;"><svg width="15"
+              height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 7v6h-6"></path>
+              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
             </svg></button>
         </div>
-        <p class="help-text tip" data-tip="Tap/Drag to move. Shift+Scroll to rotate"
-          style="font-size:10px; margin-top:8px; cursor:help; text-align:center; opacity:0.7;">ℹ️ Interaction Guide</p>
+        <div>
+          <button class="secondary-btn tip" data-tip="Clear all manual instances" id="clearDielinesBtn" style="color: #64748b; font-size: 11px; padding: 6px 10px; margin-bottom: 0;">Clear All Instances</button>
+        </div>
+        <div id="manualSidebarOverlapWarning" style="display: none; margin-top: 8px; padding: 7px 10px; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 8px; color: #b91c1c; font-size: 11px; font-weight: 600; line-height: 1.35;">
+          ⚠️ <strong>Collision Alert:</strong> Boxes are overlapping or out of bounds!
+        </div>
+        <p class="help-text tip" data-tip="Tap/Drag to move. Del to remove. Ctrl+Z to undo. Shift+Scroll to rotate"
+          style="font-size:10px; margin-top:8px; cursor:help; text-align:center; opacity:0.75;">ℹ️ <strong>Guide:</strong> Del: delete &middot; Ctrl+Z: undo &middot; Shift+Wheel: rotate</p>
       </div>
 
       <div id="autoControls">
@@ -2400,6 +2418,14 @@
             <div class="sub">How the dieline tiles across the press sheet &middot; interactive arrangement</div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
+            <span id="manualOverlapBadge" style="display: none; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; font-size: 11.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              Overlap / Out of Bounds
+            </span>
             <button type="button" id="printSheetBtn" class="printBtn" title="Print the current sheet layout">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -2436,7 +2462,7 @@
           <div class="bar-fill" id="effBar" style="width:0%;"></div>
         </div>
 
-        <div class="panel-body" id="sheetCanvasWrap" style="overflow: auto;">
+        <div class="panel-body" id="sheetCanvasWrap" style="overflow: auto; position: relative;">
           <canvas id="sheetCanvas" tabindex="1" style="outline:none; cursor: grab;"></canvas>
         </div>
       </section>
@@ -4187,14 +4213,12 @@
       bleeds: { stroke: '#46ba00', width: 1.2, dash: [] }
     };
 
-    function drawLayers(ctx, layers, originX, originY, scale, showBleed, highlight = false, fillColor = null) {
-      // Optional Print Preview color fill (Printing panel: CMYK/Pantone/RGB
-      // assigned to this design or object). Purely additive: drawn beneath the
-      // existing cut/fold/bleed strokes below, so the default fillColor=null
-      // leaves every existing call site pixel-identical to before.
-      if (fillColor && layers.cuts && layers.cuts.length) {
+    function drawLayers(ctx, layers, originX, originY, scale, showBleed, highlight = false, fillColor = null, isError = false) {
+      // Optional Print Preview color fill or highlight/error fill
+      const effectiveFill = isError ? "rgba(239, 68, 68, 0.25)" : (highlight ? "rgba(232, 99, 44, 0.14)" : fillColor);
+      if (effectiveFill && layers.cuts && layers.cuts.length) {
         ctx.save();
-        ctx.fillStyle = fillColor;
+        ctx.fillStyle = effectiveFill;
         ctx.beginPath();
         for (const poly of layers.cuts) {
           poly.forEach(([x, y], i) => {
@@ -4212,8 +4236,16 @@
         if (!polys) continue;
         const style = LAYER_STYLE[key];
         ctx.save();
-        ctx.strokeStyle = highlight ? '#e8632c' : style.stroke;
-        ctx.lineWidth = style.width;
+        if (isError) {
+          ctx.strokeStyle = '#ef4444'; // Red collision/overlap stroke
+          ctx.lineWidth = Math.max(style.width, 2.4);
+        } else if (highlight) {
+          ctx.strokeStyle = '#e8632c'; // Orange selection stroke
+          ctx.lineWidth = style.width;
+        } else {
+          ctx.strokeStyle = style.stroke;
+          ctx.lineWidth = style.width;
+        }
         ctx.setLineDash(style.dash);
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -4225,10 +4257,6 @@
             if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
           });
           ctx.stroke();
-        }
-        if (highlight) {
-          ctx.fillStyle = "rgba(232,99,44,0.1)";
-          ctx.fill();
         }
         ctx.restore();
       }
@@ -4349,14 +4377,168 @@
     let lastMergedBleeds = null; // cache used to skip merged-bleed recompute during active drag (see renderSheetCanvas)
     let selectedIdx = -1;
     let dragOffset = { x: 0, y: 0 };
-    let isColliding = false;
     let canvasPad = 20;
     let dragMoved = false;
 
+    // --- Undo / Redo State for Manual Arrangement ---
+    let manualUndoStack = [];
+    let manualRedoStack = [];
+    const MAX_MANUAL_UNDO = 50;
+    let preDragSnapshot = null;
+
+    function captureManualSnapshot() {
+      return {
+        placements: manualPlacements.map(p => ({
+          x: p.x,
+          y: p.y,
+          angleDeg: p.angleDeg,
+          color: p.color ? JSON.parse(JSON.stringify(p.color)) : null
+        })),
+        selectedIdx: selectedIdx
+      };
+    }
+
+    function restoreManualSnapshot(snapshot) {
+      if (!snapshot) return;
+      manualPlacements = snapshot.placements.map(p => ({
+        x: p.x,
+        y: p.y,
+        angleDeg: p.angleDeg,
+        color: p.color ? JSON.parse(JSON.stringify(p.color)) : null,
+        variant: (typeof resolveManualVariant === 'function') ? resolveManualVariant(p.angleDeg) : BASE_VARIANT
+      }));
+      selectedIdx = (snapshot.selectedIdx >= 0 && snapshot.selectedIdx < manualPlacements.length) ? snapshot.selectedIdx : -1;
+      draggedIdx = -1;
+      lastMergedBleeds = null;
+      updateManualBtnStates();
+      refreshColorPanelUI();
+      updateManualStats();
+      renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
+    }
+
+    function pushManualUndo() {
+      manualUndoStack.push(captureManualSnapshot());
+      if (manualUndoStack.length > MAX_MANUAL_UNDO) {
+        manualUndoStack.shift();
+      }
+      manualRedoStack = [];
+      updateManualBtnStates();
+    }
+
+    function undoManual() {
+      if (!document.getElementById('manualMode').checked) return;
+      if (manualUndoStack.length === 0) return;
+      const currentSnap = captureManualSnapshot();
+      manualRedoStack.push(currentSnap);
+      const prevSnap = manualUndoStack.pop();
+      restoreManualSnapshot(prevSnap);
+    }
+
+    function redoManual() {
+      if (!document.getElementById('manualMode').checked) return;
+      if (manualRedoStack.length === 0) return;
+      const currentSnap = captureManualSnapshot();
+      manualUndoStack.push(currentSnap);
+      const nextSnap = manualRedoStack.pop();
+      restoreManualSnapshot(nextSnap);
+    }
+
+    function updateManualBtnStates() {
+      const isManual = !!document.getElementById('manualMode')?.checked;
+      const hasSelection = selectedIdx !== -1 && isManual;
+      const rotBtn = document.getElementById('rotateSelectedBtn');
+      if (rotBtn) rotBtn.disabled = !hasSelection;
+      const delBtn = document.getElementById('deleteSelectedBtn');
+      if (delBtn) delBtn.disabled = !hasSelection;
+      const undoBtn = document.getElementById('undoManualBtn');
+      if (undoBtn) undoBtn.disabled = !isManual || manualUndoStack.length === 0;
+      const redoBtn = document.getElementById('redoManualBtn');
+      if (redoBtn) redoBtn.disabled = !isManual || manualRedoStack.length === 0;
+    }
+
+    // Keep backwards compatibility for any external calls
     function updateRotateBtnState() {
-      const btn = document.getElementById('rotateSelectedBtn');
-      if (!btn) return;
-      btn.disabled = selectedIdx === -1 || !document.getElementById('manualMode').checked;
+      updateManualBtnStates();
+    }
+
+    function deleteSelectedPlacement() {
+      if (!document.getElementById('manualMode').checked) return;
+      if (selectedIdx === -1 || !manualPlacements || !manualPlacements[selectedIdx]) return;
+      pushManualUndo();
+      manualPlacements.splice(selectedIdx, 1);
+      selectedIdx = -1;
+      draggedIdx = -1;
+      lastMergedBleeds = null;
+      updateManualBtnStates();
+      refreshColorPanelUI();
+      updateManualStats();
+      renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
+    }
+
+    // --- Overlap & Collision Computation ---
+    function getPlacementLoops(p) {
+      const v = p.variant || (BASE_VARIANT || {});
+      if (v && v.collisionLoops && v.collisionLoops.length) {
+        return v.collisionLoops.map(loop => loop.map(([x, y]) => [x + p.x, y + p.y]));
+      }
+      const w = v ? (v.widthMM || 100) : 100;
+      const h = v ? (v.heightMM || 100) : 100;
+      return [[[p.x, p.y], [p.x + w, p.y], [p.x + w, p.y + h], [p.x, p.y + h], [p.x, p.y]]];
+    }
+
+    function getAllCollidingIndices() {
+      const colliding = new Set();
+      if (!document.getElementById('manualMode').checked) return colliding;
+      const placements = manualPlacements;
+      if (!placements || !placements.length) return colliding;
+
+      const sheetW = parseFloat(document.getElementById('sheetW').value) || 1;
+      const sheetH = parseFloat(document.getElementById('sheetH').value) || 1;
+      const margin = parseFloat(document.getElementById('margin').value) || 0;
+      const eps = 0.05;
+
+      // 1. Boundary check (placed beyond margins or sheet edges)
+      for (let i = 0; i < placements.length; i++) {
+        const p = placements[i];
+        const v = p.variant || BASE_VARIANT;
+        const w = v ? v.widthMM : 0;
+        const h = v ? v.heightMM : 0;
+        if (p.x < margin - eps || p.y < margin - eps ||
+            (p.x + w) > (sheetW - margin + eps) ||
+            (p.y + h) > (sheetH - margin + eps)) {
+          colliding.add(i);
+        }
+      }
+
+      // 2. Overlap check across all pairs of boxes
+      const loopsList = placements.map(p => getPlacementLoops(p));
+      for (let i = 0; i < placements.length; i++) {
+        for (let j = i + 1; j < placements.length; j++) {
+          const pA = placements[i], pB = placements[j];
+          const vA = pA.variant || BASE_VARIANT, vB = pB.variant || BASE_VARIANT;
+          const wA = vA ? vA.widthMM : 0, hA = vA ? vA.heightMM : 0;
+          const wB = vB ? vB.widthMM : 0, hB = vB ? vB.heightMM : 0;
+
+          // Fast AABB rejection
+          if (pA.x + wA <= pB.x + eps ||
+              pB.x + wB <= pA.x + eps ||
+              pA.y + hA <= pB.y + eps ||
+              pB.y + hB <= pA.y + eps) {
+            continue;
+          }
+
+          if (typeof loopsOverlapFine === 'function') {
+            if (loopsOverlapFine(loopsList[i], loopsList[j], 1.0)) {
+              colliding.add(i);
+              colliding.add(j);
+            }
+          } else {
+            colliding.add(i);
+            colliding.add(j);
+          }
+        }
+      }
+      return colliding;
     }
 
     function renderSheetCanvas(nestingResult, showBleed) {
@@ -4368,6 +4550,14 @@
 
       const isManual = document.getElementById('manualMode').checked;
       const placements = isManual ? manualPlacements : nestingResult.placements;
+      const collidingIndices = isManual ? getAllCollidingIndices() : new Set();
+
+      // Show or hide discreet collision indicators (header badge & sidebar card)
+      const hasCollision = isManual && collidingIndices.size > 0;
+      const topBadge = document.getElementById('manualOverlapBadge');
+      if (topBadge) topBadge.style.display = hasCollision ? 'inline-flex' : 'none';
+      const sideWarning = document.getElementById('manualSidebarOverlapWarning');
+      if (sideWarning) sideWarning.style.display = hasCollision ? 'block' : 'none';
 
       const maxCssW = Math.min(wrap.parentElement.clientWidth - 32, 780);
       currentScale = (maxCssW - canvasPad * 2) / sheetW;
@@ -4391,29 +4581,11 @@
       ctx.strokeRect(canvasPad + margin * currentScale, canvasPad + margin * currentScale, (sheetW - margin * 2) * currentScale, (sheetH - margin * 2) * currentScale);
       ctx.restore();
 
-      // Resolve every placement's variant up front (same fallback the old
-      // per-item loop below always applied) so the sheet-wide merged-bleed
-      // pass right after has real geometry to read for every piece.
       for (let i = 0; i < placements.length; i++) {
         const p = placements[i];
         p.variant = p.variant || nestingResult.variants.find(v => v.angleDeg === p.angleDeg) || nestingResult.variants[0];
       }
 
-      // Draw ONE merged bleed guide across every placement before drawing the
-      // individual pieces, so copies sitting flush at 0mm gutter show a single
-      // continuous bleed line at their shared seam instead of each piece's own
-      // bleed line crossing into its neighbor. See computeMergedBleedLoops().
-      //
-      // computeMergedBleedLoops rasterizes every placement's bleed outline onto
-      // one shared sheet-wide grid (up to 900k cells) and traces its boundary --
-      // real work, not a cheap loop. renderSheetCanvas used to call it on every
-      // single native mousemove event while dragging a piece, so a sheet with
-      // any real number of copies turned every drag into a stop-start stutter.
-      // While a piece is actively being dragged, reuse the last settled merged
-      // outline instead of recomputing it on every frame; it only redraws for
-      // real the moment the drag ends (mouseup already calls renderSheetCanvas
-      // again), so the seam art is never more than one frame stale and only
-      // while the mouse is actually moving.
       if (showBleed && placements.length) {
         const mergedBleeds = (draggedIdx !== -1)
           ? (lastMergedBleeds || (lastMergedBleeds = computeMergedBleedLoops(placements)))
@@ -4444,44 +4616,24 @@
         const p = placements[i];
         const variant = p.variant;
 
-        // Check local collision if we are dragging this item
-        const isDragged = (i === draggedIdx);
         const isSelected = (i === selectedIdx);
-        const highlight = (isDragged && isColliding) || (isSelected && !isDragged);
-        // The merged pass above already drew the normal (non-highlighted)
-        // bleed guide for every piece; only redraw this piece's own bleed line
-        // here when it needs the orange highlight/fill treatment.
-        const drawOwnBleed = showBleed && highlight;
+        const isError = isManual && collidingIndices.has(i);
+        const highlight = isSelected && !isError;
+        const drawOwnBleed = showBleed && (highlight || isError);
 
         ctx.save();
-        // Move to placement position
         const ox = canvasPad + p.x * currentScale;
         const oy = canvasPad + p.y * currentScale;
         const fillColor = getPreviewFillColor(p.color);
 
-        // For free rotation we must rotate canvas around center
         if (p.angleDeg % 90 !== 0) {
           ctx.translate(ox + (variant.widthMM * currentScale) / 2, oy + (variant.heightMM * currentScale) / 2);
           ctx.rotate(p.angleDeg * Math.PI / 180);
           ctx.translate(-(ox + (variant.widthMM * currentScale) / 2), -(oy + (variant.heightMM * currentScale) / 2));
-          // We draw the unrotated variant
-          drawLayers(ctx, BASE_VARIANT.drawLayers, ox, oy, currentScale, drawOwnBleed, highlight, fillColor);
-          // Artwork is authored in BASE_VARIANT (unrotated) space, and ctx already
-          // carries this placement's rotation above, so draw it directly here.
+          drawLayers(ctx, BASE_VARIANT.drawLayers, ox, oy, currentScale, drawOwnBleed, highlight, fillColor, isError);
           if (typeof drawArtworkLayer === 'function') drawArtworkLayer(ctx, ox, oy, currentScale, { showHandles: false });
         } else {
-          drawLayers(ctx, variant.drawLayers, ox, oy, currentScale, drawOwnBleed, highlight, fillColor);
-          // variant.drawLayers here is PRE-rotated geometry (no ctx.rotate was
-          // applied) built by transformDieline as:
-          //   rotated = R(angleDeg) * (point - BB.min);  final = rotated - refShift
-          // Artwork is authored against BASE_VARIANT's own (0,0)-anchored space,
-          // so replicate that exact same rotate-then-shift, not a rotation
-          // about the bounding-box CENTER -- center-rotation only happens to
-          // match for a square dieline (width === height). For any rectangular
-          // box (the common case) it silently drifts the artwork off its panel
-          // by (width-height)/2 in each axis, which is what let it wander
-          // outside the die outline whenever a piece got rotated for a
-          // vertical/90-180-270 sheet layout.
+          drawLayers(ctx, variant.drawLayers, ox, oy, currentScale, drawOwnBleed, highlight, fillColor, isError);
           if (typeof drawArtworkLayer === 'function') {
             if (p.angleDeg === 0) {
               drawArtworkLayer(ctx, ox, oy, currentScale, { showHandles: false });
@@ -4502,31 +4654,6 @@
       }
     }
 
-    function checkCollision(idx, sheetW, sheetH, margin, gutter) {
-      const p = manualPlacements[idx];
-      const v = p.variant;
-      if (!v) return false;
-
-      // Basic bounds check (including margin)
-      if (p.x < margin || p.y < margin || p.x + v.widthMM > sheetW - margin || p.y + v.heightMM > sheetH - margin) {
-        return true;
-      }
-
-      // AABB intersection with other placements (including gutter)
-      for (let i = 0; i < manualPlacements.length; i++) {
-        if (i === idx) continue;
-        const o = manualPlacements[i];
-        const ov = o.variant;
-        if (p.x < o.x + ov.widthMM + gutter &&
-          p.x + v.widthMM + gutter > o.x &&
-          p.y < o.y + ov.heightMM + gutter &&
-          p.y + v.heightMM + gutter > o.y) {
-          return true;
-        }
-      }
-      return false;
-    }
-
     // Interaction Listeners
     const cvs = document.getElementById('sheetCanvas');
     cvs.addEventListener('mousedown', (e) => {
@@ -4539,8 +4666,9 @@
       let hitIdx = -1;
       for (let i = manualPlacements.length - 1; i >= 0; i--) {
         const p = manualPlacements[i];
-        if (mx >= p.x && mx <= p.x + p.variant.widthMM &&
-          my >= p.y && my <= p.y + p.variant.heightMM) {
+        const v = p.variant || BASE_VARIANT;
+        if (mx >= p.x && mx <= p.x + v.widthMM &&
+            my >= p.y && my <= p.y + v.heightMM) {
           hitIdx = i;
           draggedIdx = i;
           dragOffset.x = mx - p.x;
@@ -4550,17 +4678,16 @@
       }
       dragMoved = false;
       selectedIdx = hitIdx;
-      updateRotateBtnState();
+      if (hitIdx !== -1) {
+        preDragSnapshot = captureManualSnapshot();
+      } else {
+        preDragSnapshot = null;
+      }
+      updateManualBtnStates();
       refreshColorPanelUI();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
     });
 
-    // Native mousemove can fire far more often than the screen actually
-    // repaints (dozens of times within one 16ms frame on some setups). Running
-    // the full drag-update-and-render logic synchronously for every one of
-    // those events was a second source of the drag stutter -- this coalesces
-    // them so at most one update+render happens per animation frame, using
-    // only the latest mouse position.
     let pendingSheetMouseEvent = null;
     let sheetMouseRafScheduled = false;
     function handleSheetMousemove(e) {
@@ -4576,8 +4703,6 @@
 
       const margin = parseFloat(document.getElementById('margin').value) || 0;
       const gutter = parseFloat(document.getElementById('gutter').value) || 0;
-      const sheetW = parseFloat(document.getElementById('sheetW').value) || 1;
-      const sheetH = parseFloat(document.getElementById('sheetH').value) || 1;
 
       // Snapping Logic
       const snapDist = 5 / currentScale;
@@ -4587,18 +4712,17 @@
       for (let i = 0; i < manualPlacements.length; i++) {
         if (i === draggedIdx) continue;
         const o = manualPlacements[i];
-        if (Math.abs(nx - (o.x + o.variant.widthMM + gutter)) < snapDist) nx = o.x + o.variant.widthMM + gutter;
-        if (Math.abs((nx + manualPlacements[draggedIdx].variant.widthMM + gutter) - o.x) < snapDist) nx = o.x - manualPlacements[draggedIdx].variant.widthMM - gutter;
-        if (Math.abs(ny - (o.y + o.variant.heightMM + gutter)) < snapDist) ny = o.y + o.variant.heightMM + gutter;
-        if (Math.abs((ny + manualPlacements[draggedIdx].variant.heightMM + gutter) - o.y) < snapDist) ny = o.y - manualPlacements[draggedIdx].variant.heightMM - gutter;
+        const ov = o.variant || BASE_VARIANT;
+        const dv = manualPlacements[draggedIdx].variant || BASE_VARIANT;
+        if (Math.abs(nx - (o.x + ov.widthMM + gutter)) < snapDist) nx = o.x + ov.widthMM + gutter;
+        if (Math.abs((nx + dv.widthMM + gutter) - o.x) < snapDist) nx = o.x - dv.widthMM - gutter;
+        if (Math.abs(ny - (o.y + ov.heightMM + gutter)) < snapDist) ny = o.y + ov.heightMM + gutter;
+        if (Math.abs((ny + dv.heightMM + gutter) - o.y) < snapDist) ny = o.y - dv.heightMM - gutter;
       }
 
       manualPlacements[draggedIdx].x = nx;
       manualPlacements[draggedIdx].y = ny;
 
-      isColliding = checkCollision(draggedIdx, sheetW, sheetH, margin, gutter);
-
-      // Update live metrics & render
       updateManualStats();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
     }
@@ -4616,10 +4740,21 @@
 
     cvs.addEventListener('mouseup', () => {
       if (draggedIdx === -1) return;
+      if (dragMoved && preDragSnapshot) {
+        const oldP = preDragSnapshot.placements[draggedIdx];
+        const curP = manualPlacements[draggedIdx];
+        if (oldP && curP && (Math.hypot(oldP.x - curP.x, oldP.y - curP.y) > 0.05)) {
+          manualUndoStack.push(preDragSnapshot);
+          if (manualUndoStack.length > MAX_MANUAL_UNDO) manualUndoStack.shift();
+          manualRedoStack = [];
+          updateManualBtnStates();
+        }
+      }
+      preDragSnapshot = null;
       draggedIdx = -1;
-      isColliding = false;
-      lastMergedBleeds = null; // force a fresh, accurate merged-bleed trace now that the drag has settled
+      lastMergedBleeds = null; // force fresh trace
       updateManualStats();
+      updateManualBtnStates();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
     });
 
@@ -4627,23 +4762,59 @@
       if (selectedIdx === -1 || !document.getElementById('manualMode').checked) return;
       const p = manualPlacements[selectedIdx];
       if (!p) return;
+      pushManualUndo();
       p.angleDeg = (p.angleDeg + 90) % 360;
-      // Always resolve against the full 0/90/180/270 variant set, regardless
-      // of the auto-nest "Try rotations" toggle -- manual rotation should
-      // never be blocked by that setting.
       p.variant = resolveManualVariant(p.angleDeg);
-      isColliding = checkCollision(selectedIdx, currentSheetOpts().sheetWidth, currentSheetOpts().sheetHeight, currentSheetOpts().margin, currentSheetOpts().gutter);
+      lastMergedBleeds = null;
       updateManualStats();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
+    });
+
+    const delSelectedBtn = document.getElementById('deleteSelectedBtn');
+    if (delSelectedBtn) {
+      delSelectedBtn.addEventListener('click', deleteSelectedPlacement);
+    }
+
+    const undoManualBtn = document.getElementById('undoManualBtn');
+    if (undoManualBtn) {
+      undoManualBtn.addEventListener('click', undoManual);
+    }
+
+    const redoManualBtn = document.getElementById('redoManualBtn');
+    if (redoManualBtn) {
+      redoManualBtn.addEventListener('click', redoManual);
+    }
+
+    // Keyboard Shortcuts for Manual Arrangement
+    window.addEventListener('keydown', (e) => {
+      if (!document.getElementById('manualMode')?.checked) return;
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedIdx !== -1) {
+          e.preventDefault();
+          deleteSelectedPlacement();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault();
+        undoManual();
+      } else if (((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+                 ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))) {
+        e.preventDefault();
+        redoManual();
+      }
     });
 
     cvs.addEventListener('wheel', (e) => {
       if (draggedIdx === -1 || !e.shiftKey) return;
       e.preventDefault();
       const p = manualPlacements[draggedIdx];
+      if (!p) return;
+      pushManualUndo();
       p.angleDeg = (p.angleDeg + (e.deltaY > 0 ? 15 : -15) + 360) % 360;
-      // For simplicity, we fallback to base variant for free rotation bounds
       p.variant = BASE_VARIANT;
+      lastMergedBleeds = null;
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
     });
 
@@ -4653,7 +4824,6 @@
       manualNestingResult.stats = stats;
       updateStats(manualNestingResult);
     }
-
 
     // ---------- stats + badges ----------
     function updateStats(nestingResult) {
@@ -4690,28 +4860,25 @@
 
     // ---------- UI Events ----------
     document.getElementById('manualMode').addEventListener('change', (e) => {
-      if (!dxfUploaded) { e.target.checked = false; return; } // nothing to arrange until a DXF is uploaded
+      if (!dxfUploaded) { e.target.checked = false; return; }
       const isManual = e.target.checked;
       document.getElementById('manualControls').style.display = isManual ? 'block' : 'none';
       document.getElementById('autoControls').style.display = isManual ? 'none' : 'block';
       selectedIdx = -1;
       draggedIdx = -1;
-      updateRotateBtnState();
+      lastMergedBleeds = null;
+      updateManualBtnStates();
       refreshColorPanelUI();
       if (isManual) {
         if (!manualPlacementsInitialized) {
-          // Only seed from the auto layout the very first time manual mode is turned on.
-          // On later toggles, keep whatever the user last arranged manually.
           manualPlacements = JSON.parse(JSON.stringify(manualNestingResult.placements));
           manualPlacementsInitialized = true;
+          manualUndoStack = [];
+          manualRedoStack = [];
         }
-        // Rebuild variants from current options AND re-point every placement
-        // at them (JSON.parse/stringify above strips the placements' variant
-        // objects down to plain data disconnected from any live variant, so
-        // without this re-sync, bleed -- or any other option already on --
-        // wouldn't show up the moment you enter manual mode either).
         syncManualPlacementVariants();
         updateManualStats();
+        updateManualBtnStates();
         renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
       } else {
         manualFullVariants = null;
@@ -4719,12 +4886,6 @@
       }
     });
 
-    // One-click way to get "touching" dielines: 0mm gutter. The packer's
-    // dilation radius is forced to exactly 0 at gutter<=0 (see
-    // dilatedCellsForLoops), so shapes are packed right up against each
-    // other's bleed/cut boundary with no gap and no overlap -- adjacent
-    // outlines share a single cut line instead of the cutter running two
-    // separate passes with dead space between them.
     document.getElementById('touchGutterBtn').addEventListener('click', () => {
       document.getElementById('gutter').value = 0;
       autoFitAndRender();
@@ -4732,20 +4893,25 @@
 
     document.getElementById('addDielineBtn').addEventListener('click', () => {
       if (!manualNestingResult) return;
+      pushManualUndo();
       const margin = parseFloat(document.getElementById('margin').value) || 0;
       manualPlacements.push({ x: margin, y: margin, angleDeg: 0, variant: BASE_VARIANT });
       selectedIdx = manualPlacements.length - 1;
-      updateRotateBtnState();
+      lastMergedBleeds = null;
+      updateManualBtnStates();
       refreshColorPanelUI();
       updateManualStats();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
     });
 
     document.getElementById('clearDielinesBtn').addEventListener('click', () => {
+      if (!manualPlacements || manualPlacements.length === 0) return;
+      pushManualUndo();
       manualPlacements = [];
       selectedIdx = -1;
       draggedIdx = -1;
-      updateRotateBtnState();
+      lastMergedBleeds = null;
+      updateManualBtnStates();
       refreshColorPanelUI();
       updateManualStats();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
