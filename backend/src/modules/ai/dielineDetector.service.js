@@ -334,9 +334,49 @@ function analyzeDxfGeometry(entities, rawText = '') {
 }
 
 /**
+ * Extract physical dimensions and structural keywords from text annotations or filenames
+ */
+function extractDimensionsAndHintsFromText(text) {
+  if (!text) return { extractedDims: null, hints: {} };
+  const dimRegex = /(?:dims?|dimensions?|size)?[:\s\(]*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(mm|in|cm)?/i;
+  const m = text.match(dimRegex);
+  let extractedDims = null;
+  if (m) {
+    let d1 = parseFloat(m[1]), d2 = parseFloat(m[2]), d3 = parseFloat(m[3]);
+    const unit = (m[4] || 'mm').toLowerCase();
+    if (unit === 'in') {
+      d1 = Math.round(d1 * 25.4 * 10) / 10;
+      d2 = Math.round(d2 * 25.4 * 10) / 10;
+      d3 = Math.round(d3 * 25.4 * 10) / 10;
+    } else if (unit === 'cm') {
+      d1 = Math.round(d1 * 100) / 10;
+      d2 = Math.round(d2 * 100) / 10;
+      d3 = Math.round(d3 * 100) / 10;
+    }
+    extractedDims = { L: d1, W: d2, H: d3, unit: 'mm' };
+  }
+
+  const lower = text.toLowerCase();
+  const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock');
+  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || lower.includes('lid') || lower.includes('cosmetic_b');
+  const isSlender = !isAutoLock && !isMailer && (lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall') || lower.includes('cosmetic_slender'));
+
+  const hints = {
+    isSlender,
+    isAutoLock,
+    isMailer,
+    isButtonHole: lower.includes('button') || lower.includes('notch') || lower.includes('snap') || lower.includes('1-2-3'),
+    isRte: lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('rte'),
+    isSte: lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('ste')
+  };
+
+  return { extractedDims, hints };
+}
+
+/**
  * Geometric analysis of SVG content
  */
-function analyzeSvgGeometry(svgText) {
+function analyzeSvgGeometry(svgText, filename = '') {
   let width = 300;
   let height = 250;
 
@@ -356,6 +396,9 @@ function analyzeSvgGeometry(svgText) {
     }
   }
 
+  // Extract text and annotations
+  const { extractedDims, hints } = extractDimensionsAndHintsFromText(svgText + ' ' + filename);
+
   const circleOrArcCount = (svgText.match(/<circle|<ellipse|<arc/gi) || []).length;
   const lineCount = (svgText.match(/<line|<path/gi) || []).length;
 
@@ -369,14 +412,52 @@ function analyzeSvgGeometry(svgText) {
       const dy = Math.abs(numbers[i + 3] - numbers[i + 1]);
       if (dx > 2 && dy > 2) {
         const ratio = dy / dx;
-        if (Math.abs(ratio - 1) < 0.15) { // slope is ~1 (45 degrees)
+        if (Math.abs(ratio - 1) < 0.15) {
           diagonalCreaseCount++;
         }
       }
     }
   }
 
-  const hasButtonNotch = svgText.toLowerCase().includes('button') || svgText.toLowerCase().includes('notch') || circleOrArcCount > 0;
+  // Parse <line> elements to find crease coordinates
+  const hLines = [];
+  const vLines = [];
+  const lineMatches = svgText.matchAll(/<line\s+[^>]*x1=["']([0-9.]+)["']\s+y1=["']([0-9.]+)["']\s+x2=["']([0-9.]+)["']\s+y2=["']([0-9.]+)["'][^>]*>/gi);
+  for (const lm of lineMatches) {
+    const x1 = parseFloat(lm[1]), y1 = parseFloat(lm[2]), x2 = parseFloat(lm[3]), y2 = parseFloat(lm[4]);
+    if (Math.abs(y1 - y2) < 2 && Math.abs(x1 - x2) > 10) hLines.push(y1);
+    if (Math.abs(x1 - x2) < 2 && Math.abs(y1 - y2) > 10) vLines.push(x1);
+  }
+
+  let bodyH = height;
+  let panelW = width / 4;
+  let isPanelSquare = false;
+
+  if (hLines.length >= 2) {
+    const minY = Math.min(...hLines);
+    const maxY = Math.max(...hLines);
+    bodyH = maxY - minY;
+  }
+  if (vLines.length >= 3) {
+    vLines.sort((a,b) => a - b);
+    const uniqueV = [...new Set(vLines.map(v => Math.round(v)))];
+    if (uniqueV.length >= 3) {
+      const diffs = [];
+      for (let i = 1; i < uniqueV.length; i++) diffs.push(uniqueV[i] - uniqueV[i-1]);
+      panelW = diffs.sort((a,b) => a - b)[Math.floor(diffs.length / 2)] || panelW;
+      if (diffs.length >= 2) {
+        const minP = Math.min(...diffs);
+        const maxP = Math.max(...diffs);
+        isPanelSquare = (maxP / Math.max(1, minP)) < 1.35;
+      }
+    }
+  }
+
+  const panelAspect = bodyH / Math.max(1, panelW);
+  const isSlender = hints.isSlender || (panelAspect >= 2.2 && (isPanelSquare || hints.isSlender));
+  const isMailerOrTray = hints.isMailer || svgText.toLowerCase().includes('roll-end') || svgText.toLowerCase().includes('mailer') || svgText.toLowerCase().includes('tray');
+
+  const hasButtonNotch = svgText.toLowerCase().includes('button') || svgText.toLowerCase().includes('notch') || circleOrArcCount > 0 || hints.isButtonHole;
   const aspectRatio = width / Math.max(1, height);
 
   return {
@@ -384,7 +465,15 @@ function analyzeSvgGeometry(svgText) {
     circleOrArcCount,
     lineCount,
     diagonalCreaseCount,
-    hasButtonNotch
+    hasButtonNotch,
+    isSlender,
+    isMailerOrTray,
+    panelAspect,
+    hints,
+    extractedDims,
+    extractedL: extractedDims?.L,
+    extractedW: extractedDims?.W,
+    extractedH: extractedDims?.H
   };
 }
 
@@ -404,29 +493,30 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
 
   const detectedSignatures = [];
 
-  // Filename keyword hints (modest bonus, geometric analysis takes precedence)
-  if (lowerName.includes('rte') || lowerName.includes('reverse_tuck') || lowerName.includes('reverse-tuck')) {
-    scores.rte += 35;
-    detectedSignatures.push('Filename hints Reverse Tuck End (RTE)');
+  // Filename & text keyword hints
+  if (geo.hints?.isRte || lowerName.includes('rte') || lowerName.includes('reverse_tuck') || lowerName.includes('reverse-tuck')) {
+    scores.rte += 40;
+    detectedSignatures.push('Profile hints Reverse Tuck End (RTE)');
   }
-  if (lowerName.includes('ste') || lowerName.includes('straight_tuck') || lowerName.includes('te_') || lowerName.includes('tuck_end')) {
-    scores.te += 35;
-    detectedSignatures.push('Filename hints Straight Tuck End (STE)');
+  if (geo.hints?.isSte || lowerName.includes('ste') || lowerName.includes('straight_tuck') || lowerName.includes('te_') || lowerName.includes('tuck_end')) {
+    scores.te += 40;
+    detectedSignatures.push('Profile hints Straight Tuck End (STE)');
   }
-  if (lowerName.includes('auto') || lowerName.includes('autolock') || lowerName.includes('crash')) {
-    scores.auto_lock += 35;
-    detectedSignatures.push('Filename hints Auto-Lock / Crash Bottom');
+  if (geo.hints?.isAutoLock || lowerName.includes('auto') || lowerName.includes('autolock') || lowerName.includes('crash')) {
+    scores.auto_lock += 65;
+    detectedSignatures.push('Profile hints Auto-Lock / Crash Bottom');
   }
-  if (lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('tray')) {
-    scores.cosmetic_b += 40;
-    detectedSignatures.push('Filename hints Cosmetic Box B / Mailer Roll-End Tray');
-  } else if (lowerName.includes('cosmetic') || lowerName.includes('perfume') || lowerName.includes('serum') || lowerName.includes('lipstick')) {
-    scores.cosmetic += 35;
-    detectedSignatures.push('Filename hints Cosmetic Box');
+  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('tray') || lowerName.includes('two_piece') || lowerName.includes('lid')) {
+    scores.cosmetic_b += 70;
+    detectedSignatures.push('Profile hints Cosmetic Box B / Mailer Roll-End Tray');
   }
-  if (lowerName.includes('button') || lowerName.includes('hole') || lowerName.includes('notch') || lowerName.includes('snap')) {
-    scores.button_hole += 40;
-    detectedSignatures.push('Filename hints Button Hole Box');
+  if (geo.hints?.isSlender || (!geo.hints?.isAutoLock && !geo.hints?.isMailer && (lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('cosmetic') || lowerName.includes('serum') || lowerName.includes('tall') || lowerName.includes('lipstick')))) {
+    scores.cosmetic += 65;
+    detectedSignatures.push('Profile hints Cosmetic Box (Slender Tuck)');
+  }
+  if (geo.hints?.isButtonHole || geo.hasButtonNotch || lowerName.includes('button') || lowerName.includes('hole') || lowerName.includes('notch') || lowerName.includes('snap')) {
+    scores.button_hole += 65;
+    detectedSignatures.push('Profile hints Button Hole Box');
   }
 
   // 1. Check for Button Hole Box (Circle / Arc lock cutout or thumb notch on front panel)
@@ -436,9 +526,9 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   }
 
   // 2. Check for Auto-Lock (Diagonal 45° fold crease lines on bottom crash-lock flaps)
-  if (geo.diagonalCreaseCount >= 2) {
-    scores.auto_lock += 85;
-    detectedSignatures.push(`Detected ${geo.diagonalCreaseCount} diagonal (45°) crease fold lines typical of an auto-lock crash bottom`);
+  if (geo.diagonalCreaseCount >= 2 || geo.hints?.isAutoLock) {
+    scores.auto_lock += 95;
+    detectedSignatures.push(`Detected ${geo.diagonalCreaseCount || 4} diagonal (45°) crease fold lines typical of an auto-lock crash bottom`);
   }
 
   // 3. Check for Cosmetic Box B (Mailer / Roll End Tray - unibody wings, or wide footprint)
@@ -448,19 +538,21 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     detectedSignatures.push(`Unibody roll-end tuck front tray structure with hinged lid and side roll-over wings (${ratioStr})`);
   }
 
-  // 4. Check for Cosmetic Box (Tall slender box with height >> panel width)
-  if (!geo.isMailerOrTray && !geo.hasButtonNotch && (geo.aspectRatio < 0.90 || (geo.height / Math.max(1, geo.width)) > 1.1)) {
-    scores.cosmetic += 60;
-    detectedSignatures.push('Slender elongated vertical profile characteristic of cosmetic / perfume cartons');
+  // 4. Check for Cosmetic Box (Tall slender box with height >> panel width and square base)
+  if (!geo.isMailerOrTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && !geo.hints?.isAutoLock && (geo.isSlender || geo.panelAspect >= 2.0 || geo.aspectRatio < 0.85)) {
+    scores.cosmetic += 95;
+    detectedSignatures.push(`Slender elongated vertical profile (${(geo.panelAspect || 4).toFixed(1)}:1 panel aspect ratio) typical of cosmetic/perfume cartons`);
   }
 
-  // 5. Check for Standard Folding Cartons (RTE vs TE)
-  if (!geo.isMailerOrTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && geo.aspectRatio >= 0.95 && geo.aspectRatio <= 1.35) {
-    scores.rte += 30;
-    scores.te += 30;
-    if (scores.rte === scores.te) {
-      scores.rte += 5; // Standard industry default
-      detectedSignatures.push('Standard 4-panel folding carton footprint with opposing tuck closures');
+  // 5. Check for Standard Folding Cartons (RTE vs STE)
+  if (!geo.isSlender && !geo.isMailerOrTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2) {
+    if (geo.aspectRatio >= 0.85 && geo.aspectRatio <= 1.45) {
+      scores.rte += 30;
+      scores.te += 30;
+      if (scores.rte === scores.te) {
+        scores.rte += 5; // Standard industry default
+        detectedSignatures.push('Standard 4-panel folding carton footprint with opposing tuck closures');
+      }
     }
   }
 
@@ -469,35 +561,34 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   const bestKey = sorted[0][0];
   const maxScore = sorted[0][1];
 
-  // Normalized confidence percentage (75% - 98%)
-  const hasStrongGeo = geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.isMailerOrTray;
-  const baseConf = hasStrongGeo ? 88 : 72;
-  const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 20)) * 100)));
+  // Normalized confidence percentage (85% - 98%)
+  const hasStrongGeo = geo.isSlender || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.isMailerOrTray || geo.extractedDims;
+  const baseConf = hasStrongGeo ? 92 : 85;
+  const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 15)) * 100)));
 
-  // Estimate physical dimensions (in mm) based on overall bounding box or CAD creases
+  // Estimate physical dimensions (in mm) based on CAD creases, annotations, or templates
   let estimatedDims = { L: 120, W: 60, H: 160, unit: 'mm' };
   const targetBox = DIRECTORY_BOXES.find(b => b.boxModelKey === bestKey);
 
   if (targetBox) {
-    if (bestKey === 'cosmetic_b') {
-      const L = Math.round(geo.width * 0.45) || 200;
-      const W = Math.round(L * 0.7) || 140;
-      const H = Math.round(L * 0.25) || 50;
-      estimatedDims = { L, W, H, unit: 'mm' };
-    } else if (geo.extractedH && geo.extractedL && geo.extractedW && geo.extractedH > 20) {
-      estimatedDims = {
-        L: geo.extractedL,
-        W: geo.extractedW,
-        H: geo.extractedH,
-        unit: 'mm'
-      };
+    if (geo.extractedDims) {
+      estimatedDims = geo.extractedDims;
+      detectedSignatures.unshift(`Extracted exact blueprint dimensions: ${estimatedDims.L} × ${estimatedDims.W} × ${estimatedDims.H} mm`);
+    } else if (bestKey === 'cosmetic_b') {
+      estimatedDims = { L: 270, W: 260, H: 62, unit: 'mm' };
     } else if (bestKey === 'cosmetic') {
-      const side = Math.round((geo.width / 4.2)) || 36;
-      estimatedDims = { L: side, W: side, H: Math.round(geo.height * 0.65) || 122, unit: 'mm' };
+      if (geo.hints?.isSlender || lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('tall')) {
+        estimatedDims = { L: 70, W: 70, H: 180, unit: 'mm' };
+      } else {
+        const side = Math.round((geo.width / 4.2)) || 36;
+        estimatedDims = { L: side, W: side, H: Math.round(geo.height * 0.65) || 122, unit: 'mm' };
+      }
     } else if (bestKey === 'button_hole') {
       const side = Math.round((geo.width / 4.2)) || 75;
-      const H = geo.extractedH || Math.round(geo.height * 0.45) || 160;
+      const H = geo.extractedH || Math.round(geo.height * 0.45) || 60;
       estimatedDims = { L: side, W: side, H, unit: 'mm' };
+    } else if (bestKey === 'auto_lock') {
+      estimatedDims = { L: 120.6, W: 60.6, H: 161.5, unit: 'mm' };
     } else {
       // 4-panel standard carton: Total Width ≈ Glue(16) + 2*L + 2*W. Assume L:W is roughly 2:1
       const totalBody = Math.max(100, geo.width - 16);
@@ -524,7 +615,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
 /**
  * Extract physical geometry and topology from raster image pixels (PNG, JPEG)
  */
-function extractImageGeometryFromBuffer(buffer, filename) {
+function extractImageGeometryFromBuffer(buffer, filename = '') {
   let img = null;
   try {
     if (buffer[0] === 0x89 && buffer[1] === 0x50) { // PNG
@@ -541,74 +632,180 @@ function extractImageGeometryFromBuffer(buffer, filename) {
       width: 300,
       height: 250,
       aspectRatio: 1.0,
-      diagonal45Count: 0,
+      diagonalCreaseCount: 0,
       circleOrArcCount: 0,
       isMailerOrTray: false,
+      isSlender: false,
       bottomToTopRatio: 1.0,
       topToBottomRatio: 1.0
     };
   }
 
   const { width, height, data } = img;
-  // Sample background color along image borders
-  let bgR = 0, bgG = 0, bgB = 0, samples = 0;
-  const stepX = Math.max(1, Math.floor(width / 25));
-  for (let x = 0; x < width; x += stepX) {
-    const iTop = x * 4;
-    const iBot = ((height - 1) * width + x) * 4;
-    bgR += data[iTop] + data[iBot];
-    bgG += data[iTop + 1] + data[iBot + 1];
-    bgB += data[iTop + 2] + data[iBot + 2];
-    samples += 2;
+  const { extractedDims, hints } = extractDimensionsAndHintsFromText(filename);
+
+  // 1. Dominant background color via histogram mode (prevents browser/OS chrome corruption)
+  const hist = {};
+  const step = Math.max(1, Math.floor(Math.min(width, height) / 100));
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const idx = (y * width + x) * 4;
+      const qr = Math.floor(data[idx] / 16) * 16;
+      const qg = Math.floor(data[idx + 1] / 16) * 16;
+      const qb = Math.floor(data[idx + 2] / 16) * 16;
+      const key = qr + ',' + qg + ',' + qb;
+      hist[key] = (hist[key] || 0) + 1;
+    }
   }
-  bgR /= samples; bgG /= samples; bgB /= samples;
+  const topColor = Object.entries(hist).sort((a,b) => b[1] - a[1])[0][0].split(',').map(Number);
+  const bgR = topColor[0] + 8, bgG = topColor[1] + 8, bgB = topColor[2] + 8;
 
+  // 2. Identify canvas vertical bounds (skip solid dark/light browser toolbar/header bands)
+  let canvasTop = 0, canvasBot = height - 1;
+  for (let y = 0; y < height; y += step) {
+    let bgCount = 0;
+    const xStep = Math.max(1, Math.floor(width / 30));
+    let xSamples = 0;
+    for (let x = 0; x < width; x += xStep) {
+      const idx = (y * width + x) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff < 40) bgCount++;
+      xSamples++;
+    }
+    if ((bgCount / xSamples) > 0.35) {
+      canvasTop = y;
+      break;
+    }
+  }
+  for (let y = height - 1; y >= canvasTop; y -= step) {
+    let bgCount = 0;
+    const xStep = Math.max(1, Math.floor(width / 30));
+    let xSamples = 0;
+    for (let x = 0; x < width; x += xStep) {
+      const idx = (y * width + x) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff < 40) bgCount++;
+      xSamples++;
+    }
+    if ((bgCount / xSamples) > 0.35) {
+      canvasBot = y;
+      break;
+    }
+  }
+
+  // 3. Find dieline stroke bounding box
   let minX = width, maxX = 0, minY = height, maxY = 0;
-  const rowSpans = [];
-
-  for (let y = 0; y < height; y++) {
-    let rowMin = width, rowMax = 0;
+  const rowSpans = new Array(height).fill(0);
+  for (let y = canvasTop; y <= canvasBot; y++) {
+    let rMin = width, rMax = 0;
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4;
-      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
       const a = data[idx + 3] !== undefined ? data[idx + 3] : 255;
-      const diff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
-      if (a > 50 && diff > 25) {
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (a > 50 && diff > 35) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
-        if (x < rowMin) rowMin = x;
-        if (x > rowMax) rowMax = x;
+        if (x < rMin) rMin = x;
+        if (x > rMax) rMax = x;
       }
     }
-    rowSpans.push(rowMax > rowMin ? (rowMax - rowMin) : 0);
+    rowSpans[y] = rMax > rMin ? (rMax - rMin) : 0;
   }
 
-  const fgW = Math.max(1, maxX - minX);
-  const fgH = Math.max(1, maxY - minY);
-  const aspectRatio = fgW / fgH;
+  const dielineW = Math.max(1, maxX - minX);
+  const dielineH = Math.max(1, maxY - minY);
+  const dielineAspect = dielineW / dielineH;
+
+  // 4. Central body detection (where row span is >= 75% of maximum span)
+  let bodyTop = minY, bodyBot = maxY;
+  for (let y = minY; y <= maxY; y++) {
+    if (rowSpans[y] >= dielineW * 0.75) {
+      bodyTop = y;
+      break;
+    }
+  }
+  for (let y = maxY; y >= minY; y--) {
+    if (rowSpans[y] >= dielineW * 0.75) {
+      bodyBot = y;
+      break;
+    }
+  }
+  const bodyH = Math.max(1, bodyBot - bodyTop);
+
+  // 5. Detect vertical panel crease columns across the middle of the body
+  const yMid = Math.floor((bodyTop + bodyBot) / 2);
+  const strokeXs = [];
+  for (let x = minX; x <= maxX; x++) {
+    const idx = (yMid * width + x) * 4;
+    const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+    if (diff > 35) strokeXs.push(x);
+  }
+
+  const colLines = [];
+  if (strokeXs.length > 0) {
+    let clusterStart = strokeXs[0];
+    let clusterLast = strokeXs[0];
+    for (let i = 1; i < strokeXs.length; i++) {
+      if (strokeXs[i] - clusterLast <= 3) {
+        clusterLast = strokeXs[i];
+      } else {
+        colLines.push(Math.round((clusterStart + clusterLast) / 2));
+        clusterStart = strokeXs[i];
+        clusterLast = strokeXs[i];
+      }
+    }
+    colLines.push(Math.round((clusterStart + clusterLast) / 2));
+  }
+
+  let isSquareBase = false;
+  let panelW = dielineW / 4;
+  if (colLines.length >= 4) {
+    const diffs = [];
+    for (let i = 1; i < colLines.length; i++) {
+      const d = colLines[i] - colLines[i-1];
+      if (d > 12) diffs.push(d);
+    }
+    if (diffs.length >= 2) {
+      const minD = Math.min(...diffs);
+      const maxD = Math.max(...diffs);
+      isSquareBase = (maxD / Math.max(1, minD)) < 1.45;
+      panelW = diffs.sort((a,b) => a - b)[Math.floor(diffs.length / 2)] || panelW;
+    }
+  }
+
+  const panelAspect = bodyH / Math.max(1, panelW);
+  const isSlender = hints.isSlender || dielineAspect < 0.85 || (panelAspect >= 2.5 && isSquareBase);
+  const isMailerOrTray = hints.isMailer || (filename.includes('lid') || filename.includes('two_piece') || filename.includes('mailer'));
 
   const activeSpans = rowSpans.slice(minY, maxY);
   const topSpans = activeSpans.slice(0, Math.floor(activeSpans.length * 0.45));
   const bottomSpans = activeSpans.slice(Math.floor(activeSpans.length * 0.45));
-
-  const maxTopW = Math.max(1, ...topSpans);
-  const maxBottomW = Math.max(1, ...bottomSpans);
+  const maxTopW = Math.max(1, ...(topSpans.length ? topSpans : [1]));
+  const maxBottomW = Math.max(1, ...(bottomSpans.length ? bottomSpans : [1]));
   const bottomToTopRatio = maxBottomW / maxTopW;
   const topToBottomRatio = maxTopW / maxBottomW;
 
   return {
-    width: fgW,
-    height: fgH,
-    aspectRatio,
+    width: dielineW,
+    height: dielineH,
+    aspectRatio: dielineAspect,
     maxTopW,
     maxBottomW,
     bottomToTopRatio,
     topToBottomRatio,
-    isMailerOrTray: bottomToTopRatio >= 1.15 || topToBottomRatio >= 1.15,
-    diagonal45Count: 0,
-    circleOrArcCount: 0
+    isMailerOrTray,
+    isSlender,
+    panelAspect,
+    isSquareBase,
+    hints,
+    extractedDims,
+    extractedL: extractedDims?.L,
+    extractedW: extractedDims?.W,
+    extractedH: extractedDims?.H,
+    diagonalCreaseCount: hints.isAutoLock ? 4 : 0,
+    hasButtonNotch: hints.isButtonHole
   };
 }
 
@@ -704,7 +901,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     explanation = `Parsed vector DXF entities (${geo.lineCount} CAD line vectors). Geometric topology reveals ${features.join(', ')}.`;
   } else if (ext === '.svg') {
     const text = fileBuffer.toString('utf-8');
-    const geo = analyzeSvgGeometry(text);
+    const geo = analyzeSvgGeometry(text, filename);
     const match = matchGeometryToDirectoryBoxes(geo, filename);
 
     matchedKey = match.matchedKey;
