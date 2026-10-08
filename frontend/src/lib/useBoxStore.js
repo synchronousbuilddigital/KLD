@@ -348,7 +348,13 @@ export const useBoxStore = create((set) => ({
 
   // Decals
   decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
-  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
+  aiDecalsByModel: (() => {
+    try {
+      const s = typeof window !== 'undefined' ? localStorage.getItem('kld_saved_ai_decals') : null;
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
+  })(),
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];
@@ -362,13 +368,19 @@ export const useBoxStore = create((set) => ({
   }),
   setAiDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
-    const currentDecals = state.aiDecalsByModel[currentModel] || [];
+    const currentDecals = (state.aiDecalsByModel && state.aiDecalsByModel[currentModel]) || [];
     const newDecals = typeof decalsOrUpdater === "function" ? decalsOrUpdater(currentDecals) : decalsOrUpdater;
-    return {
-      aiDecalsByModel: {
-        ...state.aiDecalsByModel,
-        [currentModel]: newDecals
+    const nextDecals = {
+      ...(state.aiDecalsByModel || {}),
+      [currentModel]: newDecals
+    };
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kld_saved_ai_decals', JSON.stringify(nextDecals));
       }
+    } catch (e) {}
+    return {
+      aiDecalsByModel: nextDecals
     };
   }),
 }));

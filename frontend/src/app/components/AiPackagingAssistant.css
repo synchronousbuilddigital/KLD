@@ -351,3 +351,225 @@
   transform: scale(1.05);
   background: #1d4ed8;
 }
+
+/* Precision Badge */
+.ai-precision-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  margin-right: auto;
+  margin-left: 12px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.dark-theme .ai-precision-badge {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.ai-precision-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.6);
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Continuous Progress Bar */
+.ai-progress-box {
+  width: 100%;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dark-theme .ai-progress-box {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+.ai-progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #f4f4f5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dark-theme .ai-progress-bar-bg {
+  background: #3f3f46;
+}
+
+.ai-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #8b5cf6);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* Dieline Detection Match Card */
+.ai-dieline-card {
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1.5px solid #e4e4e7;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.dark-theme .ai-dieline-card {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+.ai-dieline-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-match-badge {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-dieline-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ai-dieline-preview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f4f4f5;
+  border-radius: 10px;
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid #e4e4e7;
+}
+
+.dark-theme .ai-dieline-preview-card {
+  background: #18181b;
+  border-color: #3f3f46;
+}
+
+.ai-dieline-preview-card img {
+  width: 100%;
+  height: 90px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.ai-dieline-preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #71717a;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.ai-dieline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-dieline-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  border: none;
+}
+
+.ai-dieline-btn.primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.ai-dieline-btn.primary:hover {
+  background: #1d4ed8;
+}
+
+.ai-dieline-btn.applied {
+  background: #059669;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(5, 150, 105, 0.35);
+}
+
+.ai-dieline-btn.applied:hover {
+  background: #047857;
+}
+
+.ai-dieline-btn.secondary {
+  background: #f4f4f5;
+  color: #18181b;
+  border: 1px solid #e4e4e7;
+}
+
+.dark-theme .ai-dieline-btn.secondary {
+  background: #3f3f46;
+  color: #f4f4f5;
+  border-color: #52525b;
+}
+
+.ai-dieline-btn.secondary:hover {
+  background: #e4e4e7;
+}
+
+/* Drag overlay */
+.ai-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(37, 99, 235, 0.9);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 50;
+  border-radius: 16px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+

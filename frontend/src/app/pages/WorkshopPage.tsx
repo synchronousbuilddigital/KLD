@@ -273,6 +273,39 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       alert("An error occurred while preparing the print layout. See console for details.");
     }
   };
+
+  const handleApplyAiVariation = (variation: any) => {
+    const bgUrl = variation?.backgroundUrl || variation?.url;
+    if (!bgUrl) return;
+
+    const L = store.L || 4.7244;
+    const W = store.W || 2.3622;
+    const H = store.H || 6.2992;
+    const glue = store.glueFlapWidth || 0.625;
+
+    // Full-bleed coverage across all 4 panels and flaps
+    const totalW = glue + L * 2 + W * 2;
+    const totalH = H + W * 2 + 1.25;
+    const xCenter = totalW / 2;
+    const yCenter = W + 0.625 + (H / 2);
+
+    const wrapDecal = {
+      id: 'ai-wrap-' + Date.now(),
+      type: 'image',
+      url: bgUrl,
+      width: totalW,
+      height: totalH,
+      x: xCenter,
+      y: yCenter,
+      surface: 'Outside',
+      isWrap: true
+    };
+
+    store.setDecals([wrapDecal]);
+    if (typeof store.setAiDecals === 'function') {
+      store.setAiDecals([wrapDecal]);
+    }
+  };
   
   const themeKey = store.theme || 'light';
   const t = themes[themeKey] || themes.light;
@@ -975,7 +1008,11 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               overflow: "hidden"
             }}
           >
-            <AiPackagingAssistant onClose={() => setIsAiOpen(false)} isOpen={isAiOpen} />
+            <AiPackagingAssistant 
+              onClose={() => setIsAiOpen(false)} 
+              isOpen={isAiOpen} 
+              onApplyVariation={handleApplyAiVariation}
+            />
           </div>
 
         </div>

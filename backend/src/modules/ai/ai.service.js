@@ -10,28 +10,24 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Layer 2: Asset Generator (Pollinations API)
- * Generates specific, separated visual assets (background texture OR isolated icon).
+ * Layer 2: Full-Bleed Packaging Wrap Artwork Generator (AI Horde Engine)
+ * Generates continuous surface patterns and seamless packaging artwork textures designed to wrap the entire dieline.
  */
 async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1) {
   let cleanPrompt = prompt.replace(/["'\\]/g, '').trim();
-  cleanPrompt = cleanPrompt.replace(/\b(box|packaging|package|bottle|tube|3d|mockup|render|carton|container)\b/gi, '').trim();
+  cleanPrompt = cleanPrompt.replace(/\b(box|packaging|package|bottle|tube|3d|mockup|render|carton|container|dieline|corrugated)\b/gi, '').trim();
 
-  let structuralSuffix = '';
-  if (isIcon) {
-    structuralSuffix = 'isolated vector graphic, flat icon, central composition, pure white background, minimal line art or flat colors, no text, no words';
-  } else {
-    structuralSuffix = 'highly detailed 2D flat vector illustration, pure digital graphic design, centered composition, purely 2D canvas, NO 3D objects, NO boxes, NO packaging shapes, NO text, NO logos, NO shadows, NO realistic product photography';
-  }
-
-  const fullPrompt = `${cleanPrompt}, ${structuralSuffix}`;
+  // Full-bleed packaging wrap prompt designed to coat the entire 3D surface seamlessly without isolated objects
+  const wrapSuffix = 'seamless repeating surface pattern, full bleed continuous wrap artwork texture, luxury decorative packaging graphics, elegant abstract geometric or botanical motif, high-end print design, edge-to-edge aesthetic, 8k resolution, flat 2D canvas print, no 3D box, no mockups, no realistic product photography, no camera, no perspective, no white borders';
+  const fullPrompt = `${cleanPrompt}, ${wrapSuffix}`;
 
   try {
-    console.log("Submitting image generation to AI Horde...");
+    console.log("Submitting wrap artwork generation to AI Horde...");
+    const apiKey = process.env.AI_HORDE_API_KEY || "0000000000";
     const submitRes = await fetch("https://stablehorde.net/api/v2/generate/async", {
       method: "POST",
       headers: {
-        "apikey": "0000000000",
+        "apikey": apiKey,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -39,11 +35,13 @@ async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1
         params: {
           width: 512,
           height: 512,
-          steps: 20
+          steps: 20,
+          cfg_scale: 7
         },
         nsfw: false,
         censor_nsfw: true,
-        models: ["stable_diffusion"]
+        // Allow any active worker with popular general models to pick up immediately
+        models: ["Deliberate", "Dreamshaper", "AbsoluteReality", "ICBINP - I Can't Believe It's Not Photography", "stable_diffusion"]
       })
     });
     
@@ -51,18 +49,18 @@ async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1
       const submitJson = await submitRes.json();
       if (submitJson.id) {
         let attempts = 0;
-        while (attempts < 15) { // Poll for up to ~75 seconds
-          await new Promise(r => setTimeout(r, 5000));
+        // Poll for up to ~60s (20 attempts * 3s)
+        while (attempts < 20) {
+          await new Promise(r => setTimeout(r, 3000));
           attempts++;
           const statusRes = await fetch(`https://stablehorde.net/api/v2/generate/status/${submitJson.id}`);
           if (!statusRes.ok) continue;
           
           const statusJson = await statusRes.json();
           if (statusJson.done && statusJson.generations && statusJson.generations.length > 0) {
-            console.log("AI Horde generation complete! Downloading to bypass CORS...");
+            console.log("AI Horde wrap generation complete! Downloading to Base64...");
             const imgUrl = statusJson.generations[0].img;
             
-            // Fetch the image from the Horde R2 URL and convert to Base64 to bypass WebGL CORS
             try {
               const imgRes = await fetch(imgUrl);
               const buffer = await imgRes.arrayBuffer();
@@ -74,7 +72,7 @@ async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1
             }
           }
           if (statusJson.faulted) {
-            console.log("AI Horde generation faulted, falling back...");
+            console.log("AI Horde generation faulted, falling back to procedural vector wrap...");
             break;
           }
         }
@@ -84,9 +82,8 @@ async function fetchLayer2AssetBase64(prompt, isIcon = false, variationIndex = 1
     console.log("AI Horde error:", err.message);
   }
 
-  // Final absolute fallback
-  const encoded = encodeURIComponent(fullPrompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 9000000)}`;
+  // Pure procedural vector wrap fallback — NEVER call Pollinations
+  return null;
 }
 
 /**
@@ -144,45 +141,81 @@ async function callGeminiLLM(userPrompt, currentContext = {}) {
 }
 
 /**
- * Real AI Image Generation Pipeline for Packaging Artwork Labels (Pollinations / Imagen / DALL-E)
+ * Clean Artwork Texture Pipeline
  */
 function generateAiGraphicArtworkUrl(prompt, variationIndex = 1, primaryColor = "#121212", accentColor = "#00f0ff") {
-  const cleanPrompt = prompt.trim();
-  const seed = Math.floor(Math.random() * 90000) + 10000 + variationIndex * 77;
-
-  let styleKeywords = "Masterpiece packaging label design, luxury minimalist, ultra-realistic, professional studio lighting, 8k resolution, award-winning commercial design";
-  const p = cleanPrompt.toLowerCase();
-  if (p.includes("cyberpunk") || p.includes("neon") || p.includes("circuit") || p.includes("nexus")) {
-    styleKeywords = "cyberpunk Nexus Cabernet Sauvignon wine bottle box label, glowing cyan and pink neon circuit grid lines, obsidian metallic paperboard, silver metallic emblem, 8k resolution, photorealistic graphic label render";
-  } else if (p.includes("perfume") || p.includes("cosmetic")) {
-    styleKeywords = "luxury perfume box packaging design, gold geometric foil stamping, marble texture, elegance, 8k resolution";
-  } else if (p.includes("tea") || p.includes("organic") || p.includes("green")) {
-    styleKeywords = "organic matcha tea package design, sage green paperboard, botanical line art, gold crest emblem, 8k resolution";
-  }
-
-  const fullPrompt = `${cleanPrompt}, ${styleKeywords}, flat 2d graphic artwork texture layout for 3d box panel`;
-  const encoded = encodeURIComponent(fullPrompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${seed}`;
+  return generateFallbackBackground(primaryColor, accentColor, variationIndex);
 }
 
 /**
- * Pacdora-Grade Ultra-Rich Graphic Artwork Generator Engine (1024x1024)
-/**
- * Procedural Fallback Generators
- * These are used when Pollinations API times out or fails.
+ * Procedural Packaging Wrap Pattern Generator (Full-Bleed 1024x1024 Vector Art)
+ * Generates aesthetic, continuous geometric, botanical, and minimalist surface wrap artwork
  */
-function generateFallbackBackground(primaryColor = "#0f172a", accentColor = "#00f0ff") {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+function generateFallbackBackground(primaryColor = "#0f172a", accentColor = "#00f0ff", variationIndex = 1) {
+  let patternContent = "";
+  
+  if (variationIndex === 1) {
+    // Elegant Art-Deco Geometric Grid
+    patternContent = `
       <defs>
-        <pattern id="bgPattern" width="40" height="40" patternUnits="userSpaceOnUse">
-          <circle cx="20" cy="20" r="1" fill="${accentColor}" opacity="0.15"/>
+        <pattern id="decoGrid" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M 0 40 L 40 0 L 80 40 L 40 80 Z" fill="none" stroke="${accentColor}" stroke-width="1.2" opacity="0.35"/>
+          <circle cx="40" cy="40" r="3" fill="${accentColor}" opacity="0.6"/>
+          <line x1="0" y1="40" x2="80" y2="40" stroke="${accentColor}" stroke-width="0.5" opacity="0.2"/>
+        </pattern>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${primaryColor}"/>
+          <stop offset="100%" stop-color="#000000" stop-opacity="0.85"/>
+        </linearGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="url(#grad1)"/>
+      <rect width="1024" height="1024" fill="url(#decoGrid)"/>
+      <rect x="24" y="24" width="976" height="976" fill="none" stroke="${accentColor}" stroke-width="1.5" opacity="0.4"/>
+    `;
+  } else if (variationIndex === 2) {
+    // Minimalist Luxury Pinstripes & Foil Diagonal Waves
+    patternContent = `
+      <defs>
+        <pattern id="stripes" width="40" height="40" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="0" y2="40" stroke="${accentColor}" stroke-width="1.5" opacity="0.3"/>
+          <line x1="20" y1="0" x2="20" y2="40" stroke="${accentColor}" stroke-width="0.5" opacity="0.15"/>
+        </pattern>
+        <radialGradient id="rad1" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="${primaryColor}" stop-opacity="1"/>
+        </radialGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="${primaryColor}"/>
+      <rect width="1024" height="1024" fill="url(#rad1)"/>
+      <rect width="1024" height="1024" fill="url(#stripes)"/>
+    `;
+  } else if (variationIndex === 3) {
+    // Modern Hexagonal Micro-Lattice Pattern
+    patternContent = `
+      <defs>
+        <pattern id="hexPattern" width="60" height="103.92" patternUnits="userSpaceOnUse">
+          <path d="M 30 0 L 60 17.32 L 60 51.96 L 30 69.28 L 0 51.96 L 0 17.32 Z" fill="none" stroke="${accentColor}" stroke-width="1" opacity="0.3"/>
+          <path d="M 30 51.96 L 60 69.28 L 60 103.92 L 30 121.24 L 0 103.92 L 0 69.28 Z" fill="none" stroke="${accentColor}" stroke-width="1" opacity="0.3"/>
         </pattern>
       </defs>
       <rect width="1024" height="1024" fill="${primaryColor}"/>
-      <rect width="1024" height="1024" fill="url(#bgPattern)"/>
-    </svg>
-  `.trim();
+      <rect width="1024" height="1024" fill="url(#hexPattern)"/>
+    `;
+  } else {
+    // Ultra-Clean Swiss Stipple / Micro-Dot Array
+    patternContent = `
+      <defs>
+        <pattern id="dotPattern" width="32" height="32" patternUnits="userSpaceOnUse">
+          <circle cx="16" cy="16" r="1.5" fill="${accentColor}" opacity="0.45"/>
+        </pattern>
+      </defs>
+      <rect width="1024" height="1024" fill="${primaryColor}"/>
+      <rect width="1024" height="1024" fill="url(#dotPattern)"/>
+      <circle cx="512" cy="512" r="420" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.25"/>
+    `;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">${patternContent.trim()}</svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
@@ -304,25 +337,26 @@ async function parseLocalDynamicPrompt(prompt, currentContext = {}) {
   ];
 
   // Local fallback generates the prompt dynamically since we don't have LLM structured output
-  const artworkPrompt = `${prompt}, beautiful sprawling packaging illustration, centered composition, premium design, isolated on ${primaryColor} background`;
-  // Only use prompt text as a brand name if it's very short (e.g. "Apple iPhone Box"). 
-  // Otherwise, a long descriptive prompt will result in ugly partial sentences like "A MINIMALIST ABSTRACT".
-  const fallbackBrandName = words.length <= 4 ? topic.toUpperCase() : null;
+  const artworkPrompt = `${prompt}, seamless full bleed luxury packaging surface design, continuous wrap artwork texture, elegant pattern, decorative packaging print, high-end commercial packaging art, flat 2D graphic layout, 8k resolution, edge-to-edge pattern, no 3D box, no mockups, no realistic product photography, no camera, no perspective, no white borders`;
 
   const renderVariations = [];
+  // Generate primary hero wrap from AI Horde (with graceful procedural fallback)
+  const heroArtworkUrl = await fetchLayer2AssetBase64(artworkPrompt, false, 1);
+
   for (const idx of [1, 2, 3, 4]) {
-    // Await sequentially to avoid rate-limiting the free-tier Hugging Face API
-    const artworkUrl = await fetchLayer2AssetBase64(artworkPrompt, false, idx);
+    const wrapUrl = (idx === 1 && heroArtworkUrl) 
+      ? heroArtworkUrl 
+      : generateFallbackBackground(primaryColor, accentColor, idx);
+
     renderVariations.push({
       id: `var-${idx}`,
-      title: `${directions[0].title} – Packshot ${idx}`,
-      backgroundUrl: artworkUrl || generateFallbackBackground(primaryColor, accentColor),
-      iconUrl: null,
-      typography: fallbackBrandName ? { brandName: fallbackBrandName, fontStyle: 'sans-serif', color: accentColor } : null,
+      title: `${directions[0].title} – Wrap Pattern ${idx}`,
+      backgroundUrl: wrapUrl,
+      url: wrapUrl,
+      isWrap: true,
+      typography: null,
       aspectRatio: '1:1'
     });
-    // Add a tiny delay between requests
-    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
   actions.push({ type: "SET_BOX_MODEL", model });
@@ -461,9 +495,7 @@ async function processAiChatV2(prompt, currentContext) {
   // Fallback / Parsing
   const data = v2Data || {
     ...localBase,
-    leftPanelText: { title: "Specifications", body: "Premium materials." },
-    rightPanelText: { title: "Story", body: "Crafted with care." },
-    artworkPrompt: `${prompt}, beautiful illustration, isolated on white background`
+    artworkPrompt: `${prompt}, seamless full bleed luxury packaging surface design, continuous wrap artwork texture, elegant pattern, decorative packaging print, high-end commercial packaging art, flat 2D graphic layout, 8k resolution, edge-to-edge pattern, no 3D box, no mockups, no realistic product photography, no camera, no perspective, no white borders`
   };
 
   // Enforce explicit context if user manually selected a box tag
@@ -472,41 +504,36 @@ async function processAiChatV2(prompt, currentContext) {
   }
 
   const primary = data.baseColor || data.packageColor || "#18181b";
+  const accent = data.directions?.[0]?.accentColor || "#00f0ff";
   const renderVariations = [];
-  const safeArtworkPrompt = data.artworkPrompt || prompt;
   
-  // If localBase already generated variations, reuse all of them with V2 panel layouts
+  // If localBase already generated variations, reuse them as clean wrap designs
   if (localBase && localBase.renderVariations && localBase.renderVariations.length > 0 && !v2Data) {
     for (let idx = 0; idx < localBase.renderVariations.length; idx++) {
       const v = localBase.renderVariations[idx];
       renderVariations.push({
         ...v,
         id: `var-v2-${idx + 1}`,
-        title: v.title || `${data.directions?.[0]?.title || 'Hero'} - Packshot ${idx + 1}`,
-        v2Layout: {
-          frontImage: v.backgroundUrl,
-          leftText: data.leftPanelText,
-          rightText: data.rightPanelText,
-          barcodeUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/UPC-A-036000291452.svg'
-        }
+        title: v.title || `${data.directions?.[0]?.title || 'Packaging Concept'} - Wrap ${idx + 1}`,
+        isWrap: true
       });
     }
   } else {
-    // Generate all 4 variations for V2
+    // Generate clean wrap variations
+    const heroArtworkUrl = await fetchLayer2AssetBase64(data.artworkPrompt || prompt, false, 1);
     for (let idx = 1; idx <= 4; idx++) {
-      const artworkUrl = await fetchLayer2AssetBase64(safeArtworkPrompt, false, idx);
+      const wrapUrl = (idx === 1 && heroArtworkUrl)
+        ? heroArtworkUrl
+        : generateFallbackBackground(primary, accent, idx);
+
       renderVariations.push({
         id: `var-v2-${idx}`,
-        title: `${data.directions?.[0]?.title || 'Hero'} - Packshot ${idx}`,
-        backgroundUrl: artworkUrl || generateFallbackBackground(primary, "#ffffff"),
-        v2Layout: {
-          frontImage: artworkUrl,
-          leftText: data.leftPanelText,
-          rightText: data.rightPanelText,
-          barcodeUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/UPC-A-036000291452.svg'
-        }
+        title: `${data.directions?.[0]?.title || 'Packaging Concept'} - Wrap ${idx}`,
+        backgroundUrl: wrapUrl,
+        url: wrapUrl,
+        isWrap: true,
+        aspectRatio: "1:1"
       });
-      if (idx < 4) await new Promise(r => setTimeout(r, 1000));
     }
   }
 

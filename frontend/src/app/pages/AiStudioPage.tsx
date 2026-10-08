@@ -54,8 +54,17 @@ interface AiStudioPageProps {
 export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioPageProps) {
   const store = useBoxStore((state: any) => state);
   
+  // Hydrate persistent state from localStorage if available
+  const savedStudioState = useMemo(() => {
+    try {
+      const s = typeof window !== 'undefined' ? localStorage.getItem('kld_ai_studio_state') : null;
+      if (s) return JSON.parse(s);
+    } catch (e) {}
+    return null;
+  }, []);
+
   // Core UI State
-  const [cardMode, setCardMode] = useState<'render' | '3d' | '2d'>('render'); // AI Render | 3D Model | 2D Dieline
+  const [cardMode, setCardMode] = useState<'render' | '3d' | '2d'>(savedStudioState?.cardMode || 'render'); // AI Render | 3D Model | 2D Dieline
   const [inputPrompt, setInputPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatThread, setChatThread] = useState<any[]>([]);
@@ -77,9 +86,9 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
     return bgDecal ? bgDecal.url : null;
   }, [currentDecals]);
 
-  const [activeBackgroundUrl, setActiveBackgroundUrl] = useState<string | null>(null);
-  const [activeIconUrl, setActiveIconUrl] = useState<string | null>(null);
-  const [activeTypography, setActiveTypography] = useState<any>(null);
+  const [activeBackgroundUrl, setActiveBackgroundUrl] = useState<string | null>(savedStudioState?.activeBackgroundUrl || null);
+  const [activeIconUrl, setActiveIconUrl] = useState<string | null>(savedStudioState?.activeIconUrl || null);
+  const [activeTypography, setActiveTypography] = useState<any>(savedStudioState?.activeTypography || null);
 
   // If no background is actively set, but we have one in the store, use it for the AI 2D view
   const displayBackgroundUrl = activeBackgroundUrl || initialBgUrl;
@@ -92,10 +101,55 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   // Per-prompt box tracking (Pacdora-accurate routing)
-  const [activeBoxModel, setActiveBoxModel] = useState<string>('rte');
-  const [activeBoxColor, setActiveBoxColor] = useState<string>('#18181b');
-  const [activeDims_mm, setActiveDims_mm] = useState({ L: 120, W: 80, H: 200 });
+  const [activeBoxModel, setActiveBoxModel] = useState<string>(savedStudioState?.activeBoxModel || store.boxModel || 'rte');
+  const [activeBoxColor, setActiveBoxColor] = useState<string>(savedStudioState?.activeBoxColor || store.packageColor || '#18181b');
+  const [activeDims_mm, setActiveDims_mm] = useState(savedStudioState?.activeDims_mm || { L: 120, W: 80, H: 200 });
   const [activeArtworkFace, setActiveArtworkFace] = useState<string>('front');
+
+  // Keep activeBoxModel in sync whenever store.boxModel changes
+  useEffect(() => {
+    if (store.boxModel && store.boxModel !== activeBoxModel) {
+      setActiveBoxModel(store.boxModel);
+    }
+  }, [store.boxModel]);
+
+  const handleApplyBoxModel = (model: string, dimsIn?: any, dimsMm?: any) => {
+    setActiveBoxModel(model);
+    if (store.setBoxModel) {
+      store.setBoxModel(model);
+    }
+    if (dimsIn && store.setDim) {
+      store.setDim('L', dimsIn.L);
+      store.setDim('W', dimsIn.W);
+      store.setDim('H', dimsIn.H);
+    }
+    if (dimsMm) {
+      setActiveDims_mm(dimsMm);
+    } else if (dimsIn) {
+      setActiveDims_mm({
+        L: Math.round(dimsIn.L * 25.4),
+        W: Math.round(dimsIn.W * 25.4),
+        H: Math.round(dimsIn.H * 25.4)
+      });
+    }
+    // Switch canvas immediately to 3D mode so user sees the box in 3D
+    setCardMode('3d');
+  };
+
+  // Save studio state whenever it updates
+  useEffect(() => {
+    try {
+      localStorage.setItem('kld_ai_studio_state', JSON.stringify({
+        activeBackgroundUrl,
+        activeIconUrl,
+        activeTypography,
+        activeBoxModel,
+        activeBoxColor,
+        activeDims_mm,
+        cardMode
+      }));
+    } catch (e) {}
+  }, [activeBackgroundUrl, activeIconUrl, activeTypography, activeBoxModel, activeBoxColor, activeDims_mm, cardMode]);
   
   // AI Second Edit State
   const [selectedPanel, setSelectedPanel] = useState<'Front' | 'Back' | 'Left' | 'Right'>('Front');
@@ -108,72 +162,80 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
 
 
   // Helper to construct AI compositor decals locally
-  const syncDecalsToStore = (bgUrl: string, iconUrl: string, typography: any) => {
+  // Helper to construct AI full-bleed wrap decals on dieline & 3D model
+  const syncDecalsToStore = (bgUrl: string, iconUrl?: string, typography?: any) => {
+    if (!bgUrl) return;
     const W = store.W || 2.36;
     const H = store.H || 6.29;
     const L = store.L || 4.72;
-    const glue = 0.625;
+    const glue = store.glueFlapWidth || 0.625;
 
-    // Use inches (the store's native unit) for layout math
+    // Full dieline span across all panels
     const totalW = glue + L * 2 + W * 2;
-    const yTop = W + 0.625; // average lip+dust
-    const yBot = yTop + H;
+    const yTop = W + 0.625;
+    const totalH = H + W * 2 + 1.25;
     const xCenter = totalW / 2;
     const yCenter = yTop + (H / 2);
 
-    // Front panel center for logo/typography
-    const frontX = glue + L / 2;
-    const frontY = yCenter;
+    const wrapDecal = {
+      id: 'ai-wrap-' + Date.now(),
+      type: 'image',
+      url: bgUrl,
+      width: totalW,
+      height: totalH,
+      x: xCenter,
+      y: yCenter,
+      surface: 'Outside',
+      isWrap: true
+    };
 
-    const existingDecals = (store.aiDecalsByModel && store.aiDecalsByModel[store.boxModel]) || [];
-    const preserved = existingDecals.filter((d: any) => !['ai-bg', 'ai-icon', 'ai-typo'].includes(d.id));
+    const newDecals: any[] = [wrapDecal];
 
-    const newDecals: any[] = [...preserved];
-
-    if (bgUrl) {
-      // Massive full-bleed texture. Center it on the FRONT panel so the main subject is visible on the front!
-      // Width is doubled so it safely wraps around the back and sides without clipping.
-      newDecals.push({
-        id: 'ai-bg', type: 'image', url: bgUrl, 
-        width: totalW * 2, height: (yBot - yTop) + W * 2, 
-        x: frontX, y: yCenter,
-        surface: 'Outside'
-      });
-    }
-
-    if (iconUrl) {
-      newDecals.push({
-        id: 'ai-icon', type: 'image', url: iconUrl,
-        width: L * 0.5, height: L * 0.5,
-        x: frontX, y: frontY - (H * 0.15),
-        surface: 'Outside'
-      });
-    }
-
+    // Optional user-specified typography on front panel
     if (typography && typography.brandName) {
+      const frontX = glue + L / 2;
       newDecals.push({
-        id: 'ai-typo', type: 'text', content: typography.brandName,
+        id: 'ai-typo',
+        type: 'text',
+        content: typography.brandName,
         fontFamily: typography.fontStyle || 'sans-serif',
         color: typography.color || '#ffffff',
         bold: true,
-        fontSize: Math.max(0.2, H * 0.05), // scaled font size
-        x: frontX, y: frontY + (H * 0.2),
-        width: L * 0.8, height: H * 0.2,
+        fontSize: Math.max(0.2, H * 0.05),
+        x: frontX,
+        y: yCenter,
+        width: L * 0.8,
+        height: H * 0.2,
         surface: 'Outside',
         textAlign: 'center'
       });
     }
 
     store.setAiDecals(newDecals);
+    if (typeof store.setDecals === 'function') {
+      store.setDecals(newDecals);
+    }
   };
 
+  // Restore compositor decals on initial mount if saved background is present
+  useEffect(() => {
+    if (savedStudioState?.activeBackgroundUrl) {
+      syncDecalsToStore(
+        savedStudioState.activeBackgroundUrl,
+        savedStudioState.activeIconUrl,
+        savedStudioState.activeTypography
+      );
+    }
+  }, []);
+
   const handleApplyVariationTo3DModel = (variation: any) => {
-    setActiveBackgroundUrl(variation.backgroundUrl);
+    const bgUrl = variation.backgroundUrl || variation.url;
+    setActiveBackgroundUrl(bgUrl);
     setActiveIconUrl(variation.iconUrl || null);
     setActiveTypography(variation.typography || null);
 
-    // Automatically extract the color from the generated image (design)
-    if (variation.backgroundUrl) {
+    // Automatically extract dominant color from the design
+    if (bgUrl) {
       const img = new Image();
       img.crossOrigin = "Anonymous";
       img.onload = () => {
@@ -181,7 +243,6 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         
-        // Sample edges of the image to get the true background color (avoiding the center subject)
         canvas.width = 50;
         canvas.height = 50;
         ctx.drawImage(img, 0, 0, 50, 50);
@@ -190,10 +251,9 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
           const data = ctx.getImageData(0, 0, 50, 50).data;
           let r = 0, g = 0, b = 0, count = 0;
           
-          // Sample the border pixels to find the most dominant background color
           for (let y = 0; y < 50; y++) {
             for (let x = 0; x < 50; x++) {
-              if (x < 5 || x > 45 || y < 5 || y > 45) { // Edge pixels
+              if (x < 5 || x > 45 || y < 5 || y > 45) {
                 const idx = (y * 50 + x) * 4;
                 r += data[idx];
                 g += data[idx + 1];
@@ -217,60 +277,11 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
           console.warn("Could not extract color automatically:", e);
         }
       };
-      img.src = variation.backgroundUrl;
+      img.src = bgUrl;
     }
 
-    if (variation.v2Layout) {
-      const W_in = store.W || 2.36;
-      const H_in = store.H || 6.29;
-      const L_in = store.L || 4.72;
-      const layout = variation.v2Layout;
-      const v2Decals = [];
-
-      // Calculate 2D canvas coordinates
-      const glue = 0.5;
-      const yTop = W_in + 0.625;
-      const yCenter = yTop + (H_in / 2);
-
-      // Standard box panel horizontal order assumed: Glue -> Front -> Right -> Back -> Left
-      const frontX = glue + (L_in / 2);
-      const rightX = glue + L_in + (W_in / 2);
-      const backX = glue + L_in + W_in + (L_in / 2);
-      const leftX = glue + (L_in * 2) + W_in + (W_in / 2);
-
-      if (layout.frontImage) {
-        // Keep 1:1 aspect ratio by using the max dimension
-        const imgSize = Math.max(L_in, H_in) * 1.1; 
-        v2Decals.push({ 
-          id: 'v2-f-' + Date.now(), type: 'image', url: layout.frontImage, 
-          width: imgSize, height: imgSize, x: frontX, y: yCenter, surface: 'Outside' 
-        });
-      }
-      if (layout.leftText?.title) {
-        v2Decals.push({ 
-          id: 'v2-l-' + Date.now(), type: 'text', content: layout.leftText.title + '\n\n' + (layout.leftText.body || ''), 
-          width: W_in * 0.8, height: H_in * 0.8, x: leftX, y: yCenter, 
-          fontSize: Math.max(0.1, H_in * 0.025), color: '#ffffff', fontFamily: 'sans-serif', textAlign: 'center', surface: 'Outside', bold: true
-        });
-      }
-      if (layout.rightText?.title) {
-        v2Decals.push({ 
-          id: 'v2-r-' + Date.now(), type: 'text', content: layout.rightText.title + '\n\n' + (layout.rightText.body || ''), 
-          width: W_in * 0.8, height: H_in * 0.8, x: rightX, y: yCenter, 
-          fontSize: Math.max(0.1, H_in * 0.025), color: '#ffffff', fontFamily: 'sans-serif', textAlign: 'center', surface: 'Outside', bold: true 
-        });
-      }
-      if (layout.barcodeUrl) {
-        v2Decals.push({ 
-          id: 'v2-b-' + Date.now(), type: 'image', url: layout.barcodeUrl, 
-          width: L_in * 0.4, height: L_in * 0.4, x: backX, y: yCenter + (H_in * 0.3), surface: 'Outside' 
-        });
-      }
-
-      store.setAiDecals(v2Decals);
-    } else {
-      syncDecalsToStore(variation.backgroundUrl, variation.iconUrl, variation.typography);
-    }
+    // Apply the full-bleed continuous wrap decal across the entire box
+    syncDecalsToStore(bgUrl, variation.iconUrl, variation.typography);
   };
 
 
@@ -359,7 +370,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                     onDoubleClick={() => setIsEditorOpen(true)}
                   >
                     <Box3DViewer
-                      boxModelOverride={activeBoxModel}
+                      boxModelOverride={store.boxModel || activeBoxModel}
                       overrideLayout="single"
                       L={store.L}
                       W={store.W}
@@ -400,7 +411,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                         L_override={activeDims_mm.L}
                         W_override={activeDims_mm.W}
                         H_override={activeDims_mm.H}
-                        model_override={activeBoxModel}
+                        model_override={store.boxModel || activeBoxModel}
                       />
                     </div>
                   </div>
@@ -503,7 +514,12 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
 
         {/* --- RIGHT SIDEBAR ("AI packaging design") --- */}
         <div style={{ width: '420px', borderLeft: '1px solid #e4e4e7', background: '#fcfcfc', display: 'flex', flexDirection: 'column' }}>
-          <AiPackagingAssistant useStore={useBoxStore} isOpen={true} onApplyVariation={handleApplyVariationTo3DModel} />
+          <AiPackagingAssistant 
+            useStore={useBoxStore} 
+            isOpen={true} 
+            onApplyVariation={handleApplyVariationTo3DModel} 
+            onApplyBoxModel={handleApplyBoxModel}
+          />
         </div>
       </div>
 
