@@ -18,7 +18,7 @@ const DEFAULT_CATALOG_ITEMS = [
       { id: 2, name: 'Tuck End Box', animation: 'Flaps fold in same direction', imageUrl: '/images/boxes/ste_white.jpg', whiteImageUrl: '/images/boxes/ste_white.jpg', kraftImageUrl: '/images/boxes/ste_kraft.jpg', boxModelKey: 'te', gridSize: 'large' },
       { id: 3, name: 'Auto Lock Bottom Box', animation: 'Bottom flaps lock automatically', imageUrl: '/images/boxes/auto_white.jpg', whiteImageUrl: '/images/boxes/auto_white.jpg', kraftImageUrl: '/images/boxes/auto_kraft.jpg', boxModelKey: 'auto_lock', gridSize: 'large' },
       { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
-      { id: 5, name: 'Cosmetic Box B (Mailer/Tray Style)', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
+      { id: 5, name: 'Mailer / Tray Box', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
       { id: 6, name: 'Button Hole Box', animation: 'Snap lock 1-2-3 bottom and button hole notch', imageUrl: '/images/boxes/button_hole_white.jpg', whiteImageUrl: '/images/boxes/button_hole_white.jpg', kraftImageUrl: '/images/boxes/button_hole_kraft.jpg', boxModelKey: 'button_hole', gridSize: 'large' },
     ],
   },
@@ -411,11 +411,11 @@ const ensureCatalogSeeded = async () => {
     } else {
       const boxItem = await CatalogItem.findOne({ itemId: 'box-mockups' });
       if (boxItem) {
-        const hasCosmeticB = boxItem.variants && boxItem.variants.some(v => v.boxModelKey === 'cosmetic_b' || (v.name && v.name.includes('Cosmetic Box B')));
-        if (!hasCosmeticB) {
+        const cosmeticBVariant = boxItem.variants && boxItem.variants.find(v => v.boxModelKey === 'cosmetic_b');
+        if (!cosmeticBVariant) {
           boxItem.variants.push({
             id: 5,
-            name: 'Cosmetic Box B (Mailer/Tray Style)',
+            name: 'Mailer / Tray Box',
             animation: 'Roll end tray and tuck front closure',
             imageUrl: '/images/boxes/cosmetic_b_white.jpg',
             whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg',
@@ -425,7 +425,11 @@ const ensureCatalogSeeded = async () => {
           });
           await boxItem.save();
           invalidateCatalogCache();
-          console.log('🌱 Added Cosmetic Box B (Mailer/Tray Style) to box-mockups in database');
+          console.log('🌱 Added Mailer / Tray Box to box-mockups in database');
+        } else if (cosmeticBVariant.name !== 'Mailer / Tray Box') {
+          cosmeticBVariant.name = 'Mailer / Tray Box';
+          await boxItem.save();
+          invalidateCatalogCache();
         }
 
         const hasButtonHole = boxItem.variants && boxItem.variants.some(v => v.boxModelKey === 'button_hole' || (v.name && v.name.includes('Button Hole')));
@@ -472,10 +476,11 @@ const getPublicCatalog = async (req, res) => {
     // Ensure box-mockups has cosmetic_b and button_hole variants
     const boxMockup = items.find(i => i.itemId === 'box-mockups');
     if (boxMockup && boxMockup.variants) {
-      if (!boxMockup.variants.some(v => v.boxModelKey === 'cosmetic_b')) {
+      const cB = boxMockup.variants.find(v => v.boxModelKey === 'cosmetic_b');
+      if (!cB) {
         boxMockup.variants.push({
           id: 5,
-          name: 'Cosmetic Box B (Mailer/Tray Style)',
+          name: 'Mailer / Tray Box',
           animation: 'Roll end tray and tuck front closure',
           imageUrl: '/images/boxes/cosmetic_b_white.jpg',
           whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg',
@@ -483,6 +488,8 @@ const getPublicCatalog = async (req, res) => {
           boxModelKey: 'cosmetic_b',
           gridSize: 'large'
         });
+      } else {
+        cB.name = 'Mailer / Tray Box';
       }
       if (!boxMockup.variants.some(v => v.boxModelKey === 'button_hole')) {
         boxMockup.variants.push({

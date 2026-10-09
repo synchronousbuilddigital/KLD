@@ -1,7 +1,7 @@
 /**
  * CosmeticBBox3DViewer.jsx
  * ─────────────────────────────────────────────────────────────────────────────
- * 3D viewer for Cosmetic Box B (Mailer / Tray Style - Roll End Tuck Front).
+ * 3D viewer for Mailer / Tray Box (Roll End Tuck Front).
  * Reconstructed with realistic packaging kinematic hierarchy:
  *
  *   Tray Base (Y=0, Z=0) is stationary ground anchor.

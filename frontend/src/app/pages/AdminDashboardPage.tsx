@@ -3367,6 +3367,7 @@ function AdminDashboardPage({ onBack }: { onBack: () => void }) {
                   <option value="te">Straight Tuck End Box (te)</option>
                   <option value="auto_lock">Auto Lock Bottom Box (auto_lock)</option>
                   <option value="cosmetic">Cosmetic Box (cosmetic)</option>
+                  <option value="cosmetic_b">Mailer / Tray Box (cosmetic_b)</option>
                 </select>
                 <div style={{ fontSize: '0.75rem', color: '#71717a', marginTop: '4px' }}>
                   Determines which 3D model opens when users click "Custom" or "3D design" on the catalog page.

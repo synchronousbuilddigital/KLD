@@ -187,7 +187,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isRTE = !isBottle && !isCan && !isTube && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
   const isAuto = !isBottle && !isCan && !isTube && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
   const isCosmetic = !isBottle && !isCan && !isTube && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
-  const isCosmeticB = !isBottle && !isCan && !isTube && (variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
+  const isCosmeticB = !isBottle && !isCan && !isTube && (variant.name === 'Mailer / Tray Box' || variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
   const isButtonHole = !isBottle && !isCan && !isTube && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
   const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
   const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');

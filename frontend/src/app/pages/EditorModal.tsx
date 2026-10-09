@@ -163,7 +163,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
         store.boxModel === 'te' ? 'Straight Tuck End Box' :
         store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
-        store.boxModel === 'cosmetic_b' ? 'Cosmetic Box B (Mailer/Tray Style)' :
+        store.boxModel === 'cosmetic_b' ? 'Mailer / Tray Box' :
         store.boxModel === 'button_hole' ? 'Button Hole Box' :
         store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 

@@ -378,7 +378,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
               else if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
               else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
               else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
-              else if (boxModel === 'cosmetic_b') categoryName = 'Cosmetic Box B (Mailer/Tray Style)';
+              else if (boxModel === 'cosmetic_b') categoryName = 'Mailer / Tray Box';
               else if (boxModel === 'cosmetic') categoryName = 'Cosmetic Box';
               else categoryName = 'Custom Packaging Box';
             }
@@ -448,7 +448,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 else if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
                 else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
                 else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
-                else if (boxModel === 'cosmetic_b') categoryName = 'Cosmetic Box B (Mailer/Tray Style)';
+                else if (boxModel === 'cosmetic_b') categoryName = 'Mailer / Tray Box';
                 else if (boxModel === 'cosmetic') categoryName = 'Cosmetic Box';
                 else categoryName = 'Custom Packaging Box';
               }

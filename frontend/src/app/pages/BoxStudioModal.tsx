@@ -198,7 +198,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     rte: "Reverse Tuck End Box",
     auto_lock: "Auto Lock Bottom Box",
     cosmetic: "Cosmetic Box",
-    cosmetic_b: "Cosmetic Box B (Mailer/Tray Style)",
+    cosmetic_b: "Mailer / Tray Box",
     button_hole: "Button Hole Box"
   };
 

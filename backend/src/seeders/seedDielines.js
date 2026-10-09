@@ -53,7 +53,7 @@ const dielineModels = [
   },
   {
     itemId: 'cosmetic_b',
-    title: 'Cosmetic Box B (Mailer/Tray)',
+    title: 'Mailer / Tray Box',
     subtitle: 'Vector CAD Blueprint • 3D Studio',
     img: '/images/boxes/cosmetic_b_white.jpg',
     dieline2DImg: '/images/dielines/cosmetic_b.svg',

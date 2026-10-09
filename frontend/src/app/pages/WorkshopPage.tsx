@@ -117,7 +117,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
       currentModel === 'rte' ? 'Reverse Tuck End Box' :
       currentModel === 'te' ? 'Straight Tuck End Box' :
       currentModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
-      currentModel === 'cosmetic_b' ? 'Cosmetic Box B (Mailer/Tray Style)' :
+      currentModel === 'cosmetic_b' ? 'Mailer / Tray Box' :
       currentModel === 'button_hole' ? 'Button Hole Box' :
       currentModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 

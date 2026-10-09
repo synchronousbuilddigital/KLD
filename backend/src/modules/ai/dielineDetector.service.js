@@ -73,7 +73,7 @@ const DIRECTORY_BOXES = [
   {
     itemId: 'cosmetic_b',
     boxModelKey: 'cosmetic_b',
-    name: 'Cosmetic Box B (Mailer / Tray Style)',
+    name: 'Mailer / Tray Box',
     subtitle: 'Roll End Tuck Top (RETT) • Double-Wall Mailer Tray',
     description: 'Unibody roll-end tuck front (RETT) mailer box. Flat, wide die-cut footprint with double-thickness roll-over side walls, base tray, and hinged locking lid.',
     dieline2DImg: '/images/dielines/cosmetic_b.svg',
@@ -382,11 +382,11 @@ function extractDimensionsAndHintsFromText(text) {
 
   const lower = text.toLowerCase();
   const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock');
-  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('cosmetic_b') || lower.includes('pizza') || lower.includes('shoebox');
+  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('pizza') || lower.includes('shoebox');
   const isButtonHole = lower.includes('button') || lower.includes('snaplock') || lower.includes('1-2-3');
   const isRte = lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('reverse_tuck') || (/\brte\b/i).test(lower);
   const isSte = !isRte && (lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('straight_tuck') || (/\bste\b/i).test(lower));
-  const isSlender = !isAutoLock && !isMailer && !isRte && (lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall') || lower.includes('cosmetic_slender'));
+  const isSlender = !isAutoLock && !isMailer && !isRte && (lower.includes('cosmetic') || lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall'));
 
   const hints = {
     isSlender,
@@ -533,9 +533,9 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     scores.auto_lock += 65;
     detectedSignatures.push('Profile hints Auto-Lock / Crash Bottom');
   }
-  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('rollover') || lowerName.includes('tray') || lowerName.includes('two_piece') || (/\blid\b/i).test(lowerName) || lowerName.includes('pizza')) {
+  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('mailer') || lowerName.includes('rollover') || lowerName.includes('tray') || lowerName.includes('two_piece') || (/\blid\b/i).test(lowerName) || lowerName.includes('pizza')) {
     scores.cosmetic_b += 70;
-    detectedSignatures.push('Profile hints Cosmetic Box B / Mailer Roll-End Tray');
+    detectedSignatures.push('Profile hints Mailer / Tray Box');
   }
   if (geo.hints?.isSlender || (!geo.hints?.isAutoLock && !geo.hints?.isMailer && !geo.hints?.isRte && (lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('cosmetic') || lowerName.includes('serum') || lowerName.includes('tall') || lowerName.includes('lipstick')))) {
     scores.cosmetic += 65;
@@ -558,7 +558,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     detectedSignatures.push(`Detected ${geo.diagonalCreaseCount || 4} diagonal (45°) crease fold lines typical of an auto-lock crash bottom`);
   }
 
-  // 3. Check for Cosmetic Box B (Mailer / Roll End Tray - unibody wings, or wide footprint)
+  // 3. Check for Mailer / Tray Box (Roll End Tray - unibody wings, or wide footprint)
   const isHorizTray = (geo.leftToRightRatio && geo.leftToRightRatio >= 1.15) || (geo.rightToLeftRatio && geo.rightToLeftRatio >= 1.15);
   const isVertTray = (geo.bottomToTopRatio && geo.bottomToTopRatio >= 1.15) || (geo.topToBottomRatio && geo.topToBottomRatio >= 1.15);
   if (!geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && (geo.isMailerOrTray || isHorizTray || isVertTray || (geo.aspectRatio > 1.38 && !geo.diagonalCreaseCount && !geo.hints?.isRte))) {
@@ -931,7 +931,7 @@ We have exactly 6 specific box models in our directory:
 2. "te" - Straight Tuck End Box (folding carton, top & bottom flaps fold in the SAME direction)
 3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases)
 4. "cosmetic" - Cosmetic Box (tall, slender rectangular carton, high aspect ratio for perfumes/serums)
-5. "cosmetic_b" - Cosmetic Box B (Mailer / Tray Style, wide roll-end unibody tray with hinged lid and side roll-over wings)
+5. "cosmetic_b" - Mailer / Tray Box (wide roll-end unibody tray with hinged lid and side roll-over wings)
 6. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 
 Examine the dieline cuts, crease lines, flap placements, and proportions.

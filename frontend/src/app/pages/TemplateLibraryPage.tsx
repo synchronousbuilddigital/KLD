@@ -228,7 +228,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
                         <button onClick={() => setSelectedBoxModel('rte')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Reverse Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('auto_lock')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Auto Lock Bottom Box</button>
                         <button onClick={() => setSelectedBoxModel('cosmetic')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Cosmetic Box</button>
-                        <button onClick={() => setSelectedBoxModel('cosmetic_b')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-indigo-600 font-semibold hover:bg-indigo-50">Cosmetic Box B (Mailer/Tray)</button>
+                        <button onClick={() => setSelectedBoxModel('cosmetic_b')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-indigo-600 font-semibold hover:bg-indigo-50">Mailer / Tray Box</button>
                       </div>
                     </motion.div>
                   )}
@@ -257,7 +257,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
               <TemplateDetailCard title="Reverse Tuck End Box" type="reverse" onClick={() => setSelectedBoxModel('rte')} />
               <TemplateDetailCard title="Auto Lock Bottom Box" type="auto_lock" onClick={() => setSelectedBoxModel('auto_lock')} />
               <TemplateDetailCard title="Cosmetic Box" type="cosmetic" onClick={() => setSelectedBoxModel('cosmetic')} />
-              <TemplateDetailCard title="Cosmetic Box B (Mailer/Tray)" type="cosmetic_b" onClick={() => setSelectedBoxModel('cosmetic_b')} />
+              <TemplateDetailCard title="Mailer / Tray Box" type="cosmetic_b" onClick={() => setSelectedBoxModel('cosmetic_b')} />
             </div>
           </div>
 
