@@ -131,13 +131,15 @@ function parseDxfEntities(dxfText) {
           inEntitiesSection = false;
           if (currentEntity) entities.push(currentEntity);
           currentEntity = null;
-        } else if (inEntitiesSection || ['LINE', 'ARC', 'CIRCLE', 'LWPOLYLINE', 'POLYLINE', 'SPLINE'].includes(uVal)) {
+        } else if (inEntitiesSection || ['LINE', 'ARC', 'CIRCLE', 'LWPOLYLINE', 'POLYLINE', 'SPLINE', 'TEXT', 'MTEXT'].includes(uVal)) {
           if (currentEntity) entities.push(currentEntity);
           currentEntity = { type: uVal, layer: '0', points: [] };
         }
       } else if (currentEntity) {
         if (currentGroupCode === 8) {
           currentEntity.layer = val.toLowerCase();
+        } else if (currentGroupCode === 1 && (currentEntity.type === 'TEXT' || currentEntity.type === 'MTEXT')) {
+          currentEntity.text = val;
         } else if (currentGroupCode === 10) {
           currentEntity.x1 = parseFloat(val);
         } else if (currentGroupCode === 20) {
@@ -164,7 +166,10 @@ function parseDxfEntities(dxfText) {
 /**
  * Geometric analysis of DXF entities
  */
-function analyzeDxfGeometry(entities, rawText = '') {
+/**
+ * Geometric analysis of DXF entities
+ */
+function analyzeDxfGeometry(entities, dxfAnnotations = '', filename = '') {
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   let lineCount = 0;
   let circleOrArcCount = 0;
@@ -186,7 +191,7 @@ function analyzeDxfGeometry(entities, rawText = '') {
 
         const isCrease = ent.layer.includes('crease') || ent.layer.includes('fold') || ent.layer.includes('score');
         if (isCrease) creases.push(ent);
-        else cuts.push(ent);
+        else if (!ent.layer.includes('bleed')) cuts.push(ent);
 
         const dx = Math.abs(x2 - x1);
         const dy = Math.abs(y2 - y1);
@@ -195,7 +200,6 @@ function analyzeDxfGeometry(entities, rawText = '') {
         if (len > 0.5) {
           const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
           // IMPORTANT: Only check diagonal angles on fold/crease lines for auto-lock bottoms
-          // Outer cut flap chamfers and bevels are always angled in any box
           if (isCrease && (Math.abs(angleDeg - 45) < 14 || Math.abs(angleDeg - 135) < 14)) {
             diagonalCreaseCount++;
           }
@@ -223,16 +227,26 @@ function analyzeDxfGeometry(entities, rawText = '') {
   const height = Math.max(1, maxY - minY);
   const aspectRatio = width / height;
 
-  // Vertical panel creases (partition the 4 panels)
-  const vCreases = creases.filter(c => Math.abs(c.x1 - c.x2) < 2.5 && Math.abs(c.y1 - c.y2) > 25);
+  // Extract dimensions and hints from annotations or filename
+  const { extractedDims, hints } = extractDimensionsAndHintsFromText(dxfAnnotations + ' ' + filename);
+
+  // Vertical panel creases (partition panels)
+  const vCreases = creases.filter(c => Math.abs(c.x1 - c.x2) < 2.5 && Math.abs(c.y1 - c.y2) > 20);
   const vXs = [...new Set(vCreases.map(c => Math.round((c.x1 + c.x2) / 2)))].sort((a, b) => a - b);
 
   // Horizontal creases (top & bottom panel fold lines)
-  const hCreases = creases.filter(c => Math.abs(c.y1 - c.y2) < 2.5 && Math.abs(c.x1 - c.x2) > 25);
+  const hCreases = creases.filter(c => Math.abs(c.y1 - c.y2) < 2.5 && Math.abs(c.x1 - c.x2) > 20);
 
   // Detect Button Hole / Thumb notch cutout
-  let hasButtonNotch = circleOrArcCount > 0;
+  let hasButtonNotch = false;
   let isButtonHoleStructure = false;
+
+  // Closed CIRCLE thumb-hole cutout (radius between 5mm and 30mm)
+  const thumbHoles = entities.filter(e => e.type === 'CIRCLE' && e.radius >= 5 && e.radius <= 30);
+  if (thumbHoles.length > 0) {
+    hasButtonNotch = true;
+    isButtonHoleStructure = true;
+  }
 
   // 1. Analyze Panel 3 for thumb notch dip
   if (vXs.length >= 3) {
@@ -287,14 +301,15 @@ function analyzeDxfGeometry(entities, rawText = '') {
     }
   }
 
-  // 3. Fallback text check
-  const lowerText = rawText.toLowerCase();
-  if (lowerText.includes('button_hole') || lowerText.includes('button hole') || lowerText.includes('snaplock_notch')) {
+  // 3. Fallback text check from annotations or filename
+  const lowerText = (dxfAnnotations + ' ' + filename).toLowerCase();
+  if (hints.isButtonHole || lowerText.includes('button_hole') || lowerText.includes('button hole') || lowerText.includes('snaplock') || lowerText.includes('1-2-3')) {
     hasButtonNotch = true;
+    isButtonHoleStructure = true;
   }
 
   // Mailer / Tray check
-  const isMailerOrTray = vXs.length >= 8 || (aspectRatio > 1.35 && cuts.length > 2000 && diagonalCreaseCount === 0 && !hasButtonNotch);
+  const isMailerOrTray = hints.isMailer || (!hints.isRte && !hints.isSte && !hints.isAutoLock && (vXs.length >= 12 || (aspectRatio > 1.35 && cuts.length > 500 && diagonalCreaseCount === 0 && !hasButtonNotch)));
 
   // Extracted body dimensions from CAD crease topology
   let extractedH = 0;
@@ -329,7 +344,9 @@ function analyzeDxfGeometry(entities, rawText = '') {
     vXs,
     extractedH,
     extractedL,
-    extractedW
+    extractedW,
+    extractedDims,
+    hints
   };
 }
 
@@ -338,12 +355,19 @@ function analyzeDxfGeometry(entities, rawText = '') {
  */
 function extractDimensionsAndHintsFromText(text) {
   if (!text) return { extractedDims: null, hints: {} };
-  const dimRegex = /(?:dims?|dimensions?|size)?[:\s\(]*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(mm|in|cm)?/i;
+  const dimRegex = /(?:dims?|dimensions?|size)?[:\s\(_]*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(?:_|-|\s)*(mm|in|cm)?/i;
   const m = text.match(dimRegex);
   let extractedDims = null;
   if (m) {
     let d1 = parseFloat(m[1]), d2 = parseFloat(m[2]), d3 = parseFloat(m[3]);
-    const unit = (m[4] || 'mm').toLowerCase();
+    let unit = (m[4] || '').toLowerCase();
+    if (!unit) {
+      if (text.toLowerCase().includes('_in') || text.toLowerCase().includes('in.dxf') || text.toLowerCase().includes('in.') || (d1 < 30 && d2 < 30 && d3 < 30)) {
+        unit = 'in';
+      } else {
+        unit = 'mm';
+      }
+    }
     if (unit === 'in') {
       d1 = Math.round(d1 * 25.4 * 10) / 10;
       d2 = Math.round(d2 * 25.4 * 10) / 10;
@@ -358,16 +382,19 @@ function extractDimensionsAndHintsFromText(text) {
 
   const lower = text.toLowerCase();
   const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock');
-  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || lower.includes('lid') || lower.includes('cosmetic_b') || lower.includes('pizza') || lower.includes('shoebox');
-  const isSlender = !isAutoLock && !isMailer && (lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall') || lower.includes('cosmetic_slender'));
+  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('cosmetic_b') || lower.includes('pizza') || lower.includes('shoebox');
+  const isButtonHole = lower.includes('button') || lower.includes('snaplock') || lower.includes('1-2-3');
+  const isRte = lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('reverse_tuck') || (/\brte\b/i).test(lower);
+  const isSte = !isRte && (lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('straight_tuck') || (/\bste\b/i).test(lower));
+  const isSlender = !isAutoLock && !isMailer && !isRte && (lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall') || lower.includes('cosmetic_slender'));
 
   const hints = {
     isSlender,
     isAutoLock,
     isMailer,
-    isButtonHole: lower.includes('button') || lower.includes('notch') || lower.includes('snap') || lower.includes('1-2-3'),
-    isRte: lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('rte'),
-    isSte: lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('ste')
+    isButtonHole,
+    isRte,
+    isSte
   };
 
   return { extractedDims, hints };
@@ -494,35 +521,35 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   const detectedSignatures = [];
 
   // Filename & text keyword hints
-  if (geo.hints?.isRte || lowerName.includes('rte') || lowerName.includes('reverse_tuck') || lowerName.includes('reverse-tuck')) {
-    scores.rte += 40;
+  if (geo.hints?.isRte || lowerName.includes('rte') || lowerName.includes('reverse_tuck') || lowerName.includes('reverse-tuck') || lowerName.includes('reverse tuck')) {
+    scores.rte += 60;
     detectedSignatures.push('Profile hints Reverse Tuck End (RTE)');
   }
-  if (geo.hints?.isSte || lowerName.includes('ste') || lowerName.includes('straight_tuck') || lowerName.includes('te_') || lowerName.includes('tuck_end')) {
-    scores.te += 40;
+  if (!geo.hints?.isRte && !lowerName.includes('reverse') && (geo.hints?.isSte || (/\bste\b/i).test(lowerName) || lowerName.includes('straight_tuck') || lowerName.includes('straight-tuck') || lowerName.includes('straight tuck') || lowerName.includes('te_'))) {
+    scores.te += 60;
     detectedSignatures.push('Profile hints Straight Tuck End (STE)');
   }
   if (geo.hints?.isAutoLock || lowerName.includes('auto') || lowerName.includes('autolock') || lowerName.includes('crash')) {
     scores.auto_lock += 65;
     detectedSignatures.push('Profile hints Auto-Lock / Crash Bottom');
   }
-  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('tray') || lowerName.includes('two_piece') || lowerName.includes('lid') || lowerName.includes('pizza')) {
+  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('rollover') || lowerName.includes('tray') || lowerName.includes('two_piece') || (/\blid\b/i).test(lowerName) || lowerName.includes('pizza')) {
     scores.cosmetic_b += 70;
     detectedSignatures.push('Profile hints Cosmetic Box B / Mailer Roll-End Tray');
   }
-  if (geo.hints?.isSlender || (!geo.hints?.isAutoLock && !geo.hints?.isMailer && (lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('cosmetic') || lowerName.includes('serum') || lowerName.includes('tall') || lowerName.includes('lipstick')))) {
+  if (geo.hints?.isSlender || (!geo.hints?.isAutoLock && !geo.hints?.isMailer && !geo.hints?.isRte && (lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('cosmetic') || lowerName.includes('serum') || lowerName.includes('tall') || lowerName.includes('lipstick')))) {
     scores.cosmetic += 65;
     detectedSignatures.push('Profile hints Cosmetic Box (Slender Tuck)');
   }
-  if (geo.hints?.isButtonHole || geo.hasButtonNotch || lowerName.includes('button') || lowerName.includes('hole') || lowerName.includes('notch') || lowerName.includes('snap')) {
+  if (geo.hints?.isButtonHole || geo.hasButtonNotch || lowerName.includes('button') || lowerName.includes('snaplock') || lowerName.includes('1-2-3')) {
     scores.button_hole += 65;
     detectedSignatures.push('Profile hints Button Hole Box');
   }
 
-  // 1. Check for Button Hole Box (Circle / Arc lock cutout or thumb notch on front panel)
-  if (geo.hasButtonNotch || geo.circleOrArcCount > 0) {
+  // 1. Check for Button Hole Box (Distinct button notch cutout or 1-2-3 snap bottom)
+  if (geo.hasButtonNotch || geo.isButtonHoleStructure) {
     scores.button_hole += 85;
-    detectedSignatures.push('Detected semicircular button notch cutout on front panel (Button Hole locking closure)');
+    detectedSignatures.push('Detected button notch cutout on closure flap (Button Hole locking closure)');
   }
 
   // 2. Check for Auto-Lock (Diagonal 45° fold crease lines on bottom crash-lock flaps)
@@ -534,7 +561,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   // 3. Check for Cosmetic Box B (Mailer / Roll End Tray - unibody wings, or wide footprint)
   const isHorizTray = (geo.leftToRightRatio && geo.leftToRightRatio >= 1.15) || (geo.rightToLeftRatio && geo.rightToLeftRatio >= 1.15);
   const isVertTray = (geo.bottomToTopRatio && geo.bottomToTopRatio >= 1.15) || (geo.topToBottomRatio && geo.topToBottomRatio >= 1.15);
-  if (!geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && (geo.isMailerOrTray || isHorizTray || isVertTray || (geo.aspectRatio > 1.38 && !geo.diagonalCreaseCount))) {
+  if (!geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && (geo.isMailerOrTray || isHorizTray || isVertTray || (geo.aspectRatio > 1.38 && !geo.diagonalCreaseCount && !geo.hints?.isRte))) {
     scores.cosmetic_b += 95;
     const ratioVal = isHorizTray ? Math.max(geo.leftToRightRatio || 1, geo.rightToLeftRatio || 1) : Math.max(geo.bottomToTopRatio || 1, geo.topToBottomRatio || 1);
     const ratioStr = (isHorizTray || isVertTray) ? `wing span asymmetry ratio ${ratioVal.toFixed(2)}` : `aspect ratio ${(geo.aspectRatio || 1).toFixed(2)}`;
@@ -570,12 +597,14 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 15)) * 100)));
 
   // Estimate physical dimensions (in mm) based on CAD creases, annotations, or templates
+  const filenameDims = extractDimensionsAndHintsFromText(filename).extractedDims;
+  const effectiveDims = geo.extractedDims || filenameDims;
   let estimatedDims = { L: 120, W: 60, H: 160, unit: 'mm' };
   const targetBox = DIRECTORY_BOXES.find(b => b.boxModelKey === bestKey);
 
   if (targetBox) {
-    if (geo.extractedDims) {
-      estimatedDims = geo.extractedDims;
+    if (effectiveDims) {
+      estimatedDims = effectiveDims;
       detectedSignatures.unshift(`Extracted exact blueprint dimensions: ${estimatedDims.L} × ${estimatedDims.W} × ${estimatedDims.H} mm`);
     } else if (bestKey === 'cosmetic_b') {
       if (lowerName.includes('pizza') || (geo.hints?.isMailer && lowerName.includes('pizza'))) {
@@ -965,7 +994,8 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
   if (ext === '.dxf') {
     const text = fileBuffer.toString('utf-8');
     const entities = parseDxfEntities(text);
-    const geo = analyzeDxfGeometry(entities, text);
+    const dxfAnnotations = entities.filter(e => e.text).map(e => e.text).join(' ');
+    const geo = analyzeDxfGeometry(entities, dxfAnnotations, filename);
     const match = matchGeometryToDirectoryBoxes(geo, filename);
 
     matchedKey = match.matchedKey;
