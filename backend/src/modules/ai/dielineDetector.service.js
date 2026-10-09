@@ -358,7 +358,7 @@ function extractDimensionsAndHintsFromText(text) {
 
   const lower = text.toLowerCase();
   const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock');
-  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || lower.includes('lid') || lower.includes('cosmetic_b');
+  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || lower.includes('lid') || lower.includes('cosmetic_b') || lower.includes('pizza') || lower.includes('shoebox');
   const isSlender = !isAutoLock && !isMailer && (lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall') || lower.includes('cosmetic_slender'));
 
   const hints = {
@@ -506,7 +506,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     scores.auto_lock += 65;
     detectedSignatures.push('Profile hints Auto-Lock / Crash Bottom');
   }
-  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('tray') || lowerName.includes('two_piece') || lowerName.includes('lid')) {
+  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('cosmetic_b') || lowerName.includes('mailer') || lowerName.includes('tray') || lowerName.includes('two_piece') || lowerName.includes('lid') || lowerName.includes('pizza')) {
     scores.cosmetic_b += 70;
     detectedSignatures.push('Profile hints Cosmetic Box B / Mailer Roll-End Tray');
   }
@@ -532,20 +532,23 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   }
 
   // 3. Check for Cosmetic Box B (Mailer / Roll End Tray - unibody wings, or wide footprint)
-  if (!geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && (geo.isMailerOrTray || (geo.bottomToTopRatio && geo.bottomToTopRatio >= 1.15) || (geo.topToBottomRatio && geo.topToBottomRatio >= 1.15) || (geo.aspectRatio > 1.38 && !geo.diagonalCreaseCount))) {
+  const isHorizTray = (geo.leftToRightRatio && geo.leftToRightRatio >= 1.15) || (geo.rightToLeftRatio && geo.rightToLeftRatio >= 1.15);
+  const isVertTray = (geo.bottomToTopRatio && geo.bottomToTopRatio >= 1.15) || (geo.topToBottomRatio && geo.topToBottomRatio >= 1.15);
+  if (!geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && (geo.isMailerOrTray || isHorizTray || isVertTray || (geo.aspectRatio > 1.38 && !geo.diagonalCreaseCount))) {
     scores.cosmetic_b += 95;
-    const ratioStr = geo.bottomToTopRatio ? `wing-to-lid span asymmetry ratio ${geo.bottomToTopRatio.toFixed(2)}` : `aspect ratio ${(geo.aspectRatio || 1).toFixed(2)}`;
+    const ratioVal = isHorizTray ? Math.max(geo.leftToRightRatio || 1, geo.rightToLeftRatio || 1) : Math.max(geo.bottomToTopRatio || 1, geo.topToBottomRatio || 1);
+    const ratioStr = (isHorizTray || isVertTray) ? `wing span asymmetry ratio ${ratioVal.toFixed(2)}` : `aspect ratio ${(geo.aspectRatio || 1).toFixed(2)}`;
     detectedSignatures.push(`Unibody roll-end tuck front tray structure with hinged lid and side roll-over wings (${ratioStr})`);
   }
 
   // 4. Check for Cosmetic Box (Tall slender box with height >> panel width and square base)
-  if (!geo.isMailerOrTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && !geo.hints?.isAutoLock && (geo.isSlender || geo.panelAspect >= 2.0 || geo.aspectRatio < 0.85)) {
+  if (!geo.isMailerOrTray && !isHorizTray && !isVertTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && !geo.hints?.isAutoLock && (geo.isSlender || geo.panelAspect >= 2.0 || geo.aspectRatio < 0.85)) {
     scores.cosmetic += 95;
     detectedSignatures.push(`Slender elongated vertical profile (${(geo.panelAspect || 4).toFixed(1)}:1 panel aspect ratio) typical of cosmetic/perfume cartons`);
   }
 
   // 5. Check for Standard Folding Cartons (RTE vs STE)
-  if (!geo.isSlender && !geo.isMailerOrTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2) {
+  if (!geo.isSlender && !geo.isMailerOrTray && !isHorizTray && !isVertTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2) {
     if (geo.aspectRatio >= 0.85 && geo.aspectRatio <= 1.45) {
       scores.rte += 30;
       scores.te += 30;
@@ -562,7 +565,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   const maxScore = sorted[0][1];
 
   // Normalized confidence percentage (85% - 98%)
-  const hasStrongGeo = geo.isSlender || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.isMailerOrTray || geo.extractedDims;
+  const hasStrongGeo = geo.isSlender || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.isMailerOrTray || isHorizTray || isVertTray || geo.extractedDims;
   const baseConf = hasStrongGeo ? 92 : 85;
   const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 15)) * 100)));
 
@@ -575,7 +578,11 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
       estimatedDims = geo.extractedDims;
       detectedSignatures.unshift(`Extracted exact blueprint dimensions: ${estimatedDims.L} × ${estimatedDims.W} × ${estimatedDims.H} mm`);
     } else if (bestKey === 'cosmetic_b') {
-      estimatedDims = { L: 270, W: 260, H: 62, unit: 'mm' };
+      if (lowerName.includes('pizza') || (geo.hints?.isMailer && lowerName.includes('pizza'))) {
+        estimatedDims = { L: 250, W: 250, H: 45, unit: 'mm' };
+      } else {
+        estimatedDims = { L: 270, W: 260, H: 62, unit: 'mm' };
+      }
     } else if (bestKey === 'cosmetic') {
       if (geo.hints?.isSlender || lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('tall')) {
         estimatedDims = { L: 70, W: 70, H: 180, unit: 'mm' };
@@ -660,45 +667,80 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
   const topColor = Object.entries(hist).sort((a,b) => b[1] - a[1])[0][0].split(',').map(Number);
   const bgR = topColor[0] + 8, bgG = topColor[1] + 8, bgB = topColor[2] + 8;
 
-  // 2. Identify canvas vertical bounds (skip solid dark/light browser toolbar/header bands)
-  let canvasTop = 0, canvasBot = height - 1;
-  for (let y = 0; y < height; y += step) {
-    let bgCount = 0;
-    const xStep = Math.max(1, Math.floor(width / 30));
-    let xSamples = 0;
-    for (let x = 0; x < width; x += xStep) {
+  // 2. Identify canvas outer borders (trim window snip borders / dark letterbox bars)
+  let canvasLeft = 0;
+  while (canvasLeft < Math.floor(width * 0.15)) {
+    let isBorder = 0;
+    for (let y = 10; y < height - 10; y += 10) {
+      const idx = (y * width + canvasLeft) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff > 45) isBorder++;
+    }
+    if (isBorder > 20) canvasLeft++;
+    else break;
+  }
+
+  let canvasRight = width - 1;
+  while (canvasRight > Math.floor(width * 0.85)) {
+    let isBorder = 0;
+    for (let y = 10; y < height - 10; y += 10) {
+      const idx = (y * width + canvasRight) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff > 45) isBorder++;
+    }
+    if (isBorder > 20) canvasRight--;
+    else break;
+  }
+
+  let canvasTop = 0;
+  while (canvasTop < Math.floor(height * 0.15)) {
+    let isBorder = 0;
+    for (let x = canvasLeft + 5; x < canvasRight - 5; x += 10) {
+      const idx = (canvasTop * width + x) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff > 45) isBorder++;
+    }
+    if (isBorder > 20) canvasTop++;
+    else break;
+  }
+
+  let canvasBot = height - 1;
+  while (canvasBot > Math.floor(height * 0.85)) {
+    let isBorder = 0;
+    for (let x = canvasLeft + 5; x < canvasRight - 5; x += 10) {
+      const idx = (canvasBot * width + x) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff > 45) isBorder++;
+    }
+    if (isBorder > 20) canvasBot--;
+    else break;
+  }
+
+  // Row counts across interior canvas to detect isolated title header banner (e.g. "PIZZA BOX DIELINE")
+  const rowCounts = new Array(height).fill(0);
+  for (let y = canvasTop; y <= canvasBot; y++) {
+    for (let x = canvasLeft + 2; x <= canvasRight - 2; x++) {
       const idx = (y * width + x) * 4;
       const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff < 40) bgCount++;
-      xSamples++;
-    }
-    if ((bgCount / xSamples) > 0.35) {
-      canvasTop = y;
-      break;
+      if (diff > 35) rowCounts[y]++;
     }
   }
-  for (let y = height - 1; y >= canvasTop; y -= step) {
-    let bgCount = 0;
-    const xStep = Math.max(1, Math.floor(width / 30));
-    let xSamples = 0;
-    for (let x = 0; x < width; x += xStep) {
-      const idx = (y * width + x) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff < 40) bgCount++;
-      xSamples++;
-    }
-    if ((bgCount / xSamples) > 0.35) {
-      canvasBot = y;
-      break;
+
+  let drawingStartY = canvasTop;
+  let hadBannerText = false;
+  for (let y = canvasTop; y < Math.min(canvasBot, canvasTop + Math.floor(height * 0.25)); y++) {
+    if (rowCounts[y] > 20) hadBannerText = true;
+    if (hadBannerText && rowCounts[y] === 0) {
+      drawingStartY = y;
     }
   }
 
   // 3. Find dieline stroke bounding box
   let minX = width, maxX = 0, minY = height, maxY = 0;
   const rowSpans = new Array(height).fill(0);
-  for (let y = canvasTop; y <= canvasBot; y++) {
+  for (let y = drawingStartY; y <= canvasBot; y++) {
     let rMin = width, rMax = 0;
-    for (let x = 0; x < width; x++) {
+    for (let x = canvasLeft + 2; x <= canvasRight - 2; x++) {
       const idx = (y * width + x) * 4;
       const a = data[idx + 3] !== undefined ? data[idx + 3] : 255;
       const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
@@ -717,6 +759,43 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
   const dielineW = Math.max(1, maxX - minX);
   const dielineH = Math.max(1, maxY - minY);
   const dielineAspect = dielineW / dielineH;
+
+  // Column heights across X
+  const colHeights = new Array(width).fill(0);
+  for (let x = minX; x <= maxX; x++) {
+    let cMin = height, cMax = 0;
+    for (let y = minY; y <= maxY; y++) {
+      const idx = (y * width + x) * 4;
+      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
+      if (diff > 35) {
+        if (y < cMin) cMin = y;
+        if (y > cMax) cMax = y;
+      }
+    }
+    colHeights[x] = cMax > cMin ? (cMax - cMin) : 0;
+  }
+
+  // Vertical orientation wings check (Tray at top, Lid at bottom, or vice versa)
+  const activeSpans = rowSpans.slice(minY, maxY);
+  const topSpans = activeSpans.slice(0, Math.floor(activeSpans.length * 0.40));
+  const bottomSpans = activeSpans.slice(Math.floor(activeSpans.length * 0.60));
+  const maxTopW = Math.max(1, ...(topSpans.length ? topSpans : [1]));
+  const maxBottomW = Math.max(1, ...(bottomSpans.length ? bottomSpans : [1]));
+  const bottomToTopRatio = maxBottomW / maxTopW;
+  const topToBottomRatio = maxTopW / maxBottomW;
+  const vWingRatio = Math.max(bottomToTopRatio, topToBottomRatio);
+
+  // Horizontal orientation wings check (Tray on left, Lid on right, or vice versa)
+  const activeCols = colHeights.slice(minX, maxX);
+  const leftCols = activeCols.slice(0, Math.floor(activeCols.length * 0.40));
+  const rightCols = activeCols.slice(Math.floor(activeCols.length * 0.60));
+  const maxLeftH = Math.max(1, ...(leftCols.length ? leftCols : [1]));
+  const maxRightH = Math.max(1, ...(rightCols.length ? rightCols : [1]));
+  const leftToRightRatio = maxLeftH / maxRightH;
+  const rightToLeftRatio = maxRightH / maxLeftH;
+  const hWingRatio = Math.max(leftToRightRatio, rightToLeftRatio);
+
+  const isWingAsymmetry = vWingRatio >= 1.20 || hWingRatio >= 1.20;
 
   // 4. Central body detection (where row span is >= 75% of maximum span)
   let bodyTop = minY, bodyBot = maxY;
@@ -776,16 +855,9 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
   }
 
   const panelAspect = bodyH / Math.max(1, panelW);
-  const isSlender = hints.isSlender || dielineAspect < 0.85 || (panelAspect >= 2.5 && isSquareBase);
-  const isMailerOrTray = hints.isMailer || (filename.includes('lid') || filename.includes('two_piece') || filename.includes('mailer'));
-
-  const activeSpans = rowSpans.slice(minY, maxY);
-  const topSpans = activeSpans.slice(0, Math.floor(activeSpans.length * 0.45));
-  const bottomSpans = activeSpans.slice(Math.floor(activeSpans.length * 0.45));
-  const maxTopW = Math.max(1, ...(topSpans.length ? topSpans : [1]));
-  const maxBottomW = Math.max(1, ...(bottomSpans.length ? bottomSpans : [1]));
-  const bottomToTopRatio = maxBottomW / maxTopW;
-  const topToBottomRatio = maxTopW / maxBottomW;
+  const isMailerKeyword = hints.isMailer || filename.toLowerCase().includes('pizza') || filename.toLowerCase().includes('mailer') || filename.toLowerCase().includes('tray') || filename.toLowerCase().includes('two_piece') || filename.toLowerCase().includes('lid');
+  const isMailerOrTray = isMailerKeyword || isWingAsymmetry;
+  const isSlender = !isMailerOrTray && (hints.isSlender || dielineAspect < 0.85 || (panelAspect >= 2.5 && isSquareBase));
 
   return {
     width: dielineW,
@@ -795,6 +867,8 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
     maxBottomW,
     bottomToTopRatio,
     topToBottomRatio,
+    leftToRightRatio,
+    rightToLeftRatio,
     isMailerOrTray,
     isSlender,
     panelAspect,
