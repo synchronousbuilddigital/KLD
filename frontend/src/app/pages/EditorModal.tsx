@@ -154,25 +154,34 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     setIsExportModalOpen(false);
   };
 
-  const saveDesignToWorkspace = async () => {
+  const saveDesignToWorkspace = async (customData) => {
     setIsSaving(true);
     try {
+      const data = customData || store;
+      const currentBoxModel = data.boxModel || store.boxModel || 'rte';
+
       const categoryName = 
-        store.boxModel === 'can' || store.boxModel === 'soda_can' ? '12 oz Aluminum Soda Can' :
-        store.boxModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
-        store.boxModel === 'rte' ? 'Reverse Tuck End Box' :
-        store.boxModel === 'te' ? 'Straight Tuck End Box' :
-        store.boxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
-        store.boxModel === 'cosmetic_b' ? 'Mailer / Tray Box' :
-        store.boxModel === 'button_hole' ? 'Button Hole Box' :
-        store.boxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
+        currentBoxModel === 'can' || currentBoxModel === 'soda_can' ? '12 oz Aluminum Soda Can' :
+        currentBoxModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
+        currentBoxModel === 'rte' ? 'Reverse Tuck End Box' :
+        currentBoxModel === 'te' ? 'Straight Tuck End Box' :
+        currentBoxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
+        currentBoxModel === 'cosmetic_b' ? 'Mailer / Tray Box' :
+        currentBoxModel === 'button_hole' ? 'Button Hole Box' :
+        currentBoxModel === 'cosmetic' ? 'Cosmetic Box' : 'Custom Packaging Box';
 
-      const dimL_mm = Math.round((store.L || 4.72) * 25.4);
-      const dimW_mm = Math.round((store.W || 2.36) * 25.4);
-      const dimH_mm = Math.round((store.H || 6.29) * 25.4);
+      const rawL = data.L || store.L || 4.72;
+      const rawW = data.W || store.W || 2.36;
+      const rawH = data.H || store.H || 6.29;
 
-      const targetId = store.activeProjectId || ('saved-' + Date.now());
-      const targetName = store.activeProjectName || `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`;
+      const dimL_mm = rawL < 30 ? Math.round(rawL * 25.4) : Math.round(rawL);
+      const dimW_mm = rawW < 30 ? Math.round(rawW * 25.4) : Math.round(rawW);
+      const dimH_mm = rawH < 30 ? Math.round(rawH * 25.4) : Math.round(rawH);
+
+      const targetId = (isAiMode ? ('saved-' + Date.now()) : (data.activeProjectId || store.activeProjectId)) || ('saved-' + Date.now());
+      const targetName = (isAiMode ? `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)` : (data.activeProjectName || store.activeProjectName)) || `${categoryName} (${dimL_mm}×${dimW_mm}×${dimH_mm}mm)`;
+
+      const modelDecals = data.decalsByModel ? (data.decalsByModel[currentBoxModel] || []) : (store.decalsByModel ? store.decalsByModel[currentBoxModel] || [] : []);
 
       const savedItem = {
         id: targetId,
@@ -180,24 +189,24 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         name: targetName,
         type: contextType === "mockup" ? "MOCKUP" : "DIELINE",
         category: categoryName,
-        boxModel: store.boxModel,
-        variantId: store.boxModel === "rte" ? 2 : 1,
+        boxModel: currentBoxModel,
+        variantId: currentBoxModel === "rte" ? 2 : 1,
         dimensions: {
           L: dimL_mm,
           W: dimW_mm,
           H: dimH_mm,
-          length: store.L,
-          width: store.W,
-          height: store.H,
+          length: rawL < 30 ? rawL : rawL / 25.4,
+          width: rawW < 30 ? rawW : rawW / 25.4,
+          height: rawH < 30 ? rawH : rawH / 25.4,
           glueTab: 15,
           tuck: 18,
           flapH: 35
         },
-        packageColor: store.packageColor || null,
-        insideColor: store.insideColor || null,
-        capColor: store.capColor || "#ffffff",
-        materialType: store.materialType || "plastic_glossy",
-        decals: store.decalsByModel ? store.decalsByModel[store.boxModel] || [] : [],
+        packageColor: data.packageColor || store.packageColor || null,
+        insideColor: data.insideColor || store.insideColor || null,
+        capColor: data.capColor || store.capColor || "#ffffff",
+        materialType: data.materialType || store.materialType || "plastic_glossy",
+        decals: modelDecals,
         tabCategory: "projects",
         isDraft: false,
         updatedAt: new Date().toISOString()
@@ -257,10 +266,17 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
     const editorData = JSON.parse(JSON.stringify(useEditorStore.getState()));
     
     if (isAiMode) {
-      useBoxStore.setState({ aiDecalsByModel: editorData.decalsByModel });
+      useBoxStore.setState({ 
+        aiDecalsByModel: editorData.decalsByModel,
+        decalsByModel: editorData.decalsByModel,
+        ...(editorData.packageColor !== undefined ? { packageColor: editorData.packageColor } : {}),
+        ...(editorData.insideColor !== undefined ? { insideColor: editorData.insideColor } : {}),
+        ...(editorData.materialType !== undefined ? { materialType: editorData.materialType } : {})
+      });
+      await saveDesignToWorkspace(editorData);
     } else {
       useBoxStore.setState(editorData);
-      await saveDesignToWorkspace();
+      await saveDesignToWorkspace(editorData);
     }
     
     onClose();
