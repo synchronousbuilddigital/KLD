@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" width="400" height="480">
+  <rect width="100%" height="100%" fill="#f8fafc"/>
+  <g fill="none" stroke="#2563eb" stroke-width="2">
+    <!-- External Custom Perfume/Tea Slender Tuck Box with custom curved tabs -->
+    <path d="M 30,120 L 70,120 L 70,30 C 75,15 115,15 120,30 L 120,120 L 190,120 L 190,40 L 260,40 L 260,120 L 330,120 L 330,420 L 260,420 L 260,460 L 190,460 L 190,420 L 120,420 L 120,470 C 115,480 75,480 70,470 L 70,420 L 30,420 Z" />
+    <!-- Creases / Folds -->
+    <g stroke="#dc2626" stroke-dasharray="4,4">
+      <line x1="70" y1="120" x2="70" y2="420" />
+      <line x1="120" y1="120" x2="120" y2="420" />
+      <line x1="190" y1="120" x2="190" y2="420" />
+      <line x1="260" y1="120" x2="260" y2="420" />
+      <line x1="30" y1="120" x2="330" y2="120" />
+      <line x1="30" y1="420" x2="330" y2="420" />
+    </g>
+  </g>
+  <text x="175" y="270" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2563eb" text-anchor="middle">CUSTOM SLENDER TUCK (70x70x180mm)</text>
+</svg>

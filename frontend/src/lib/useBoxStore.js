@@ -348,17 +348,30 @@ export const useBoxStore = create((set) => ({
 
   // Decals
   decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
-  aiDecalsByModel: (() => {
+  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
+  clearAllAiDecals: () => set(() => {
+    const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
     try {
-      const s = typeof window !== 'undefined' ? localStorage.getItem('kld_saved_ai_decals') : null;
-      if (s) return JSON.parse(s);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kld_saved_ai_decals');
+      }
     } catch (e) {}
-    return { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
-  })(),
+    return {
+      decalsByModel: empty,
+      aiDecalsByModel: empty
+    };
+  }),
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];
     const newDecals = typeof decalsOrUpdater === "function" ? decalsOrUpdater(currentDecals) : decalsOrUpdater;
+    if (Array.isArray(newDecals) && newDecals.length === 0) {
+      const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
+      return {
+        decalsByModel: empty,
+        aiDecalsByModel: empty
+      };
+    }
     return {
       decalsByModel: {
         ...state.decalsByModel,
@@ -370,15 +383,22 @@ export const useBoxStore = create((set) => ({
     const currentModel = state.boxModel;
     const currentDecals = (state.aiDecalsByModel && state.aiDecalsByModel[currentModel]) || [];
     const newDecals = typeof decalsOrUpdater === "function" ? decalsOrUpdater(currentDecals) : decalsOrUpdater;
+    if (Array.isArray(newDecals) && newDecals.length === 0) {
+      const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('kld_saved_ai_decals');
+        }
+      } catch (e) {}
+      return {
+        decalsByModel: empty,
+        aiDecalsByModel: empty
+      };
+    }
     const nextDecals = {
       ...(state.aiDecalsByModel || {}),
       [currentModel]: newDecals
     };
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('kld_saved_ai_decals', JSON.stringify(nextDecals));
-      }
-    } catch (e) {}
     return {
       aiDecalsByModel: nextDecals
     };

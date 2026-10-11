@@ -35,7 +35,8 @@ import {
   FileCheck,
   ScanLine,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 
 interface Message {
@@ -79,10 +80,22 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [isDetectingFile, setIsDetectingFile] = useState(false);
+  const [appliedVariationUrl, setAppliedVariationUrl] = useState<string | null>(null);
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<any>(null);
+
+  // Automatically start a fresh chat and archive old chat when AI Creation navigation is clicked
+  useEffect(() => {
+    const handleAiCreationEvent = () => {
+      handleNewChat();
+    };
+    window.addEventListener('ai-creation-click', handleAiCreationEvent);
+    return () => {
+      window.removeEventListener('ai-creation-click', handleAiCreationEvent);
+    };
+  }, [messages, chatHistory]);
 
   // 1. Hydrate full history from IndexedDB on mount (bypasses localStorage 5MB limit)
   useEffect(() => {
@@ -207,11 +220,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
 
           if (res.renderVariations && res.renderVariations.length > 0) {
             useBoxStore.setState({ generatedRenders: res.renderVariations });
-            if (onApplyVariation) {
-              onApplyVariation(res.renderVariations[0]);
-            } else {
-              applyWrapToStore(res.renderVariations[0]);
-            }
+            // Decals are strictly independent: do NOT auto-apply to the 3D box model
           }
           setIsLoading(false);
           setGenerationProgress(100);
@@ -263,19 +272,27 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         date: new Date().toLocaleDateString(),
         messages: [...messages]
       };
-      const updatedHistory = [historyItem, ...chatHistory].slice(0, 10);
+      const updatedHistory = [historyItem, ...chatHistory].slice(0, 20);
       setChatHistory(updatedHistory);
       try {
         localStorage.setItem('pacdora_ai_chat_history', JSON.stringify(updatedHistory));
       } catch (e) {}
     }
 
-    // Clear active chat to reveal hero screen
+    // Clear active chat to reveal clean canvas and hero screen
     setMessages([]);
     localStorage.removeItem('kld_ai_history');
     setLargeData('kld_ai_history', []);
     setShowHistory(false);
     setInputPrompt('');
+
+    // Independent decal rule: clear decals on fresh chat
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+    if (typeof store.setDecals === 'function') store.setDecals([]);
+    setAppliedVariationUrl(null);
+    if (onApplyVariation) onApplyVariation(null);
+    else applyWrapToStore(null);
   };
 
   const handleRestoreChat = (historyItem: any) => {
@@ -289,11 +306,49 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
     setShowHistory(false);
   };
 
+  // Delete a single saved chat session from history
+  const handleDeleteHistoryItem = (histId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = chatHistory.filter(h => h.id !== histId);
+    setChatHistory(updated);
+    try {
+      localStorage.setItem('pacdora_ai_chat_history', JSON.stringify(updated));
+    } catch (e) {}
+  };
+
+  // Clear all saved chat history
+  const handleClearAllHistory = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setChatHistory([]);
+    try {
+      localStorage.removeItem('pacdora_ai_chat_history');
+    } catch (e) {}
+  };
+
+  // Clear the current active conversation
+  const handleDeleteCurrentChat = () => {
+    if (messages.length === 0) return;
+    setMessages([]);
+    localStorage.removeItem('kld_ai_history');
+    setLargeData('kld_ai_history', []);
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+    if (typeof store.setDecals === 'function') store.setDecals([]);
+    setAppliedVariationUrl(null);
+    if (onApplyVariation) onApplyVariation(null);
+    else applyWrapToStore(null);
+    setInputPrompt('');
+  };
+
   const applyWrapToStore = (variation: any) => {
+    const s = customStore ? customStore.getState() : useBoxStore.getState();
+    if (!variation) {
+      if (typeof s.setDecals === 'function') s.setDecals([]);
+      if (typeof s.setAiDecals === 'function') s.setAiDecals([]);
+      return;
+    }
     const bgUrl = variation?.backgroundUrl || variation?.url;
     if (!bgUrl) return;
-
-    const s = customStore ? customStore.getState() : useBoxStore.getState();
     const L = s.L || 4.7244;
     const W = s.W || 2.3622;
     const H = s.H || 6.2992;
@@ -331,8 +386,18 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
     actions.forEach(action => {
       switch (action.type) {
         case 'SET_BOX_MODEL':
-          if (action.model && typeof store.setBoxModel === 'function') {
-            store.setBoxModel(action.model);
+          if (action.model) {
+            setAppliedVariationUrl(null);
+            if (onApplyVariation) onApplyVariation(null);
+            else applyWrapToStore(null);
+            if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+            else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+            if (typeof store.setDecals === 'function') store.setDecals([]);
+            if (onApplyBoxModel) {
+              onApplyBoxModel(action.model);
+            } else if (typeof store.setBoxModel === 'function') {
+              store.setBoxModel(action.model);
+            }
           }
           break;
         case 'SET_DIMENSIONS':
@@ -377,6 +442,14 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
     setIsLoading(true);
     setGenerationProgress(10);
     setGenerationStepText('Interpreting box specifications & style...');
+
+    // Any new prompt starts with a clean/blank box: decals are strictly opt-in via 3D Studio button!
+    setAppliedVariationUrl(null);
+    if (onApplyVariation) onApplyVariation(null);
+    else applyWrapToStore(null);
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+    if (typeof store.setDecals === 'function') store.setDecals([]);
 
     const boxContext = {
       currentBoxModel: store.boxModel,
@@ -426,11 +499,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
 
       if (res.renderVariations && res.renderVariations.length > 0) {
         useBoxStore.setState({ generatedRenders: res.renderVariations });
-        if (onApplyVariation) {
-          onApplyVariation(res.renderVariations[0]);
-        } else {
-          applyWrapToStore(res.renderVariations[0]);
-        }
+        // Decals are strictly independent: do NOT auto-apply to the 3D box model
       }
     } catch (err: any) {
       console.error('AI assistant error:', err);
@@ -451,6 +520,14 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
   const processUploadedDielineFile = async (file: File) => {
     if (!file) return;
 
+    // Reset decals immediately when uploading so the box is clean
+    setAppliedVariationUrl(null);
+    if (onApplyVariation) onApplyVariation(null);
+    else applyWrapToStore(null);
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+    if (typeof store.setDecals === 'function') store.setDecals([]);
+
     const userMsg: Message = {
       id: 'msg-' + Date.now(),
       sender: 'user',
@@ -464,9 +541,21 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
     try {
       const result = await detectDielineFile(file);
 
+      // Decals are strictly independent: clear existing decals so detected box starts clean
+      setAppliedVariationUrl(null);
+      if (onApplyVariation) onApplyVariation(null);
+      else applyWrapToStore(null);
+      if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+      else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+      if (typeof store.setDecals === 'function') store.setDecals([]);
+
       // Auto-apply to store so the 3D model immediately syncs with the detected box
-      if (result.matchedModelKey && typeof store.setBoxModel === 'function') {
-        store.setBoxModel(result.matchedModelKey);
+      if (result.matchedModelKey) {
+        if (onApplyBoxModel) {
+          onApplyBoxModel(result.matchedModelKey, result.dimensionsIn, result.dimensions);
+        } else if (typeof store.setBoxModel === 'function') {
+          store.setBoxModel(result.matchedModelKey);
+        }
       }
       if (result.dimensionsIn && typeof store.setDim === 'function') {
         store.setDim('L', result.dimensionsIn.L);
@@ -525,13 +614,13 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
   };
 
   // Download DXF helper
-  const handleDownloadDielineDXF = (modelOverride?: string) => {
+  const handleDownloadDielineDXF = (modelOverride?: string, dimsOverride?: any) => {
     try {
       const activeModel = modelOverride || store.boxModel || 'rte';
       const params = {
-        L: store.L || 4.7244,
-        W: store.W || 2.3622,
-        H: store.H || 6.2992,
+        L: dimsOverride?.L || store.L || 4.7244,
+        W: dimsOverride?.W || store.W || 2.3622,
+        H: dimsOverride?.H || store.H || 6.2992,
         T: store.T || 0.0197,
         glueFlapWidth: store.glueFlapWidth || 0.625,
         bleed: store.bleed || (2 / 25.4)
@@ -603,30 +692,101 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         </div>
 
         <div className="ai-header-actions">
+          {messages.length > 0 && (
+            <button 
+              className="ai-icon-btn" 
+              onClick={handleDeleteCurrentChat} 
+              title="Delete / Clear Active Chat"
+              style={{ color: '#ef4444' }}
+            >
+              <Trash2 style={{ width: '15px', height: '15px' }} />
+            </button>
+          )}
+
           <button className="ai-icon-btn" onClick={handleNewChat} title="New Chat">
             <Plus style={{ width: '18px', height: '18px' }} />
           </button>
+
           <div style={{ position: 'relative' }}>
             <button className={`ai-icon-btn ${showHistory ? 'active' : ''}`} onClick={() => setShowHistory(!showHistory)} title="Chat History">
               <History style={{ width: '15px', height: '15px' }} />
             </button>
             {showHistory && (
-              <div style={{ position: 'absolute', top: '30px', right: '0', width: '260px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 50, padding: '8px' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#a1a1aa', padding: '8px', borderBottom: '1px solid #f4f4f5', marginBottom: '8px' }}>RECENT DESIGNS</div>
+              <div style={{ position: 'absolute', top: '34px', right: '0', width: '280px', background: '#fff', border: '1px solid #e4e4e7', borderRadius: '12px', boxShadow: '0 10px 35px rgba(0,0,0,0.12)', zIndex: 50, padding: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid #f4f4f5', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#71717a', textTransform: 'uppercase' }}>Recent Chats</span>
+                  {chatHistory.length > 0 && (
+                    <button
+                      onClick={handleClearAllHistory}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#ef4444',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="Clear all saved chats"
+                    >
+                      <Trash2 style={{ width: '12px', height: '12px' }} />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+                </div>
+
                 {chatHistory.length === 0 ? (
-                  <div style={{ padding: '16px 8px', fontSize: '12px', color: '#a1a1aa', textAlign: 'center' }}>No recent chats.</div>
+                  <div style={{ padding: '16px 8px', fontSize: '12px', color: '#a1a1aa', textAlign: 'center' }}>No saved chats.</div>
                 ) : (
-                  <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                  <div style={{ maxHeight: '260px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {chatHistory.map(hist => (
                       <div 
                         key={hist.id} 
                         onClick={() => handleRestoreChat(hist)}
-                        style={{ padding: '10px', borderRadius: '8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px' }}
+                        style={{
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          transition: 'background 0.15s ease'
+                        }}
                         onMouseEnter={e => e.currentTarget.style.background = '#f4f4f5'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#27272a' }}>{hist.title}</span>
-                        <span style={{ fontSize: '10px', color: '#a1a1aa' }}>{hist.date}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden', flex: 1 }}>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#27272a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {hist.title}
+                          </span>
+                          <span style={{ fontSize: '10px', color: '#a1a1aa' }}>{hist.date}</span>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteHistoryItem(hist.id, e)}
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#9ca3af',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            transition: 'color 0.15s ease'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.background = 'transparent'; }}
+                          title="Delete this chat"
+                        >
+                          <Trash2 style={{ width: '13px', height: '13px' }} />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -717,203 +877,305 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                 <div className={`chat-bubble ${msg.sender}`}>
                   <div>{msg.text}</div>
                   
-                  {/* Dieline Detection Result Card */}
-                  {msg.dielineMatch && (
-                    <div className="ai-dieline-card">
-                      <div className="ai-dieline-card-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <FileCheck style={{ width: '16px', height: '16px', color: '#059669' }} />
-                          <span style={{ fontSize: '13px', fontWeight: '800' }}>Directory Match Found</span>
-                        </div>
-                        <div className="ai-match-badge">
-                          <span>{msg.dielineMatch.confidence}% Match</span>
-                          <span>•</span>
-                          <span>{msg.dielineMatch.isExactMatch ? 'Exact Box' : 'Nearest Box'}</span>
-                        </div>
-                      </div>
+                  {/* Dieline Detection Result Card - 2 Box Recommendations */}
+                  {msg.dielineMatch && (() => {
+                    const match = msg.dielineMatch;
 
-                      {/* Side-by-side Blueprint & 3D Render from Directory */}
-                      <div className="ai-dieline-preview-grid">
-                        <div className="ai-dieline-preview-card">
-                          <img 
-                            src={msg.dielineMatch.dieline2DImg} 
-                            alt={msg.dielineMatch.matchedTitle}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                          <span className="ai-dieline-preview-label">2D CAD Dieline</span>
-                        </div>
-                        <div className="ai-dieline-preview-card">
-                          <img 
-                            src={msg.dielineMatch.box3DImg} 
-                            alt={msg.dielineMatch.matchedTitle}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                          <span className="ai-dieline-preview-label">3D Studio Fold</span>
-                        </div>
-                      </div>
+                    // Compute Primary Recommendation (Most Accurate Dieline - Highest Score)
+                    const rec1 = match.primaryRecommendation || {
+                      rank: 1,
+                      matchedModelKey: match.matchedModelKey,
+                      matchedTitle: match.matchedTitle,
+                      subtitle: match.matchedBox?.subtitle || match.subtitle || 'Standard Folding Carton Structure',
+                      confidence: match.confidence || 94,
+                      isExactMatch: match.isExactMatch !== false,
+                      dimensions: match.dimensions || { L: 120, W: 60, H: 160 },
+                      dimensionsIn: match.dimensionsIn,
+                      detectedFeatures: match.detectedFeatures || [],
+                      dieline2DImg: match.dieline2DImg || '/images/dielines/ste_real.png',
+                      box3DImg: match.box3DImg || '/images/boxes/ste_white.jpg',
+                      badgeText: 'Most Accurate Dieline'
+                    };
 
-                      {/* Box Specifications */}
-                      <div style={{ background: 'rgba(0,0,0,0.03)', padding: '10px', borderRadius: '8px', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div><strong>Matched Model:</strong> {msg.dielineMatch.matchedTitle} (<code>{msg.dielineMatch.matchedModelKey}</code>)</div>
-                        {msg.dielineMatch.dimensions && (
-                          <div><strong>Detected Dimensions:</strong> {msg.dielineMatch.dimensions.L} × {msg.dielineMatch.dimensions.W} × {msg.dielineMatch.dimensions.H} mm</div>
-                        )}
-                        {msg.dielineMatch.detectedFeatures && msg.dielineMatch.detectedFeatures.length > 0 && (
-                          <div style={{ marginTop: '2px', color: '#71717a' }}>
-                            <strong>Structural Signature:</strong> {msg.dielineMatch.detectedFeatures.join(' • ')}
-                          </div>
-                        )}
-                      </div>
+                    // Compute Secondary Recommendation (Runner-up Box - Lower Score)
+                    let rec2 = match.secondaryRecommendation;
+                    if (!rec2) {
+                      const altKey = match.matchedModelKey === 'te' ? 'rte' : (match.matchedModelKey === 'rte' ? 'te' : 'rte');
+                      const altBox = match.suggestions?.find((s: any) => s.key === altKey) || match.suggestions?.[0] || {
+                        key: altKey,
+                        name: altKey === 'rte' ? 'Reverse Tuck End Box (RTE)' : 'Straight Tuck End Box (STE)',
+                        subtitle: altKey === 'rte' ? 'Standard Folding Carton • Opposite Tuck Flaps' : 'Clean Front Display • Same-Direction Tuck Flaps',
+                        dieline2DImg: altKey === 'rte' ? '/images/dielines/rte_real.png' : '/images/dielines/ste_real.png',
+                        box3DImg: altKey === 'rte' ? '/images/boxes/rte_white.jpg' : '/images/boxes/ste_white.jpg'
+                      };
+                      const lowerScore = Math.max(68, Math.min((rec1.confidence || 92) - 12, Math.round((rec1.confidence || 92) * 0.83)));
+                      rec2 = {
+                        rank: 2,
+                        matchedModelKey: altBox.key,
+                        matchedTitle: altBox.name,
+                        subtitle: altBox.subtitle,
+                        confidence: lowerScore,
+                        isExactMatch: false,
+                        dimensions: rec1.dimensions,
+                        dimensionsIn: rec1.dimensionsIn,
+                        detectedFeatures: [
+                          altBox.key === 'rte' ? 'Top and bottom tuck flaps fold in reverse/opposite directions' : 'Top and bottom flaps fold towards same front face',
+                          'Alternative 4-panel folding carton profile'
+                        ],
+                        dieline2DImg: altBox.dieline2DImg,
+                        box3DImg: altBox.box3DImg,
+                        badgeText: 'Alternative Recommendation'
+                      };
+                    }
 
-                      {/* Action buttons */}
-                      {(() => {
-                        const isModelApplied = (store?.boxModel === msg.dielineMatch.matchedModelKey);
-                        return (
-                          <>
-                            {isModelApplied && (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '6px 10px',
-                                background: '#ecfdf5',
-                                border: '1px solid #a7f3d0',
-                                borderRadius: '8px',
-                                color: '#065f46',
-                                fontSize: '11px',
-                                fontWeight: '700',
-                                marginBottom: '8px'
-                              }}>
-                                <CheckCircle2 style={{ width: '14px', height: '14px', color: '#059669', flexShrink: 0 }} />
-                                <span>Active on 3D Canvas: {msg.dielineMatch.matchedTitle}</span>
-                              </div>
-                            )}
+                    const recommendations = [rec1, rec2];
 
-                            <div className="ai-dieline-actions">
-                              <button 
-                                className={`ai-dieline-btn ${isModelApplied ? 'applied' : 'primary'}`}
-                                onClick={() => {
-                                  if (onApplyBoxModel) {
-                                    onApplyBoxModel(msg.dielineMatch.matchedModelKey, msg.dielineMatch.dimensionsIn, msg.dielineMatch.dimensions);
-                                  } else {
-                                    if (store.setBoxModel) store.setBoxModel(msg.dielineMatch.matchedModelKey);
-                                    if (msg.dielineMatch.dimensionsIn && store.setDim) {
-                                      store.setDim('L', msg.dielineMatch.dimensionsIn.L);
-                                      store.setDim('W', msg.dielineMatch.dimensionsIn.W);
-                                      store.setDim('H', msg.dielineMatch.dimensionsIn.H);
-                                    }
-                                  }
-                                }}
-                              >
-                                {isModelApplied ? (
-                                  <>
-                                    <CheckCircle2 style={{ width: '13px', height: '13px' }} />
-                                    <span>Applied to 3D Studio</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Box style={{ width: '13px', height: '13px' }} />
-                                    <span>Apply to 3D Studio</span>
-                                  </>
-                                )}
-                              </button>
+                    const handleApplyRec = (rec: any) => {
+                      setAppliedVariationUrl(null);
+                      if (onApplyVariation) onApplyVariation(null);
+                      else applyWrapToStore(null);
+                      if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+                      else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+                      if (typeof store.setDecals === 'function') store.setDecals([]);
 
-                              <button 
-                                className="ai-dieline-btn secondary"
-                                onClick={() => handleDownloadDielineDXF(msg.dielineMatch.matchedModelKey)}
-                              >
-                                <Download style={{ width: '13px', height: '13px' }} />
-                                <span>Export DXF</span>
-                              </button>
+                      if (onApplyBoxModel) {
+                        onApplyBoxModel(rec.matchedModelKey, rec.dimensionsIn, rec.dimensions);
+                      } else {
+                        if (store.setBoxModel) store.setBoxModel(rec.matchedModelKey);
+                        if (rec.dimensionsIn && store.setDim) {
+                          store.setDim('L', rec.dimensionsIn.L);
+                          store.setDim('W', rec.dimensionsIn.W);
+                          store.setDim('H', rec.dimensionsIn.H);
+                        }
+                      }
+                    };
 
-                              <button 
-                                className="ai-dieline-btn secondary"
-                                onClick={() => handleSendPrompt(`Design packaging for ${msg.dielineMatch.matchedTitle} with dimensions ${msg.dielineMatch.dimensions.L}x${msg.dielineMatch.dimensions.W}x${msg.dielineMatch.dimensions.H} mm`)}
-                              >
-                                <Sparkles style={{ width: '13px', height: '13px', color: '#2563eb' }} />
-                                <span>AI Design</span>
-                              </button>
+                    return (
+                      <div className="ai-dieline-card">
+                        <div className="ai-dieline-card-header">
+                          <div className="ai-dieline-header-left">
+                            <div className="ai-dieline-header-icon">
+                              <ScanLine style={{ width: '16px', height: '16px' }} />
                             </div>
+                            <div>
+                              <div className="ai-dieline-header-title">CAD Structural Topology Scan</div>
+                              <div className="ai-dieline-header-subtitle">2 box models matched from our parametric directory</div>
+                            </div>
+                          </div>
+                          <div className="ai-match-count-badge">
+                            2 Box Fits
+                          </div>
+                        </div>
 
-                            {/* Optional Alternatives Collapsible Section */}
-                            {msg.dielineMatch.suggestions && msg.dielineMatch.suggestions.length > 0 && (
-                              <details style={{ marginTop: '10px', borderTop: '1px dashed #e4e4e7', paddingTop: '8px' }}>
-                                <summary style={{
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  color: '#71717a',
-                                  cursor: 'pointer',
-                                  userSelect: 'none',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '2px 0'
-                                }}>
-                                  <span>Switch to an alternative box model (Optional)</span>
-                                  <span style={{ fontSize: '10px', color: '#a1a1aa' }}>▾</span>
-                                </summary>
-                                <div style={{ fontSize: '10px', color: '#71717a', marginTop: '6px', marginBottom: '8px', lineHeight: '1.4' }}>
-                                  The detected <strong>{msg.dielineMatch.matchedTitle}</strong> is active. You can override it below if desired:
+                        {/* 2 Recommendations Stacked Vertically */}
+                        <div className="ai-recommendations-list">
+                          {recommendations.map((rec: any, idx: number) => {
+                            const isPrimary = (idx === 0);
+                            const isApplied = (store?.boxModel === rec.matchedModelKey);
+
+                            return (
+                              <div 
+                                key={rec.matchedModelKey + '-' + idx} 
+                                className={`ai-rec-card ${isPrimary ? 'primary' : 'secondary'} ${isApplied ? 'is-active' : ''}`}
+                              >
+                                {/* Header with Rank and Score */}
+                                <div className="ai-rec-header">
+                                  <div className="ai-rec-title-group">
+                                    <div className={`ai-rec-rank-pill ${isPrimary ? 'primary' : 'secondary'}`}>
+                                      {isPrimary ? (
+                                        <>
+                                          <Sparkles style={{ width: '10px', height: '10px', color: '#059669' }} />
+                                          <span>#1 Best Match • Most Accurate</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Layers style={{ width: '10px', height: '10px', color: '#2563eb' }} />
+                                          <span>#2 Alternative Fit • Runner-Up</span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <div className="ai-rec-box-name">
+                                      <span>{rec.matchedTitle}</span>
+                                      <span className="ai-rec-code-tag">{rec.matchedModelKey}</span>
+                                    </div>
+                                    {rec.subtitle && (
+                                      <div className="ai-rec-subtitle">{rec.subtitle}</div>
+                                    )}
+                                  </div>
+
+                                  <div className={`ai-rec-score-badge ${isPrimary ? 'primary' : 'secondary'}`}>
+                                    <span className="ai-score-dot" />
+                                    <span>{rec.confidence}% Match</span>
+                                  </div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  {msg.dielineMatch.suggestions.map((sug: any) => {
-                                    const isSugActive = store?.boxModel === sug.key;
-                                    return (
-                                      <div
-                                        key={sug.key}
-                                        onClick={() => {
-                                          if (onApplyBoxModel) {
-                                            onApplyBoxModel(sug.key, sug.defaultDimsIn, sug.defaultDims);
-                                          } else {
-                                            if (store.setBoxModel) store.setBoxModel(sug.key);
-                                            if (sug.defaultDimsIn && store.setDim) {
-                                              store.setDim('L', sug.defaultDimsIn.L);
-                                              store.setDim('W', sug.defaultDimsIn.W);
-                                              store.setDim('H', sug.defaultDimsIn.H);
-                                            }
-                                          }
-                                        }}
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          padding: '6px 10px',
-                                          background: isSugActive ? '#eff6ff' : 'rgba(0,0,0,0.02)',
-                                          border: isSugActive ? '1px solid #3b82f6' : '1px solid #e4e4e7',
-                                          borderRadius: '8px',
-                                          cursor: 'pointer'
-                                        }}
-                                        onMouseEnter={e => { if (!isSugActive) e.currentTarget.style.background = '#f4f4f5'; }}
-                                        onMouseLeave={e => { if (!isSugActive) e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
-                                      >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                          <img 
-                                            src={sug.box3DImg} 
-                                            alt={sug.name} 
-                                            style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} 
-                                            onError={e => { e.currentTarget.style.display = 'none'; }}
-                                          />
-                                          <div>
-                                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#18181b' }}>{sug.name}</div>
-                                            {sug.defaultDims && (
-                                              <div style={{ fontSize: '9px', color: '#71717a' }}>{sug.defaultDims.L}×{sug.defaultDims.W}×{sug.defaultDims.H} mm</div>
-                                            )}
-                                          </div>
+
+                                {/* Dual Previews: 2D CAD & 3D Fold */}
+                                <div className="ai-rec-preview-grid">
+                                  <div className="ai-rec-preview-card">
+                                    <img 
+                                      src={rec.dieline2DImg} 
+                                      alt={`${rec.matchedTitle} 2D Dieline`}
+                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                    <span className="ai-rec-preview-label">
+                                      <span>📐 2D Dieline</span>
+                                    </span>
+                                  </div>
+                                  <div className="ai-rec-preview-card">
+                                    <img 
+                                      src={rec.box3DImg} 
+                                      alt={`${rec.matchedTitle} 3D Fold`}
+                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                    <span className="ai-rec-preview-label">
+                                      <span>📦 3D Fold</span>
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Dimensions & Structural Specifications */}
+                                <div className="ai-rec-specs-box">
+                                  {rec.dimensions && (
+                                    <div className="ai-rec-dims-row">
+                                      <span style={{ fontWeight: '700', color: '#64748b' }}>Dimensions:</span>
+                                      <span className="ai-rec-dim-tag">
+                                        <span>📏 {rec.dimensions.L} × {rec.dimensions.W} × {rec.dimensions.H} mm</span>
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {rec.detectedFeatures && rec.detectedFeatures.length > 0 && (
+                                    <div className="ai-rec-features-list">
+                                      {rec.detectedFeatures.map((feat: string, fIdx: number) => (
+                                        <div key={fIdx} className="ai-rec-feature-item">
+                                          <span style={{ color: isPrimary ? '#059669' : '#2563eb', fontWeight: '800' }}>•</span>
+                                          <span>{feat}</span>
                                         </div>
-                                        <span style={{ fontSize: '10px', color: isSugActive ? '#2563eb' : '#71717a', fontWeight: '700' }}>
-                                          {isSugActive ? '✓ Active' : 'Select Box →'}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                              </details>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
+
+                                {/* Active canvas banner */}
+                                {isApplied && (
+                                  <div className="ai-rec-active-status">
+                                    <CheckCircle2 style={{ width: '13px', height: '13px', color: '#059669', flexShrink: 0 }} />
+                                    <span>Active in 3D Canvas Studio</span>
+                                  </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="ai-rec-actions">
+                                  <button 
+                                    className={`ai-rec-btn ${isApplied ? 'active' : 'primary'}`}
+                                    onClick={() => handleApplyRec(rec)}
+                                  >
+                                    {isApplied ? (
+                                      <>
+                                        <CheckCircle2 style={{ width: '13px', height: '13px' }} />
+                                        <span>Applied</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Box style={{ width: '13px', height: '13px' }} />
+                                        <span>{isPrimary ? 'Apply to 3D Studio' : 'Switch to This Box'}</span>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  <button 
+                                    className="ai-rec-btn secondary"
+                                    onClick={() => handleDownloadDielineDXF(rec.matchedModelKey, rec.dimensionsIn)}
+                                  >
+                                    <Download style={{ width: '13px', height: '13px' }} />
+                                    <span>Export DXF</span>
+                                  </button>
+
+                                  <button 
+                                    className="ai-rec-btn sparkle"
+                                    onClick={() => handleSendPrompt(`Design packaging for ${rec.matchedTitle} with dimensions ${rec.dimensions?.L || 120}x${rec.dimensions?.W || 60}x${rec.dimensions?.H || 160} mm`)}
+                                  >
+                                    <Sparkles style={{ width: '13px', height: '13px' }} />
+                                    <span>AI Design</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Collapsible remaining directory alternatives */}
+                        {match.suggestions && match.suggestions.length > 0 && (
+                          <details style={{ marginTop: '4px', borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
+                            <summary style={{
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              color: '#64748b',
+                              cursor: 'pointer',
+                              userSelect: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '2px 0'
+                            }}>
+                              <span>Other Packaging Directory Models</span>
+                              <span style={{ fontSize: '10px', color: '#94a3b8' }}>▾</span>
+                            </summary>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                              {match.suggestions.map((sug: any) => {
+                                const isSugActive = store?.boxModel === sug.key;
+                                return (
+                                  <div
+                                    key={sug.key}
+                                    onClick={() => {
+                                      if (onApplyBoxModel) {
+                                        onApplyBoxModel(sug.key, sug.defaultDimsIn, sug.defaultDims);
+                                      } else {
+                                        if (store.setBoxModel) store.setBoxModel(sug.key);
+                                        if (sug.defaultDimsIn && store.setDim) {
+                                          store.setDim('L', sug.defaultDimsIn.L);
+                                          store.setDim('W', sug.defaultDimsIn.W);
+                                          store.setDim('H', sug.defaultDimsIn.H);
+                                        }
+                                      }
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '6px 10px',
+                                      background: isSugActive ? '#eff6ff' : 'rgba(0,0,0,0.02)',
+                                      border: isSugActive ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                                      borderRadius: '8px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <img 
+                                        src={sug.box3DImg} 
+                                        alt={sug.name} 
+                                        style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} 
+                                        onError={e => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                      <div>
+                                        <div style={{ fontSize: '11px', fontWeight: '700' }}>{sug.name}</div>
+                                        {sug.defaultDims && (
+                                          <div style={{ fontSize: '9px', color: '#64748b' }}>{sug.defaultDims.L}×{sug.defaultDims.W}×{sug.defaultDims.H} mm</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <span style={{ fontSize: '10px', color: isSugActive ? '#2563eb' : '#64748b', fontWeight: '700' }}>
+                                      {isSugActive ? '✓ Active' : 'Select Box →'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Concept directions if available */}
                   {msg.directions && msg.directions.length > 0 && (
@@ -932,41 +1194,98 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                     </div>
                   )}
 
-                  {/* Generated Render Grid */}
+                  {/* Generated Artwork Variations — Strictly Independent & Opt-in */}
                   {msg.variations && msg.variations.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                      <div className="ai-render-grid">
-                        {msg.variations.map((v: any) => (
-                          <div 
-                            key={v.id} 
-                            className="ai-render-card"
-                            onClick={() => {
-                              if (onApplyVariation) {
-                                onApplyVariation(v);
-                              } else {
-                                applyWrapToStore(v);
-                              }
-                            }}
-                          >
-                            <img 
-                              src={v.backgroundUrl || v.url} 
-                              alt={v.title}
-                              onError={(e) => {
-                                e.currentTarget.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-                                  `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="#18181b"/><text x="150" y="150" font-family="sans-serif" font-size="14" fill="#2563eb" text-anchor="middle">KLD AI RENDER</text></svg>`
-                                )}`;
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Artwork Variations (Click 3D Studio to View)
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                        {msg.variations.map((v: any, idx: number) => {
+                          const vUrl = v.backgroundUrl || v.url;
+                          const isApplied = (appliedVariationUrl === vUrl);
+                          return (
+                            <div 
+                              key={v.id || idx} 
+                              style={{
+                                background: '#ffffff',
+                                border: isApplied ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                padding: '8px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                                boxShadow: isApplied ? '0 4px 14px rgba(37,99,235,0.15)' : '0 2px 6px rgba(0,0,0,0.03)',
+                                transition: 'all 0.2s ease'
                               }}
-                            />
-                            <div className="ai-render-card-overlay">
-                              <span style={{ color: '#fff', fontSize: '11px', fontWeight: '700' }}>Apply to Box</span>
+                            >
+                              <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc' }}>
+                                <img 
+                                  src={vUrl} 
+                                  alt={v.title || `Variation ${idx + 1}`}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => {
+                                    e.currentTarget.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+                                      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="#18181b"/><text x="150" y="150" font-family="sans-serif" font-size="14" fill="#2563eb" text-anchor="middle">KLD AI RENDER</text></svg>`
+                                    )}`;
+                                  }}
+                                />
+                              </div>
+                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {v.title || `Variation ${idx + 1}`}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (isApplied) {
+                                    // Remove decal from 3D studio
+                                    setAppliedVariationUrl(null);
+                                    if (onApplyVariation) onApplyVariation(null);
+                                    else applyWrapToStore(null);
+                                  } else {
+                                    // Apply ONLY this specific decal to 3D studio
+                                    setAppliedVariationUrl(vUrl);
+                                    if (onApplyVariation) onApplyVariation(v);
+                                    else applyWrapToStore(v);
+                                  }
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '6px 8px',
+                                  borderRadius: '7px',
+                                  border: 'none',
+                                  background: isApplied ? '#059669' : '#2563eb',
+                                  color: '#ffffff',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '4px',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                title={isApplied ? 'Click to remove decal from 3D studio' : 'Apply this decal to 3D studio'}
+                              >
+                                {isApplied ? (
+                                  <>
+                                    <CheckCircle2 style={{ width: '12px', height: '12px' }} />
+                                    <span>3D Active</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Box style={{ width: '12px', height: '12px' }} />
+                                    <span>3D Studio</span>
+                                  </>
+                                )}
+                              </button>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <button 
                         onClick={() => handleDownloadDielineDXF()}
-                        style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }}
+                        style={{ background: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }}
                       >
                         <Download style={{ width: '13px', height: '13px' }} />
                         <span>Export Vector DXF Dieline</span>
@@ -1037,6 +1356,13 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
               key={tag.id || 'auto'}
               onClick={() => {
                 setSelectedBoxModelOverride(tag.id);
+                // Independent decal rule: clear decals when switching box models
+                setAppliedVariationUrl(null);
+                if (onApplyVariation) onApplyVariation(null);
+                else applyWrapToStore(null);
+                if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+                else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+                if (typeof store.setDecals === 'function') store.setDecals([]);
                 if (tag.id && onApplyBoxModel) {
                   onApplyBoxModel(tag.id);
                 }

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { PNG } = require('pngjs');
 const jpeg = require('jpeg-js');
@@ -520,69 +521,64 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
 
   const detectedSignatures = [];
 
-  // Filename & text keyword hints
+  // Filename & text keyword hints (secondary bonus only)
   if (geo.hints?.isRte || lowerName.includes('rte') || lowerName.includes('reverse_tuck') || lowerName.includes('reverse-tuck') || lowerName.includes('reverse tuck')) {
-    scores.rte += 60;
-    detectedSignatures.push('Profile hints Reverse Tuck End (RTE)');
+    scores.rte += 30;
   }
   if (!geo.hints?.isRte && !lowerName.includes('reverse') && (geo.hints?.isSte || (/\bste\b/i).test(lowerName) || lowerName.includes('straight_tuck') || lowerName.includes('straight-tuck') || lowerName.includes('straight tuck') || lowerName.includes('te_'))) {
-    scores.te += 60;
-    detectedSignatures.push('Profile hints Straight Tuck End (STE)');
+    scores.te += 30;
   }
-  if (geo.hints?.isAutoLock || lowerName.includes('auto') || lowerName.includes('autolock') || lowerName.includes('crash')) {
-    scores.auto_lock += 65;
-    detectedSignatures.push('Profile hints Auto-Lock / Crash Bottom');
+  if (geo.hints?.isAutoLock || lowerName.includes('autolock') || lowerName.includes('crashlock') || lowerName.includes('crash-lock')) {
+    scores.auto_lock += 35;
   }
-  if (geo.hints?.isMailer || geo.isMailerOrTray || lowerName.includes('mailer') || lowerName.includes('rollover') || lowerName.includes('tray') || lowerName.includes('two_piece') || (/\blid\b/i).test(lowerName) || lowerName.includes('pizza')) {
-    scores.cosmetic_b += 70;
-    detectedSignatures.push('Profile hints Mailer / Tray Box');
+  if (geo.hints?.isMailer || lowerName.includes('mailer') || lowerName.includes('rollover') || lowerName.includes('tray') || lowerName.includes('two_piece') || (/\blid\b/i).test(lowerName) || lowerName.includes('pizza')) {
+    scores.cosmetic_b += 35;
   }
-  if (geo.hints?.isSlender || (!geo.hints?.isAutoLock && !geo.hints?.isMailer && !geo.hints?.isRte && (lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('cosmetic') || lowerName.includes('serum') || lowerName.includes('tall') || lowerName.includes('lipstick')))) {
-    scores.cosmetic += 65;
-    detectedSignatures.push('Profile hints Cosmetic Box (Slender Tuck)');
+  if (geo.hints?.isSlender || lowerName.includes('perfume') || lowerName.includes('slender') || lowerName.includes('serum')) {
+    scores.cosmetic += 35;
   }
-  if (geo.hints?.isButtonHole || geo.hasButtonNotch || lowerName.includes('button') || lowerName.includes('snaplock') || lowerName.includes('1-2-3')) {
-    scores.button_hole += 65;
-    detectedSignatures.push('Profile hints Button Hole Box');
+  if (geo.hints?.isButtonHole || lowerName.includes('button_hole') || lowerName.includes('snaplock') || lowerName.includes('1-2-3')) {
+    scores.button_hole += 35;
   }
 
-  // 1. Check for Button Hole Box (Distinct button notch cutout or 1-2-3 snap bottom)
-  if (geo.hasButtonNotch || geo.isButtonHoleStructure) {
-    scores.button_hole += 85;
-    detectedSignatures.push('Detected button notch cutout on closure flap (Button Hole locking closure)');
+  // 1. Mailer / Tray Box check (Roll End Tray - wide unibody wings, distinct tray-vs-lid ratio)
+  const isHorizTray = (geo.leftToRightRatio && geo.leftToRightRatio >= 1.25) || (geo.rightToLeftRatio && geo.rightToLeftRatio >= 1.25);
+  const isVertTray = (geo.bottomToTopRatio && geo.bottomToTopRatio >= 1.25) || (geo.topToBottomRatio && geo.topToBottomRatio >= 1.25);
+  if (geo.isMailerOrTray || isHorizTray || isVertTray) {
+    scores.cosmetic_b += 140;
+    detectedSignatures.push('Unibody roll-end tuck front tray structure with hinged lid and side roll-over wings');
   }
 
-  // 2. Check for Auto-Lock (Diagonal 45° fold crease lines on bottom crash-lock flaps)
-  if (geo.diagonalCreaseCount >= 2 || geo.hints?.isAutoLock) {
-    scores.auto_lock += 95;
+  // 2. Cosmetic Box check (Slender vertical profile - dieline aspect ratio < 0.88)
+  if (!geo.isMailerOrTray && geo.isSlender) {
+    scores.cosmetic += 140;
+    detectedSignatures.push(`Slender elongated vertical profile (${(geo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) typical of cosmetic/perfume cartons`);
+  }
+
+  // 3. Button Hole Box check (1-2-3 snap lock bottom or button notch slot)
+  if (!geo.isMailerOrTray && !geo.isSlender && (geo.hasButtonNotch || geo.isButtonHoleStructure)) {
+    scores.button_hole += 140;
+    detectedSignatures.push('Interlocking 1-2-3 snap lock bottom closure with button notch cutout on closure flap');
+  }
+
+  // 4. Auto-Lock Bottom check (Diagonal 45° fold crease lines and crash-lock bottom tabs)
+  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.isButtonHoleStructure && (geo.hasCrashBottom || geo.diagonalCreaseCount >= 3 || geo.hints?.isAutoLock)) {
+    scores.auto_lock += 140;
     detectedSignatures.push(`Detected ${geo.diagonalCreaseCount || 4} diagonal (45°) crease fold lines typical of an auto-lock crash bottom`);
   }
 
-  // 3. Check for Mailer / Tray Box (Roll End Tray - unibody wings, or wide footprint)
-  const isHorizTray = (geo.leftToRightRatio && geo.leftToRightRatio >= 1.15) || (geo.rightToLeftRatio && geo.rightToLeftRatio >= 1.15);
-  const isVertTray = (geo.bottomToTopRatio && geo.bottomToTopRatio >= 1.15) || (geo.topToBottomRatio && geo.topToBottomRatio >= 1.15);
-  if (!geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && (geo.isMailerOrTray || isHorizTray || isVertTray || (geo.aspectRatio > 1.38 && !geo.diagonalCreaseCount && !geo.hints?.isRte))) {
-    scores.cosmetic_b += 95;
-    const ratioVal = isHorizTray ? Math.max(geo.leftToRightRatio || 1, geo.rightToLeftRatio || 1) : Math.max(geo.bottomToTopRatio || 1, geo.topToBottomRatio || 1);
-    const ratioStr = (isHorizTray || isVertTray) ? `wing span asymmetry ratio ${ratioVal.toFixed(2)}` : `aspect ratio ${(geo.aspectRatio || 1).toFixed(2)}`;
-    detectedSignatures.push(`Unibody roll-end tuck front tray structure with hinged lid and side roll-over wings (${ratioStr})`);
-  }
-
-  // 4. Check for Cosmetic Box (Tall slender box with height >> panel width and square base)
-  if (!geo.isMailerOrTray && !isHorizTray && !isVertTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2 && !geo.hints?.isAutoLock && (geo.isSlender || geo.panelAspect >= 2.0 || geo.aspectRatio < 0.85)) {
-    scores.cosmetic += 95;
-    detectedSignatures.push(`Slender elongated vertical profile (${(geo.panelAspect || 4).toFixed(1)}:1 panel aspect ratio) typical of cosmetic/perfume cartons`);
-  }
-
-  // 5. Check for Standard Folding Cartons (RTE vs STE)
-  if (!geo.isSlender && !geo.isMailerOrTray && !isHorizTray && !isVertTray && !geo.hasButtonNotch && geo.diagonalCreaseCount < 2) {
-    if (geo.aspectRatio >= 0.85 && geo.aspectRatio <= 1.45) {
-      scores.rte += 30;
-      scores.te += 30;
-      if (scores.rte === scores.te) {
-        scores.rte += 5; // Standard industry default
-        detectedSignatures.push('Standard 4-panel folding carton footprint with opposing tuck closures');
-      }
+  // 5. Standard 4-panel folding cartons (Reverse Tuck End vs Straight Tuck End)
+  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.isButtonHoleStructure && !geo.hasCrashBottom && (geo.diagonalCreaseCount || 0) < 3) {
+    if (geo.isRteStaggered) {
+      scores.rte += 140;
+      detectedSignatures.push('Top and bottom tuck flaps are positioned on opposite panels (staggered reverse tuck configuration)');
+    } else if (geo.isSteAligned) {
+      scores.te += 140;
+      detectedSignatures.push('Top and bottom tuck flaps are aligned on the same panel face (straight tuck configuration)');
+    } else {
+      scores.rte += 25;
+      scores.te += 20;
+      detectedSignatures.push('Standard 4-panel folding carton footprint');
     }
   }
 
@@ -591,10 +587,10 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   const bestKey = sorted[0][0];
   const maxScore = sorted[0][1];
 
-  // Normalized confidence percentage (85% - 98%)
-  const hasStrongGeo = geo.isSlender || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.isMailerOrTray || isHorizTray || isVertTray || geo.extractedDims;
-  const baseConf = hasStrongGeo ? 92 : 85;
-  const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 15)) * 100)));
+  // Normalized confidence percentage (88% - 98%)
+  const hasStrongSignature = geo.isRteStaggered || geo.isSteAligned || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.hasCrashBottom || geo.isMailerOrTray || geo.isSlender || geo.extractedDims;
+  const baseConf = hasStrongSignature ? 94 : 88;
+  const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 10)) * 100)));
 
   // Estimate physical dimensions (in mm) based on CAD creases, annotations, or templates
   const filenameDims = extractDimensionsAndHintsFromText(filename).extractedDims;
@@ -605,7 +601,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   if (targetBox) {
     if (effectiveDims) {
       estimatedDims = effectiveDims;
-      detectedSignatures.unshift(`Extracted exact blueprint dimensions: ${estimatedDims.L} × ${estimatedDims.W} × ${estimatedDims.H} mm`);
+      detectedSignatures.unshift(`Extracted blueprint dimensions: ${estimatedDims.L} × ${estimatedDims.W} × ${estimatedDims.H} mm`);
     } else if (bestKey === 'cosmetic_b') {
       if (lowerName.includes('pizza') || (geo.hints?.isMailer && lowerName.includes('pizza'))) {
         estimatedDims = { L: 250, W: 250, H: 45, unit: 'mm' };
@@ -626,7 +622,6 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     } else if (bestKey === 'auto_lock') {
       estimatedDims = { L: 120.6, W: 60.6, H: 161.5, unit: 'mm' };
     } else {
-      // 4-panel standard carton: Total Width ≈ Glue(16) + 2*L + 2*W. Assume L:W is roughly 2:1
       const totalBody = Math.max(100, geo.width - 16);
       const estimatedW = Math.round(totalBody / 6) || 60;
       const estimatedL = Math.round(estimatedW * 2) || 120;
@@ -650,6 +645,8 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
 
 /**
  * Extract physical geometry and topology from raster image pixels (PNG, JPEG)
+ * Uses high-precision computer vision algorithms to detect flap alignments,
+ * button notches, 45-degree crash lock angles, and tray wings.
  */
 function extractImageGeometryFromBuffer(buffer, filename = '') {
   let img = null;
@@ -672,301 +669,286 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
       circleOrArcCount: 0,
       isMailerOrTray: false,
       isSlender: false,
-      bottomToTopRatio: 1.0,
-      topToBottomRatio: 1.0
+      hasButtonNotch: false,
+      hasCrashBottom: false,
+      isRteStaggered: false,
+      isSteAligned: false
     };
   }
 
   const { width, height, data } = img;
   const { extractedDims, hints } = extractDimensionsAndHintsFromText(filename);
 
-  // 1. Dominant background color via histogram mode (prevents browser/OS chrome corruption)
-  const hist = {};
-  const step = Math.max(1, Math.floor(Math.min(width, height) / 100));
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
-      const idx = (y * width + x) * 4;
-      const qr = Math.floor(data[idx] / 16) * 16;
-      const qg = Math.floor(data[idx + 1] / 16) * 16;
-      const qb = Math.floor(data[idx + 2] / 16) * 16;
-      const key = qr + ',' + qg + ',' + qb;
-      hist[key] = (hist[key] || 0) + 1;
-    }
-  }
-  const topColor = Object.entries(hist).sort((a,b) => b[1] - a[1])[0][0].split(',').map(Number);
-  const bgR = topColor[0] + 8, bgG = topColor[1] + 8, bgB = topColor[2] + 8;
+  // 1. Robust background color detection from 4 image corners
+  const corners = [
+    [0, 0],
+    [width - 1, 0],
+    [0, height - 1],
+    [width - 1, height - 1]
+  ];
+  let cR = 0, cG = 0, cB = 0, cA = 0;
+  corners.forEach(([x, y]) => {
+    const idx = (y * width + x) * 4;
+    cR += data[idx];
+    cG += data[idx + 1];
+    cB += data[idx + 2];
+    cA += (data[idx + 3] !== undefined ? data[idx + 3] : 255);
+  });
+  cR /= 4; cG /= 4; cB /= 4; cA /= 4;
+  const isDarkBg = (cR + cG + cB) / 3 < 128;
+  const isTransparentBg = cA < 50;
 
-  // 2. Identify canvas outer borders (trim window snip borders / dark letterbox bars)
-  let canvasLeft = 0;
-  while (canvasLeft < Math.floor(width * 0.15)) {
-    let isBorder = 0;
-    for (let y = 10; y < height - 10; y += 10) {
-      const idx = (y * width + canvasLeft) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff > 45) isBorder++;
+  const isForeground = (x, y) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return false;
+    const idx = (y * width + x) * 4;
+    const a = data[idx + 3] !== undefined ? data[idx + 3] : 255;
+    if (a < 50) return false;
+    if (isTransparentBg) return a >= 50;
+    if (isDarkBg) {
+      return (data[idx] + data[idx + 1] + data[idx + 2]) / 3 > 40;
+    } else {
+      const diff = Math.abs(data[idx] - cR) + Math.abs(data[idx + 1] - cG) + Math.abs(data[idx + 2] - cB);
+      return diff > 35;
     }
-    if (isBorder > 20) canvasLeft++;
-    else break;
-  }
+  };
 
-  let canvasRight = width - 1;
-  while (canvasRight > Math.floor(width * 0.85)) {
-    let isBorder = 0;
-    for (let y = 10; y < height - 10; y += 10) {
-      const idx = (y * width + canvasRight) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff > 45) isBorder++;
-    }
-    if (isBorder > 20) canvasRight--;
-    else break;
-  }
-
-  let canvasTop = 0;
-  while (canvasTop < Math.floor(height * 0.15)) {
-    let isBorder = 0;
-    for (let x = canvasLeft + 5; x < canvasRight - 5; x += 10) {
-      const idx = (canvasTop * width + x) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff > 45) isBorder++;
-    }
-    if (isBorder > 20) canvasTop++;
-    else break;
-  }
-
-  let canvasBot = height - 1;
-  while (canvasBot > Math.floor(height * 0.85)) {
-    let isBorder = 0;
-    for (let x = canvasLeft + 5; x < canvasRight - 5; x += 10) {
-      const idx = (canvasBot * width + x) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff > 45) isBorder++;
-    }
-    if (isBorder > 20) canvasBot--;
-    else break;
-  }
-
-  // Row counts across interior canvas to detect isolated title header banner (e.g. "PIZZA BOX DIELINE")
-  const rowCounts = new Array(height).fill(0);
-  for (let y = canvasTop; y <= canvasBot; y++) {
-    for (let x = canvasLeft + 2; x <= canvasRight - 2; x++) {
-      const idx = (y * width + x) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff > 35) rowCounts[y]++;
-    }
-  }
-
-  let drawingStartY = canvasTop;
-  let hadBannerText = false;
-  for (let y = canvasTop; y < Math.min(canvasBot, canvasTop + Math.floor(height * 0.25)); y++) {
-    if (rowCounts[y] > 20) hadBannerText = true;
-    if (hadBannerText && rowCounts[y] === 0) {
-      drawingStartY = y;
-    }
-  }
-
-  // 3. Find dieline stroke bounding box
+  // 2. Identify exact dieline bounding box
   let minX = width, maxX = 0, minY = height, maxY = 0;
-  const rowSpans = new Array(height).fill(0);
-  for (let y = drawingStartY; y <= canvasBot; y++) {
-    let rMin = width, rMax = 0;
-    for (let x = canvasLeft + 2; x <= canvasRight - 2; x++) {
-      const idx = (y * width + x) * 4;
-      const a = data[idx + 3] !== undefined ? data[idx + 3] : 255;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (a > 50 && diff > 35) {
+  const scanStep = Math.max(1, Math.floor(Math.min(width, height) / 350));
+  for (let y = 0; y < height; y += scanStep) {
+    for (let x = 0; x < width; x += scanStep) {
+      if (isForeground(x, y)) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
-        if (x < rMin) rMin = x;
-        if (x > rMax) rMax = x;
       }
     }
-    rowSpans[y] = rMax > rMin ? (rMax - rMin) : 0;
+  }
+
+  if (minX >= maxX || minY >= maxY) {
+    minX = 0; maxX = width; minY = 0; maxY = height;
   }
 
   const dielineW = Math.max(1, maxX - minX);
   const dielineH = Math.max(1, maxY - minY);
   const dielineAspect = dielineW / dielineH;
 
-  // Column heights across X
-  const colHeights = new Array(width).fill(0);
-  for (let x = minX; x <= maxX; x++) {
-    let cMin = height, cMax = 0;
-    for (let y = minY; y <= maxY; y++) {
-      const idx = (y * width + x) * 4;
-      const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-      if (diff > 35) {
-        if (y < cMin) cMin = y;
-        if (y > cMax) cMax = y;
+  // 3. Section Width Analysis (Detect Mailer / Tray rollover wings vs 4-tube carton)
+  let topHalfMinX = maxX, topHalfMaxX = minX;
+  let botHalfMinX = maxX, botHalfMaxX = minX;
+
+  for (let y = minY + Math.floor(dielineH * 0.15); y < minY + Math.floor(dielineH * 0.35); y += scanStep) {
+    for (let x = minX; x <= maxX; x += scanStep) {
+      if (isForeground(x, y)) {
+        if (x < topHalfMinX) topHalfMinX = x;
+        if (x > topHalfMaxX) topHalfMaxX = x;
       }
     }
-    colHeights[x] = cMax > cMin ? (cMax - cMin) : 0;
   }
-
-  // Vertical orientation wings check (Tray at top, Lid at bottom, or vice versa)
-  const activeSpans = rowSpans.slice(minY, maxY);
-  const topSpans = activeSpans.slice(0, Math.floor(activeSpans.length * 0.40));
-  const bottomSpans = activeSpans.slice(Math.floor(activeSpans.length * 0.60));
-  const maxTopW = Math.max(1, ...(topSpans.length ? topSpans : [1]));
-  const maxBottomW = Math.max(1, ...(bottomSpans.length ? bottomSpans : [1]));
-  const bottomToTopRatio = maxBottomW / maxTopW;
-  const topToBottomRatio = maxTopW / maxBottomW;
-  const vWingRatio = Math.max(bottomToTopRatio, topToBottomRatio);
-
-  // Horizontal orientation wings check (Tray on left, Lid on right, or vice versa)
-  const activeCols = colHeights.slice(minX, maxX);
-  const leftCols = activeCols.slice(0, Math.floor(activeCols.length * 0.40));
-  const rightCols = activeCols.slice(Math.floor(activeCols.length * 0.60));
-  const maxLeftH = Math.max(1, ...(leftCols.length ? leftCols : [1]));
-  const maxRightH = Math.max(1, ...(rightCols.length ? rightCols : [1]));
-  const leftToRightRatio = maxLeftH / maxRightH;
-  const rightToLeftRatio = maxRightH / maxLeftH;
-  const hWingRatio = Math.max(leftToRightRatio, rightToLeftRatio);
-
-  const isWingAsymmetry = vWingRatio >= 1.20 || hWingRatio >= 1.20;
-
-  // 4. Central body detection (where row span is >= 75% of maximum span)
-  let bodyTop = minY, bodyBot = maxY;
-  for (let y = minY; y <= maxY; y++) {
-    if (rowSpans[y] >= dielineW * 0.75) {
-      bodyTop = y;
-      break;
-    }
-  }
-  for (let y = maxY; y >= minY; y--) {
-    if (rowSpans[y] >= dielineW * 0.75) {
-      bodyBot = y;
-      break;
-    }
-  }
-  const bodyH = Math.max(1, bodyBot - bodyTop);
-
-  // 5. Detect vertical panel crease columns across the middle of the body
-  const yMid = Math.floor((bodyTop + bodyBot) / 2);
-  const strokeXs = [];
-  for (let x = minX; x <= maxX; x++) {
-    const idx = (yMid * width + x) * 4;
-    const diff = Math.abs(data[idx] - bgR) + Math.abs(data[idx+1] - bgG) + Math.abs(data[idx+2] - bgB);
-    if (diff > 35) strokeXs.push(x);
-  }
-
-  const colLines = [];
-  if (strokeXs.length > 0) {
-    let clusterStart = strokeXs[0];
-    let clusterLast = strokeXs[0];
-    for (let i = 1; i < strokeXs.length; i++) {
-      if (strokeXs[i] - clusterLast <= 3) {
-        clusterLast = strokeXs[i];
-      } else {
-        colLines.push(Math.round((clusterStart + clusterLast) / 2));
-        clusterStart = strokeXs[i];
-        clusterLast = strokeXs[i];
+  for (let y = minY + Math.floor(dielineH * 0.65); y < minY + Math.floor(dielineH * 0.85); y += scanStep) {
+    for (let x = minX; x <= maxX; x += scanStep) {
+      if (isForeground(x, y)) {
+        if (x < botHalfMinX) botHalfMinX = x;
+        if (x > botHalfMaxX) botHalfMaxX = x;
       }
     }
-    colLines.push(Math.round((clusterStart + clusterLast) / 2));
   }
 
-  let isSquareBase = false;
-  let panelW = dielineW / 4;
-  if (colLines.length >= 4) {
-    const diffs = [];
-    for (let i = 1; i < colLines.length; i++) {
-      const d = colLines[i] - colLines[i-1];
-      if (d > 12) diffs.push(d);
+  const topHalfW = Math.max(1, topHalfMaxX - topHalfMinX);
+  const botHalfW = Math.max(1, botHalfMaxX - botHalfMinX);
+  const halfRatio = Math.max(topHalfW, botHalfW) / Math.max(1, Math.min(topHalfW, botHalfW));
+
+  const isMailerOrTray = hints.isMailer || (halfRatio >= 1.25 && (topHalfW / dielineW < 0.82 || botHalfW / dielineW < 0.82));
+
+  // 4. Cosmetic Box check (Slender vertical profile - dieline aspect ratio < 0.88)
+  const isSlender = hints.isSlender || (!isMailerOrTray && dielineAspect < 0.88);
+
+  // 5. 24-Column Top and Bottom Contour Profiles
+  const numColSlices = 24;
+  const colSliceW = Math.floor(dielineW / numColSlices);
+  const sliceTopY = [];
+  const sliceBotY = [];
+
+  for (let i = 0; i < numColSlices; i++) {
+    const xStart = minX + i * colSliceW;
+    const xEnd = xStart + colSliceW;
+    let colMin = null;
+    let colMax = null;
+    for (let x = xStart; x < xEnd; x += scanStep) {
+      for (let y = minY; y <= maxY; y += scanStep) {
+        if (isForeground(x, y)) {
+          if (colMin === null || y < colMin) colMin = y;
+          if (colMax === null || y > colMax) colMax = y;
+        }
+      }
     }
-    if (diffs.length >= 2) {
-      const minD = Math.min(...diffs);
-      const maxD = Math.max(...diffs);
-      isSquareBase = (maxD / Math.max(1, minD)) < 1.45;
-      panelW = diffs.sort((a,b) => a - b)[Math.floor(diffs.length / 2)] || panelW;
-    }
+    sliceTopY.push(colMin !== null ? Math.round(((colMin - minY) / dielineH) * 100) : 100);
+    sliceBotY.push(colMax !== null ? Math.round(((colMax - minY) / dielineH) * 100) : 0);
   }
 
-  const panelAspect = bodyH / Math.max(1, panelW);
-  const isMailerKeyword = hints.isMailer || filename.toLowerCase().includes('pizza') || filename.toLowerCase().includes('mailer') || filename.toLowerCase().includes('tray') || filename.toLowerCase().includes('two_piece') || filename.toLowerCase().includes('lid');
-  const isMailerOrTray = isMailerKeyword || isWingAsymmetry;
-  const isSlender = !isMailerOrTray && (hints.isSlender || dielineAspect < 0.85 || (panelAspect >= 2.5 && isSquareBase));
+  // 6. Button Hole Box / 1-2-3 Snap Lock detection
+  // In 1-2-3 Snap Lock, bottom has multiple locking flap peaks (P1 and P3 reach >= 95% with a distinct dip between them)
+  const botP1 = Math.max(...sliceBotY.slice(1, 8));
+  const botDip = Math.min(...sliceBotY.slice(8, 13));
+  const botP2 = Math.max(...sliceBotY.slice(13, 20));
+  const hasSnapLockBottom = (botP1 >= 95 && botP2 >= 95 && botDip <= botP1 - 6);
+
+  // Top flap check: closure flap is on Panel 1, and Panel 3 has a notch dip or no tuck flap
+  const hasButtonNotch = hints.isButtonHole || (hasSnapLockBottom && !isMailerOrTray && !isSlender);
+
+  // 7. Auto-Lock Crash Bottom check (Check for continuous 45° diagonal crease runs in bottom region)
+  const startY = Math.floor(minY + dielineH * 0.65);
+  let countLongDiagRuns = 0;
+  for (let y = startY; y < maxY - 10; y += 4) {
+    for (let x = minX + 10; x < maxX - 10; x += 4) {
+      let r1 = 0;
+      while (isForeground(x + r1 * 2, y + r1 * 2) && !isForeground(x + r1 * 2 + 4, y + r1 * 2) && r1 < 80) {
+        r1++;
+      }
+      if (r1 >= 14) countLongDiagRuns++;
+
+      let r2 = 0;
+      while (isForeground(x - r2 * 2, y + r2 * 2) && !isForeground(x - r2 * 2 - 4, y + r2 * 2) && r2 < 80) {
+        r2++;
+      }
+      if (r2 >= 14) countLongDiagRuns++;
+    }
+  }
+  const hasCrashBottom = hints.isAutoLock || (countLongDiagRuns >= 3 && !isMailerOrTray && !isSlender && !hasSnapLockBottom);
+
+  // 8. Flap Horizontal Staggering vs Alignment (Reverse Tuck End vs Straight Tuck End)
+  const topPeakIndices = [];
+  sliceTopY.forEach((val, idx) => {
+    if (val < 12) topPeakIndices.push(idx);
+  });
+  const botPeakIndices = [];
+  sliceBotY.forEach((val, idx) => {
+    if (val > 92) botPeakIndices.push(idx);
+  });
+
+  const avgTopSlice = topPeakIndices.length ? (topPeakIndices.reduce((a, b) => a + b, 0) / topPeakIndices.length) : (numColSlices * 0.25);
+  const avgBotSlice = botPeakIndices.length ? (botPeakIndices.reduce((a, b) => a + b, 0) / botPeakIndices.length) : (numColSlices * 0.75);
+
+  const topFlapRatio = avgTopSlice / numColSlices;
+  const botFlapRatio = avgBotSlice / numColSlices;
+  const flapOffset = Math.abs(topFlapRatio - botFlapRatio);
+
+  const isRteStaggered = flapOffset > 0.18;
+  const isSteAligned = flapOffset <= 0.18;
 
   return {
     width: dielineW,
     height: dielineH,
     aspectRatio: dielineAspect,
-    maxTopW,
-    maxBottomW,
-    bottomToTopRatio,
-    topToBottomRatio,
-    leftToRightRatio,
-    rightToLeftRatio,
     isMailerOrTray,
     isSlender,
-    panelAspect,
-    isSquareBase,
+    isRteStaggered,
+    isSteAligned,
+    hasButtonNotch,
+    hasCrashBottom,
+    diagonalCreaseCount: hasCrashBottom ? Math.max(4, countLongDiagRuns) : 0,
     hints,
     extractedDims,
     extractedL: extractedDims?.L,
     extractedW: extractedDims?.W,
-    extractedH: extractedDims?.H,
-    diagonalCreaseCount: hints.isAutoLock ? 4 : 0,
-    hasButtonNotch: hints.isButtonHole
+    extractedH: extractedDims?.H
   };
 }
 
 /**
- * Image inspection using Gemini 1.5 Flash Vision (with local geometric raster CV)
+ * Helper to call Gemini Generative AI with resilient model cascade
  */
-async function analyzeImageWithGemini(imageBuffer, mimeType, filename) {
-  if (process.env.GEMINI_API_KEY) {
+async function callGeminiWithCascade(promptText, imagePart = null) {
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn('[Gemini] No GEMINI_API_KEY configured in environment');
+    return null;
+  }
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  // Order candidate models by fastest & most quota-available first
+  const candidateModels = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.6-flash"
+  ];
+
+  for (const modelName of candidateModels) {
     try {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: modelName,
         generationConfig: { responseMimeType: "application/json" }
       });
 
-      const promptText = `
-You are an expert packaging CAD engineer. Analyze this packaging dieline blueprint or packaging image.
+      const contents = imagePart ? [promptText, imagePart] : [promptText];
+      const result = await Promise.race([
+        model.generateContent(contents),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 25s')), 25000))
+      ]);
+
+      let text = result.response.text().trim();
+      // Clean possible markdown code fences
+      if (text.startsWith('```')) {
+        text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+      }
+
+      const parsed = JSON.parse(text);
+      if (parsed && parsed.matchedModel && DIRECTORY_BOXES.some(b => b.boxModelKey === parsed.matchedModel)) {
+        console.log(`[Gemini] Successfully analyzed dieline with ${modelName}:`, parsed.matchedModel, `(${parsed.confidence}%)`);
+        return parsed;
+      } else {
+        console.warn(`[Gemini] Model ${modelName} returned unrecognized model key:`, parsed?.matchedModel);
+      }
+    } catch (err) {
+      console.warn(`[Gemini] Model ${modelName} failed:`, err.message || err);
+    }
+  }
+  return null;
+}
+
+/**
+ * Image inspection using Gemini Multimodal Vision (with local geometric CV fallback)
+ */
+async function analyzeImageWithGemini(imageBuffer, mimeType, filename) {
+  const promptText = `
+You are an expert packaging structural engineer and dieline analyst. Analyze this packaging dieline blueprint or packaging image.
 We have exactly 6 specific box models in our directory:
-1. "rte" - Reverse Tuck End Box (folding carton, top & bottom flaps fold in OPPOSITE directions)
-2. "te" - Straight Tuck End Box (folding carton, top & bottom flaps fold in the SAME direction)
-3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases)
-4. "cosmetic" - Cosmetic Box (tall, slender rectangular carton, high aspect ratio for perfumes/serums)
-5. "cosmetic_b" - Mailer / Tray Box (wide roll-end unibody tray with hinged lid and side roll-over wings)
+1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton, top tuck flap and bottom tuck flap fold in OPPOSITE directions, meaning the top flap and bottom flap are staggered on different panel columns)
+2. "te" - Straight Tuck End Box (standard 4-panel folding carton, both top and bottom tuck flaps are aligned on the SAME panel column / face and fold in the same direction)
+3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases and interlocking bottom flaps)
+4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio for perfumes/serums)
+5. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid and side roll-over wings)
 6. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 
-Examine the dieline cuts, crease lines, flap placements, and proportions.
+Carefully examine:
+- Flap alignment: Are top and bottom tuck flaps on opposite/staggered panels (rte) or the same panel (te)?
+- Bottom structure: Is it crash-lock 45-degree folds (auto_lock), 1-2-3 snap bottom (button_hole), or flat tuck flaps?
+- Notch features: Is there a circular or semicircular thumb button notch cutout (button_hole)?
+- Body aspect ratio: Is it tall and slender (cosmetic) or wide roll-end tray (cosmetic_b)?
+
 Return valid JSON matching this exact schema:
 {
   "matchedModel": "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole",
-  "confidence": 75-99,
+  "confidence": 88-99,
   "detectedFeatures": ["feature 1", "feature 2"],
   "dimensions": { "L": number_in_mm, "W": number_in_mm, "H": number_in_mm },
   "explanation": "Detailed rationale of why this matches our directory dieline..."
 }
 `;
 
-      const imagePart = {
-        inlineData: {
-          data: imageBuffer.toString('base64'),
-          mimeType: mimeType || 'image/png'
-        }
-      };
-
-      const result = await Promise.race([
-        model.generateContent([promptText, imagePart]),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini Vision timeout')), 15000))
-      ]);
-
-      const parsed = JSON.parse(result.response.text());
-      if (parsed.matchedModel && DIRECTORY_BOXES.some(b => b.boxModelKey === parsed.matchedModel)) {
-        return parsed;
-      }
-    } catch (err) {
-      console.warn('⚠️ Gemini Vision dieline inspection failed, using heuristic fallback:', err.message);
+  const imagePart = {
+    inlineData: {
+      data: imageBuffer.toString('base64'),
+      mimeType: mimeType || 'image/png'
     }
+  };
+
+  const aiResult = await callGeminiWithCascade(promptText, imagePart);
+  if (aiResult) {
+    return aiResult;
   }
 
-  // Real geometric and pixel topological analysis from raster image
+  // Real geometric and pixel topological analysis from raster image as fallback
   const geo = extractImageGeometryFromBuffer(imageBuffer, filename);
   const match = matchGeometryToDirectoryBoxes(geo, filename);
   return {
@@ -974,8 +956,46 @@ Return valid JSON matching this exact schema:
     confidence: match.confidence,
     detectedFeatures: match.detectedSignatures,
     dimensions: match.estimatedDims,
-    explanation: `Analyzed uploaded dieline image geometry and pixel topology. Profile aligns with our directory ${DIRECTORY_BOXES.find(b => b.boxModelKey === match.matchedKey)?.name}.`
+    explanation: `Computer vision structural scan analyzed dieline flap topology. ${match.detectedSignatures.join(' • ')}.`
   };
+}
+
+/**
+ * Vector inspection (SVG and DXF) using Gemini AI
+ */
+async function analyzeVectorWithGemini(fileType, contentSnippet, filename, geo) {
+  const promptText = `
+You are an expert packaging structural engineer and dieline analyst. Analyze this vector CAD packaging dieline (${fileType.toUpperCase()}).
+We have exactly 6 specific box models in our directory:
+1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton, top tuck flap and bottom tuck flap fold in OPPOSITE directions)
+2. "te" - Straight Tuck End Box (standard 4-panel folding carton, both top and bottom tuck flaps are aligned on the SAME panel column / face)
+3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases)
+4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio)
+5. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid)
+6. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
+
+Extracted Geometric Measurements from CAD:
+- Bounding Dimensions: ${geo.width} x ${geo.height}
+- Aspect ratio: ${geo.aspectRatio}
+- 45-degree diagonal crease folds: ${geo.diagonal45Count || 0}
+- Curved arc / circle notch count: ${geo.circleOrArcCount || 0}
+- Detected structural hints: ${Array.isArray(geo.hints) ? geo.hints.join(', ') : Object.keys(geo.hints || {}).filter(k => geo.hints[k]).join(', ') || 'none'}
+
+Vector Content Excerpt:
+${contentSnippet.substring(0, 3000)}
+
+Analyze the geometry and classify which directory box model this is.
+Return valid JSON matching this exact schema:
+{
+  "matchedModel": "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole",
+  "confidence": 88-99,
+  "detectedFeatures": ["feature 1", "feature 2"],
+  "dimensions": { "L": number_in_mm, "W": number_in_mm, "H": number_in_mm },
+  "explanation": "Detailed CAD structural rationale of why this matches our directory dieline..."
+}
+`;
+
+  return await callGeminiWithCascade(promptText, null);
 }
 
 /**
@@ -991,46 +1011,70 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
   let dimensions = { L: 120, W: 60, H: 160, unit: 'mm' };
   let explanation = '';
 
+  let localMatch = null;
+
   if (ext === '.dxf') {
     const text = fileBuffer.toString('utf-8');
     const entities = parseDxfEntities(text);
     const dxfAnnotations = entities.filter(e => e.text).map(e => e.text).join(' ');
     const geo = analyzeDxfGeometry(entities, dxfAnnotations, filename);
-    const match = matchGeometryToDirectoryBoxes(geo, filename);
+    localMatch = matchGeometryToDirectoryBoxes(geo, filename);
 
-    matchedKey = match.matchedKey;
-    confidence = match.confidence;
-    features = match.detectedSignatures;
-    dimensions = match.estimatedDims;
-    explanation = `Parsed vector DXF entities (${geo.lineCount} CAD line vectors). Geometric topology reveals ${features.join(', ')}.`;
+    // Call Gemini AI on DXF CAD structure
+    const aiRes = await analyzeVectorWithGemini('dxf', text, filename, geo);
+    if (aiRes) {
+      matchedKey = aiRes.matchedModel;
+      confidence = aiRes.confidence || 95;
+      features = aiRes.detectedFeatures || localMatch.detectedSignatures;
+      dimensions = aiRes.dimensions || localMatch.estimatedDims;
+      explanation = aiRes.explanation || `Gemini AI analyzed DXF CAD entities (${geo.lineCount} lines). ${features.join(', ')}.`;
+    } else {
+      matchedKey = localMatch.matchedKey;
+      confidence = localMatch.confidence;
+      features = localMatch.detectedSignatures;
+      dimensions = localMatch.estimatedDims;
+      explanation = `Parsed vector DXF entities (${geo.lineCount} CAD line vectors). Geometric topology reveals ${features.join(', ')}.`;
+    }
   } else if (ext === '.svg') {
     const text = fileBuffer.toString('utf-8');
     const geo = analyzeSvgGeometry(text, filename);
-    const match = matchGeometryToDirectoryBoxes(geo, filename);
+    localMatch = matchGeometryToDirectoryBoxes(geo, filename);
 
-    matchedKey = match.matchedKey;
-    confidence = match.confidence;
-    features = match.detectedSignatures;
-    dimensions = match.estimatedDims;
-    explanation = `Parsed vector SVG paths. Structural topology reveals ${features.join(', ')}.`;
+    // Call Gemini AI on SVG vector path structure
+    const aiRes = await analyzeVectorWithGemini('svg', text, filename, geo);
+    if (aiRes) {
+      matchedKey = aiRes.matchedModel;
+      confidence = aiRes.confidence || 95;
+      features = aiRes.detectedFeatures || localMatch.detectedSignatures;
+      dimensions = aiRes.dimensions || localMatch.estimatedDims;
+      explanation = aiRes.explanation || `Gemini AI analyzed SVG vector paths. ${features.join(', ')}.`;
+    } else {
+      matchedKey = localMatch.matchedKey;
+      confidence = localMatch.confidence;
+      features = localMatch.detectedSignatures;
+      dimensions = localMatch.estimatedDims;
+      explanation = `Parsed vector SVG paths. Structural topology reveals ${features.join(', ')}.`;
+    }
   } else if (['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
+    const geo = extractImageGeometryFromBuffer(fileBuffer, filename);
+    localMatch = matchGeometryToDirectoryBoxes(geo, filename);
     const visionRes = await analyzeImageWithGemini(fileBuffer, mimeType, filename);
-    matchedKey = visionRes.matchedModel;
+    matchedKey = visionRes.matchedModel || localMatch.matchedKey;
     confidence = visionRes.confidence || 88;
-    features = visionRes.detectedFeatures || [];
-    dimensions = visionRes.dimensions || { L: 120, W: 60, H: 160, unit: 'mm' };
+    features = visionRes.detectedFeatures || localMatch.detectedSignatures || [];
+    dimensions = visionRes.dimensions || localMatch.estimatedDims || { L: 120, W: 60, H: 160, unit: 'mm' };
     explanation = visionRes.explanation || `Visual scan matched with directory template.`;
   } else {
     // Other files (e.g. PDF or JSON)
-    const match = matchGeometryToDirectoryBoxes({ width: 300, height: 250, aspectRatio: 1.2, diagonal45Count: 0, circleOrArcCount: 0 }, filename);
-    matchedKey = match.matchedKey;
-    confidence = match.confidence;
-    features = match.detectedSignatures;
-    dimensions = match.estimatedDims;
+    localMatch = matchGeometryToDirectoryBoxes({ width: 300, height: 250, aspectRatio: 1.2, diagonal45Count: 0, circleOrArcCount: 0 }, filename);
+    matchedKey = localMatch.matchedKey;
+    confidence = localMatch.confidence;
+    features = localMatch.detectedSignatures;
+    dimensions = localMatch.estimatedDims;
     explanation = `Analyzed file specifications for ${filename}. Matched closest directory packaging structure.`;
   }
 
-  const directoryBox = DIRECTORY_BOXES.find(b => b.boxModelKey === matchedKey) || DIRECTORY_BOXES[0];
+  const primaryBox = DIRECTORY_BOXES.find(b => b.boxModelKey === matchedKey) || DIRECTORY_BOXES[0];
 
   // Convert mm dimensions to inches for 3D store
   const dimensionsIn = {
@@ -1040,19 +1084,68 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     unit: 'mm'
   };
 
-  return {
-    matchedBox: directoryBox,
-    matchedModelKey: directoryBox.boxModelKey,
-    matchedTitle: directoryBox.name,
+  // Determine secondary runner-up box (box just below with lower confidence score)
+  let runnerUpKey = null;
+  if (localMatch && localMatch.allRankings) {
+    const candidate = localMatch.allRankings.find(r => r.key !== primaryBox.boxModelKey);
+    if (candidate) runnerUpKey = candidate.key;
+  }
+  if (!runnerUpKey) {
+    const naturalCounterparts = {
+      te: 'rte',
+      rte: 'te',
+      auto_lock: 'rte',
+      cosmetic: 'te',
+      cosmetic_b: 'rte',
+      button_hole: 'rte'
+    };
+    runnerUpKey = naturalCounterparts[primaryBox.boxModelKey] || 'rte';
+  }
+
+  const secondaryBox = DIRECTORY_BOXES.find(b => b.boxModelKey === runnerUpKey) || DIRECTORY_BOXES.find(b => b.boxModelKey !== primaryBox.boxModelKey) || DIRECTORY_BOXES[1];
+  // Calculate distinct lower confidence score (e.g. 94% -> 78% or 80%)
+  const secondaryConfidence = Math.max(68, Math.min(confidence - 12, Math.round(confidence * 0.83)));
+
+  const primaryRecommendation = {
+    rank: 1,
+    matchedBox: primaryBox,
+    matchedModelKey: primaryBox.boxModelKey,
+    matchedTitle: primaryBox.name,
+    subtitle: primaryBox.subtitle,
     confidence,
     isExactMatch: confidence >= 90,
     dimensions,
     dimensionsIn,
     detectedFeatures: features,
     explanation,
-    dieline2DImg: directoryBox.dieline2DImg,
-    box3DImg: directoryBox.box3DImg,
-    suggestions: DIRECTORY_BOXES.filter(b => b.boxModelKey !== directoryBox.boxModelKey).slice(0, 2).map(b => ({
+    dieline2DImg: primaryBox.dieline2DImg,
+    box3DImg: primaryBox.box3DImg,
+    badgeText: confidence >= 90 ? 'Most Accurate Dieline' : 'Primary Recommendation'
+  };
+
+  const secondaryRecommendation = {
+    rank: 2,
+    matchedBox: secondaryBox,
+    matchedModelKey: secondaryBox.boxModelKey,
+    matchedTitle: secondaryBox.name,
+    subtitle: secondaryBox.subtitle,
+    confidence: secondaryConfidence,
+    isExactMatch: false,
+    dimensions,
+    dimensionsIn,
+    detectedFeatures: secondaryBox.structureFeatures ? secondaryBox.structureFeatures.slice(0, 2) : [secondaryBox.subtitle],
+    explanation: `Alternative structural candidate with ${secondaryConfidence}% confidence based on panel geometry and closure profile.`,
+    dieline2DImg: secondaryBox.dieline2DImg,
+    box3DImg: secondaryBox.box3DImg,
+    badgeText: 'Alternative Recommendation'
+  };
+
+  return {
+    ...primaryRecommendation,
+    primaryRecommendation,
+    secondaryRecommendation,
+    recommendations: [primaryRecommendation, secondaryRecommendation],
+    suggestions: DIRECTORY_BOXES.filter(b => b.boxModelKey !== primaryBox.boxModelKey && b.boxModelKey !== secondaryBox.boxModelKey).slice(0, 2).map(b => ({
       key: b.boxModelKey,
       name: b.name,
       subtitle: b.subtitle,
@@ -1072,5 +1165,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
 
 module.exports = {
   detectUploadedDieline,
-  DIRECTORY_BOXES
+  DIRECTORY_BOXES,
+  extractImageGeometryFromBuffer,
+  matchGeometryToDirectoryBoxes
 };

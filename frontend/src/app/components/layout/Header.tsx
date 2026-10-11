@@ -72,6 +72,9 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
       view = 'admin';
       targetPath = '/admin';
     }
+    if (view === 'aistudio') {
+      window.dispatchEvent(new CustomEvent('ai-creation-click'));
+    }
     window.history.pushState(null, '', targetPath);
     if (onNavigate) {
       onNavigate(view as any);

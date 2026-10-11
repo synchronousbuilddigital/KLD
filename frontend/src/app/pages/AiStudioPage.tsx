@@ -11,6 +11,7 @@ import { generateCosmeticBoxDieline } from '../../lib/cosmeticBoxDielineGenerato
 import { generateDXFString } from '../../lib/exportUtils';
 import DielineSVG from '../../components/DielineSVG';
 import EditorModal from './EditorModal';
+import BoxStudioModal from './BoxStudioModal';
 import Header from '../components/layout/Header';
 import './AiStudioPage.css';
 import { 
@@ -41,7 +42,8 @@ import {
   Eye,
   Edit3,
   Move,
-  Maximize2
+  Maximize2,
+  Scissors
 } from 'lucide-react';
 
 interface AiStudioPageProps {
@@ -49,7 +51,16 @@ interface AiStudioPageProps {
   onNavigateToWorkshop?: () => void;
 }
 
-
+const BOX_TITLES: Record<string, string> = {
+  rte: 'Reverse Tuck End Box',
+  te: 'Straight Tuck End Box',
+  auto_lock: 'Auto Lock Bottom Box',
+  cosmetic: 'Cosmetic Box',
+  cosmetic_b: 'Mailer / Tray Box',
+  button_hole: 'Button Hole Box',
+  water_bottle: 'Water Bottle',
+  can: 'Beverage Can'
+};
 
 export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioPageProps) {
   const store = useBoxStore((state: any) => state);
@@ -70,8 +81,15 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
   const [chatThread, setChatThread] = useState<any[]>([]);
   const [selectedDirection, setSelectedDirection] = useState<any>(null);
   
-  // Compositor Layer State
-  const currentDecals = store.aiDecalsByModel ? (store.aiDecalsByModel[store.boxModel] || []) : [];
+  const [activeBackgroundUrl, setActiveBackgroundUrl] = useState<string | null>(null);
+  const [activeIconUrl, setActiveIconUrl] = useState<string | null>(null);
+  const [activeTypography, setActiveTypography] = useState<any>(null);
+
+  // Decal is only visible when user explicitly applies it via 3D Studio button
+  const displayBackgroundUrl = activeBackgroundUrl;
+
+  // Compositor Layer State: Decals are strictly opt-in and only active when user explicitly clicks 3D Studio for a variation
+  const currentDecals = activeBackgroundUrl && store.aiDecalsByModel ? (store.aiDecalsByModel[store.boxModel] || []) : [];
   
   useEffect(() => {
     // Ensure we are operating in the mockup context so we don't accidentally leak changes to the dieline context
@@ -80,25 +98,13 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
     }
   }, []);
   
-  // Try to find the existing applied background from the store if one isn't explicitly active
-  const initialBgUrl = useMemo(() => {
-    const bgDecal = currentDecals.find(d => d.type === 'image' && d.url);
-    return bgDecal ? bgDecal.url : null;
-  }, [currentDecals]);
-
-  const [activeBackgroundUrl, setActiveBackgroundUrl] = useState<string | null>(savedStudioState?.activeBackgroundUrl || null);
-  const [activeIconUrl, setActiveIconUrl] = useState<string | null>(savedStudioState?.activeIconUrl || null);
-  const [activeTypography, setActiveTypography] = useState<any>(savedStudioState?.activeTypography || null);
-
-  // If no background is actively set, but we have one in the store, use it for the AI 2D view
-  const displayBackgroundUrl = activeBackgroundUrl || initialBgUrl;
-  
   const [showBriefAccordion, setShowBriefAccordion] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [foldProgress, setFoldProgress] = useState(1); // 1 = closed box, 0 = open dieline
   const [isPlaying, setIsPlaying] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isDielineStudioOpen, setIsDielineStudioOpen] = useState(false);
 
   // Per-prompt box tracking (Pacdora-accurate routing)
   const [activeBoxModel, setActiveBoxModel] = useState<string>(savedStudioState?.activeBoxModel || store.boxModel || 'rte');
@@ -106,18 +112,31 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
   const [activeDims_mm, setActiveDims_mm] = useState(savedStudioState?.activeDims_mm || { L: 120, W: 80, H: 200 });
   const [activeArtworkFace, setActiveArtworkFace] = useState<string>('front');
 
-  // Keep activeBoxModel in sync whenever store.boxModel changes
+  // Keep activeBoxModel in sync and ensure box starts completely blank when model changes
   useEffect(() => {
     if (store.boxModel && store.boxModel !== activeBoxModel) {
       setActiveBoxModel(store.boxModel);
+      setActiveBackgroundUrl(null);
+      setActiveIconUrl(null);
+      setActiveTypography(null);
+      if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+      else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
     }
   }, [store.boxModel]);
 
   const handleApplyBoxModel = (model: string, dimsIn?: any, dimsMm?: any) => {
     setActiveBoxModel(model);
+    // Independent decal rule: clear decals completely so new box opens 100% blank
+    setActiveBackgroundUrl(null);
+    setActiveIconUrl(null);
+    setActiveTypography(null);
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+
     if (store.setBoxModel) {
       store.setBoxModel(model);
     }
+
     if (dimsIn && store.setDim) {
       store.setDim('L', dimsIn.L);
       store.setDim('W', dimsIn.W);
@@ -128,7 +147,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
     } else if (dimsIn) {
       setActiveDims_mm({
         L: Math.round(dimsIn.L * 25.4),
-        W: Math.round(dimsIn.W * 25.4),
+        W: Math.round(dimsIn.L * 25.4),
         H: Math.round(dimsIn.H * 25.4)
       });
     }
@@ -217,22 +236,34 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
     }
   };
 
-  // Restore compositor decals on initial mount if saved background is present
+  // Decals are strictly independent & opt-in: keep 3D box clean by default on initial mount
   useEffect(() => {
-    if (savedStudioState?.activeBackgroundUrl) {
-      syncDecalsToStore(
-        savedStudioState.activeBackgroundUrl,
-        savedStudioState.activeIconUrl,
-        savedStudioState.activeTypography
-      );
-    }
+    setActiveBackgroundUrl(null);
+    setActiveIconUrl(null);
+    setActiveTypography(null);
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+    try {
+      localStorage.removeItem('kld_saved_ai_decals');
+      localStorage.removeItem('kld_ai_studio_state');
+    } catch (e) {}
   }, []);
 
   const handleApplyVariationTo3DModel = (variation: any) => {
+    if (!variation) {
+      setActiveBackgroundUrl(null);
+      setActiveIconUrl(null);
+      setActiveTypography(null);
+      if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+      else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+      if (typeof store.setDecals === 'function') store.setDecals([]);
+      return;
+    }
     const bgUrl = variation.backgroundUrl || variation.url;
     setActiveBackgroundUrl(bgUrl);
     setActiveIconUrl(variation.iconUrl || null);
     setActiveTypography(variation.typography || null);
+    setCardMode('3d');
 
     // Automatically extract dominant color from the design
     if (bgUrl) {
@@ -294,13 +325,6 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
       
       {/* --- TOP NAVIGATION BAR --- */}
       <Header activeNav="aistudio" />
-      
-      {/* --- AI STUDIO TOOLBAR --- */}
-      <div className="ai-studio-topbar" style={{ marginTop: '10px' }}>
-        <div className="ai-topbar-left">
-          <span className="ai-project-name" style={{ marginLeft: '12px' }}>Untitled KLD AI Design</span>
-        </div>
-      </div>
 
       {/* --- MAIN STUDIO WORKSPACE --- */}
       <div className="ai-studio-main">
@@ -309,34 +333,98 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         <div className="ai-canvas-workspace">
           
             {/* Pacdora 2D | 3D Interactive Card Canvas Container */}
-            <div style={{ position: 'relative', width: '560px', height: '560px', background: '#ffffff', border: '2px stroke #a855f7', borderRadius: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '580px', height: '580px', background: store.theme === 'dark' ? '#18181b' : '#b4bcc8', border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #94a3b8', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               
-              {/* Card Header: mode badge + 3-way toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'transparent', zIndex: 15 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#7e22ce', fontSize: '13px', fontWeight: '800' }}>
-                  <Sparkles style={{ width: '15px', height: '15px' }} />
-                  <span>{
-                    cardMode === 'render' ? 'AI Product Render' :
-                    cardMode === '3d' ? '3D Box Model' : '2D Dieline'
-                  }</span>
+              {/* Card Header: Clean mode badge on left + Action button & 3-way toggle on right */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: store.theme === 'dark' ? '#1f1f23' : '#ffffff', borderBottom: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #cbd5e1', zIndex: 15 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: cardMode === '3d' ? '#eff6ff' : cardMode === '2d' ? '#f5f3ff' : '#f4f4f5', color: cardMode === '3d' ? '#2563eb' : cardMode === '2d' ? '#7c3aed' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sparkles style={{ width: '15px', height: '15px' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                      {cardMode === 'render' ? 'AI Product Render' : cardMode === '3d' ? '3D Box Model' : '2D CAD Dieline'}
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#64748b' }}>
+                      {BOX_TITLES[store.boxModel || activeBoxModel] || 'Standard Packaging'}
+                    </span>
+                  </div>
                 </div>
-                {/* 3-way pill: AI Render | 3D | 2D */}
-                <div style={{ display: 'flex', background: '#18181b', borderRadius: '10px', padding: '3px', gap: '2px' }}>
-                  {(['render', '3d', '2d'] as const).map(m => (
-                    <button key={m} onClick={() => setCardMode(m)}
-                      style={{ background: cardMode === m ? '#fff' : 'transparent', color: cardMode === m ? '#000' : '#a1a1aa', border: 'none', padding: '4px 10px', borderRadius: '7px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      {m === 'render' ? 'AI' : m === '3d' ? '3D' : '2D'}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Subtle, elegant header actions */}
+                  {cardMode === '2d' && (
+                    <button
+                      onClick={() => setIsDielineStudioOpen(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: '#f8fafc',
+                        color: '#0f172a',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '8px',
+                        padding: '5px 12px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#0f172a'; }}
+                      title="Open full Dieline Generator & Studio"
+                    >
+                      <Scissors style={{ width: '12px', height: '12px', color: '#2563eb' }} />
+                      <span>Customise Dieline</span>
+                      <ExternalLink style={{ width: '11px', height: '11px', opacity: 0.6 }} />
                     </button>
-                  ))}
+                  )}
+
+                  {cardMode === '3d' && (
+                    <button
+                      onClick={() => setIsEditorOpen(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        background: '#f8fafc',
+                        color: '#0f172a',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '8px',
+                        padding: '5px 12px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#0f172a'; }}
+                      title="Customise 3D Box graphics and artwork"
+                    >
+                      <Box style={{ width: '12px', height: '12px', color: '#2563eb' }} />
+                      <span>Customise Box</span>
+                      <ExternalLink style={{ width: '11px', height: '11px', opacity: 0.6 }} />
+                    </button>
+                  )}
+
+                  {/* 3-way pill: AI Render | 3D | 2D */}
+                  <div style={{ display: 'flex', background: '#18181b', borderRadius: '10px', padding: '3px', gap: '2px' }}>
+                    {(['render', '3d', '2d'] as const).map(m => (
+                      <button key={m} onClick={() => setCardMode(m)}
+                        style={{ background: cardMode === m ? '#fff' : 'transparent', color: cardMode === m ? '#000' : '#a1a1aa', border: 'none', padding: '4px 10px', borderRadius: '7px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', transition: 'all 0.2s' }}>
+                        {m === 'render' ? 'AI' : m === '3d' ? '3D' : '2D'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Card Main Viewport */}
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: store.theme === 'dark' ? '#18181b' : '#b4bcc8' }}>
 
                 {cardMode === 'render' ? (
                   /* AI Compositor Preview — shows bg + icon + text composited */
-                  <div style={{ width: '100%', height: '100%', background: '#f4f4f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: '100%', background: store.theme === 'dark' ? '#1c1c1f' : '#f1f3f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {displayBackgroundUrl ? (
                       <>
                         {/* 1. Base graphic */}
@@ -366,7 +454,14 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                 ) : cardMode === '3d' ? (
                   /* 3D WebGL Box — uses activeBoxModel (correct per prompt type) */
                   <div 
-                    style={{ width: '100%', height: '100%', position: 'relative' }}
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      position: 'relative',
+                      background: store.theme === 'dark' 
+                        ? 'radial-gradient(circle at 50% 45%, #27272a 0%, #18181b 100%)' 
+                        : 'radial-gradient(circle at 50% 45%, #b4bcc8 0%, #8896a6 100%)'
+                    }}
                     onDoubleClick={() => setIsEditorOpen(true)}
                   >
                     <Box3DViewer
@@ -383,13 +478,13 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                       decals={currentDecals}
                     />
                     {/* Fold slider */}
-                    <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: '#ffffff', border: '1px solid #e4e4e7', padding: '8px 20px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 10 }}>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#71717a' }}>Open</span>
+                    <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: store.theme === 'dark' ? '#27272a' : '#ffffff', border: store.theme === 'dark' ? '1px solid #3f3f46' : '1px solid #cbd5e1', padding: '8px 20px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 10 }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: store.theme === 'dark' ? '#a1a1aa' : '#64748b' }}>Open</span>
                       <input type="range" min="0" max="1" step="0.01" value={foldProgress}
                         onChange={e => { setFoldProgress(parseFloat(e.target.value)); setIsPlaying(false); }}
                         style={{ width: '130px', accentColor: '#2563eb', cursor: 'pointer' }}/>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#71717a' }}>Close</span>
-                      <div style={{ width: '1px', height: '16px', background: '#e4e4e7', margin: '0 4px' }} />
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: store.theme === 'dark' ? '#a1a1aa' : '#64748b' }}>Close</span>
+                      <div style={{ width: '1px', height: '16px', background: store.theme === 'dark' ? '#3f3f46' : '#cbd5e1', margin: '0 4px' }} />
                       <button onClick={() => setIsPlaying(!isPlaying)}
                         style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '700' }}>
                         {isPlaying ? <Pause style={{ width: '14px', height: '14px' }} /> : <Play style={{ width: '14px', height: '14px' }} />}
@@ -400,8 +495,8 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                 ) : (
                   /* 2D Structural Dieline */
                   <div 
-                    style={{ width: '100%', height: '100%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer' }}
-                    onDoubleClick={() => setIsEditorOpen(true)}
+                    style={{ width: '100%', height: '100%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer', position: 'relative' }}
+                    onDoubleClick={() => setIsDielineStudioOpen(true)}
                   >
                     <div style={{ width: '100%', height: '100%', transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 0.2s ease-out' }}>
                       <DielineSVG
@@ -413,6 +508,34 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                         H_override={activeDims_mm.H}
                         model_override={store.boxModel || activeBoxModel}
                       />
+                    </div>
+
+                    {/* Prominent floating action button in 2D mode */}
+                    <div style={{ position: 'absolute', bottom: '18px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+                      <button
+                        onClick={() => setIsDielineStudioOpen(true)}
+                        style={{
+                          background: '#ffffff',
+                          color: '#0f172a',
+                          border: '1.5px solid #cbd5e1',
+                          padding: '8px 18px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.transform = 'scale(1)'; }}
+                      >
+                        <Scissors style={{ width: '13px', height: '13px', color: '#2563eb' }} />
+                        <span>Open Dieline Studio (Dimensions & CAD)</span>
+                        <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.6 }} />
+                      </button>
                     </div>
                   </div>
                 )}
@@ -513,7 +636,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         )}
 
         {/* --- RIGHT SIDEBAR ("AI packaging design") --- */}
-        <div style={{ width: '420px', borderLeft: '1px solid #e4e4e7', background: '#fcfcfc', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: '440px', minWidth: '400px', maxWidth: '480px', borderLeft: '1px solid #e4e4e7', background: '#ffffff', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <AiPackagingAssistant 
             useStore={useBoxStore} 
             isOpen={true} 
@@ -523,8 +646,22 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         </div>
       </div>
 
+      {isDielineStudioOpen && (
+        <BoxStudioModal
+          isOpen={isDielineStudioOpen}
+          onClose={() => setIsDielineStudioOpen(false)}
+          initialModel={store.boxModel || activeBoxModel}
+          boxTitle={BOX_TITLES[store.boxModel || activeBoxModel] || 'Dieline Studio'}
+        />
+      )}
+
       {isEditorOpen && (
-        <EditorModal isOpen={isEditorOpen} onClose={() => setIsEditorOpen(false)} isAiMode={true} />
+        <EditorModal 
+          isOpen={isEditorOpen} 
+          onClose={() => setIsEditorOpen(false)} 
+          contextType={cardMode === '2d' ? 'dieline' : 'mockup'} 
+          isAiMode={true} 
+        />
       )}
     </div>
   );

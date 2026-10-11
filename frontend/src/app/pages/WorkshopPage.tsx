@@ -275,6 +275,12 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
   };
 
   const handleApplyAiVariation = (variation: any) => {
+    if (!variation) {
+      if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+      else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+      if (typeof store.setDecals === 'function') store.setDecals([]);
+      return;
+    }
     const bgUrl = variation?.backgroundUrl || variation?.url;
     if (!bgUrl) return;
 
@@ -304,6 +310,18 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
     store.setDecals([wrapDecal]);
     if (typeof store.setAiDecals === 'function') {
       store.setAiDecals([wrapDecal]);
+    }
+  };
+
+  const handleApplyAiBoxModel = (model: string, dimsIn?: any) => {
+    if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+    else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+    if (typeof store.setDecals === 'function') store.setDecals([]);
+    if (store.setBoxModel) store.setBoxModel(model);
+    if (dimsIn && store.setDim) {
+      store.setDim('L', dimsIn.L);
+      store.setDim('W', dimsIn.W);
+      store.setDim('H', dimsIn.H);
     }
   };
   
@@ -1012,6 +1030,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               onClose={() => setIsAiOpen(false)} 
               isOpen={isAiOpen} 
               onApplyVariation={handleApplyAiVariation}
+              onApplyBoxModel={handleApplyAiBoxModel}
             />
           </div>
 

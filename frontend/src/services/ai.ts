@@ -59,6 +59,12 @@ export interface DielineDetectionResult {
   explanation: string;
   dieline2DImg: string;
   box3DImg: string;
+  subtitle?: string;
+  badgeText?: string;
+  primaryRecommendation?: any;
+  secondaryRecommendation?: any;
+  recommendations?: any[];
+  suggestions?: any[];
   allDirectoryBoxes: Array<{
     key: string;
     name: string;

@@ -10,6 +10,8 @@
   color: #18181b;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
   user-select: none;
+  padding-top: 68px;
+  box-sizing: border-box;
 }
 
 .ai-studio-root.dark-theme {
