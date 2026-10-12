@@ -966,7 +966,10 @@ Return valid JSON matching this exact schema:
   const aiResult = await callGeminiWithCascade(promptText, imagePart);
   if (aiResult) {
     // Reconcile AI result with definitive geometric ground-truth
-    if (currentGeo.isRteStaggered && aiResult.matchedModel === 'te') {
+    if (currentGeo.isSlender && (aiResult.matchedModel === 'te' || aiResult.matchedModel === 'rte')) {
+      aiResult.matchedModel = 'cosmetic';
+      aiResult.explanation = `Cosmetic Box (Slender Tuck) verified. Tall, slender elongated vertical profile (${(currentGeo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) characteristic of cosmetic, serum, and perfume packaging.`;
+    } else if (currentGeo.isRteStaggered && aiResult.matchedModel === 'te') {
       aiResult.matchedModel = 'rte';
       aiResult.explanation = `Reverse Tuck End Box verified. Top tuck flap and bottom tuck flap are positioned on opposite panels (staggered reverse tuck configuration).`;
     } else if (currentGeo.isSteAligned && aiResult.matchedModel === 'rte') {
@@ -996,10 +999,10 @@ async function analyzeVectorWithGemini(fileType, contentSnippet, filename, geo) 
   const promptText = `
 You are an expert packaging structural engineer and dieline analyst. Analyze this vector CAD packaging dieline (${fileType.toUpperCase()} file: ${filename}).
 We have exactly 6 specific box models in our directory:
-1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton, top tuck flap and bottom tuck flap fold in OPPOSITE directions, meaning top flap and bottom flap are staggered on different panel columns)
-2. "te" - Straight Tuck End Box (standard 4-panel folding carton, both top and bottom tuck flaps are aligned on the SAME panel column / face)
+1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton with moderate aspect ratio, top tuck flap and bottom tuck flap fold in OPPOSITE directions, meaning top flap and bottom flap are staggered on different panel columns)
+2. "te" - Straight Tuck End Box (standard 4-panel folding carton with moderate aspect ratio, both top and bottom tuck flaps are aligned on the SAME panel column / face)
 3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases and pre-glued locking base)
-4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio)
+4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio H/W > 2.2 for perfumes, serums, dropper bottles. Its defining feature is its slender vertical silhouette)
 5. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid)
 6. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 
@@ -1027,7 +1030,10 @@ Return valid JSON matching this exact schema:
   const aiRes = await callGeminiWithCascade(promptText, null);
   if (aiRes) {
     // Reconcile with ground-truth CAD geometry
-    if (geo.isRteStaggered && aiRes.matchedModel === 'te') {
+    if (geo.isSlender && (aiRes.matchedModel === 'te' || aiRes.matchedModel === 'rte')) {
+      aiRes.matchedModel = 'cosmetic';
+      aiRes.explanation = `Cosmetic Box (Slender Tuck) verified. Tall, slender elongated aspect ratio characteristic of cosmetic, serum, and perfume packaging.`;
+    } else if (geo.isRteStaggered && aiRes.matchedModel === 'te') {
       aiRes.matchedModel = 'rte';
       aiRes.explanation = `Reverse Tuck End Box verified. CAD vector geometry confirms top and bottom tuck flaps fold in opposite directions across staggered panels.`;
     } else if (geo.isSteAligned && aiRes.matchedModel === 'rte') {
