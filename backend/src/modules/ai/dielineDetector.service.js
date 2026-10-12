@@ -868,15 +868,11 @@ async function callGeminiWithCascade(promptText, imagePart = null) {
   const genAI = new GoogleGenerativeAI(apiKey);
   // Order candidate models by fastest & most quota-available first
   const candidateModels = [
-    "gemini-3.5-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-3.1-flash-lite",
-    "gemini-3.6-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash"
+    { name: "gemini-3.5-flash-lite", timeoutMs: 9000 },
+    { name: "gemini-3.1-flash-lite", timeoutMs: 7000 }
   ];
 
-  for (const modelName of candidateModels) {
+  for (const { name: modelName, timeoutMs } of candidateModels) {
     try {
       const model = genAI.getGenerativeModel({
         model: modelName,
@@ -886,7 +882,7 @@ async function callGeminiWithCascade(promptText, imagePart = null) {
       const contents = imagePart ? [promptText, imagePart] : [promptText];
       const result = await Promise.race([
         model.generateContent(contents),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 25s')), 25000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${timeoutMs / 1000}s`)), timeoutMs))
       ]);
 
       let text = result.response.text().trim();

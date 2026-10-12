@@ -120,7 +120,7 @@ async function callGeminiLLM(userPrompt, currentContext = {}) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-2.0-flash"];
+  const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
 
   for (const modelName of candidateModels) {
     try {
@@ -131,7 +131,7 @@ async function callGeminiLLM(userPrompt, currentContext = {}) {
 
       const result = await Promise.race([
         model.generateContent(promptText),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
       ]);
       const responseText = result.response.text();
 
@@ -478,7 +478,7 @@ async function processAiChatV2(prompt, currentContext) {
   let v2Data = null;
   const apiKey = process.env.GEMINI_API_KEY;
   if (apiKey) {
-    const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-2.0-flash"];
+    const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
     for (const modelName of candidateModels) {
       try {
         const genAI = new GoogleGenerativeAI(apiKey);
@@ -492,7 +492,7 @@ async function processAiChatV2(prompt, currentContext) {
             { text: SYSTEM_PACKAGING_PROMPT_V2 },
             { text: `User request: ${prompt}\n\nCurrent context: ${JSON.stringify(currentContext)}` }
           ]),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini API timeout')), 15000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini API timeout')), 8000))
         ]);
         
         const responseText = res.response.text();
