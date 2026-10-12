@@ -800,7 +800,56 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                 <div style={{ textAlign: "center", color: t.textMuted, fontSize: "13px", marginTop: "20px" }}>Tools coming soon...</div>
               ) : activeTab === "AI Creation" ? (
                 <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                  <AiPackagingAssistant useStore={useEditorStore} isOpen={true} onClose={() => setActiveTab("Elements")} />
+                  <AiPackagingAssistant 
+                    useStore={useEditorStore} 
+                    isOpen={true} 
+                    onClose={() => setActiveTab("Elements")} 
+                    onApplyBoxModel={(model, dimsIn) => {
+                      if (model && useEditorStore.getState().setBoxModel) {
+                        useEditorStore.getState().setBoxModel(model);
+                      } else if (model) {
+                        useEditorStore.setState({ boxModel: model });
+                      }
+                      if (dimsIn) {
+                        if (useEditorStore.getState().setDim) {
+                          useEditorStore.getState().setDim('L', dimsIn.L);
+                          useEditorStore.getState().setDim('W', dimsIn.W);
+                          useEditorStore.getState().setDim('H', dimsIn.H);
+                        } else {
+                          useEditorStore.setState({ L: dimsIn.L, W: dimsIn.W, H: dimsIn.H });
+                        }
+                      }
+                    }}
+                    onApplyVariation={(variation) => {
+                      if (!variation) {
+                        setDecals([]);
+                        return;
+                      }
+                      const bgUrl = variation?.backgroundUrl || variation?.url;
+                      if (!bgUrl) return;
+                      const s = useEditorStore.getState();
+                      const L = s.L || 4.7244;
+                      const W = s.W || 2.3622;
+                      const H = s.H || 6.2992;
+                      const glue = s.glueFlapWidth || 0.625;
+                      const totalW = glue + L * 2 + W * 2;
+                      const totalH = H + W * 2 + 1.25;
+                      const xCenter = totalW / 2;
+                      const yCenter = W + 0.625 + (H / 2);
+                      const wrapDecal = {
+                        id: 'ai-wrap-' + Date.now(),
+                        type: 'image',
+                        url: bgUrl,
+                        width: totalW,
+                        height: totalH,
+                        x: xCenter,
+                        y: yCenter,
+                        surface: 'Outside',
+                        isWrap: true
+                      };
+                      setDecals([wrapDecal]);
+                    }}
+                  />
                 </div>
               ) : (
                 <div style={{ textAlign: "center", color: t.textMuted, fontSize: "13px", marginTop: "20px" }}>Coming soon...</div>
@@ -836,7 +885,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   disableInteractions={activeTool === "hand"}
                   useStore={useEditorStore}
                 />
-              ), [store.L, store.W, store.H, store.T, store.materialType, activeColor, activeSurface, surfaceDecals, setDecals, commitHistory, activeDecalId, setActiveDecalId, handleDeleteDecal, activeTool])}
+              ), [store.boxModel, store.L, store.W, store.H, store.T, store.materialType, activeColor, activeSurface, surfaceDecals, setDecals, commitHistory, activeDecalId, setActiveDecalId, handleDeleteDecal, activeTool])}
             </div>
           </div>
         </div>
@@ -878,7 +927,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   decals={deferredDecals}
                   useStore={useEditorStore}
                 />
-              ), [store.L, store.W, store.H, store.T, foldProgress, store.materialType, activeColor, store.capColor, deferredDecals])}
+              ), [store.boxModel, store.L, store.W, store.H, store.T, foldProgress, store.materialType, activeColor, store.capColor, deferredDecals])}
               <div style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(255,255,255,0.8)", padding: "4px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: "bold", color: "#333" }}>3D</div>
             </div>
 

@@ -860,17 +860,20 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
  * Helper to call Gemini Generative AI with resilient model cascade
  */
 async function callGeminiWithCascade(promptText, imagePart = null) {
-  if (!process.env.GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     console.warn('[Gemini] No GEMINI_API_KEY configured in environment');
     return null;
   }
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const genAI = new GoogleGenerativeAI(apiKey);
   // Order candidate models by fastest & most quota-available first
   const candidateModels = [
     "gemini-3.5-flash-lite",
-    "gemini-3.1-flash-lite",
     "gemini-3.5-flash",
-    "gemini-3.6-flash"
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash"
   ];
 
   for (const modelName of candidateModels) {

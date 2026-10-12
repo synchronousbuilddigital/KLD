@@ -120,22 +120,29 @@ async function callGeminiLLM(userPrompt, currentContext = {}) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+  const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-2.0-flash"];
 
-    const promptText = `${SYSTEM_PACKAGING_PROMPT}\n\nCurrent Context: ${JSON.stringify(currentContext)}\nUser Packaging Request: "${userPrompt}"\nReturn ONLY raw JSON.`;
+  for (const modelName of candidateModels) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: modelName });
 
-    const result = await model.generateContent(promptText);
-    const responseText = result.response.text();
+      const promptText = `${SYSTEM_PACKAGING_PROMPT}\n\nCurrent Context: ${JSON.stringify(currentContext)}\nUser Packaging Request: "${userPrompt}"\nReturn ONLY raw JSON.`;
 
-    // Extract JSON from response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const result = await Promise.race([
+        model.generateContent(promptText),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+      ]);
+      const responseText = result.response.text();
+
+      // Extract JSON from response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (err) {
+      console.warn(`Gemini LLM (${modelName}) failed, trying next:`, err.message);
     }
-  } catch (err) {
-    console.warn("Gemini LLM API call failed, falling back to smart local NLP engine:", err.message);
   }
   return null;
 }
@@ -469,26 +476,31 @@ async function processAiChatV2(prompt, currentContext) {
   
   // Try Gemini for true V2 output
   let v2Data = null;
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3.5-flash",
-        generationConfig: { responseMimeType: "application/json" }
-      });
-      
-      const res = await Promise.race([
-        model.generateContent([
-          { text: SYSTEM_PACKAGING_PROMPT_V2 },
-          { text: `User request: ${prompt}\n\nCurrent context: ${JSON.stringify(currentContext)}` }
-        ]),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini API timeout')), 15000))
-      ]);
-      
-      const responseText = res.response.text();
-      v2Data = JSON.parse(responseText);
-    } catch (e) {
-      console.error("V2 Gemini failed, falling back to mock V2:", e.message);
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    const candidateModels = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-2.0-flash"];
+    for (const modelName of candidateModels) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: { responseMimeType: "application/json" }
+        });
+        
+        const res = await Promise.race([
+          model.generateContent([
+            { text: SYSTEM_PACKAGING_PROMPT_V2 },
+            { text: `User request: ${prompt}\n\nCurrent context: ${JSON.stringify(currentContext)}` }
+          ]),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Gemini API timeout')), 15000))
+        ]);
+        
+        const responseText = res.response.text();
+        v2Data = JSON.parse(responseText);
+        if (v2Data) break;
+      } catch (e) {
+        console.warn(`V2 Gemini (${modelName}) failed:`, e.message);
+      }
     }
   }
 
