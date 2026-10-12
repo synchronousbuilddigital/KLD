@@ -48,6 +48,63 @@ interface Message {
   variations?: any[];
   actionsApplied?: string[];
   dielineMatch?: any;
+  filePreview?: {
+    type: 'image' | 'svg' | 'dxf' | 'other';
+    name: string;
+    sizeFormatted: string;
+    url?: string;
+    svgPreview?: string;
+  };
+}
+
+function generateDxfWireframeSvg(dxfText: string): string {
+  const lines = dxfText.split(/\r?\n/);
+  const entities: { x1: number; y1: number; x2: number; y2: number }[] = [];
+  let cur: any = null;
+  let code: number | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (i % 2 === 0) {
+      code = parseInt(line, 10);
+    } else {
+      if (code === 0) {
+        if (cur && cur.x1 !== undefined && cur.y1 !== undefined && cur.x2 !== undefined && cur.y2 !== undefined) {
+          entities.push(cur);
+        }
+        cur = line.toUpperCase() === 'LINE' ? {} : null;
+      } else if (cur) {
+        if (code === 10) cur.x1 = parseFloat(line);
+        else if (code === 20) cur.y1 = parseFloat(line);
+        else if (code === 11) cur.x2 = parseFloat(line);
+        else if (code === 21) cur.y2 = parseFloat(line);
+      }
+    }
+  }
+  if (cur && cur.x1 !== undefined && cur.y1 !== undefined && cur.x2 !== undefined && cur.y2 !== undefined) {
+    entities.push(cur);
+  }
+
+  if (entities.length === 0) return '';
+
+  const xs = entities.flatMap(e => [e.x1, e.x2]).filter(n => !isNaN(n));
+  const ys = entities.flatMap(e => [e.y1, e.y2]).filter(n => !isNaN(n));
+  if (xs.length === 0 || ys.length === 0) return '';
+
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const w = Math.max(1, maxX - minX);
+  const h = Math.max(1, maxY - minY);
+  const pad = Math.max(w, h) * 0.05;
+  const strokeW = Math.max(0.6, w / 350);
+
+  const lineTags = entities.slice(0, 1000).map(e => {
+    const y1 = maxY - (e.y1 - minY);
+    const y2 = maxY - (e.y2 - minY);
+    return `<line x1="${e.x1}" y1="${y1}" x2="${e.x2}" y2="${y2}" stroke="#38bdf8" stroke-width="${strokeW}" stroke-linecap="round"/>`;
+  }).join('');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX - pad} ${minY - pad} ${w + pad * 2} ${h + pad * 2}" style="width:100%;height:100%;">${lineTags}</svg>`;
 }
 
 interface AiPackagingAssistantProps {
@@ -528,10 +585,55 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
     else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
     if (typeof store.setDecals === 'function') store.setDecals([]);
 
+    let filePreview: any = null;
+    const lowerName = file.name.toLowerCase();
+
+    if (file.type.startsWith('image/') || lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.webp')) {
+      const url = URL.createObjectURL(file);
+      filePreview = {
+        type: 'image',
+        name: file.name,
+        sizeFormatted: (file.size / 1024).toFixed(1) + ' KB',
+        url
+      };
+    } else if (file.type === 'image/svg+xml' || lowerName.endsWith('.svg')) {
+      const url = URL.createObjectURL(file);
+      filePreview = {
+        type: 'svg',
+        name: file.name,
+        sizeFormatted: (file.size / 1024).toFixed(1) + ' KB',
+        url
+      };
+    } else if (lowerName.endsWith('.dxf')) {
+      try {
+        const text = await file.text();
+        const svgPreview = generateDxfWireframeSvg(text);
+        filePreview = {
+          type: 'dxf',
+          name: file.name,
+          sizeFormatted: (file.size / 1024).toFixed(1) + ' KB',
+          svgPreview
+        };
+      } catch (e) {
+        filePreview = {
+          type: 'dxf',
+          name: file.name,
+          sizeFormatted: (file.size / 1024).toFixed(1) + ' KB'
+        };
+      }
+    } else {
+      filePreview = {
+        type: 'other',
+        name: file.name,
+        sizeFormatted: (file.size / 1024).toFixed(1) + ' KB'
+      };
+    }
+
     const userMsg: Message = {
       id: 'msg-' + Date.now(),
       sender: 'user',
       text: `Uploaded dieline file: **${file.name}** (${(file.size / 1024).toFixed(1)} KB)`,
+      filePreview,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -540,6 +642,10 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
 
     try {
       const result = await detectDielineFile(file);
+      if (result) {
+        result.uploadedFilePreview = filePreview;
+        result.uploadedFileName = file.name;
+      }
 
       // Decals are strictly independent: clear existing decals so detected box starts clean
       setAppliedVariationUrl(null);
@@ -877,6 +983,56 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                 <div className={`chat-bubble ${msg.sender}`}>
                   <div>{msg.text}</div>
                   
+                  {/* Uploaded File Preview Card */}
+                  {msg.filePreview && (
+                    <div style={{ marginTop: '10px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #cbd5e1', background: '#f8fafc', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' }}>
+                      {/* Image Preview */}
+                      {msg.filePreview.type === 'image' && msg.filePreview.url && (
+                        <div style={{ position: 'relative', width: '100%', maxHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', padding: '10px' }}>
+                          <img 
+                            src={msg.filePreview.url} 
+                            alt={msg.filePreview.name} 
+                            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* SVG Preview */}
+                      {msg.filePreview.type === 'svg' && msg.filePreview.url && (
+                        <div style={{ position: 'relative', width: '100%', maxHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff', padding: '10px' }}>
+                          <img 
+                            src={msg.filePreview.url} 
+                            alt={msg.filePreview.name} 
+                            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                          />
+                        </div>
+                      )}
+
+                      {/* DXF CAD Blueprint Wireframe */}
+                      {msg.filePreview.type === 'dxf' && msg.filePreview.svgPreview && (
+                        <div 
+                          style={{ width: '100%', height: '190px', background: '#090d16', padding: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          dangerouslySetInnerHTML={{ __html: msg.filePreview.svgPreview }}
+                        />
+                      )}
+
+                      {/* Footer Badge with filename & size */}
+                      <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', background: '#ffffff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                          <span style={{ fontSize: '10px', fontWeight: '900', background: '#eff6ff', color: '#2563eb', padding: '2px 7px', borderRadius: '5px', textTransform: 'uppercase' }}>
+                            {msg.filePreview.type}
+                          </span>
+                          <span style={{ fontSize: '12px', fontWeight: '700', color: '#1e293b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                            {msg.filePreview.name}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', flexShrink: 0 }}>
+                          {msg.filePreview.sizeFormatted}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Dieline Detection Result Card - 2 Box Recommendations */}
                   {msg.dielineMatch && (() => {
                     const match = msg.dielineMatch;
@@ -966,6 +1122,30 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                             2 Box Fits
                           </div>
                         </div>
+
+                        {/* Uploaded File Reference Preview Banner */}
+                        {match.uploadedFilePreview && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: '#f8fafc', borderRadius: '10px', margin: '0 0 12px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '8px', overflow: 'hidden', background: '#fff', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {match.uploadedFilePreview.type === 'image' || match.uploadedFilePreview.type === 'svg' ? (
+                                <img src={match.uploadedFilePreview.url} alt="Uploaded" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                              ) : match.uploadedFilePreview.type === 'dxf' && match.uploadedFilePreview.svgPreview ? (
+                                <div style={{ width: '100%', height: '100%', background: '#090d16' }} dangerouslySetInnerHTML={{ __html: match.uploadedFilePreview.svgPreview }} />
+                              ) : (
+                                <FileCheck style={{ width: '20px', height: '20px', color: '#2563eb' }} />
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                Uploaded: {match.uploadedFilePreview.name}
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#059669', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <CheckCircle2 style={{ width: '12px', height: '12px' }} />
+                                <span>CAD topology matched with our directory box</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* 2 Recommendations Stacked Vertically */}
                         <div className="ai-recommendations-list">

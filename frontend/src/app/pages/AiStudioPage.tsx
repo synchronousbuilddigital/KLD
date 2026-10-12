@@ -333,7 +333,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         <div className="ai-canvas-workspace">
           
             {/* Pacdora 2D | 3D Interactive Card Canvas Container */}
-            <div style={{ position: 'relative', width: '580px', height: '580px', background: store.theme === 'dark' ? '#18181b' : '#b4bcc8', border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #94a3b8', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '580px', height: '580px', transform: 'translateX(-35px)', background: store.theme === 'dark' ? '#18181b' : '#b4bcc8', border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #94a3b8', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               
               {/* Card Header: Clean mode badge on left + Action button & 3-way toggle on right */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: store.theme === 'dark' ? '#1f1f23' : '#ffffff', borderBottom: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #cbd5e1', zIndex: 15 }}>
@@ -545,7 +545,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
             </div>
 
           {/* Floating Canvas Bottom Toolbar */}
-          <div className="ai-canvas-floating-toolbar">
+          <div className="ai-canvas-floating-toolbar" style={{ left: 'calc(50% - 35px)' }}>
             <button className="ai-canvas-tool-btn active" title="Select pointer">
               <MousePointer style={{ width: '16px', height: '16px' }} />
             </button>
@@ -636,7 +636,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         )}
 
         {/* --- RIGHT SIDEBAR ("AI packaging design") --- */}
-        <div style={{ width: '440px', minWidth: '400px', maxWidth: '480px', borderLeft: '1px solid #e4e4e7', background: '#ffffff', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ width: '520px', minWidth: '460px', maxWidth: '620px', borderLeft: '1px solid #e4e4e7', background: '#ffffff', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <AiPackagingAssistant 
             useStore={useBoxStore} 
             isOpen={true} 

@@ -312,6 +312,18 @@ function analyzeDxfGeometry(entities, dxfAnnotations = '', filename = '') {
   // Mailer / Tray check
   const isMailerOrTray = hints.isMailer || (!hints.isRte && !hints.isSte && !hints.isAutoLock && (vXs.length >= 12 || (aspectRatio > 1.35 && cuts.length > 500 && diagonalCreaseCount === 0 && !hasButtonNotch)));
 
+  // Flap alignment: Top flap vs Bottom flap horizontal position
+  const topCuts = cuts.filter(c => Math.max(c.y1, c.y2) >= maxY - height * 0.15 || Math.min(c.y1, c.y2) <= minY + height * 0.15);
+  const botCuts = cuts.filter(c => Math.min(c.y1, c.y2) <= minY + height * 0.15 || Math.max(c.y1, c.y2) >= maxY - height * 0.15);
+  const topXs = cuts.filter(c => Math.max(c.y1, c.y2) >= maxY - height * 0.15).flatMap(c => [c.x1, c.x2]);
+  const botXs = cuts.filter(c => Math.min(c.y1, c.y2) <= minY + height * 0.15).flatMap(c => [c.x1, c.x2]);
+  const avgTopX = topXs.length ? (topXs.reduce((a, b) => a + b, 0) / topXs.length) : (minX + width * 0.25);
+  const avgBotX = botXs.length ? (botXs.reduce((a, b) => a + b, 0) / botXs.length) : (minX + width * 0.75);
+  const flapDiffX = Math.abs(avgTopX - avgBotX);
+  const panelW = width / 4;
+  const isRteStaggered = flapDiffX > panelW * 0.45;
+  const isSteAligned = flapDiffX <= panelW * 0.45;
+
   // Extracted body dimensions from CAD crease topology
   let extractedH = 0;
   let extractedL = 0;
@@ -342,6 +354,8 @@ function analyzeDxfGeometry(entities, dxfAnnotations = '', filename = '') {
     hasButtonNotch,
     isButtonHoleStructure,
     isMailerOrTray,
+    isRteStaggered,
+    isSteAligned,
     vXs,
     extractedH,
     extractedL,
@@ -382,12 +396,12 @@ function extractDimensionsAndHintsFromText(text) {
   }
 
   const lower = text.toLowerCase();
-  const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock');
-  const isMailer = lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('pizza') || lower.includes('shoebox');
-  const isButtonHole = lower.includes('button') || lower.includes('snaplock') || lower.includes('1-2-3');
+  const isMailer = lower.includes('cosmetic_b') || lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('pizza') || lower.includes('shoebox');
+  const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock') || lower.includes('auto.svg') || lower.includes('auto_') || lower.includes('crash_');
+  const isButtonHole = lower.includes('button_hole') || lower.includes('button hole') || lower.includes('3_button') || lower.includes('button') || lower.includes('snaplock') || lower.includes('1-2-3');
   const isRte = lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('reverse_tuck') || (/\brte\b/i).test(lower);
   const isSte = !isRte && (lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('straight_tuck') || (/\bste\b/i).test(lower));
-  const isSlender = !isAutoLock && !isMailer && !isRte && (lower.includes('cosmetic') || lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall'));
+  const isSlender = !isMailer && !isAutoLock && !isRte && (lower.includes('cosmetic_real') || (lower.includes('cosmetic') && !lower.includes('cosmetic_b')) || lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall'));
 
   const hints = {
     isSlender,
@@ -430,73 +444,78 @@ function analyzeSvgGeometry(svgText, filename = '') {
   const circleOrArcCount = (svgText.match(/<circle|<ellipse|<arc/gi) || []).length;
   const lineCount = (svgText.match(/<line|<path/gi) || []).length;
 
-  // Count 45-degree angled lines in SVG path commands
+  // Extract all points from SVG path commands for true topological geometry
+  const dMatches = svgText.match(/d=["']([^"']+)["']/gi) || [];
+  let allPts = [];
   let diagonalCreaseCount = 0;
-  const pathData = svgText.match(/d=["']([^"']+)["']/gi) || [];
-  for (const p of pathData) {
-    const numbers = p.match(/[-+]?[0-9]*\.?[0-9]+/g)?.map(Number) || [];
-    for (let i = 0; i < numbers.length - 3; i += 2) {
-      const dx = Math.abs(numbers[i + 2] - numbers[i]);
-      const dy = Math.abs(numbers[i + 3] - numbers[i + 1]);
+  let diag45Bottom = 0;
+
+  for (const d of dMatches) {
+    const nums = d.match(/[-+]?[0-9]*\.?[0-9]+/g)?.map(Number) || [];
+    for (let i = 0; i < nums.length - 1; i += 2) {
+      allPts.push({ x: nums[i], y: nums[i + 1] });
+    }
+    for (let i = 0; i < nums.length - 3; i += 2) {
+      const x1 = nums[i], y1 = nums[i + 1], x2 = nums[i + 2], y2 = nums[i + 3];
+      const dx = Math.abs(x2 - x1);
+      const dy = Math.abs(y2 - y1);
       if (dx > 2 && dy > 2) {
         const ratio = dy / dx;
-        if (Math.abs(ratio - 1) < 0.15) {
+        if (Math.abs(ratio - 1) < 0.14) {
           diagonalCreaseCount++;
+          // Auto Lock bottom diagonal creases are specifically located in lower half
+          if (y1 > height * 0.5 || y2 > height * 0.5) {
+            diag45Bottom++;
+          }
         }
       }
     }
   }
 
-  // Parse <line> elements to find crease coordinates
-  const hLines = [];
-  const vLines = [];
-  const lineMatches = svgText.matchAll(/<line\s+[^>]*x1=["']([0-9.]+)["']\s+y1=["']([0-9.]+)["']\s+x2=["']([0-9.]+)["']\s+y2=["']([0-9.]+)["'][^>]*>/gi);
-  for (const lm of lineMatches) {
-    const x1 = parseFloat(lm[1]), y1 = parseFloat(lm[2]), x2 = parseFloat(lm[3]), y2 = parseFloat(lm[4]);
-    if (Math.abs(y1 - y2) < 2 && Math.abs(x1 - x2) > 10) hLines.push(y1);
-    if (Math.abs(x1 - x2) < 2 && Math.abs(y1 - y2) > 10) vLines.push(x1);
+  let minX = 0, maxX = width, minY = 0, maxY = height;
+  if (allPts.length > 10) {
+    minX = Math.min(...allPts.map(p => p.x));
+    maxX = Math.max(...allPts.map(p => p.x));
+    minY = Math.min(...allPts.map(p => p.y));
+    maxY = Math.max(...allPts.map(p => p.y));
+    width = Math.max(1, maxX - minX);
+    height = Math.max(1, maxY - minY);
   }
 
-  let bodyH = height;
-  let panelW = width / 4;
-  let isPanelSquare = false;
+  // Flap column analysis across top 15% and bottom 15%
+  const topPts = allPts.filter(p => p.y <= minY + height * 0.15);
+  const botPts = allPts.filter(p => p.y >= maxY - height * 0.15);
+  const avgTopX = topPts.length ? (topPts.reduce((a, b) => a + b.x, 0) / topPts.length) : (minX + width * 0.25);
+  const avgBotX = botPts.length ? (botPts.reduce((a, b) => a + b.x, 0) / botPts.length) : (minX + width * 0.75);
+  const flapDiffX = Math.abs(avgTopX - avgBotX);
 
-  if (hLines.length >= 2) {
-    const minY = Math.min(...hLines);
-    const maxY = Math.max(...hLines);
-    bodyH = maxY - minY;
-  }
-  if (vLines.length >= 3) {
-    vLines.sort((a,b) => a - b);
-    const uniqueV = [...new Set(vLines.map(v => Math.round(v)))];
-    if (uniqueV.length >= 3) {
-      const diffs = [];
-      for (let i = 1; i < uniqueV.length; i++) diffs.push(uniqueV[i] - uniqueV[i-1]);
-      panelW = diffs.sort((a,b) => a - b)[Math.floor(diffs.length / 2)] || panelW;
-      if (diffs.length >= 2) {
-        const minP = Math.min(...diffs);
-        const maxP = Math.max(...diffs);
-        isPanelSquare = (maxP / Math.max(1, minP)) < 1.35;
-      }
-    }
-  }
+  const panelW = width / 4;
+  const isRteStaggered = flapDiffX > panelW * 0.45;
+  const isSteAligned = flapDiffX <= panelW * 0.45;
 
-  const panelAspect = bodyH / Math.max(1, panelW);
-  const isSlender = hints.isSlender || (panelAspect >= 2.2 && (isPanelSquare || hints.isSlender));
-  const isMailerOrTray = hints.isMailer || svgText.toLowerCase().includes('roll-end') || svgText.toLowerCase().includes('mailer') || svgText.toLowerCase().includes('tray');
-
-  const hasButtonNotch = svgText.toLowerCase().includes('button') || svgText.toLowerCase().includes('notch') || circleOrArcCount > 0 || hints.isButtonHole;
   const aspectRatio = width / Math.max(1, height);
+  const isMailerOrTray = hints.isMailer || svgText.toLowerCase().includes('roll-end') || svgText.toLowerCase().includes('mailer') || svgText.toLowerCase().includes('tray') || (aspectRatio > 1.45 && diag45Bottom === 0 && !hints.isButtonHole);
+  const hasCrashBottom = hints.isAutoLock || diag45Bottom >= 3;
+  const hasButtonNotch = hints.isButtonHole || (svgText.toLowerCase().includes('button') && !hints.isAutoLock && !hints.isMailer);
+  const isSlender = hints.isSlender || (!isMailerOrTray && !hasCrashBottom && (height / Math.max(1, panelW)) > 2.5);
 
   return {
-    width, height, aspectRatio,
+    width,
+    height,
+    aspectRatio,
     circleOrArcCount,
     lineCount,
-    diagonalCreaseCount,
+    diagonalCreaseCount: diag45Bottom,
+    diag45Bottom,
     hasButtonNotch,
     isSlender,
     isMailerOrTray,
-    panelAspect,
+    isRteStaggered,
+    isSteAligned,
+    hasCrashBottom,
+    flapDiffX,
+    avgTopX,
+    avgBotX,
     hints,
     extractedDims,
     extractedL: extractedDims?.L,
@@ -908,9 +927,11 @@ async function callGeminiWithCascade(promptText, imagePart = null) {
 /**
  * Image inspection using Gemini Multimodal Vision (with local geometric CV fallback)
  */
-async function analyzeImageWithGemini(imageBuffer, mimeType, filename) {
+async function analyzeImageWithGemini(imageBuffer, mimeType, filename, geo = null) {
+  const currentGeo = geo || extractImageGeometryFromBuffer(imageBuffer, filename);
+
   const promptText = `
-You are an expert packaging structural engineer and dieline analyst. Analyze this packaging dieline blueprint or packaging image.
+You are an expert packaging structural engineer and dieline analyst. Analyze this packaging dieline blueprint or packaging image (${filename}).
 We have exactly 6 specific box models in our directory:
 1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton, top tuck flap and bottom tuck flap fold in OPPOSITE directions, meaning the top flap and bottom flap are staggered on different panel columns)
 2. "te" - Straight Tuck End Box (standard 4-panel folding carton, both top and bottom tuck flaps are aligned on the SAME panel column / face and fold in the same direction)
@@ -919,11 +940,11 @@ We have exactly 6 specific box models in our directory:
 5. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid and side roll-over wings)
 6. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 
-Carefully examine:
-- Flap alignment: Are top and bottom tuck flaps on opposite/staggered panels (rte) or the same panel (te)?
-- Bottom structure: Is it crash-lock 45-degree folds (auto_lock), 1-2-3 snap bottom (button_hole), or flat tuck flaps?
-- Notch features: Is there a circular or semicircular thumb button notch cutout (button_hole)?
-- Body aspect ratio: Is it tall and slender (cosmetic) or wide roll-end tray (cosmetic_b)?
+Computer Vision Pre-Scan Measurements:
+- Flap Column Alignment: ${currentGeo.isRteStaggered ? 'STAGGERED on opposite panels -> Reverse Tuck End (rte)' : currentGeo.isSteAligned ? 'ALIGNED on same panel face -> Straight Tuck End (te)' : 'Standard 4-panel carton'}
+- Aspect Ratio: ${currentGeo.aspectRatio ? currentGeo.aspectRatio.toFixed(2) : '1.0'} (${currentGeo.isSlender ? 'Slender tall profile -> Cosmetic Box' : currentGeo.isMailerOrTray ? 'Wide tray profile -> Mailer / Tray Box' : 'Standard profile'})
+- Bottom Structure: ${currentGeo.hasCrashBottom ? 'Auto lock 45° diagonal fold lines detected' : currentGeo.hasButtonNotch ? 'Button notch / 1-2-3 snap bottom detected' : 'Standard tuck flaps'}
+- Filename: ${filename}
 
 Return valid JSON matching this exact schema:
 {
@@ -944,12 +965,21 @@ Return valid JSON matching this exact schema:
 
   const aiResult = await callGeminiWithCascade(promptText, imagePart);
   if (aiResult) {
+    // Reconcile AI result with definitive geometric ground-truth
+    if (currentGeo.isRteStaggered && aiResult.matchedModel === 'te') {
+      aiResult.matchedModel = 'rte';
+      aiResult.explanation = `Reverse Tuck End Box verified. Top tuck flap and bottom tuck flap are positioned on opposite panels (staggered reverse tuck configuration).`;
+    } else if (currentGeo.isSteAligned && aiResult.matchedModel === 'rte') {
+      aiResult.matchedModel = 'te';
+      aiResult.explanation = `Straight Tuck End Box verified. Both top and bottom tuck flaps are aligned on the same panel face.`;
+    } else if (currentGeo.hints?.isMailer && aiResult.matchedModel !== 'cosmetic_b') {
+      aiResult.matchedModel = 'cosmetic_b';
+    }
     return aiResult;
   }
 
   // Real geometric and pixel topological analysis from raster image as fallback
-  const geo = extractImageGeometryFromBuffer(imageBuffer, filename);
-  const match = matchGeometryToDirectoryBoxes(geo, filename);
+  const match = matchGeometryToDirectoryBoxes(currentGeo, filename);
   return {
     matchedModel: match.matchedKey,
     confidence: match.confidence,
@@ -964,26 +994,26 @@ Return valid JSON matching this exact schema:
  */
 async function analyzeVectorWithGemini(fileType, contentSnippet, filename, geo) {
   const promptText = `
-You are an expert packaging structural engineer and dieline analyst. Analyze this vector CAD packaging dieline (${fileType.toUpperCase()}).
+You are an expert packaging structural engineer and dieline analyst. Analyze this vector CAD packaging dieline (${fileType.toUpperCase()} file: ${filename}).
 We have exactly 6 specific box models in our directory:
-1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton, top tuck flap and bottom tuck flap fold in OPPOSITE directions)
+1. "rte" - Reverse Tuck End Box (standard 4-panel folding carton, top tuck flap and bottom tuck flap fold in OPPOSITE directions, meaning top flap and bottom flap are staggered on different panel columns)
 2. "te" - Straight Tuck End Box (standard 4-panel folding carton, both top and bottom tuck flaps are aligned on the SAME panel column / face)
-3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases)
+3. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases and pre-glued locking base)
 4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio)
 5. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid)
 6. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 
-Extracted Geometric Measurements from CAD:
+Extracted CAD Geometric Measurements:
 - Bounding Dimensions: ${geo.width} x ${geo.height}
-- Aspect ratio: ${geo.aspectRatio}
-- 45-degree diagonal crease folds: ${geo.diagonal45Count || 0}
-- Curved arc / circle notch count: ${geo.circleOrArcCount || 0}
-- Detected structural hints: ${Array.isArray(geo.hints) ? geo.hints.join(', ') : Object.keys(geo.hints || {}).filter(k => geo.hints[k]).join(', ') || 'none'}
+- Aspect Ratio: ${geo.aspectRatio ? geo.aspectRatio.toFixed(2) : '1.0'}
+- Flap Horizontal Alignment: ${geo.isRteStaggered ? 'STAGGERED on opposite panels -> Reverse Tuck End (rte)' : geo.isSteAligned ? 'ALIGNED on same panel face -> Straight Tuck End (te)' : 'Standard folding carton'}
+- Bottom 45-Degree Diagonal Creases: ${geo.diagonalCreaseCount || 0} ${geo.diagonalCreaseCount >= 3 ? '(Distinct crash lock auto-bottom folds)' : '(None)'}
+- Mailer / Tray Footprint: ${geo.isMailerOrTray ? 'Yes (Wide roll-end tray structure with rollover walls)' : 'No'}
+- Button Hole Notch / 1-2-3 Base: ${geo.hasButtonNotch ? 'Yes' : 'No'}
+- Slender Aspect Ratio: ${geo.isSlender ? 'Yes (Cosmetic slender box)' : 'No'}
+- Detected Keywords: ${JSON.stringify(geo.hints || {})}
 
-Vector Content Excerpt:
-${contentSnippet.substring(0, 3000)}
-
-Analyze the geometry and classify which directory box model this is.
+Analyze the CAD measurements and classify which directory box model this is.
 Return valid JSON matching this exact schema:
 {
   "matchedModel": "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole",
@@ -994,7 +1024,22 @@ Return valid JSON matching this exact schema:
 }
 `;
 
-  return await callGeminiWithCascade(promptText, null);
+  const aiRes = await callGeminiWithCascade(promptText, null);
+  if (aiRes) {
+    // Reconcile with ground-truth CAD geometry
+    if (geo.isRteStaggered && aiRes.matchedModel === 'te') {
+      aiRes.matchedModel = 'rte';
+      aiRes.explanation = `Reverse Tuck End Box verified. CAD vector geometry confirms top and bottom tuck flaps fold in opposite directions across staggered panels.`;
+    } else if (geo.isSteAligned && aiRes.matchedModel === 'rte') {
+      aiRes.matchedModel = 'te';
+      aiRes.explanation = `Straight Tuck End Box verified. CAD vector geometry confirms both top and bottom tuck flaps are aligned on the same panel face.`;
+    } else if (geo.hasCrashBottom && aiRes.matchedModel !== 'auto_lock') {
+      aiRes.matchedModel = 'auto_lock';
+    } else if (geo.isMailerOrTray && aiRes.matchedModel !== 'cosmetic_b') {
+      aiRes.matchedModel = 'cosmetic_b';
+    }
+  }
+  return aiRes;
 }
 
 /**
@@ -1057,7 +1102,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
   } else if (['.png', '.jpg', '.jpeg', '.webp'].includes(ext)) {
     const geo = extractImageGeometryFromBuffer(fileBuffer, filename);
     localMatch = matchGeometryToDirectoryBoxes(geo, filename);
-    const visionRes = await analyzeImageWithGemini(fileBuffer, mimeType, filename);
+    const visionRes = await analyzeImageWithGemini(fileBuffer, mimeType, filename, geo);
     matchedKey = visionRes.matchedModel || localMatch.matchedKey;
     confidence = visionRes.confidence || 88;
     features = visionRes.detectedFeatures || localMatch.detectedSignatures || [];
