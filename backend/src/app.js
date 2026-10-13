@@ -157,6 +157,7 @@ app.get('/api/health', (req, res) => {
       host: mongoose.connection.host || 'N/A',
       name: mongoose.connection.name || 'N/A',
     },
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     uptime: `${Math.floor(process.uptime())}s`,
