@@ -599,20 +599,20 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     detectedSignatures.push(`Slender elongated vertical profile (${(geo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) typical of cosmetic/perfume cartons`);
   }
 
-  // 3. Button Hole Box check (1-2-3 snap lock bottom or button notch slot)
-  if (!geo.isMailerOrTray && !geo.isSlender && (geo.hasButtonNotch || geo.isButtonHoleStructure)) {
+  // 3. Auto-Lock Bottom check (Crash-lock bottom or 45° diagonal fold lines)
+  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && (geo.hasCrashBottom || (geo.diagonalCreaseCount || 0) >= 2 || geo.hasInterlockingBottom || geo.hints?.isAutoLock)) {
+    scores.auto_lock += 140;
+    detectedSignatures.push(`Interlocking auto-lock crash bottom base with 45° pre-glued diagonal fold tabs`);
+  }
+
+  // 4. Button Hole Box check (1-2-3 snap lock bottom with button notch slot)
+  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasCrashBottom && (geo.hasButtonNotch || geo.isButtonHoleStructure || geo.hints?.isButtonHole)) {
     scores.button_hole += 140;
     detectedSignatures.push('Interlocking 1-2-3 snap lock bottom closure with button notch cutout on closure flap');
   }
 
-  // 4. Auto-Lock Bottom check (Diagonal 45° fold crease lines and crash-lock bottom tabs)
-  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.isButtonHoleStructure && (geo.hasCrashBottom || geo.diagonalCreaseCount >= 3 || geo.hints?.isAutoLock)) {
-    scores.auto_lock += 140;
-    detectedSignatures.push(`Detected ${geo.diagonalCreaseCount || 4} diagonal (45°) crease fold lines typical of an auto-lock crash bottom`);
-  }
-
   // 5. Standard 4-panel folding cartons (Reverse Tuck End vs Straight Tuck End)
-  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.isButtonHoleStructure && !geo.hasCrashBottom && (geo.diagonalCreaseCount || 0) < 3) {
+  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.hasCrashBottom && !geo.hasInterlockingBottom && (geo.diagonalCreaseCount || 0) < 2) {
     if (geo.isRteStaggered) {
       scores.rte += 140;
       detectedSignatures.push('Top and bottom tuck flaps are positioned on opposite panels (staggered reverse tuck configuration)');
@@ -834,15 +834,21 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
     sliceBotY.push(colMax !== null ? Math.round(((colMax - minY) / dielineH) * 100) : 0);
   }
 
-  // 6. Button Hole Box / 1-2-3 Snap Lock detection
-  // In 1-2-3 Snap Lock, bottom has multiple locking flap peaks (P1 and P3 reach >= 95% with a distinct dip between them)
+  // 6. Interlocking bottom tabs check (Auto-Lock / 1-2-3 base)
+  // In interlocking bases, the bottom has multiple distinct closure lobes across panels (P1 and P3 reach >= 90% with a dip between them)
   const botP1 = Math.max(...sliceBotY.slice(1, 8));
   const botDip = Math.min(...sliceBotY.slice(8, 13));
   const botP2 = Math.max(...sliceBotY.slice(13, 20));
-  const hasSnapLockBottom = (botP1 >= 95 && botP2 >= 95 && botDip <= botP1 - 6);
+  const hasInterlockingBottom = (botP1 >= 90 && botP2 >= 90 && botDip <= botP1 - 5);
+  const hasSnapLockBottom = hasInterlockingBottom;
 
-  // Top flap check: closure flap is on Panel 1, and Panel 3 has a notch dip or no tuck flap
-  const hasButtonNotch = hints.isButtonHole || (hasSnapLockBottom && !isMailerOrTray && !isSlender);
+  // Genuine button notch cutout check on top edge:
+  // Panel 3 (columns 12 to 18) dips downward into the panel
+  const p3TopSlices = sliceTopY.slice(12, 18);
+  const p3Min = Math.min(...p3TopSlices);
+  const p3Max = Math.max(...p3TopSlices);
+  const hasTopNotchDip = (p3Max - p3Min >= 6 && p3Min > 20);
+  const hasButtonNotch = hints.isButtonHole || (hasTopNotchDip && !hints.isAutoLock);
 
   // 7. Auto-Lock Crash Bottom check (Check for continuous 45° diagonal crease runs in bottom region)
   const startY = Math.floor(minY + dielineH * 0.65);
@@ -862,7 +868,8 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
       if (r2 >= 14) countLongDiagRuns++;
     }
   }
-  const hasCrashBottom = hints.isAutoLock || (countLongDiagRuns >= 3 && !isMailerOrTray && !isSlender && !hasSnapLockBottom);
+  // If bottom has interlocking flaps or diagonal creases without a top button notch -> Auto Lock Bottom Box
+  const hasCrashBottom = hints.isAutoLock || (!isMailerOrTray && !isSlender && !hasButtonNotch && (countLongDiagRuns >= 2 || hasInterlockingBottom));
 
   // 8. Flap Horizontal Staggering vs Alignment (Reverse Tuck End vs Straight Tuck End)
   const topPeakIndices = [];
@@ -881,7 +888,7 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
   const botFlapRatio = avgBotSlice / numColSlices;
   const flapOffset = Math.abs(topFlapRatio - botFlapRatio);
 
-  const isStandardTuckCarton = !hasSnapLockBottom && !hasCrashBottom && !isMailerOrTray && !hasButtonNotch && !isSlender;
+  const isStandardTuckCarton = !hasInterlockingBottom && !hasCrashBottom && !isMailerOrTray && !hasButtonNotch && !isSlender;
   const isRteStaggered = isStandardTuckCarton && (flapOffset > 0.18);
   const isSteAligned = isStandardTuckCarton && (flapOffset <= 0.18);
 
@@ -917,6 +924,7 @@ async function callGeminiWithCascade(promptText, imagePart = null) {
   // Order candidate models by fastest & most quota-available first
   const candidateModels = [
     { name: "gemini-3.5-flash-lite", timeoutMs: 9000 },
+    { name: "gemini-3.8-flash", timeoutMs: 12000 },
     { name: "gemini-3.1-flash-lite", timeoutMs: 7000 }
   ];
 
@@ -962,40 +970,41 @@ async function analyzeImageWithGemini(imageBuffer, mimeType, filename, geo = nul
   const promptText = `
 You are an expert packaging structural engineer and dieline analyst. Analyze this packaging dieline blueprint or packaging image (${filename}).
 We have exactly 6 specific box models in our directory:
-1. "button_hole" - Button Hole Box (specialty presentation carton with top button-hole slot notch cutout, and interlocking 1-2-3 snap-lock bottom tabs with hooks)
-2. "auto_lock" - Auto Lock Bottom Box (crash lock bottom featuring 45-degree diagonal creases and pre-glued locking base)
+1. "auto_lock" - Auto Lock Bottom Box (crash lock bottom featuring 45-degree diagonal creases and pre-glued locking base)
+2. "button_hole" - Button Hole Box (specialty presentation carton with top button-hole slot notch cutout, and interlocking 1-2-3 snap-lock bottom tabs)
 3. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front RETT tray with hinged lid and rollover side walls)
 4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton with high aspect ratio H/W > 2.2 for perfumes/serums)
 5. "rte" - Reverse Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where top and bottom flaps fold in OPPOSITE directions on staggered panel columns)
 6. "te" - Straight Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where both top and bottom flaps are on the SAME panel column)
 
-CRITICAL STRUCTURAL INSPECTION ORDER:
-1. CHECK FOR BUTTON HOLE / 1-2-3 SNAP LOCK:
-   - Does the top edge have a circular or semi-circular button notch cutout or thumb lock slot?
-   - Does the bottom closure have interlocking snap-lock flaps (1-2-3 snap bottom with distinctive hooked tabs and notches) instead of a simple flat tuck flap?
-   -> If YES to either, classify as "button_hole".
-2. CHECK FOR AUTO LOCK (CRASH BOTTOM):
-   - Does the bottom section have 45-degree diagonal crease lines forming a crash-lock base?
-   -> If YES, classify as "auto_lock".
-3. CHECK FOR MAILER / TRAY:
-   - Is it a unibody roll-end tray with rollover side wall wings and a hinged lid?
-   -> If YES, classify as "cosmetic_b".
-4. CHECK FOR SLENDER COSMETIC CARTON:
-   - Is it an elongated slender vertical carton (H/W > 2.2)?
-   -> If YES, classify as "cosmetic".
-5. STANDARD TUCK CARTONS (Only if none of the above special structures apply and both top and bottom are standard flat rectangular tuck flaps):
-   - Flaps staggered on opposite panels -> "rte"
-   - Flaps aligned on same panel -> "te"
+CRITICAL STRUCTURAL INSPECTION RULES:
+1. AUTO LOCK BOTTOM (Crash Lock) -> "auto_lock":
+   - Inspect the bottom closure flaps carefully: Do the bottom flaps have 45-degree diagonal crease fold lines or pre-glued crash-lock locking tabs?
+   - Top is a standard tuck closure with side dust flaps.
+   - CRITICAL: Even if the top is a standard tuck flap, if the bottom is a crash-lock/auto-lock base (or has diagonal fold creases), the box is 100% "auto_lock" (Auto Lock Bottom Box)!
+2. BUTTON HOLE BOX -> "button_hole":
+   - Top edge features a circular or semi-circular button notch cutout or thumb lock slot.
+   - Bottom has interlocking 1-2-3 snap-lock tabs without 45-degree diagonal creases.
+   - Do NOT classify as "button_hole" unless there is a genuine button notch / thumb slot cutout along the top edge!
+3. MAILER / TRAY BOX -> "cosmetic_b":
+   - Unibody roll-end tray with rollover side wall wings and a hinged lid.
+4. SLENDER COSMETIC CARTON -> "cosmetic":
+   - Elongated slender vertical carton (H/W > 2.2).
+5. STANDARD TUCK CARTONS (Straight Tuck "te" or Reverse Tuck "rte"):
+   - ONLY classify as "te" or "rte" if BOTH top AND bottom are simple flat rectangular tuck flaps!
+   - If the bottom has interlocking tabs, crash-lock folds, or diagonal creases, it is NEVER "te" and NEVER "rte"!
+   - If top and bottom tuck flaps fold in opposite directions on staggered panels -> "rte".
+   - If top and bottom tuck flaps fold in the same direction on the same panel -> "te".
 
 Computer Vision Pre-Scan Data:
 - Aspect Ratio: ${currentGeo.aspectRatio ? currentGeo.aspectRatio.toFixed(2) : '1.0'}
-- Bottom Structure: ${currentGeo.hasCrashBottom ? 'Auto lock 45° diagonal fold lines detected' : currentGeo.hasButtonNotch ? 'Button notch / 1-2-3 snap bottom detected' : 'Standard profile'}
+- Bottom Structure: ${currentGeo.hasCrashBottom ? 'Auto lock 45° diagonal fold lines / crash base detected' : currentGeo.hasButtonNotch ? 'Button notch detected' : 'Standard profile'}
 - Flap Alignment (Tuck Cartons Only): ${currentGeo.isRteStaggered ? 'Staggered (opposite panels)' : currentGeo.isSteAligned ? 'Aligned (same panel)' : 'N/A'}
 - Filename: ${filename}
 
-Dimensions: Extract any dimension numbers indicated on the dieline. If labeled in inches (e.g., 2.9528 in, 2.3622 in), convert to mm (2.9528 in = 75mm, 2.3622 in = 60mm). If not specified, use directory defaults:
-- button_hole: 75 x 75 x 60 mm
+Dimensions: Extract any dimension numbers indicated on the dieline. If labeled in inches (e.g., 4.7244 in, 2.3622 in, 6.2992 in), convert to mm (120 x 60 x 160 mm). If not specified, use directory defaults:
 - auto_lock: 120.6 x 60.6 x 161.5 mm
+- button_hole: 75 x 75 x 60 mm
 - cosmetic: 35.6 x 35.6 x 121.6 mm
 - cosmetic_b: 270 x 260 x 62 mm
 - rte: 120 x 60 x 160 mm
@@ -1003,7 +1012,7 @@ Dimensions: Extract any dimension numbers indicated on the dieline. If labeled i
 
 Return valid JSON matching this exact schema:
 {
-  "matchedModel": "button_hole" | "auto_lock" | "cosmetic_b" | "cosmetic" | "rte" | "te",
+  "matchedModel": "auto_lock" | "button_hole" | "cosmetic_b" | "cosmetic" | "rte" | "te",
   "confidence": 88-99,
   "detectedFeatures": ["feature 1", "feature 2"],
   "dimensions": { "L": number_in_mm, "W": number_in_mm, "H": number_in_mm },
@@ -1021,21 +1030,21 @@ Return valid JSON matching this exact schema:
   const aiResult = await callGeminiWithCascade(promptText, imagePart);
   if (aiResult) {
     // Reconcile AI result with definitive geometric ground-truth
-    if (aiResult.matchedModel === 'button_hole' || currentGeo.hasButtonNotch || currentGeo.hints?.isButtonHole) {
-      aiResult.matchedModel = 'button_hole';
-      if (!aiResult.explanation || !aiResult.explanation.toLowerCase().includes('button')) {
-        aiResult.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top closure with button lock slot notch.`;
-      }
-    } else if (aiResult.matchedModel === 'auto_lock' || currentGeo.hasCrashBottom || currentGeo.diagonalCreaseCount >= 3 || currentGeo.hints?.isAutoLock) {
+    if (currentGeo.isSlender && !currentGeo.hasCrashBottom && !currentGeo.isMailerOrTray) {
+      aiResult.matchedModel = 'cosmetic';
+      aiResult.explanation = `Cosmetic Box (Slender Tuck) verified. Tall, slender elongated vertical profile (${(currentGeo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) characteristic of cosmetic, serum, and perfume packaging.`;
+    } else if (aiResult.matchedModel === 'auto_lock' || currentGeo.hasCrashBottom || currentGeo.hints?.isAutoLock) {
       aiResult.matchedModel = 'auto_lock';
       if (!aiResult.explanation || (!aiResult.explanation.toLowerCase().includes('crash') && !aiResult.explanation.toLowerCase().includes('auto lock'))) {
         aiResult.explanation = `Auto Lock Bottom Box verified. Features 45-degree crash-lock diagonal creases and pre-glued locking base.`;
       }
+    } else if (aiResult.matchedModel === 'button_hole' || currentGeo.hasButtonNotch || currentGeo.hints?.isButtonHole) {
+      aiResult.matchedModel = 'button_hole';
+      if (!aiResult.explanation || !aiResult.explanation.toLowerCase().includes('button')) {
+        aiResult.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top closure with button lock slot notch.`;
+      }
     } else if (aiResult.matchedModel === 'cosmetic_b' || currentGeo.isMailerOrTray || currentGeo.hints?.isMailer) {
       aiResult.matchedModel = 'cosmetic_b';
-    } else if (currentGeo.isSlender && (aiResult.matchedModel === 'te' || aiResult.matchedModel === 'rte' || aiResult.matchedModel === 'cosmetic')) {
-      aiResult.matchedModel = 'cosmetic';
-      aiResult.explanation = `Cosmetic Box (Slender Tuck) verified. Tall, slender elongated vertical profile (${(currentGeo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) characteristic of cosmetic, serum, and perfume packaging.`;
     } else if (currentGeo.isRteStaggered && aiResult.matchedModel === 'te') {
       aiResult.matchedModel = 'rte';
       aiResult.explanation = `Reverse Tuck End Box verified. Top tuck flap and bottom tuck flap are positioned on opposite panels (staggered reverse tuck configuration).`;
@@ -1064,16 +1073,16 @@ async function analyzeVectorWithGemini(fileType, contentSnippet, filename, geo) 
   const promptText = `
 You are an expert packaging structural engineer and dieline analyst. Analyze this vector CAD packaging dieline (${fileType.toUpperCase()} file: ${filename}).
 We have exactly 6 specific box models in our directory:
-1. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
-2. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases and pre-glued locking base)
+1. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases and pre-glued locking base)
+2. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 3. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid and rollover side walls)
 4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio H/W > 2.2 for perfumes/serums)
 5. "rte" - Reverse Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where top and bottom flaps fold in OPPOSITE directions on staggered panel columns)
 6. "te" - Straight Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where both top and bottom flaps are on the SAME panel column)
 
 CRITICAL STRUCTURAL INSPECTION ORDER:
-1. Button Hole Box: circular/semi-circular button notch cutout on top edge OR 1-2-3 snap lock bottom tabs -> "button_hole".
-2. Auto Lock Box: 45-degree diagonal crash-lock bottom creases -> "auto_lock".
+1. Auto Lock Box: bottom has 45-degree diagonal crash-lock bottom creases or pre-glued base tabs -> "auto_lock".
+2. Button Hole Box: circular/semi-circular button notch cutout on top edge OR 1-2-3 snap lock bottom tabs without diagonal folds -> "button_hole".
 3. Mailer Box: wide unibody roll-end tray structure with rollover walls -> "cosmetic_b".
 4. Cosmetic Box: slender vertical carton (H/W > 2.2) -> "cosmetic".
 5. Standard Tuck: only if simple flat rectangular tuck flaps on top & bottom:
@@ -1084,7 +1093,7 @@ Extracted CAD Geometric Measurements:
 - Bounding Dimensions: ${geo.width} x ${geo.height}
 - Aspect Ratio: ${geo.aspectRatio ? geo.aspectRatio.toFixed(2) : '1.0'}
 - Flap Horizontal Alignment (Tuck Only): ${geo.isRteStaggered ? 'Staggered' : geo.isSteAligned ? 'Aligned' : 'N/A'}
-- Bottom 45-Degree Diagonal Creases: ${geo.diagonalCreaseCount || 0} ${geo.diagonalCreaseCount >= 3 ? '(Distinct crash lock auto-bottom folds)' : '(None)'}
+- Bottom 45-Degree Diagonal Creases: ${geo.diagonalCreaseCount || 0} ${geo.diagonalCreaseCount >= 2 ? '(Distinct crash lock auto-bottom folds)' : '(None)'}
 - Mailer / Tray Footprint: ${geo.isMailerOrTray ? 'Yes' : 'No'}
 - Button Hole Notch / 1-2-3 Base: ${geo.hasButtonNotch ? 'Yes' : 'No'}
 - Slender Aspect Ratio: ${geo.isSlender ? 'Yes' : 'No'}
@@ -1092,7 +1101,7 @@ Extracted CAD Geometric Measurements:
 
 Return valid JSON matching this exact schema:
 {
-  "matchedModel": "button_hole" | "auto_lock" | "cosmetic_b" | "cosmetic" | "rte" | "te",
+  "matchedModel": "auto_lock" | "button_hole" | "cosmetic_b" | "cosmetic" | "rte" | "te",
   "confidence": 88-99,
   "detectedFeatures": ["feature 1", "feature 2"],
   "dimensions": { "L": number_in_mm, "W": number_in_mm, "H": number_in_mm },
@@ -1103,15 +1112,15 @@ Return valid JSON matching this exact schema:
   const aiRes = await callGeminiWithCascade(promptText, null);
   if (aiRes) {
     // Reconcile with ground-truth CAD geometry
-    if (aiRes.matchedModel === 'button_hole' || geo.hasButtonNotch || geo.hints?.isButtonHole) {
-      aiRes.matchedModel = 'button_hole';
-      if (!aiRes.explanation || !aiRes.explanation.toLowerCase().includes('button')) {
-        aiRes.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top closure with button lock slot notch.`;
-      }
-    } else if (aiRes.matchedModel === 'auto_lock' || geo.hasCrashBottom || (geo.diagonalCreaseCount >= 3) || geo.hints?.isAutoLock) {
+    if (aiRes.matchedModel === 'auto_lock' || geo.hasCrashBottom || (geo.diagonalCreaseCount >= 2) || geo.hints?.isAutoLock) {
       aiRes.matchedModel = 'auto_lock';
       if (!aiRes.explanation || (!aiRes.explanation.toLowerCase().includes('crash') && !aiRes.explanation.toLowerCase().includes('auto lock'))) {
         aiRes.explanation = `Auto Lock Bottom Box verified. Features 45-degree crash-lock diagonal creases and pre-glued locking base.`;
+      }
+    } else if (aiRes.matchedModel === 'button_hole' || geo.hasButtonNotch || geo.hints?.isButtonHole) {
+      aiRes.matchedModel = 'button_hole';
+      if (!aiRes.explanation || !aiRes.explanation.toLowerCase().includes('button')) {
+        aiRes.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top closure with button lock slot notch.`;
       }
     } else if (aiRes.matchedModel === 'cosmetic_b' || geo.isMailerOrTray || geo.hints?.isMailer) {
       aiRes.matchedModel = 'cosmetic_b';
