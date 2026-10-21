@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, Bookmark, Check, Star, Box, Rotate3d } from 'lucide-react';
+import { ChevronRight, Bookmark, Check, Star, Box, Rotate3d, Search } from 'lucide-react';
 import '../../styles/new-home.css';
 import { mockupCategories, MockupCategory, MockupVariant } from '../data/mockupData';
 import { catalogService } from '../../services/catalog';
 import { useBoxStore } from '../../lib/useBoxStore';
 import BackgroundCanvas from '../components/layout/BackgroundCanvas';
 import Header from '../components/layout/Header';
+import { LiveCategoryBanner } from '../components/catalog/LiveCategoryBanner';
 import HoverBoxAnimation from '../animations/HoverBoxAnimation';
 import MagneticRigidBoxAnimation from '../animations/MagneticRigidBoxAnimation';
 import DrawerSleeveBoxAnimation from '../animations/DrawerSleeveBoxAnimation';
@@ -15,8 +16,8 @@ import TelescopeBoxAnimation from '../animations/TelescopeBoxAnimation';
 import HoverPouchAnimation from '../animations/HoverPouchAnimation';
 import HoverBottleAnimation from '../animations/HoverBottleAnimation';
 import HoverCanAnimation from '../animations/HoverCanAnimation';
-import HoverTubeAnimation from '../animations/HoverTubeAnimation';
 import PlasticWaterBottle3D from '../components/3d/PlasticWaterBottle3D';
+import SipperWaterBottle3D from '../components/3d/SipperWaterBottle3D';
 import { BeverageCan3D, CanvasDecal } from '../components/3d/BeverageCan3D';
 import SlimCan3D from '../components/3d/SlimCan3D';
 import ToothpasteTube3D from '../components/3d/ToothpasteTube3D';
@@ -145,6 +146,10 @@ interface MockupDetailsProps {
 }
 
 const BOX_MOCKUP_IMAGES: Record<string, { white: string; kraft: string }> = {
+  rsc: {
+    white: '/images/boxes/rsc_white.jpg',
+    kraft: '/images/boxes/rsc_kraft.jpg',
+  },
   rte: {
     white: '/images/boxes/rte_white.jpg',
     kraft: '/images/boxes/rte_kraft.jpg',
@@ -175,28 +180,32 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isHovered = hoveredVariant?.id === variant.id;
   const setBoxModel = useBoxStore((state: any) => state.setBoxModel);
 
-  const isWaterBottle = variant.boxModelKey === 'water_bottle' || variant.name.toLowerCase().includes('water bottle');
-  const isBottle = isWaterBottle || variant.boxModelKey === 'bottle' || variant.name.toLowerCase().includes('bottle') || activeCategoryId?.includes('bottle');
+  const isSipperWaterBottle = variant.boxModelKey === 'sipper_water_bottle' || variant.name.toLowerCase().includes('sipper') || variant.name.toLowerCase().includes('handle');
+  const isWaterBottle = !isSipperWaterBottle && (variant.boxModelKey === 'water_bottle' || variant.name.toLowerCase().includes('water bottle'));
+  const isBottle = isSipperWaterBottle || isWaterBottle || variant.boxModelKey === 'bottle' || variant.name.toLowerCase().includes('bottle') || activeCategoryId?.includes('bottle');
   const isSlimCan = variant.boxModelKey === 'slim_can' || variant.boxModelKey === 'slim_355ml_can' || variant.name.toLowerCase().includes('slim can') || (activeCategoryId?.includes('can') && variant.id === 2);
   const is12ozSodaCan = !isSlimCan && (variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('soda can') || (activeCategoryId?.includes('can') && variant.id === 1));
   const isCan = isSlimCan || is12ozSodaCan || variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('can');
   const isTube = variant.boxModelKey === 'tube' || variant.boxModelKey === 'toothpaste_tube' || variant.name.toLowerCase().includes('tube') || activeCategoryId?.includes('tube');
   const isToothpasteTube = isTube && (variant.id === 1 || variant.name.toLowerCase().includes('toothpaste'));
 
+  const isRSC = !isBottle && !isCan && !isTube && (variant.name === 'Square Shipping Box' || variant.name === 'Regular Slotted Carton' || variant.name === 'Regular Slotted Carton (RSC)' || variant.name === 'Shipping Box' || variant.boxModelKey === 'rsc');
   const isTE = !isBottle && !isCan && !isTube && (variant.name === 'Tuck End Box' || variant.name === 'Straight Tuck End Box' || variant.boxModelKey === 'te');
   const isRTE = !isBottle && !isCan && !isTube && (variant.name === 'Reverse Tuck End Box' || variant.boxModelKey === 'rte');
   const isAuto = !isBottle && !isCan && !isTube && (variant.name === 'Auto Lock Bottom Box' || variant.boxModelKey === 'auto_lock');
   const isCosmetic = !isBottle && !isCan && !isTube && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
   const isCosmeticB = !isBottle && !isCan && !isTube && (variant.name === 'Mailer / Tray Box' || variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
   const isButtonHole = !isBottle && !isCan && !isTube && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
-  const isBox = isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
-  const boxType = variant.boxModelKey || (isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
+  const isBox = isRSC || isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
+  const boxType = variant.boxModelKey || (isRSC ? 'rsc' : isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
-  const [material, setMaterial] = useState<'white' | 'kraft'>('white');
+  const [material, setMaterial] = useState<'white' | 'kraft'>('kraft');
 
   let defaultImage = variant.imageUrl;
   if (!defaultImage || defaultImage === '/mockups/generated_box.png' || defaultImage.includes('box')) {
-    if (isToothpasteTube || isTube) {
+    if (isSipperWaterBottle) {
+      defaultImage = '/images/sipper_water_bottle.png';
+    } else if (isToothpasteTube || isTube) {
       defaultImage = '/images/toothpaste_tube_mockup.png';
     } else if (isSlimCan) {
       defaultImage = '/images/kld_slim_can_mockup.png';
@@ -206,12 +215,16 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       defaultImage = '/images/water_bottle.png';
     } else if (isBottle) {
       defaultImage = '/images/bottle.png';
+    } else if (isRSC) {
+      defaultImage = '/images/boxes/rsc_kraft.jpg';
     } else {
       defaultImage = '/images/boxes/rte_white.jpg';
     }
   }
 
-  const currentImage = isSlimCan
+  const currentImage = isSipperWaterBottle
+    ? '/images/sipper_water_bottle.png'
+    : isSlimCan
     ? '/images/kld_slim_can_mockup.png'
     : is12ozSodaCan
     ? '/images/kld_can_mockup.png'
@@ -304,6 +317,32 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       return;
     }
 
+    if (isSipperWaterBottle) {
+      useBoxStore.setState({
+        boxModel: 'sipper_water_bottle',
+        activeProjectId: null,
+        activeProjectName: null,
+        L: 251 / 25.4,
+        W: 227 / 25.4,
+        H: 260 / 25.4,
+        T: 0.008,
+        glueFlapWidth: 0,
+        bleed: 2 / 25.4,
+        sizeMode: "manufacture",
+        materialType: "metal_glossy",
+        materialName: "Aluminum / Stainless Steel",
+        isCustomMaterial: false,
+        materialColor: "#ffffff",
+        materialCategory: "metal",
+        packageColor: "#ffffff",
+        insideColor: "#ffffff",
+        capColor: "#18181b",
+        decalsByModel: { ...useBoxStore.getState().decalsByModel, sipper_water_bottle: useBoxStore.getState().decalsByModel?.sipper_water_bottle || [] }
+      });
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+      return;
+    }
+
     if (isWaterBottle || variant.name.toLowerCase().includes('water bottle')) {
       useBoxStore.setState({
         boxModel: 'water_bottle',
@@ -329,8 +368,24 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       return;
     }
 
-    const isKraft = material === 'kraft';
-    const cleanDefaultState = {
+    const isKraft = material === 'kraft' || isRSC;
+    const cleanDefaultState = isRSC ? {
+      L: 12.0079,
+      W: 12.0079,
+      H: 12.0079,
+      T: 0.1181,
+      glueFlapWidth: 1.25,
+      bleed: 0.125,
+      sizeMode: "manufacture",
+      materialType: "corrugated",
+      materialName: "B-flute",
+      isCustomMaterial: false,
+      materialColor: "#c89a63",
+      materialCategory: "corrugated",
+      packageColor: null,
+      insideColor: null,
+      decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
+    } : {
       L: isButtonHole ? 75 / 25.4 : (isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244)),
       W: isButtonHole ? 75 / 25.4 : (isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622)),
       H: isButtonHole ? 60 / 25.4 : (isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992)),
@@ -345,10 +400,10 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       materialCategory: isKraft ? "kraft_cardboard" : "white_paperboard",
       packageColor: null,
       insideColor: null,
-      decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
+      decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
     };
 
-    const targetModel = variant.boxModelKey || (isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
+    const targetModel = variant.boxModelKey || (isRSC ? 'rsc' : isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
     useBoxStore.setState({ 
       boxModel: targetModel, 
@@ -417,7 +472,20 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
 
         {/* Box / Bottle Image / Animation Container */}
         <div className="w-full h-[260px] relative flex items-center justify-center overflow-hidden rounded-lg mb-4">
-          {isHovered && isSlimCan ? (
+          {isHovered && isSipperWaterBottle ? (
+            <div className="w-full h-full flex items-center justify-center p-2">
+              <SipperWaterBottle3D
+                labelColor="#ffffff"
+                capColor="#18181b"
+                autoRotate={true}
+                autoRotateSpeed={1.6}
+                interactive={false}
+                cameraDistance={5.8}
+                materialType="metal_matt"
+                className="w-full h-full pointer-events-none"
+              />
+            </div>
+          ) : isHovered && isSlimCan ? (
             <div className="w-full h-full flex items-center justify-center p-2">
               <SlimCan3D
                 autoRotate={true}
@@ -551,6 +619,12 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
           <h4 className={`text-[17px] font-bold transition-colors text-center ${isHovered ? 'text-black' : ''}`} style={!isHovered ? { color: 'var(--ink)' } : {}}>{variant.name}</h4>
           <p className={`text-[13px] mt-1 text-center ${isHovered ? 'text-zinc-600 opacity-100' : 'opacity-60'}`} style={!isHovered ? { color: 'var(--ink)' } : {}}>{variant.animation || 'Standard reveal'}</p>
 
+          {isSipperWaterBottle && (
+            <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full mt-2.5">
+              3D Aluminum Bottle • 251×227mm Wrap Label
+            </span>
+          )}
+
           {isWaterBottle && (
             <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-2.5">
               3D PET Plastic • 243×46mm Wrap Label
@@ -607,12 +681,19 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
       const defaultVariants = defaultBoxCategory?.variants || [];
       const currentVariants = [...(cat.variants || [])];
       for (const defV of defaultVariants) {
-        const exists = currentVariants.some(v => 
+        const existingIdx = currentVariants.findIndex(v => 
           (v.boxModelKey && defV.boxModelKey && v.boxModelKey === defV.boxModelKey) ||
-          (v.name && defV.name && v.name.toLowerCase().trim() === defV.name.toLowerCase().trim())
+          (v.name && defV.name && v.name.toLowerCase().trim() === defV.name.toLowerCase().trim()) ||
+          (defV.boxModelKey === 'rsc' && (v.boxModelKey === 'rsc' || v.name?.includes('RSC') || v.name?.includes('Slotted')))
         );
-        if (!exists) {
+        if (existingIdx === -1) {
           currentVariants.push(defV);
+        } else if (defV.boxModelKey === 'rsc') {
+          currentVariants[existingIdx] = {
+            ...currentVariants[existingIdx],
+            ...defV,
+            name: 'Square Shipping Box'
+          };
         }
       }
       return {
@@ -638,6 +719,18 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
         gridSize: 'large'
       };
 
+      const sipperWaterBottleVariant: MockupVariant = {
+        id: 102,
+        name: 'Sipper Water Bottle with Handle',
+        animation: 'Aluminum sports bottle with loop handle cap & 251x227mm wrap label',
+        imageUrl: '/images/sipper_water_bottle.png',
+        whiteImageUrl: '/images/sipper_water_bottle.png',
+        kraftImageUrl: '/images/sipper_water_bottle.png',
+        boxModelKey: 'sipper_water_bottle',
+        isFeatured: true,
+        gridSize: 'large'
+      };
+
       const hasWaterBottle = currentVariants.some(v => 
         v.boxModelKey === 'water_bottle' || v.name.toLowerCase().includes('mineral water bottle')
       );
@@ -646,15 +739,24 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
         currentVariants.unshift(waterBottleVariant);
       }
 
+      const hasSipper = currentVariants.some(v =>
+        v.boxModelKey === 'sipper_water_bottle' || v.name.toLowerCase().includes('sipper') || v.name.toLowerCase().includes('bottle with handle')
+      );
+
+      if (!hasSipper) {
+        currentVariants.splice(1, 0, sipperWaterBottleVariant);
+      }
+
       // Ensure proper bottle images instead of generated_box.png
       const updatedVariants = currentVariants.map(v => {
-        const isW = v.boxModelKey === 'water_bottle' || v.name.toLowerCase().includes('water bottle');
+        const isS = v.boxModelKey === 'sipper_water_bottle' || v.name.toLowerCase().includes('sipper') || v.name.toLowerCase().includes('bottle with handle');
+        const isW = !isS && (v.boxModelKey === 'water_bottle' || v.name.toLowerCase().includes('water bottle'));
         if (!v.imageUrl || v.imageUrl.includes('generated_box.png') || v.imageUrl.includes('boxes')) {
           return {
             ...v,
-            imageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
-            whiteImageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
-            kraftImageUrl: isW ? '/images/water_bottle.png' : '/images/bottle.png',
+            imageUrl: isS ? '/images/sipper_water_bottle.png' : isW ? '/images/water_bottle.png' : '/images/bottle.png',
+            whiteImageUrl: isS ? '/images/sipper_water_bottle.png' : isW ? '/images/water_bottle.png' : '/images/bottle.png',
+            kraftImageUrl: isS ? '/images/sipper_water_bottle.png' : isW ? '/images/water_bottle.png' : '/images/bottle.png',
           };
         }
         return v;
@@ -819,8 +921,24 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
   const [activeCategoryId, setActiveCategoryId] = useState(initialCategoryId);
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(initialCategoryId);
   const [hoveredVariant, setHoveredVariant] = useState<MockupVariant | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
+
+  useEffect(() => {
+    setSearchQuery('');
+  }, [activeCategoryId]);
+
+  const CATEGORY_TOTAL_COUNTS: Record<string, number> = {
+    'box-mockups': 2031,
+    'bottle-mockups': 1988,
+    'can-mockups': 696,
+    'tube-mockups': 696,
+    'pouch-bag-mockups': 842,
+    'cup-container-mockups': 520,
+    'food-packaging-mockups': 1140,
+    'water-bottle-mockups': 320,
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -867,6 +985,17 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
   }, []);
 
   const activeCategory = categories.find(c => c.id === activeCategoryId) || categories.find(c => c.id === initialCategoryId) || mockupCategories.find(c => c.id === activeCategoryId) || mockupCategories[0];
+
+  const displayedVariants = activeCategory.variants.filter((variant) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      variant.name.toLowerCase().includes(q) ||
+      (variant.animation && variant.animation.toLowerCase().includes(q)) ||
+      (variant.description && variant.description.toLowerCase().includes(q)) ||
+      (variant.boxModelKey && variant.boxModelKey.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="new-home-landing min-h-screen font-sans flex flex-col relative z-0">
@@ -928,26 +1057,51 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
           </nav>
         </aside>
 
-        {/* Main Content Pane - Centered Layout */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-12 bg-transparent flex flex-col items-center">
-          <div className="w-full max-w-[1200px] flex flex-col items-center">
-            <h1 className="text-[40px] font-bold mb-3 tracking-tight text-center" style={{ color: 'var(--ink)' }}>{activeCategory.name}</h1>
-            <p className="text-lg mb-10 max-w-2xl text-center" style={{ color: 'var(--ink)', opacity: 0.7 }}>
-              Discover our wide range of packaging variants, designed to elevate your brand and experience.
-            </p>
+        {/* Main Content Pane */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-10 bg-transparent flex flex-col items-center">
+          <div className="w-full max-w-[1240px] flex flex-col items-center">
+            {/* Live Interactive & Autonomous Animated Category Banner */}
+            <LiveCategoryBanner
+              categoryId={activeCategory.id}
+              categoryName={activeCategory.name}
+              totalCount={CATEGORY_TOTAL_COUNTS[activeCategory.id] || activeCategory.variants.length}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSelectChip={(chipText) => setSearchQuery(chipText)}
+              onOpenCustomizer={() => {
+                window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+              }}
+            />
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-              {activeCategory.variants.map((variant) => (
-                <div key={variant.id} className="w-full max-w-[360px]">
-                  <MockupCard
-                    variant={variant}
-                    activeCategoryId={activeCategoryId}
-                    setHoveredVariant={setHoveredVariant}
-                    hoveredVariant={hoveredVariant}
-                  />
-                </div>
-              ))}
-            </div>
+            {/* Mockups Grid / Empty State */}
+            {displayedVariants.length > 0 ? (
+              <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center mt-4">
+                {displayedVariants.map((variant) => (
+                  <div key={variant.id} className="w-full max-w-[360px]">
+                    <MockupCard
+                      variant={variant}
+                      activeCategoryId={activeCategoryId}
+                      setHoveredVariant={setHoveredVariant}
+                      hoveredVariant={hoveredVariant}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="w-full py-16 flex flex-col items-center justify-center text-center bg-white/70 backdrop-blur-md rounded-2xl border-2 border-dashed border-zinc-300 mt-6 p-8">
+                <Search className="w-10 h-10 text-zinc-400 mb-3" />
+                <h3 className="text-lg font-bold text-zinc-800">No mockups found</h3>
+                <p className="text-sm text-zinc-500 mt-1 max-w-sm">
+                  We couldn't find any models matching "<span className="font-semibold text-zinc-700">{searchQuery}</span>" in {activeCategory.name}.
+                </p>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="mt-4 px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm"
+                >
+                  Clear Search
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>

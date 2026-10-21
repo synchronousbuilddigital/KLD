@@ -26,7 +26,8 @@ interface DielinesPageProps {
 }
 
 const CATEGORY_ITEMS = [
-  { id: 'all', label: 'All Box Models', count: 4, icon: Box, color: 'text-indigo-600' },
+  { id: 'all', label: 'All Box Models', count: 5, icon: Box, color: 'text-indigo-600' },
+  { id: 'rsc', label: 'Square Shipping Box', count: 1, icon: Box, color: 'text-amber-600' },
   { id: 'te', label: 'Straight Tuck End (STE)', count: 1, icon: PackageCheck, color: 'text-blue-600' },
   { id: 'rte', label: 'Reverse Tuck End (RTE)', count: 1, icon: Layers, color: 'text-emerald-600' },
   { id: 'auto_lock', label: 'Auto Lock Bottom', count: 1, icon: Sparkles, color: 'text-amber-600' },
@@ -41,16 +42,107 @@ const CATEGORY_ITEMS = [
   { id: 'envelope', label: 'Envelope Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
 ];
 
+const DEFAULT_DIELINES: CatalogItemData[] = [
+  {
+    itemId: 'rsc',
+    title: 'Square Shipping Box',
+    subtitle: 'Corrugated Shipping Box • 3D Studio',
+    img: '/images/boxes/rsc_kraft.jpg',
+    dieline2DImg: '/images/dielines/rsc.svg',
+    box3DImg: '/images/boxes/rsc_kraft.jpg',
+    group: 'dielines',
+    boxModelKey: 'rsc',
+    active: true,
+    order: 0,
+  },
+  {
+    itemId: 'te',
+    title: 'Straight Tuck End Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/boxes/ste_white.jpg',
+    dieline2DImg: '/images/dielines/ste_real.png',
+    box3DImg: '/images/boxes/ste_white.jpg',
+    group: 'dielines',
+    boxModelKey: 'te',
+    active: true,
+    order: 1,
+  },
+  {
+    itemId: 'rte',
+    title: 'Reverse Tuck End Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/boxes/rte_white.jpg',
+    dieline2DImg: '/images/dielines/rte_real.png',
+    box3DImg: '/images/boxes/rte_white.jpg',
+    group: 'dielines',
+    boxModelKey: 'rte',
+    active: true,
+    order: 2,
+  },
+  {
+    itemId: 'auto_lock',
+    title: 'Auto Lock Bottom Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/boxes/auto_white.jpg',
+    dieline2DImg: '/images/dielines/auto.svg',
+    box3DImg: '/images/boxes/auto_white.jpg',
+    group: 'dielines',
+    boxModelKey: 'auto_lock',
+    active: true,
+    order: 3,
+  },
+  {
+    itemId: 'cosmetic',
+    title: 'Cosmetic Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/boxes/cosmetic_white.jpg',
+    dieline2DImg: '/images/dielines/cosmetic_real.png',
+    box3DImg: '/images/boxes/cosmetic_white.jpg',
+    group: 'dielines',
+    boxModelKey: 'cosmetic',
+    active: true,
+    order: 4,
+  },
+  {
+    itemId: 'cosmetic_b',
+    title: 'Mailer / Tray Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/boxes/cosmetic_b_white.jpg',
+    dieline2DImg: '/images/dielines/cosmetic_b.svg',
+    box3DImg: '/images/boxes/cosmetic_b_white.jpg',
+    group: 'dielines',
+    boxModelKey: 'cosmetic_b',
+    active: true,
+    order: 5,
+  },
+  {
+    itemId: 'button_hole',
+    title: 'Button Hole Box',
+    subtitle: 'Vector CAD Blueprint • 3D Studio',
+    img: '/images/box.png',
+    dieline2DImg: '/images/boxes/3_button_hole_box.svg',
+    box3DImg: '/images/box.png',
+    group: 'dielines',
+    boxModelKey: 'button_hole',
+    active: true,
+    order: 6,
+  }
+];
+
 export default function DielinesPage({ onNavigate }: DielinesPageProps) {
-  const [selectedBoxModel, setSelectedBoxModel] = useState<"rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | null>(null);
+  const [selectedBoxModel, setSelectedBoxModel] = useState<"rsc" | "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dielineModels, setDielineModels] = useState<CatalogItemData[]>(() => {
     const cached = catalogService.getCachedCatalog();
-    if (cached) {
-      return cached.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      const filtered = cached.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+      if (!filtered.some(f => f.boxModelKey === 'rsc')) {
+        filtered.unshift(DEFAULT_DIELINES[0]);
+      }
+      return filtered;
     }
-    return [];
+    return DEFAULT_DIELINES;
   });
   const [isLoading, setIsLoading] = useState<boolean>(!catalogService.getCachedCatalog());
   useEffect(() => {
@@ -70,7 +162,17 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
     const fetchDielines = async () => {
       try {
         const catalog = await catalogService.getPublicCatalog();
-        setDielineModels(catalog.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0)));
+        const items = catalog.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+        if (items.length > 0) {
+          if (!items.some(f => f.boxModelKey === 'rsc')) {
+            items.unshift(DEFAULT_DIELINES[0]);
+          }
+          setDielineModels(items);
+        } else {
+          setDielineModels(DEFAULT_DIELINES);
+        }
+      } catch {
+        setDielineModels(DEFAULT_DIELINES);
       } finally {
         setIsLoading(false);
       }
@@ -85,8 +187,10 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
 
-    let targetModel: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' = 'rte';
-    if (category === 'tuck_end' || category === 'folding' || category === 'rte') {
+    let targetModel: 'rsc' | 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' = 'rsc';
+    if (category === 'rsc' || category === 'shipping' || category === 'corrugated') {
+      targetModel = 'rsc';
+    } else if (category === 'tuck_end' || category === 'folding' || category === 'rte') {
       targetModel = 'rte';
     } else if (category === 'cosmetic_b' || category === 'mailer' || category === 'tray') {
       targetModel = 'cosmetic_b';

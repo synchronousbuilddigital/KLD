@@ -109,7 +109,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   }, []);
 
   const [activeSurface, setActiveSurface] = useState("Outside");
-  const isCylinder = store.boxModel === 'can' || store.boxModel === 'soda_can' || store.boxModel === 'beverage_can' || store.boxModel === 'slim_can' || store.boxModel === 'slim_355ml_can' || store.boxModel === 'water_bottle' || store.boxModel === 'tube' || store.boxModel === 'toothpaste_tube';
+  const isCylinder = store.boxModel === 'can' || store.boxModel === 'soda_can' || store.boxModel === 'beverage_can' || store.boxModel === 'slim_can' || store.boxModel === 'slim_355ml_can' || store.boxModel === 'sipper_water_bottle' || store.boxModel === 'water_bottle_handle' || store.boxModel === 'sipper_bottle' || store.boxModel === 'water_bottle' || store.boxModel === 'tube' || store.boxModel === 'toothpaste_tube';
   const t = themes[store.theme || 'light'];
 
   const deferredDecals = useDeferredValue(decals);
@@ -161,8 +161,10 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       const currentBoxModel = data.boxModel || store.boxModel || 'rte';
 
       const categoryName = 
+        currentBoxModel === 'sipper_water_bottle' || currentBoxModel === 'water_bottle_handle' ? 'Sipper Water Bottle with Handle' :
         currentBoxModel === 'can' || currentBoxModel === 'soda_can' ? '12 oz Aluminum Soda Can' :
         currentBoxModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
+        currentBoxModel === 'rsc' ? 'Square Shipping Box' :
         currentBoxModel === 'rte' ? 'Reverse Tuck End Box' :
         currentBoxModel === 'te' ? 'Straight Tuck End Box' :
         currentBoxModel === 'auto_lock' ? 'Auto Lock Bottom Box' :

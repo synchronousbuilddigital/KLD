@@ -20,7 +20,7 @@ router.post('/jobs/start', aiController.startAiJob);
 // GET /api/ai/jobs/:jobId
 router.get('/jobs/:jobId', aiController.getAiJobStatus);
 
-// Dieline CAD detection & matching across the 6 directory box models
+// Dieline CAD detection & matching across the 7 directory box models
 // POST /api/ai/detect-dieline
 router.post('/detect-dieline', uploadDieline.single('file'), aiController.detectDieline);
 

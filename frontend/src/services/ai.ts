@@ -65,6 +65,7 @@ export interface DielineDetectionResult {
   secondaryRecommendation?: any;
   recommendations?: any[];
   suggestions?: any[];
+  allCandidates?: any[];
   allDirectoryBoxes: Array<{
     key: string;
     name: string;
@@ -133,7 +134,7 @@ export async function pollAiJob(jobId: string): Promise<{ id: string; status: st
 }
 
 /**
- * Detect dieline from uploaded DXF, SVG, or image file and match to the 6 directory box models
+ * Detect dieline from uploaded DXF, SVG, or image file and match to the 7 directory box models
  */
 export async function detectDielineFile(file: File): Promise<DielineDetectionResult> {
   try {

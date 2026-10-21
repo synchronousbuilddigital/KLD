@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 560" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#ffffff" rx="10" />
+  <g id="tube-dieline-geometry" transform="translate(45, 40)">
+    <!-- Bleed Boundary (Green Dashed) -->
+    <rect x="-8" y="-8" width="346" height="496" fill="none" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="6,4" rx="2" />
+
+    <!-- Top Heat-Seal Crimp Bar Zone (Pale Shading) -->
+    <rect x="0" y="0" width="330" height="42" fill="#fef3c7" stroke="none" />
+    <text x="165" y="24" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#b45309" text-anchor="middle">CRIMP HEAT SEAL ZONE (TOP EDGE)</text>
+    <line x1="0" y1="42" x2="330" y2="42" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4,2" />
+
+    <!-- Center Fold / Front & Back Division (Blue Dashed) -->
+    <line x1="165" y1="42" x2="165" y2="480" stroke="#2563eb" stroke-width="1.8" stroke-dasharray="5,3" />
+
+    <!-- Panel Labels -->
+    <text x="82" y="240" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#64748b" text-anchor="middle">FRONT (45 mm)</text>
+    <text x="247" y="240" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#64748b" text-anchor="middle">BACK (45 mm)</text>
+    <text x="165" y="280" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">75 mL COLLAPSIBLE SQUEEZE TUBE</text>
+    <text x="165" y="300" font-family="system-ui, sans-serif" font-size="9.5" fill="#94a3b8" text-anchor="middle">Flat Width: 90 mm (3.54 in) × Height: 133 mm (5.24 in)</text>
+
+    <!-- Bottom Cap & Shoulder Collar Area -->
+    <rect x="0" y="445" width="330" height="35" fill="#f1f5f9" stroke="none" />
+    <text x="165" y="466" font-family="system-ui, sans-serif" font-size="8.5" fill="#64748b" text-anchor="middle">COLLAR &amp; SCREW / FLIP-TOP CAP BASE</text>
+
+    <!-- Outer Cut Path (Red Solid) -->
+    <rect x="0" y="0" width="330" height="480" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linejoin="round" />
+  </g>
+</svg>

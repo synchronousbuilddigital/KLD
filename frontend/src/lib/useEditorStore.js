@@ -355,7 +355,7 @@ export const useEditorStore = create((set) => ({
   }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], sipper_water_bottle: [], water_bottle_handle: [], sipper_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
   setDecals: (decalsOrUpdater) => set((state) => {
     const currentModel = state.boxModel;
     const currentDecals = state.decalsByModel[currentModel] || [];

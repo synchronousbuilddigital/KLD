@@ -4,6 +4,18 @@ const CatalogItem = require('../models/CatalogItem');
 
 const dielineModels = [
   {
+    itemId: 'rsc',
+    title: 'Square Shipping Box',
+    subtitle: 'Corrugated Shipping Box • 3D Studio',
+    img: '/images/boxes/rsc_kraft.jpg',
+    dieline2DImg: '/images/dielines/rsc.svg',
+    box3DImg: '/images/boxes/rsc_kraft.jpg',
+    group: 'dielines',
+    boxModelKey: 'rsc',
+    active: true,
+    order: 0,
+  },
+  {
     itemId: 'te',
     title: 'Straight Tuck End Box',
     subtitle: 'Vector CAD Blueprint • 3D Studio',

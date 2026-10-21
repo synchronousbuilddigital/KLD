@@ -16,7 +16,7 @@ import { setLargeData } from "../../lib/idbStorage";
 interface BoxStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole";
+  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "rsc";
   boxTitle?: string;
 }
 
@@ -194,6 +194,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
   if (!isOpen) return null;
 
   const modelLabels: Record<string, string> = {
+    rsc: "Square Shipping Box",
     te: "Straight Tuck End Box",
     rte: "Reverse Tuck End Box",
     auto_lock: "Auto Lock Bottom Box",
@@ -530,11 +531,20 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
             
+            {/* Design Online Button matching screenshot */}
+            <button
+              onClick={() => setIsEditorOpen(true)}
+              className="px-4 py-2 rounded-xl text-[13px] font-bold text-zinc-800 bg-white border border-zinc-300 hover:border-zinc-900 transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+            >
+              <span>Design Online</span>
+              <span className="text-zinc-500 font-normal">↗</span>
+            </button>
+
             {/* Save Project Button */}
             <button
               onClick={handleSaveProject}
               disabled={isSaving}
-              className="px-4 py-2 rounded-lg text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer hover:bg-opacity-90 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer hover:bg-opacity-90 flex items-center gap-1.5"
               style={{ backgroundColor: isSaved ? '#047857' : '#00c48c' }}
             >
               {isSaved ? (
@@ -545,19 +555,18 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
               ) : (
                 <>
                   <Save className="w-4 h-4 text-white" />
-                  <span>{isSaving ? 'Saving...' : 'Save Project'}</span>
+                  <span>{isSaving ? 'Saving...' : 'Save'}</span>
                 </>
               )}
             </button>
 
-            {/* Print Button */}
+            {/* Download The Dieline Button matching screenshot */}
             <button
-              onClick={handlePrint}
-              className="px-4 py-2 rounded-lg text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer hover:bg-opacity-90 flex items-center gap-1.5"
-              style={{ backgroundColor: '#2563eb' }}
+              onClick={handleExportPDF}
+              className="px-4 py-2 rounded-xl text-[13px] font-bold text-white transition-all shadow-sm cursor-pointer hover:bg-blue-700 flex items-center gap-1.5 bg-blue-600"
             >
-              <Printer className="w-4 h-4 text-white" />
-              Print
+              <Download className="w-4 h-4 text-white" />
+              <span>Download the dieline</span>
             </button>
 
           </div>

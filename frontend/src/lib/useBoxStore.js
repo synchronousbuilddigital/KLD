@@ -91,6 +91,25 @@ const createWaterBottleDefaultState = () => ({
   capColor: "#ffffff"
 });
 
+const createSipperBottleDefaultState = () => ({
+  L: 251 / 25.4, // circumference ~9.88 in (251 mm)
+  W: 227 / 25.4, // label height ~8.94 in (227 mm)
+  H: 290 / 25.4, // total 1000 ml bottle height ~11.42 in (290 mm)
+  T: 0.008,
+  glueFlapWidth: 0,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "metal_matt",
+  materialName: "Metal matt",
+  isCustomMaterial: false,
+  materialColor: "#ffffff",
+  materialCategory: "metal",
+  generatorMethod: "dxf",
+  packageColor: "#ffffff",
+  insideColor: "#ffffff",
+  capColor: "#18181b"
+});
+
 const createCanDefaultState = () => ({
   L: 207 / 25.4, // circumference ~8.15 in (784 px aspect)
   W: 125 / 25.4, // label height ~4.92 in (472 px aspect)
@@ -146,6 +165,24 @@ const createTubeDefaultState = () => ({
   capColor: "#ffffff"
 });
 
+const createRSCDefaultState = () => ({
+  L: 12.0079,
+  W: 12.0079,
+  H: 12.0079,
+  T: 0.1181,
+  glueFlapWidth: 1.25,
+  bleed: 0.125,
+  sizeMode: "manufacture",
+  materialType: "corrugated",
+  materialName: "B-flute",
+  isCustomMaterial: false,
+  materialColor: "#c89a63",
+  materialCategory: "corrugated",
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
+});
+
 export const useBoxStore = create((set) => ({
   // Default Dimensions & Unit
   unit: "in",
@@ -163,6 +200,7 @@ export const useBoxStore = create((set) => ({
   
   savedState: {
     dieline: {
+      rsc: createRSCDefaultState(),
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
@@ -170,6 +208,7 @@ export const useBoxStore = create((set) => ({
       cosmetic_b: createCosmeticBDefaultState(),
       button_hole: createButtonHoleDefaultState(),
       water_bottle: createWaterBottleDefaultState(),
+      sipper_water_bottle: createSipperBottleDefaultState(),
       can: createCanDefaultState(),
       slim_can: createSlimCanDefaultState(),
       slim_355ml_can: createSlimCanDefaultState(),
@@ -177,6 +216,7 @@ export const useBoxStore = create((set) => ({
       toothpaste_tube: createTubeDefaultState()
     },
     mockup: {
+      rsc: createRSCDefaultState(),
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
@@ -184,6 +224,7 @@ export const useBoxStore = create((set) => ({
       cosmetic_b: createCosmeticBDefaultState(),
       button_hole: createButtonHoleDefaultState(),
       water_bottle: createWaterBottleDefaultState(),
+      sipper_water_bottle: createSipperBottleDefaultState(),
       can: createCanDefaultState(),
       slim_can: createSlimCanDefaultState(),
       slim_355ml_can: createSlimCanDefaultState(),
@@ -347,10 +388,10 @@ export const useBoxStore = create((set) => ({
   }),
 
   // Decals
-  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
-  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
+  decalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], sipper_water_bottle: [], water_bottle_handle: [], sipper_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
+  aiDecalsByModel: { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], sipper_water_bottle: [], water_bottle_handle: [], sipper_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] },
   clearAllAiDecals: () => set(() => {
-    const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
+    const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], sipper_water_bottle: [], water_bottle_handle: [], sipper_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
     try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('kld_saved_ai_decals');
@@ -366,7 +407,7 @@ export const useBoxStore = create((set) => ({
     const currentDecals = state.decalsByModel[currentModel] || [];
     const newDecals = typeof decalsOrUpdater === "function" ? decalsOrUpdater(currentDecals) : decalsOrUpdater;
     if (Array.isArray(newDecals) && newDecals.length === 0) {
-      const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
+      const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], sipper_water_bottle: [], water_bottle_handle: [], sipper_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
       return {
         decalsByModel: empty,
         aiDecalsByModel: empty
@@ -384,7 +425,7 @@ export const useBoxStore = create((set) => ({
     const currentDecals = (state.aiDecalsByModel && state.aiDecalsByModel[currentModel]) || [];
     const newDecals = typeof decalsOrUpdater === "function" ? decalsOrUpdater(currentDecals) : decalsOrUpdater;
     if (Array.isArray(newDecals) && newDecals.length === 0) {
-      const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
+      const empty = { rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], sipper_water_bottle: [], water_bottle_handle: [], sipper_bottle: [], can: [], slim_can: [], slim_355ml_can: [], tube: [], toothpaste_tube: [] };
       try {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('kld_saved_ai_decals');

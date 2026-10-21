@@ -7,12 +7,7 @@ import {
   pollAiJob, 
   detectDielineFile 
 } from '../../services/ai';
-import { generateRTEDielineDXF } from '../../lib/rteDielineGenerator';
-import { generateTEDielineDXF } from '../../lib/teDielineGenerator';
-import { generateAutoLockDieline } from '../../lib/autoLockDielineGenerator';
-import { generateCosmeticBoxDieline } from '../../lib/cosmeticBoxDielineGenerator';
-import { generateCosmeticBoxBDieline } from '../../lib/cosmeticBoxBDielineGenerator';
-import { generateButtonHoleDieline } from '../../lib/buttonHoleDielineGenerator';
+import { getBoxDieline } from '../../lib/boxDielineDispatcher';
 import { generateDXFString } from '../../lib/exportUtils';
 import { setLargeData, getLargeData } from '../../lib/idbStorage';
 import './AiPackagingAssistant.css';
@@ -31,6 +26,8 @@ import {
   CheckCircle2, 
   Download, 
   ChevronRight,
+  ChevronDown,
+  SlidersHorizontal,
   Upload,
   FileCheck,
   ScanLine,
@@ -138,6 +135,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [isDetectingFile, setIsDetectingFile] = useState(false);
   const [appliedVariationUrl, setAppliedVariationUrl] = useState<string | null>(null);
+  const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<{ [msgId: string]: string }>({});
 
   const bodyRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -672,7 +670,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
       const matchMsg: Message = {
         id: 'msg-detect-' + Date.now(),
         sender: 'assistant',
-        text: result.explanation || `Dieline analyzed. Identified nearest match from our 6 box models: **${result.matchedTitle}** (${result.confidence}% Match).`,
+        text: result.explanation || `Dieline analyzed. Identified nearest match from our packaging directory: **${result.matchedTitle}** (${result.confidence}% Match).`,
         dielineMatch: result,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -732,14 +730,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         bleed: store.bleed || (2 / 25.4)
       };
 
-      let dielineData;
-      if (activeModel === 'te') dielineData = generateTEDielineDXF(params);
-      else if (activeModel === 'auto_lock') dielineData = generateAutoLockDieline(params);
-      else if (activeModel === 'cosmetic') dielineData = generateCosmeticBoxDieline(params);
-      else if (activeModel === 'cosmetic_b') dielineData = generateCosmeticBoxBDieline(params);
-      else if (activeModel === 'button_hole') dielineData = generateButtonHoleDieline(params);
-      else dielineData = generateRTEDielineDXF(params);
-
+      const dielineData = getBoxDieline(activeModel, params);
       const dxfString = generateDXFString(dielineData);
       const blob = new Blob([dxfString], { type: 'application/dxf' });
       const url = URL.createObjectURL(blob);
@@ -780,7 +771,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         <div className="ai-drag-overlay">
           <Upload style={{ width: '36px', height: '36px' }} />
           <span style={{ fontSize: '15px', fontWeight: '800' }}>Drop DXF or Dieline File Here</span>
-          <span style={{ fontSize: '12px', opacity: 0.85 }}>Detects nearest match from our 6 box directory</span>
+          <span style={{ fontSize: '12px', opacity: 0.85 }}>Detects nearest match across boxes, cans, bottles & tubes</span>
         </div>
       )}
 
@@ -942,7 +933,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
               </div>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', fontWeight: '800', color: '#1d4ed8' }}>Upload DXF or Dieline File</div>
-                <div style={{ fontSize: '11px', color: '#6b7280', lineHeight: '1.3' }}>Auto-detects nearest match across our 6 box models</div>
+                <div style={{ fontSize: '11px', color: '#6b7280', lineHeight: '1.3' }}>Auto-detects nearest match across boxes, cans, bottles & tubes</div>
               </div>
             </div>
 
@@ -1284,75 +1275,175 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                           })}
                         </div>
 
-                        {/* Collapsible remaining directory alternatives */}
-                        {match.suggestions && match.suggestions.length > 0 && (
-                          <details style={{ marginTop: '4px', borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
-                            <summary style={{
-                              fontSize: '11px',
-                              fontWeight: '700',
-                              color: '#64748b',
-                              cursor: 'pointer',
-                              userSelect: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '2px 0'
-                            }}>
-                              <span>Other Packaging Directory Models</span>
-                              <span style={{ fontSize: '10px', color: '#94a3b8' }}>▾</span>
-                            </summary>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-                              {match.suggestions.map((sug: any) => {
-                                const isSugActive = store?.boxModel === sug.key;
-                                return (
-                                  <div
-                                    key={sug.key}
-                                    onClick={() => {
-                                      if (onApplyBoxModel) {
-                                        onApplyBoxModel(sug.key, sug.defaultDimsIn, sug.defaultDims);
-                                      } else {
-                                        if (store.setBoxModel) store.setBoxModel(sug.key);
-                                        if (sug.defaultDimsIn && store.setDim) {
-                                          store.setDim('L', sug.defaultDimsIn.L);
-                                          store.setDim('W', sug.defaultDimsIn.W);
-                                          store.setDim('H', sug.defaultDimsIn.H);
-                                        }
-                                      }
-                                    }}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      padding: '6px 10px',
-                                      background: isSugActive ? '#eff6ff' : 'rgba(0,0,0,0.02)',
-                                      border: isSugActive ? '1px solid #3b82f6' : '1px solid #e2e8f0',
-                                      borderRadius: '8px',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <img 
-                                        src={sug.box3DImg} 
-                                        alt={sug.name} 
-                                        style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} 
-                                        onError={e => { e.currentTarget.style.display = 'none'; }}
-                                      />
-                                      <div>
-                                        <div style={{ fontSize: '11px', fontWeight: '700' }}>{sug.name}</div>
-                                        {sug.defaultDims && (
-                                          <div style={{ fontSize: '9px', color: '#64748b' }}>{sug.defaultDims.L}×{sug.defaultDims.W}×{sug.defaultDims.H} mm</div>
-                                        )}
+                        {/* Dynamic Dropdown for All Other Packaging Directory Models with Lower Confidence Scores */}
+                        {(() => {
+                          const otherCandidates = (match.allCandidates && match.allCandidates.length > 0)
+                            ? match.allCandidates.filter((c: any) => c.matchedModelKey !== rec1.matchedModelKey && c.matchedModelKey !== rec2.matchedModelKey)
+                            : (match.suggestions || []);
+
+                          if (!otherCandidates || otherCandidates.length === 0) return null;
+
+                          const activeSelectedKey = selectedCandidateKeys[msg.id] || (otherCandidates[0]?.matchedModelKey || otherCandidates[0]?.key || '');
+                          const selectedCand = otherCandidates.find((c: any) => (c.matchedModelKey || c.key) === activeSelectedKey) || otherCandidates[0];
+                          const isSelectedApplied = (store?.boxModel === (selectedCand?.matchedModelKey || selectedCand?.key));
+
+                          return (
+                            <div className="ai-dieline-dropdown-section">
+                              <div className="ai-dieline-dropdown-header">
+                                <div className="ai-dieline-dropdown-title">
+                                  <SlidersHorizontal style={{ width: '13px', height: '13px', color: '#6366f1' }} />
+                                  <span>Other Packaging Directory Models ({otherCandidates.length})</span>
+                                </div>
+                                <span className="ai-dieline-dropdown-hint">Select a model to view & switch</span>
+                              </div>
+
+                              <div className="ai-dieline-select-wrapper">
+                                <select
+                                  id={`ai-dieline-dropdown-${msg.id}`}
+                                  className="ai-dieline-candidate-select"
+                                  value={activeSelectedKey}
+                                  onChange={(e) => {
+                                    setSelectedCandidateKeys(prev => ({ ...prev, [msg.id]: e.target.value }));
+                                  }}
+                                >
+                                  {otherCandidates.map((cand: any) => {
+                                    const cKey = cand.matchedModelKey || cand.key;
+                                    const cName = cand.matchedTitle || cand.name;
+                                    return (
+                                      <option key={cKey} value={cKey}>
+                                        #{cand.rank || '•'} {cName} — {cand.confidence}% Match
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <ChevronDown className="ai-dieline-select-arrow" style={{ width: '14px', height: '14px' }} />
+                              </div>
+
+                              {/* Dedicated Selected Candidate Preview Card */}
+                              {selectedCand && (
+                                <div className={`ai-rec-card candidate-card ${isSelectedApplied ? 'is-active' : ''}`}>
+                                  <div className="ai-rec-header">
+                                    <div className="ai-rec-title-group">
+                                      <div className="ai-rec-rank-pill candidate">
+                                        <Layers style={{ width: '10px', height: '10px', color: '#6366f1' }} />
+                                        <span>#{selectedCand.rank || 3} Directory Fit • Dynamic Score</span>
                                       </div>
+                                      <div className="ai-rec-box-name">
+                                        <span>{selectedCand.matchedTitle || selectedCand.name}</span>
+                                        <span className="ai-rec-code-tag">{selectedCand.matchedModelKey || selectedCand.key}</span>
+                                      </div>
+                                      {selectedCand.subtitle && (
+                                        <div className="ai-rec-subtitle">{selectedCand.subtitle}</div>
+                                      )}
                                     </div>
-                                    <span style={{ fontSize: '10px', color: isSugActive ? '#2563eb' : '#64748b', fontWeight: '700' }}>
-                                      {isSugActive ? '✓ Active' : 'Select Box →'}
-                                    </span>
+
+                                    <div className="ai-rec-score-badge candidate">
+                                      <span className="ai-score-dot candidate" />
+                                      <span>{selectedCand.confidence}% Match</span>
+                                    </div>
                                   </div>
-                                );
-                              })}
+
+                                  {/* Dual Previews: 2D Dieline & 3D Fold */}
+                                  <div className="ai-rec-preview-grid">
+                                    <div className="ai-rec-preview-card">
+                                      <img 
+                                        src={selectedCand.dieline2DImg} 
+                                        alt={`${selectedCand.matchedTitle || selectedCand.name} 2D Dieline`}
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                      <span className="ai-rec-preview-label">
+                                        <span>📐 2D Dieline</span>
+                                      </span>
+                                    </div>
+                                    <div className="ai-rec-preview-card">
+                                      <img 
+                                        src={selectedCand.box3DImg} 
+                                        alt={`${selectedCand.matchedTitle || selectedCand.name} 3D Fold`}
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                      />
+                                      <span className="ai-rec-preview-label">
+                                        <span>📦 3D Fold</span>
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Dimensions & Features */}
+                                  <div className="ai-rec-specs-box">
+                                    {(selectedCand.dimensions || selectedCand.defaultDims) && (
+                                      <div className="ai-rec-dims-row">
+                                        <span style={{ fontWeight: '700', color: '#64748b' }}>Dimensions:</span>
+                                        <span className="ai-rec-dim-tag">
+                                          <span>📏 {(selectedCand.dimensions || selectedCand.defaultDims).L} × {(selectedCand.dimensions || selectedCand.defaultDims).W} × {(selectedCand.dimensions || selectedCand.defaultDims).H} mm</span>
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {selectedCand.explanation && (
+                                      <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', margin: '4px 0 6px' }}>
+                                        {selectedCand.explanation}
+                                      </div>
+                                    )}
+
+                                    {selectedCand.detectedFeatures && selectedCand.detectedFeatures.length > 0 && (
+                                      <div className="ai-rec-features-list">
+                                        {selectedCand.detectedFeatures.map((feat: string, fIdx: number) => (
+                                          <div key={fIdx} className="ai-rec-feature-item">
+                                            <span style={{ color: '#6366f1', fontWeight: '800' }}>•</span>
+                                            <span>{feat}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Active status */}
+                                  {isSelectedApplied && (
+                                    <div className="ai-rec-active-status">
+                                      <CheckCircle2 style={{ width: '13px', height: '13px', color: '#059669', flexShrink: 0 }} />
+                                      <span>Active in 3D Canvas Studio</span>
+                                    </div>
+                                  )}
+
+                                  {/* Action Buttons */}
+                                  <div className="ai-rec-actions">
+                                    <button 
+                                      className={`ai-rec-btn ${isSelectedApplied ? 'active' : 'primary'}`}
+                                      onClick={() => handleApplyRec(selectedCand)}
+                                    >
+                                      {isSelectedApplied ? (
+                                        <>
+                                          <CheckCircle2 style={{ width: '13px', height: '13px' }} />
+                                          <span>Applied</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Box style={{ width: '13px', height: '13px' }} />
+                                          <span>Switch to This Model ({selectedCand.confidence}%)</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    <button 
+                                      className="ai-rec-btn secondary"
+                                      onClick={() => handleDownloadDielineDXF(selectedCand.matchedModelKey || selectedCand.key, selectedCand.dimensionsIn || selectedCand.defaultDimsIn)}
+                                    >
+                                      <Download style={{ width: '13px', height: '13px' }} />
+                                      <span>Export DXF</span>
+                                    </button>
+
+                                    <button 
+                                      className="ai-rec-btn sparkle"
+                                      onClick={() => handleSendPrompt(`Design packaging for ${selectedCand.matchedTitle || selectedCand.name} with dimensions ${(selectedCand.dimensions || selectedCand.defaultDims)?.L || 120}x${(selectedCand.dimensions || selectedCand.defaultDims)?.W || 60}x${(selectedCand.dimensions || selectedCand.defaultDims)?.H || 160} mm`)}
+                                    >
+                                      <Sparkles style={{ width: '13px', height: '13px' }} />
+                                      <span>AI Design</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </details>
-                        )}
+                          );
+                        })()}
                       </div>
                     );
                   })()}
@@ -1484,7 +1575,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                 <div className="chat-bubble assistant">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#71717a' }}>
                     <ScanLine className="animate-spin" style={{ width: '15px', height: '15px', color: '#2563eb' }} />
-                    <span>Analyzing dieline CAD entities & geometry... Matching across 6 directory box models...</span>
+                    <span>Analyzing dieline CAD entities & geometry... Matching across packaging directory (boxes, cans, bottles & tubes)...</span>
                   </div>
                 </div>
               </div>
@@ -1586,7 +1677,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                 type="button"
                 className="ai-dieline-upload-pill-btn" 
                 onClick={() => fileInputRef.current?.click()} 
-                title="Upload DXF / SVG / Image to detect box dieline"
+                title="Upload DXF / SVG / Image to detect packaging dieline (boxes, cans, bottles & tubes)"
                 style={{
                   display: 'flex',
                   alignItems: 'center',

@@ -303,7 +303,7 @@
       };
     },
 
-    // Regular Slotted Carton (RSC) Geometry
+    // Square Shipping Box (RSC) Geometry
     getRscGeometry: function(L, W, H, glueTab) {
       const g = glueTab;
       const flapH = W / 2;

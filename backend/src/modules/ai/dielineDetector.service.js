@@ -4,7 +4,7 @@ const { PNG } = require('pngjs');
 const jpeg = require('jpeg-js');
 
 /**
- * 6 Directory Box Models Reference Data
+ * 7 Directory Box Models Reference Data
  */
 const DIRECTORY_BOXES = [
   {
@@ -101,6 +101,86 @@ const DIRECTORY_BOXES = [
       'Distinctive circular/semicircular button lock slot notch in top flap',
       '1-2-3 snap lock bottom closure flaps',
       'Square profile base footprint'
+    ]
+  },
+  {
+    itemId: 'rsc',
+    boxModelKey: 'rsc',
+    name: 'Square Shipping Box (RSC)',
+    subtitle: 'Corrugated Shipping Carton • Equal-Length Center Flaps',
+    description: 'Standard 4-panel corrugated Regular Slotted Carton (RSC / FEFCO 0201). All outer flaps meet at the center when folded, providing heavy-duty structural rigidity for parcel shipping and distribution.',
+    dieline2DImg: '/images/dielines/rsc.svg',
+    box3DImg: '/images/boxes/rsc_kraft.jpg',
+    defaultDims: { L: 200, W: 200, H: 200, unit: 'mm' },
+    defaultDimsIn: { L: 7.874, W: 7.874, H: 7.874 },
+    structureFeatures: [
+      'Regular Slotted Carton (RSC / FEFCO 0201) shipping box standard',
+      'All 4 top and bottom flaps are equal depth (W/2) and meet at center seam',
+      '4 vertical body panels (L, W, L, W) + side manufacturer glue flap'
+    ]
+  },
+  {
+    itemId: 'can',
+    boxModelKey: 'can',
+    name: 'Standard Beverage Can (12 oz / 355 mL)',
+    subtitle: 'Classic Squat Aluminum Can • 207×125 mm Wrap Label',
+    description: 'Standard 12 oz (355 mL) / 330 mL aluminum soda and beer can (diameter 66 mm, height 122 mm). Uses a wrap label with ~1.66:1 aspect ratio and single vertical seam overlap.',
+    dieline2DImg: '/images/dielines/can_dieline.svg',
+    box3DImg: '/images/kld_can_mockup.png',
+    defaultDims: { L: 207, W: 125, H: 122, unit: 'mm' },
+    defaultDimsIn: { L: 8.1496, W: 4.9213, H: 4.8031 },
+    structureFeatures: [
+      'Classic squat cylindrical profile with aspect ratio ~1.66:1 (207 × 125 mm flat label)',
+      'Continuous 360-degree aluminum can wrap label with 6.35 mm seam glue tab',
+      'Standard 66 mm diameter body with beveled top rim and pull-tab lid'
+    ]
+  },
+  {
+    itemId: 'slim_can',
+    boxModelKey: 'slim_can',
+    name: 'Slim / Sleek Can (355 mL / 250 mL)',
+    subtitle: 'Tall Energy Drink Can • 175×145 mm Wrap with Front/Back Guides',
+    description: 'Sleek, tall aluminum beverage can standard for energy drinks, seltzers, and iced coffee (diameter 57 mm, height 156 mm). Features a narrower, taller wrap label with a center front/back division and double top neck margin guides.',
+    dieline2DImg: '/images/dielines/slim_can_dieline.svg',
+    box3DImg: '/images/kld_slim_can_mockup.png',
+    defaultDims: { L: 175, W: 145, H: 156, unit: 'mm' },
+    defaultDimsIn: { L: 6.8898, W: 5.7087, H: 6.1417 },
+    structureFeatures: [
+      'Slender tall cylindrical can profile (aspect ratio ~1.21:1, 175 × 145 mm wrap)',
+      'Vertical centerline fold guide splitting front (87.5 mm) & back (87.5 mm) panels',
+      'Double horizontal neck margin crease guides at 8 mm & 14 mm from top rim'
+    ]
+  },
+  {
+    itemId: 'water_bottle',
+    boxModelKey: 'water_bottle',
+    name: 'Plastic Mineral Water Bottle (PET)',
+    subtitle: 'Cylindrical PET Bottle • 243×46 mm Horizontal Wrap Label',
+    description: 'Standard 500 mL PET mineral water bottle featuring contoured ribbed grip sections and a single continuous horizontal wrap-around label strip.',
+    dieline2DImg: '/images/dielines/water_bottle_dieline.svg',
+    box3DImg: '/images/water_bottle.png',
+    defaultDims: { L: 243, W: 46, H: 240, unit: 'mm' },
+    defaultDimsIn: { L: 9.5669, W: 1.8110, H: 9.4488 },
+    structureFeatures: [
+      'Continuous horizontal wrap-around label strip (aspect ratio ~5.28:1, 243 × 46 mm)',
+      '6.35 mm (1/4") adhesive seam overlap glue tab',
+      'Contoured ribbed PET plastic bottle silhouette with threaded screw cap'
+    ]
+  },
+  {
+    itemId: 'tube',
+    boxModelKey: 'tube',
+    name: 'Toothpaste & Cosmetic Squeeze Tube (75 mL)',
+    subtitle: 'Collapsible Tube • 90×133 mm Crimp Seal Artwork',
+    description: 'Standard 75 mL flexible plastic squeeze tube for toothpaste, cosmetics, gels, and lotions. Features a vertical rectangular artwork footprint divided into front and back panels with a top crimped heat-seal edge and screw cap.',
+    dieline2DImg: '/images/dielines/tube_dieline.svg',
+    box3DImg: '/images/toothpaste_tube_mockup.png',
+    defaultDims: { L: 90, W: 133, H: 155, unit: 'mm' },
+    defaultDimsIn: { L: 3.5433, W: 5.2362, H: 6.1024 },
+    structureFeatures: [
+      'Vertical collapsible squeeze tube layout (aspect ratio ~0.677:1, 90 × 133 mm)',
+      'Vertical center fold/guide line separating Front (45 mm) and Back (45 mm) panels',
+      'Top horizontal heat-seal crimp bar zone and circular screw/flip cap at base'
     ]
   }
 ];
@@ -321,7 +401,26 @@ function analyzeDxfGeometry(entities, dxfAnnotations = '', filename = '') {
   const avgBotX = botXs.length ? (botXs.reduce((a, b) => a + b, 0) / botXs.length) : (minX + width * 0.75);
   const flapDiffX = Math.abs(avgTopX - avgBotX);
   const panelW = width / 4;
-  const isStandardTuck = !isMailerOrTray && !hasButtonNotch && !isButtonHoleStructure && (diagonalCreaseCount < 3);
+
+  // RSC (Square Shipping Box) check: all 4 top and bottom flaps uniform and slotted
+  let isRsc = hints.isRsc || false;
+  if (!hints.isMailer && !hasButtonNotch && !isButtonHoleStructure && diagonalCreaseCount < 2) {
+    if (hints.isRsc) {
+      isRsc = true;
+    } else if (vXs.length >= 3 && hCreases.length >= 2) {
+      const topEdgeYs = topCuts.map(c => Math.max(c.y1, c.y2));
+      const botEdgeYs = botCuts.map(c => Math.min(c.y1, c.y2));
+      if (topEdgeYs.length >= 4 && botEdgeYs.length >= 4) {
+        const topVariance = Math.max(...topEdgeYs) - Math.min(...topEdgeYs);
+        const botVariance = Math.max(...botEdgeYs) - Math.min(...botEdgeYs);
+        if (topVariance < 6 && botVariance < 6 && aspectRatio > 1.2 && aspectRatio < 2.5) {
+          isRsc = true;
+        }
+      }
+    }
+  }
+
+  const isStandardTuck = !isMailerOrTray && !hasButtonNotch && !isButtonHoleStructure && !isRsc && (diagonalCreaseCount < 3);
   const isRteStaggered = isStandardTuck && (flapDiffX > panelW * 0.45);
   const isSteAligned = isStandardTuck && (flapDiffX <= panelW * 0.45);
 
@@ -344,6 +443,12 @@ function analyzeDxfGeometry(entities, dxfAnnotations = '', filename = '') {
     extractedW = Math.round(Math.abs(vXs[2] - vXs[1])) || 0;
   }
 
+  const isCylinderOrWrap = (topCuts.length <= 4 && botCuts.length <= 4) || (cuts.length < 30 && vXs.length <= 3);
+  const isWaterBottle = hints.isWaterBottle || (isCylinderOrWrap && aspectRatio > 3.2);
+  const isSlimCan = hints.isSlimCan || (isCylinderOrWrap && aspectRatio >= 1.05 && aspectRatio <= 1.38 && (vXs.some(x => Math.abs((x - minX) - width / 2) < width * 0.1) || hCreases.length >= 1));
+  const isCan = !isSlimCan && (hints.isCan || (isCylinderOrWrap && aspectRatio >= 1.45 && aspectRatio <= 2.3));
+  const isTube = hints.isTube || (isCylinderOrWrap && aspectRatio >= 0.55 && aspectRatio <= 0.85);
+
   return {
     minX, maxX, minY, maxY,
     width, height, aspectRatio,
@@ -354,9 +459,15 @@ function analyzeDxfGeometry(entities, dxfAnnotations = '', filename = '') {
     verticalLineCount,
     hasButtonNotch,
     isButtonHoleStructure,
-    isMailerOrTray,
-    isRteStaggered,
-    isSteAligned,
+    isMailerOrTray: !isWaterBottle && !isSlimCan && !isCan && !isTube && isMailerOrTray,
+    isRsc: !isWaterBottle && !isSlimCan && !isCan && !isTube && isRsc,
+    isRteStaggered: !isWaterBottle && !isSlimCan && !isCan && !isTube && isRteStaggered,
+    isSteAligned: !isWaterBottle && !isSlimCan && !isCan && !isTube && isSteAligned,
+    isWaterBottle,
+    isSlimCan,
+    isCan,
+    isTube,
+    isCylinderWrap: isCylinderOrWrap,
     vXs,
     extractedH,
     extractedL,
@@ -394,23 +505,54 @@ function extractDimensionsAndHintsFromText(text) {
       d3 = Math.round(d3 * 100) / 10;
     }
     extractedDims = { L: d1, W: d2, H: d3, unit: 'mm' };
+  } else {
+    // 2-Dimension check (flat wrap width × height, e.g. 243x46mm, 207x125mm, 175x145mm, 90x133mm)
+    const dim2Regex = /(?:dims?|dimensions?|size)?[:\s\(_]*([0-9]+(?:\.[0-9]+)?)\s*(?:x|X|\*|×)\s*([0-9]+(?:\.[0-9]+)?)\s*(?:_|-|\s)*(mm|in|cm)?/i;
+    const m2 = text.match(dim2Regex);
+    if (m2) {
+      let d1 = parseFloat(m2[1]), d2 = parseFloat(m2[2]);
+      let unit = (m2[3] || '').toLowerCase();
+      if (!unit) {
+        if (d1 < 15 && d2 < 15) unit = 'in';
+        else unit = 'mm';
+      }
+      if (unit === 'in') {
+        d1 = Math.round(d1 * 25.4 * 10) / 10;
+        d2 = Math.round(d2 * 25.4 * 10) / 10;
+      } else if (unit === 'cm') {
+        d1 = Math.round(d1 * 100) / 10;
+        d2 = Math.round(d2 * 100) / 10;
+      }
+      extractedDims = { L: d1, W: d2, H: 150, unit: 'mm' };
+    }
   }
 
   const lower = text.toLowerCase();
-  const isMailer = lower.includes('cosmetic_b') || lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('pizza') || lower.includes('shoebox');
-  const isAutoLock = lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock') || lower.includes('auto.svg') || lower.includes('auto_') || lower.includes('crash_');
-  const isButtonHole = lower.includes('button_hole') || lower.includes('button hole') || lower.includes('3_button') || lower.includes('button') || lower.includes('snaplock') || lower.includes('1-2-3');
-  const isRte = lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('reverse_tuck') || (/\brte\b/i).test(lower);
-  const isSte = !isRte && (lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('straight_tuck') || (/\bste\b/i).test(lower));
-  const isSlender = !isMailer && !isAutoLock && !isRte && (lower.includes('cosmetic_real') || (lower.includes('cosmetic') && !lower.includes('cosmetic_b')) || lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall'));
+  const isWaterBottle = lower.includes('water_bottle') || lower.includes('water bottle') || lower.includes('mineral water') || lower.includes('pet bottle') || lower.includes('bottle wrap') || (lower.includes('bottle') && !lower.includes('serum') && !lower.includes('perfume') && !lower.includes('dropper') && !lower.includes('button_hole'));
+  const isSlimCan = lower.includes('slim_can') || lower.includes('slim can') || lower.includes('slim_355ml') || lower.includes('sleek can') || lower.includes('sleek_can') || lower.includes('energy can') || lower.includes('seltzer can') || (lower.includes('slim') && lower.includes('can'));
+  const isCan = !isSlimCan && (lower.includes('soda_can') || lower.includes('beverage_can') || lower.includes('aluminum can') || lower.includes('can wrap') || lower.includes('can_mockup') || lower.includes('can_dieline') || (lower.includes('can') && !lower.includes('candle') && !lower.includes('canvas') && !lower.includes('cannot') && !lower.includes('scan')));
+  const isTube = lower.includes('toothpaste') || lower.includes('toothpaste_tube') || lower.includes('squeeze tube') || lower.includes('squeeze_tube') || lower.includes('lotion tube') || lower.includes('cosmetic tube') || lower.includes('tube_dieline') || (lower.includes('tube') && !lower.includes('youtube') && !lower.includes('tuck'));
+
+  const isMailer = !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('cosmetic_b') || lower.includes('mailer') || lower.includes('roll-end') || lower.includes('rollover') || lower.includes('hinged_lid') || lower.includes('tray') || lower.includes('rett') || lower.includes('subscription') || lower.includes('two_piece') || (/\blid\b/i).test(lower) || lower.includes('pizza') || lower.includes('shoebox'));
+  const isAutoLock = !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('crash') || lower.includes('autolock') || lower.includes('auto-lock') || lower.includes('auto lock') || lower.includes('crashlock') || lower.includes('auto.svg') || lower.includes('auto_') || lower.includes('crash_'));
+  const isButtonHole = !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('button_hole') || lower.includes('button hole') || lower.includes('3_button') || lower.includes('button') || lower.includes('snaplock') || lower.includes('1-2-3'));
+  const isRsc = !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('square shipping') || lower.includes('shipping box') || lower.includes('square_shipping') || lower.includes('shipping_box') || lower.includes('regular slotted') || lower.includes('slotted carton') || (/\brsc\b/i).test(lower) || lower.includes('corrugated') || lower.includes('fefco 0201') || lower.includes('shipping carton'));
+  const isRte = !isRsc && !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('reverse tuck') || lower.includes('reverse-tuck') || lower.includes('reverse_tuck') || (/\brte\b/i).test(lower));
+  const isSte = !isRsc && !isRte && !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('straight tuck') || lower.includes('straight-tuck') || lower.includes('straight_tuck') || (/\bste\b/i).test(lower));
+  const isSlender = !isMailer && !isAutoLock && !isRte && !isRsc && !isCan && !isSlimCan && !isWaterBottle && !isTube && (lower.includes('cosmetic_real') || (lower.includes('cosmetic') && !lower.includes('cosmetic_b')) || lower.includes('slender') || lower.includes('perfume') || lower.includes('lipstick') || lower.includes('serum') || lower.includes('tall'));
 
   const hints = {
+    isWaterBottle,
+    isSlimCan,
+    isCan,
+    isTube,
     isSlender,
     isAutoLock,
     isMailer,
     isButtonHole,
     isRte,
-    isSte
+    isSte,
+    isRsc
   };
 
   return { extractedDims, hints };
@@ -520,9 +662,23 @@ function analyzeSvgGeometry(svgText, filename = '') {
   const hasButtonNotch = hints.isButtonHole || hasSnapLockSvg || (svgText.toLowerCase().includes('button') && !hints.isAutoLock && !hints.isMailer);
   const isSlender = hints.isSlender || (!isMailerOrTray && !hasCrashBottom && !hasButtonNotch && aspectRatio < 0.88);
 
-  const isStandardTuck = !isMailerOrTray && !hasCrashBottom && !hasButtonNotch && !isSlender;
+  const isRsc = hints.isRsc || (!isMailerOrTray && !hasCrashBottom && !hasButtonNotch && (
+    svgText.toLowerCase().includes('rsc') ||
+    svgText.toLowerCase().includes('square shipping') ||
+    svgText.toLowerCase().includes('shipping box') ||
+    svgText.toLowerCase().includes('slotted') ||
+    svgText.toLowerCase().includes('fefco')
+  ));
+
+  const isStandardTuck = !isMailerOrTray && !hasCrashBottom && !hasButtonNotch && !isSlender && !isRsc;
   const isRteStaggered = isStandardTuck && (flapDiffX > panelW * 0.45);
   const isSteAligned = isStandardTuck && (flapDiffX <= panelW * 0.45);
+
+  const lowerSvg = svgText.toLowerCase();
+  const isWaterBottle = hints.isWaterBottle || false;
+  const isSlimCan = hints.isSlimCan || false;
+  const isCan = hints.isCan || false;
+  const isTube = hints.isTube || false;
 
   return {
     width,
@@ -533,10 +689,16 @@ function analyzeSvgGeometry(svgText, filename = '') {
     diagonalCreaseCount: diag45Bottom,
     diag45Bottom,
     hasButtonNotch,
-    isSlender,
-    isMailerOrTray,
-    isRteStaggered,
-    isSteAligned,
+    isSlender: !isTube && isSlender,
+    isMailerOrTray: !isWaterBottle && !isSlimCan && !isCan && !isTube && isMailerOrTray,
+    isRsc: !isWaterBottle && !isSlimCan && !isCan && !isTube && isRsc,
+    isRteStaggered: !isWaterBottle && !isSlimCan && !isCan && !isTube && isRteStaggered,
+    isSteAligned: !isWaterBottle && !isSlimCan && !isCan && !isTube && isSteAligned,
+    isWaterBottle,
+    isSlimCan,
+    isCan,
+    isTube,
+    isCylinderWrap: isWaterBottle || isSlimCan || isCan || isTube,
     hasCrashBottom,
     flapDiffX,
     avgTopX,
@@ -560,12 +722,29 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     auto_lock: 15,
     cosmetic: 15,
     cosmetic_b: 15,
-    button_hole: 15
+    button_hole: 15,
+    rsc: 15,
+    can: 10,
+    slim_can: 10,
+    water_bottle: 10,
+    tube: 10
   };
 
   const detectedSignatures = [];
 
   // Filename & text keyword hints (secondary bonus only)
+  if (geo.hints?.isWaterBottle || lowerName.includes('water_bottle') || lowerName.includes('water-bottle') || lowerName.includes('mineral_water')) {
+    scores.water_bottle += 40;
+  }
+  if (geo.hints?.isSlimCan || lowerName.includes('slim_can') || lowerName.includes('slim-can') || lowerName.includes('sleek_can') || lowerName.includes('energy_can') || lowerName.includes('slim_355ml')) {
+    scores.slim_can += 40;
+  }
+  if (geo.hints?.isCan || (!lowerName.includes('slim') && (lowerName.includes('soda_can') || lowerName.includes('beverage_can') || lowerName.includes('aluminum_can') || lowerName.includes('can_mockup') || lowerName.includes('can_dieline')))) {
+    scores.can += 40;
+  }
+  if (geo.hints?.isTube || lowerName.includes('toothpaste') || lowerName.includes('squeeze_tube') || lowerName.includes('lotion_tube') || lowerName.includes('tube_dieline') || (lowerName.includes('tube') && !lowerName.includes('tuck'))) {
+    scores.tube += 40;
+  }
   if (geo.hints?.isRte || lowerName.includes('rte') || lowerName.includes('reverse_tuck') || lowerName.includes('reverse-tuck') || lowerName.includes('reverse tuck')) {
     scores.rte += 30;
   }
@@ -584,6 +763,33 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   if (geo.hints?.isButtonHole || lowerName.includes('button_hole') || lowerName.includes('snaplock') || lowerName.includes('1-2-3')) {
     scores.button_hole += 35;
   }
+  if (geo.hints?.isRsc || lowerName.includes('rsc') || lowerName.includes('shipping') || lowerName.includes('square')) {
+    scores.rsc += 35;
+  }
+
+  // 0a. Water Bottle Model check (Only when explicitly identified as water bottle)
+  if (geo.isWaterBottle || geo.hints?.isWaterBottle || lowerName.includes('water_bottle') || lowerName.includes('mineral_water')) {
+    scores.water_bottle += 150;
+    detectedSignatures.push(`Plastic Mineral Water Bottle (PET) 3D Model`);
+  }
+
+  // 0b. Slim / Sleek Energy Can check (Only when explicitly identified as slim can)
+  if (geo.isSlimCan || geo.hints?.isSlimCan || lowerName.includes('slim_can') || lowerName.includes('sleek_can') || lowerName.includes('energy_can')) {
+    scores.slim_can += 150;
+    detectedSignatures.push(`Slim / Sleek Aluminum Beverage Can 3D Model`);
+  }
+
+  // 0c. Standard 12 oz Beverage Can check (Only when explicitly identified as can)
+  if (geo.isCan || (!lowerName.includes('slim') && (geo.hints?.isCan || lowerName.includes('soda_can') || lowerName.includes('beverage_can') || lowerName.includes('aluminum_can') || lowerName.includes('can_mockup')))) {
+    scores.can += 145;
+    detectedSignatures.push(`Classic 12 oz (355 mL) Aluminum Beverage Can 3D Model`);
+  }
+
+  // 0d. Toothpaste / Cosmetic Squeeze Tube check (Only when explicitly identified as squeeze tube)
+  if (geo.isTube || geo.hints?.isTube || lowerName.includes('toothpaste') || lowerName.includes('squeeze_tube') || lowerName.includes('lotion_tube') || (lowerName.includes('tube') && !lowerName.includes('tuck'))) {
+    scores.tube += 145;
+    detectedSignatures.push(`Collapsible Squeeze Tube (75 mL) 3D Model`);
+  }
 
   // 1. Mailer / Tray Box check (Roll End Tray - wide unibody wings, distinct tray-vs-lid ratio)
   const isHorizTray = (geo.leftToRightRatio && geo.leftToRightRatio >= 1.25) || (geo.rightToLeftRatio && geo.rightToLeftRatio >= 1.25);
@@ -594,7 +800,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   }
 
   // 2. Cosmetic Box check (Slender vertical profile - dieline aspect ratio < 0.88)
-  if (!geo.isMailerOrTray && geo.isSlender) {
+  if (!geo.isMailerOrTray && geo.isSlender && !geo.isTube) {
     scores.cosmetic += 140;
     detectedSignatures.push(`Slender elongated vertical profile (${(geo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) typical of cosmetic/perfume cartons`);
   }
@@ -611,8 +817,14 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     detectedSignatures.push('Interlocking 1-2-3 snap lock bottom closure with button notch cutout on closure flap');
   }
 
-  // 5. Standard 4-panel folding cartons (Reverse Tuck End vs Straight Tuck End)
-  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.hasCrashBottom && !geo.hasInterlockingBottom && (geo.diagonalCreaseCount || 0) < 2) {
+  // 5. Square Shipping Box (RSC) check
+  if (!geo.isMailerOrTray && !geo.hasButtonNotch && !geo.hasCrashBottom && (geo.isRsc || geo.hints?.isRsc)) {
+    scores.rsc += 140;
+    detectedSignatures.push('Regular Slotted Carton (RSC) topology with equal-length slotted flaps meeting at center');
+  }
+
+  // 6. Standard 4-panel folding cartons (Reverse Tuck End vs Straight Tuck End)
+  if (!geo.isMailerOrTray && !geo.isSlender && !geo.hasButtonNotch && !geo.hasCrashBottom && !geo.hasInterlockingBottom && !geo.isRsc && !geo.hints?.isRsc && !geo.isWaterBottle && !geo.isCan && !geo.isSlimCan && !geo.isTube && (geo.diagonalCreaseCount || 0) < 2) {
     if (geo.isRteStaggered) {
       scores.rte += 140;
       detectedSignatures.push('Top and bottom tuck flaps are positioned on opposite panels (staggered reverse tuck configuration)');
@@ -632,7 +844,7 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
   const maxScore = sorted[0][1];
 
   // Normalized confidence percentage (88% - 98%)
-  const hasStrongSignature = geo.isRteStaggered || geo.isSteAligned || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.hasCrashBottom || geo.isMailerOrTray || geo.isSlender || geo.extractedDims;
+  const hasStrongSignature = geo.isRsc || geo.isRteStaggered || geo.isSteAligned || geo.hasButtonNotch || (geo.diagonalCreaseCount >= 2) || geo.hasCrashBottom || geo.isMailerOrTray || geo.isSlender || geo.isWaterBottle || geo.isSlimCan || geo.isCan || geo.isTube || geo.extractedDims;
   const baseConf = hasStrongSignature ? 94 : 88;
   const confidence = Math.min(98, Math.max(baseConf, Math.round((maxScore / (maxScore + 10)) * 100)));
 
@@ -649,6 +861,16 @@ function matchGeometryToDirectoryBoxes(geo, filename = '') {
     } else if (geo.width > 500 || !geo.extractedH) {
       // Raster image buffer or template without extracted CAD creases -> use directory model canonical dimensions
       estimatedDims = { ...targetBox.defaultDims };
+    } else if (bestKey === 'rsc') {
+      estimatedDims = { L: 200, W: 200, H: 200, unit: 'mm' };
+    } else if (bestKey === 'can') {
+      estimatedDims = { L: 207, W: 125, H: 122, unit: 'mm' };
+    } else if (bestKey === 'slim_can') {
+      estimatedDims = { L: 175, W: 145, H: 156, unit: 'mm' };
+    } else if (bestKey === 'water_bottle') {
+      estimatedDims = { L: 243, W: 46, H: 240, unit: 'mm' };
+    } else if (bestKey === 'tube') {
+      estimatedDims = { L: 90, W: 133, H: 155, unit: 'mm' };
     } else if (bestKey === 'cosmetic_b') {
       if (lowerName.includes('pizza') || (geo.hints?.isMailer && lowerName.includes('pizza'))) {
         estimatedDims = { L: 250, W: 250, H: 45, unit: 'mm' };
@@ -888,18 +1110,34 @@ function extractImageGeometryFromBuffer(buffer, filename = '') {
   const botFlapRatio = avgBotSlice / numColSlices;
   const flapOffset = Math.abs(topFlapRatio - botFlapRatio);
 
-  const isStandardTuckCarton = !hasInterlockingBottom && !hasCrashBottom && !isMailerOrTray && !hasButtonNotch && !isSlender;
-  const isRteStaggered = isStandardTuckCarton && (flapOffset > 0.18);
-  const isSteAligned = isStandardTuckCarton && (flapOffset <= 0.18);
+  const isRsc = hints.isRsc || (!hasInterlockingBottom && !hasCrashBottom && !isMailerOrTray && !hasButtonNotch && !isSlender && (
+    filename.toLowerCase().includes('rsc') ||
+    filename.toLowerCase().includes('shipping') ||
+    filename.toLowerCase().includes('square')
+  ));
+  const isStandardTuckCarton = !hasInterlockingBottom && !hasCrashBottom && !isMailerOrTray && !hasButtonNotch && !isSlender && !isRsc;
+  const isRteStaggered = hints.isRte || (isStandardTuckCarton && flapOffset > 0.15);
+  const isSteAligned = hints.isSte || (isStandardTuckCarton && flapOffset <= 0.15);
+
+  const isWaterBottle = hints.isWaterBottle || false;
+  const isSlimCan = hints.isSlimCan || false;
+  const isCan = hints.isCan || false;
+  const isTube = hints.isTube || false;
 
   return {
     width: dielineW,
     height: dielineH,
     aspectRatio: dielineAspect,
-    isMailerOrTray,
-    isSlender,
-    isRteStaggered,
-    isSteAligned,
+    isMailerOrTray: !isWaterBottle && !isSlimCan && !isCan && !isTube && isMailerOrTray,
+    isSlender: !isWaterBottle && !isSlimCan && !isCan && !isTube && isSlender,
+    isRsc: !isWaterBottle && !isSlimCan && !isCan && !isTube && isRsc,
+    isRteStaggered: !isWaterBottle && !isSlimCan && !isCan && !isTube && isRteStaggered,
+    isSteAligned: !isWaterBottle && !isSlimCan && !isCan && !isTube && isSteAligned,
+    isWaterBottle,
+    isSlimCan,
+    isCan,
+    isTube,
+    isCylinderWrap: isWaterBottle || isSlimCan || isCan || isTube,
     hasButtonNotch,
     hasCrashBottom,
     diagonalCreaseCount: hasCrashBottom ? Math.max(4, countLongDiagRuns) : 0,
@@ -970,55 +1208,88 @@ async function analyzeImageWithGemini(imageBuffer, mimeType, filename, geo = nul
   const currentGeo = geo || extractImageGeometryFromBuffer(imageBuffer, filename);
 
   const promptText = `
-You are an expert packaging structural engineer and dieline analyst. Analyze this packaging dieline blueprint or packaging image (${filename}).
-We have exactly 6 specific box models in our directory:
+You are an expert packaging structural engineer, dieline analyst, and computer vision packaging classifier.
+Analyze this uploaded packaging image (${filename}).
+
+IMPORTANT: The uploaded image can be:
+A) A flat 2D CAD/vector/raster dieline blueprint drawing (with cut lines, crease folds, flap profiles, glue tabs, and technical drawings), OR
+B) A REAL-WORLD PHOTOGRAPH or 3D rendering of any physical product, package, or container in reality (e.g. an actual aluminum soda can, energy drink can, plastic mineral water bottle, lotion/toothpaste squeeze tube, brown kraft corrugated shipping box, retail tuck carton, perfume cosmetic box, or subscription mailer box photographed on a table, shelf, or plain background).
+
+We have exactly 11 specific packaging models in our directory:
 1. "auto_lock" - Auto Lock Bottom Box (crash lock bottom featuring 45-degree diagonal creases and pre-glued locking base)
 2. "button_hole" - Button Hole Box (specialty presentation carton with top button-hole slot notch cutout, and interlocking 1-2-3 snap-lock bottom tabs)
-3. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front RETT tray with hinged lid and rollover side walls)
-4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton with high aspect ratio H/W > 2.2 for perfumes/serums)
+3. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front RETT tray with hinged lid and rollover side walls, e.g. subscription box, pizza box, mailer)
+4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular folding carton with tuck flaps, high aspect ratio H/W > 2.2 for perfumes/serums/creams)
 5. "rte" - Reverse Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where top and bottom flaps fold in OPPOSITE directions on staggered panel columns)
 6. "te" - Straight Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where both top and bottom flaps are on the SAME panel column)
+7. "rsc" - Square Shipping Box (RSC / Regular Slotted Carton standard shipping box where all 4 top and bottom outer flaps meet at the center)
+8. "can" - Standard Beverage Can (12 oz / 355 mL classic squat aluminum can wrap label or real physical squat soda/beer can, ~1.66:1 aspect ratio ~207x125 mm)
+9. "slim_can" - Slim / Sleek Can (355 mL / 250 mL tall energy drink/seltzer can wrap label or real physical sleek tall can, ~1.21:1 aspect ratio ~175x145 mm)
+10. "water_bottle" - Plastic Mineral Water Bottle (PET bottle wrap label strip or real physical plastic water/soda bottle with cap and ribbed grip, ~243x46 mm)
+11. "tube" - Toothpaste & Cosmetic Squeeze Tube (collapsible squeeze tube artwork or real physical plastic/aluminum flexible squeeze tube with crimp seal and screw cap, ~90x133 mm)
 
-CRITICAL STRUCTURAL INSPECTION RULES:
-1. AUTO LOCK BOTTOM (Crash Lock) -> "auto_lock":
-   - Inspect the bottom closure flaps carefully: Do the bottom flaps have 45-degree diagonal crease fold lines or pre-glued crash-lock locking tabs?
-   - Top is a standard tuck closure with side dust flaps.
-   - CRITICAL: Even if the top is a standard tuck flap, if the bottom is a crash-lock/auto-lock base (or has diagonal fold creases), the box is 100% "auto_lock" (Auto Lock Bottom Box)!
-2. BUTTON HOLE BOX -> "button_hole":
+CRITICAL PHYSICAL PRODUCT PHOTO RECOGNITION RULES:
+- If the image is a photograph of a physical object:
+  * Standard squat aluminum beverage/soda/beer can -> identify as "can"
+  * Tall sleek/slim energy drink / seltzer / iced coffee can (Red Bull, Celsius, White Claw style) -> identify as "slim_can"
+  * Plastic water bottle / PET beverage bottle -> identify as "water_bottle"
+  * Squeeze tube (toothpaste, skin cream, facial cleanser, lotion, ointment tube) -> identify as "tube"
+  * Brown kraft corrugated shipping parcel box with taped center flaps -> identify as "rsc"
+  * Flat roll-end mailer / e-commerce presentation box with folding lid -> identify as "cosmetic_b"
+  * Tall slender vertical rectangular perfume/cosmetic carton -> identify as "cosmetic"
+  * Standard retail folding box with tuck closure -> identify as "rte" or "te"
+  * Crash-lock bottom box -> identify as "auto_lock"
+  * Button lock notch box -> identify as "button_hole"
+
+CRITICAL CAN VS SLIM CAN VS BOTTLE VS TUBE DIFFERENTIATION RULES:
+1. WATER BOTTLE WRAP -> "water_bottle":
+   - Ultra-wide narrow horizontal wrap ribbon strip (aspect ratio > 3.2:1, e.g. 243 × 46 mm) OR physical PET plastic water bottle.
+2. STANDARD CAN VS SLIM CAN DIFFERENTIATION:
+   - "can" (Standard 12 oz Can): Classic squat aluminum can wrap or photo. Width is significantly greater than height (aspect ratio ~1.66:1; 207 × 125 mm). Single vertical overlap tab along the side seam.
+   - "slim_can" (Slim Energy Can): Tall, sleek energy drink / seltzer can wrap or photo (aspect ratio ~1.21:1; 175 × 145 mm). Distinct vertical centerline separating Front & Back panels, plus horizontal neck margin crease guides.
+3. COLLAPSIBLE SQUEEZE TUBE -> "tube":
+   - Flexible squeeze tube artwork or physical squeeze tube (aspect ratio ~0.68:1; 90 × 133 mm). Vertical rectangle divided down the center into Front & Back panels, with top crimp seal margin and cap collar. NO carton tuck flaps.
+4. AUTO LOCK BOTTOM (Crash Lock) -> "auto_lock":
+   - Bottom closure flaps feature 45-degree diagonal crease fold lines or pre-glued crash-lock locking tabs.
+5. BUTTON HOLE BOX -> "button_hole":
    - Top edge features a circular or semi-circular button notch cutout or thumb lock slot.
-   - Bottom has interlocking 1-2-3 snap-lock tabs without 45-degree diagonal creases.
-   - Do NOT classify as "button_hole" unless there is a genuine button notch / thumb slot cutout along the top edge!
-3. MAILER / TRAY BOX -> "cosmetic_b":
+6. MAILER / TRAY BOX -> "cosmetic_b":
    - Unibody roll-end tray with rollover side wall wings and a hinged lid.
-4. SLENDER COSMETIC CARTON -> "cosmetic":
-   - Elongated slender vertical carton (H/W > 2.2).
-5. STANDARD TUCK CARTONS (Straight Tuck "te" or Reverse Tuck "rte"):
-   - ONLY classify as "te" or "rte" if BOTH top AND bottom are simple flat rectangular tuck flaps!
-   - If the bottom has interlocking tabs, crash-lock folds, or diagonal creases, it is NEVER "te" and NEVER "rte"!
-   - If top and bottom tuck flaps fold in opposite directions on staggered panels -> "rte".
-   - If top and bottom tuck flaps fold in the same direction on the same panel -> "te".
+7. SLENDER COSMETIC CARTON -> "cosmetic":
+   - Elongated slender vertical 4-panel folding box with top/bottom tuck flaps.
+8. SQUARE SHIPPING BOX (RSC) -> "rsc":
+   - Corrugated shipping carton where top and bottom outer flaps are slotted and meet at center seam.
+9. STANDARD TUCK CARTONS (Straight Tuck "te" or Reverse Tuck "rte"):
+   - Top and bottom tuck flaps in opposite directions -> "rte"; same direction -> "te".
 
 Computer Vision Pre-Scan Data:
 - Aspect Ratio: ${currentGeo.aspectRatio ? currentGeo.aspectRatio.toFixed(2) : '1.0'}
+- Container / Wrap Signature: ${currentGeo.isWaterBottle ? 'Water Bottle Wrap' : currentGeo.isSlimCan ? 'Slim Can Wrap' : currentGeo.isCan ? 'Standard Can Wrap' : currentGeo.isTube ? 'Squeeze Tube Layout' : 'Folding Carton'}
 - Bottom Structure: ${currentGeo.hasCrashBottom ? 'Auto lock 45° diagonal fold lines / crash base detected' : currentGeo.hasButtonNotch ? 'Button notch detected' : 'Standard profile'}
 - Flap Alignment (Tuck Cartons Only): ${currentGeo.isRteStaggered ? 'Staggered (opposite panels)' : currentGeo.isSteAligned ? 'Aligned (same panel)' : 'N/A'}
+- RSC Geometry Signature: ${currentGeo.isRsc ? 'Yes (Equal-depth slotted flaps)' : 'No'}
 - Filename: ${filename}
 
-Dimensions: Extract any dimension numbers indicated on the dieline. If labeled in inches (e.g., 4.7244 in, 2.3622 in, 6.2992 in), convert to mm (120 x 60 x 160 mm). If not specified, use directory defaults:
+Dimensions: Extract any dimension numbers indicated on the dieline or realistic object dimensions. If labeled in inches, convert to mm. If not specified, use directory defaults:
 - auto_lock: 120.6 x 60.6 x 161.5 mm
 - button_hole: 75 x 75 x 60 mm
 - cosmetic: 35.6 x 35.6 x 121.6 mm
 - cosmetic_b: 270 x 260 x 62 mm
 - rte: 120 x 60 x 160 mm
 - te: 120 x 60 x 160 mm
+- rsc: 200 x 200 x 200 mm
+- can: 207 x 125 x 122 mm
+- slim_can: 175 x 145 x 156 mm
+- water_bottle: 243 x 46 x 240 mm
+- tube: 90 x 133 x 155 mm
 
 Return valid JSON matching this exact schema:
 {
-  "matchedModel": "auto_lock" | "button_hole" | "cosmetic_b" | "cosmetic" | "rte" | "te",
+  "matchedModel": "auto_lock" | "button_hole" | "cosmetic_b" | "cosmetic" | "rte" | "te" | "rsc" | "can" | "slim_can" | "water_bottle" | "tube",
   "confidence": 88-99,
   "detectedFeatures": ["feature 1", "feature 2"],
   "dimensions": { "L": number_in_mm, "W": number_in_mm, "H": number_in_mm },
-  "explanation": "Detailed rationale of why this matches our directory dieline..."
+  "explanation": "Detailed rationale of why this matches our directory packaging model..."
 }
 `;
 
@@ -1031,29 +1302,44 @@ Return valid JSON matching this exact schema:
 
   const aiResult = await callGeminiWithCascade(promptText, imagePart);
   if (aiResult) {
-    // Reconcile AI result with definitive geometric ground-truth
-    if (currentGeo.isSlender && !currentGeo.hasCrashBottom && !currentGeo.isMailerOrTray) {
-      aiResult.matchedModel = 'cosmetic';
-      aiResult.explanation = `Cosmetic Box (Slender Tuck) verified. Tall, slender elongated vertical profile (${(currentGeo.aspectRatio || 0.67).toFixed(2)}:1 dieline aspect ratio) characteristic of cosmetic, serum, and perfume packaging.`;
-    } else if (aiResult.matchedModel === 'auto_lock' || currentGeo.hasCrashBottom || currentGeo.hints?.isAutoLock) {
-      aiResult.matchedModel = 'auto_lock';
-      if (!aiResult.explanation || (!aiResult.explanation.toLowerCase().includes('crash') && !aiResult.explanation.toLowerCase().includes('auto lock'))) {
-        aiResult.explanation = `Auto Lock Bottom Box verified. Features 45-degree crash-lock diagonal creases and pre-glued locking base.`;
-      }
-    } else if (aiResult.matchedModel === 'button_hole' || currentGeo.hasButtonNotch || currentGeo.hints?.isButtonHole) {
-      aiResult.matchedModel = 'button_hole';
-      if (!aiResult.explanation || !aiResult.explanation.toLowerCase().includes('button')) {
-        aiResult.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top closure with button lock slot notch.`;
-      }
-    } else if (aiResult.matchedModel === 'cosmetic_b' || currentGeo.isMailerOrTray || currentGeo.hints?.isMailer) {
-      aiResult.matchedModel = 'cosmetic_b';
-    } else if (currentGeo.isRteStaggered && aiResult.matchedModel === 'te') {
-      aiResult.matchedModel = 'rte';
-      aiResult.explanation = `Reverse Tuck End Box verified. Top tuck flap and bottom tuck flap are positioned on opposite panels (staggered reverse tuck configuration).`;
-    } else if (currentGeo.isSteAligned && aiResult.matchedModel === 'rte') {
-      aiResult.matchedModel = 'te';
-      aiResult.explanation = `Straight Tuck End Box verified. Both top and bottom tuck flaps are aligned on the same panel face.`;
+    const validModels = ['auto_lock', 'button_hole', 'cosmetic_b', 'cosmetic', 'rte', 'te', 'rsc', 'can', 'slim_can', 'water_bottle', 'tube'];
+    if (!validModels.includes(aiResult.matchedModel)) {
+      aiResult.matchedModel = currentGeo.matchedKey || 'rte';
     }
+
+    const boxModels = ['auto_lock', 'button_hole', 'cosmetic_b', 'cosmetic', 'rte', 'te', 'rsc'];
+    const containerModels = ['can', 'slim_can', 'water_bottle', 'tube'];
+
+    // 1. If Gemini identified a BOX DIELINE model, PRESERVE IT! Never let container models override box dielines
+    if (boxModels.includes(aiResult.matchedModel)) {
+      if (currentGeo.isRteStaggered && aiResult.matchedModel === 'te') {
+        aiResult.matchedModel = 'rte';
+        aiResult.explanation = `Reverse Tuck End Box verified. Flaps fold in opposite directions across staggered panels.`;
+      } else if (currentGeo.isSteAligned && aiResult.matchedModel === 'rte') {
+        aiResult.matchedModel = 'te';
+        aiResult.explanation = `Straight Tuck End Box verified. Both top and bottom tuck flaps are aligned on the same panel face.`;
+      }
+      return aiResult;
+    }
+
+    // 2. If Gemini identified a physical container model (can, slim_can, water_bottle, tube)
+    if (containerModels.includes(aiResult.matchedModel)) {
+      // If the image clearly shows box dieline structural folds, trust the box structure
+      if (currentGeo.hasCrashBottom) {
+        aiResult.matchedModel = 'auto_lock';
+        aiResult.explanation = `Auto Lock Bottom Box verified. Features 45-degree crash-lock diagonal creases and pre-glued locking base.`;
+      } else if (currentGeo.hasButtonNotch) {
+        aiResult.matchedModel = 'button_hole';
+        aiResult.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top button lock slot.`;
+      } else if (currentGeo.isRsc) {
+        aiResult.matchedModel = 'rsc';
+        aiResult.explanation = `Square Shipping Box (RSC) verified. Regular Slotted Carton with equal-length center-meeting flaps.`;
+      } else if (currentGeo.isMailerOrTray) {
+        aiResult.matchedModel = 'cosmetic_b';
+      }
+      return aiResult;
+    }
+
     return aiResult;
   }
 
@@ -1064,7 +1350,7 @@ Return valid JSON matching this exact schema:
     confidence: match.confidence,
     detectedFeatures: match.detectedSignatures,
     dimensions: match.estimatedDims,
-    explanation: `Computer vision structural scan analyzed dieline flap topology. ${match.detectedSignatures.join(' • ')}.`
+    explanation: `Computer vision structural scan analyzed packaging topology. ${match.detectedSignatures.join(' • ')}.`
   };
 }
 
@@ -1074,27 +1360,46 @@ Return valid JSON matching this exact schema:
 async function analyzeVectorWithGemini(fileType, contentSnippet, filename, geo) {
   const promptText = `
 You are an expert packaging structural engineer and dieline analyst. Analyze this vector CAD packaging dieline (${fileType.toUpperCase()} file: ${filename}).
-We have exactly 6 specific box models in our directory:
+We have exactly 11 specific packaging models in our directory:
 1. "auto_lock" - Auto Lock Bottom Box (crash lock bottom with 45-degree diagonal creases and pre-glued locking base)
 2. "button_hole" - Button Hole Box (snap lock 1-2-3 bottom and top closure with button lock slot notch)
 3. "cosmetic_b" - Mailer / Tray Box (wide unibody roll-end tuck front tray with hinged lid and rollover side walls)
-4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular carton, high aspect ratio H/W > 2.2 for perfumes/serums)
+4. "cosmetic" - Cosmetic Box (tall, slender elongated rectangular folding carton with tuck flaps, high aspect ratio H/W > 2.2 for perfumes/serums)
 5. "rte" - Reverse Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where top and bottom flaps fold in OPPOSITE directions on staggered panel columns)
 6. "te" - Straight Tuck End Box (standard 4-panel folding carton with flat rectangular tuck flaps where both top and bottom flaps are on the SAME panel column)
+7. "rsc" - Square Shipping Box (RSC / Regular Slotted Carton standard shipping box where all 4 top and bottom outer flaps meet at the center seam)
+8. "can" - Standard Beverage Can (12 oz / 355 mL classic squat aluminum can wrap label, ~1.66:1 aspect ratio ~207x125 mm, single glue seam overlap tab)
+9. "slim_can" - Slim / Sleek Can (355 mL / 250 mL tall energy drink can wrap label, ~1.21:1 aspect ratio ~175x145 mm, vertical centerline dividing front/back panels and top neck margin guides)
+10. "water_bottle" - Plastic Mineral Water Bottle (PET bottle wrap label strip, ultra-wide horizontal aspect ratio ~5.28:1 ~243x46 mm)
+11. "tube" - Toothpaste & Cosmetic Squeeze Tube (75 mL collapsible squeeze tube artwork, vertical aspect ratio ~0.68:1 ~90x133 mm with center front/back division and top crimp seal margin)
 
-CRITICAL STRUCTURAL INSPECTION ORDER:
-1. Auto Lock Box: bottom has 45-degree diagonal crash-lock bottom creases or pre-glued base tabs -> "auto_lock".
-2. Button Hole Box: circular/semi-circular button notch cutout on top edge OR 1-2-3 snap lock bottom tabs without diagonal folds -> "button_hole".
-3. Mailer Box: wide unibody roll-end tray structure with rollover walls -> "cosmetic_b".
-4. Cosmetic Box: slender vertical carton (H/W > 2.2) -> "cosmetic".
-5. Standard Tuck: only if simple flat rectangular tuck flaps on top & bottom:
-   - Staggered flaps -> "rte"
-   - Aligned flaps -> "te"
+CRITICAL CAN VS SLIM CAN VS BOTTLE VS TUBE DIFFERENTIATION RULES:
+1. WATER BOTTLE WRAP -> "water_bottle":
+   - Ultra-wide narrow horizontal wrap ribbon strip (aspect ratio > 3.2:1, e.g. 243 × 46 mm).
+2. STANDARD CAN VS SLIM CAN DIFFERENTIATION:
+   - "can" (Standard 12 oz Can): Classic squat aluminum can wrap. Width is significantly greater than height (aspect ratio ~1.66:1; 207 × 125 mm). Has single vertical overlap tab along the side seam. No vertical centerline and no top neck margin lines.
+   - "slim_can" (Slim Energy Can): Tall, sleek energy drink / seltzer can wrap (aspect ratio ~1.21:1; 175 × 145 mm). Has a distinct vertical centerline separating Front (87.5 mm) & Back (87.5 mm) panels, plus horizontal neck margin crease guides at 8mm & 14mm from the top edge.
+3. COLLAPSIBLE SQUEEZE TUBE -> "tube":
+   - Flexible squeeze tube artwork (aspect ratio ~0.68:1; 90 × 133 mm). Vertical rectangle divided down the center into Front & Back panels, with a top horizontal heat-seal crimp bar zone and circular collar/screw cap margin at bottom. NO carton tuck flaps.
+4. AUTO LOCK BOTTOM (Crash Lock) -> "auto_lock":
+   - Bottom 45-degree diagonal crash-lock creases or pre-glued locking base.
+5. BUTTON HOLE BOX -> "button_hole":
+   - Circular/semi-circular button notch cutout on top edge OR 1-2-3 snap lock bottom tabs.
+6. SQUARE SHIPPING BOX (RSC) -> "rsc":
+   - All 4 top and bottom outer flaps are slotted and equal depth W/2 meeting at center seam.
+7. MAILER BOX -> "cosmetic_b":
+   - Wide unibody roll-end tray structure with rollover walls.
+8. COSMETIC BOX -> "cosmetic":
+   - Slender vertical carton (H/W > 2.2) with folding flaps.
+9. STANDARD TUCK CARTONS ("rte" or "te"):
+   - Staggered flaps -> "rte"; Aligned flaps -> "te".
 
 Extracted CAD Geometric Measurements:
 - Bounding Dimensions: ${geo.width} x ${geo.height}
 - Aspect Ratio: ${geo.aspectRatio ? geo.aspectRatio.toFixed(2) : '1.0'}
+- Container / Wrap Signature: ${geo.isWaterBottle ? 'Water Bottle Wrap' : geo.isSlimCan ? 'Slim Can Wrap' : geo.isCan ? 'Standard Can Wrap' : geo.isTube ? 'Squeeze Tube Layout' : 'Folding Carton'}
 - Flap Horizontal Alignment (Tuck Only): ${geo.isRteStaggered ? 'Staggered' : geo.isSteAligned ? 'Aligned' : 'N/A'}
+- RSC Geometry Signature: ${geo.isRsc ? 'Yes (Equal-depth slotted flaps)' : 'No'}
 - Bottom 45-Degree Diagonal Creases: ${geo.diagonalCreaseCount || 0} ${geo.diagonalCreaseCount >= 2 ? '(Distinct crash lock auto-bottom folds)' : '(None)'}
 - Mailer / Tray Footprint: ${geo.isMailerOrTray ? 'Yes' : 'No'}
 - Button Hole Notch / 1-2-3 Base: ${geo.hasButtonNotch ? 'Yes' : 'No'}
@@ -1103,38 +1408,50 @@ Extracted CAD Geometric Measurements:
 
 Return valid JSON matching this exact schema:
 {
-  "matchedModel": "auto_lock" | "button_hole" | "cosmetic_b" | "cosmetic" | "rte" | "te",
+  "matchedModel": "auto_lock" | "button_hole" | "cosmetic_b" | "cosmetic" | "rte" | "te" | "rsc" | "can" | "slim_can" | "water_bottle" | "tube",
   "confidence": 88-99,
   "detectedFeatures": ["feature 1", "feature 2"],
   "dimensions": { "L": number_in_mm, "W": number_in_mm, "H": number_in_mm },
-  "explanation": "Detailed CAD structural rationale of why this matches our directory dieline..."
+  "explanation": "Detailed CAD structural rationale of why this matches our directory packaging model..."
 }
 `;
 
   const aiRes = await callGeminiWithCascade(promptText, null);
   if (aiRes) {
-    // Reconcile with ground-truth CAD geometry
-    if (aiRes.matchedModel === 'auto_lock' || geo.hasCrashBottom || (geo.diagonalCreaseCount >= 2) || geo.hints?.isAutoLock) {
-      aiRes.matchedModel = 'auto_lock';
-      if (!aiRes.explanation || (!aiRes.explanation.toLowerCase().includes('crash') && !aiRes.explanation.toLowerCase().includes('auto lock'))) {
+    const boxModels = ['auto_lock', 'button_hole', 'cosmetic_b', 'cosmetic', 'rte', 'te', 'rsc'];
+
+    // 1. If Gemini identified a box model dieline in vector CAD, preserve it!
+    if (boxModels.includes(aiRes.matchedModel)) {
+      if (geo.isRteStaggered && aiRes.matchedModel === 'te') {
+        aiRes.matchedModel = 'rte';
+        aiRes.explanation = `Reverse Tuck End Box verified. CAD vector geometry confirms top and bottom tuck flaps fold in opposite directions across staggered panels.`;
+      } else if (geo.isSteAligned && aiRes.matchedModel === 'rte') {
+        aiRes.matchedModel = 'te';
+        aiRes.explanation = `Straight Tuck End Box verified. CAD vector geometry confirms both top and bottom tuck flaps are aligned on the same panel face.`;
+      }
+      return aiRes;
+    }
+
+    // 2. Vector CAD files are dielines: if Gemini returned a container without explicit hints, map to the closest box dieline
+    if (!geo.hints?.isCan && !geo.hints?.isSlimCan && !geo.hints?.isWaterBottle && !geo.hints?.isTube) {
+      if (geo.hasCrashBottom || (geo.diagonalCreaseCount >= 2) || geo.hints?.isAutoLock) {
+        aiRes.matchedModel = 'auto_lock';
         aiRes.explanation = `Auto Lock Bottom Box verified. Features 45-degree crash-lock diagonal creases and pre-glued locking base.`;
+      } else if (geo.hasButtonNotch || geo.hints?.isButtonHole) {
+        aiRes.matchedModel = 'button_hole';
+        aiRes.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top button lock slot notch.`;
+      } else if (geo.isRsc || geo.hints?.isRsc) {
+        aiRes.matchedModel = 'rsc';
+        aiRes.explanation = `Square Shipping Box (RSC) verified. Regular Slotted Carton with equal-length center-meeting flaps for corrugated shipping.`;
+      } else if (geo.isMailerOrTray || geo.hints?.isMailer) {
+        aiRes.matchedModel = 'cosmetic_b';
+      } else if (geo.isRteStaggered) {
+        aiRes.matchedModel = 'rte';
+      } else if (geo.isSteAligned) {
+        aiRes.matchedModel = 'te';
+      } else {
+        aiRes.matchedModel = 'rte';
       }
-    } else if (aiRes.matchedModel === 'button_hole' || geo.hasButtonNotch || geo.hints?.isButtonHole) {
-      aiRes.matchedModel = 'button_hole';
-      if (!aiRes.explanation || !aiRes.explanation.toLowerCase().includes('button')) {
-        aiRes.explanation = `Button Hole Box verified. Features 1-2-3 snap lock bottom closure and top closure with button lock slot notch.`;
-      }
-    } else if (aiRes.matchedModel === 'cosmetic_b' || geo.isMailerOrTray || geo.hints?.isMailer) {
-      aiRes.matchedModel = 'cosmetic_b';
-    } else if (geo.isSlender && (aiRes.matchedModel === 'te' || aiRes.matchedModel === 'rte' || aiRes.matchedModel === 'cosmetic')) {
-      aiRes.matchedModel = 'cosmetic';
-      aiRes.explanation = `Cosmetic Box (Slender Tuck) verified. Tall, slender elongated aspect ratio characteristic of cosmetic, serum, and perfume packaging.`;
-    } else if (geo.isRteStaggered && aiRes.matchedModel === 'te') {
-      aiRes.matchedModel = 'rte';
-      aiRes.explanation = `Reverse Tuck End Box verified. CAD vector geometry confirms top and bottom tuck flaps fold in opposite directions across staggered panels.`;
-    } else if (geo.isSteAligned && aiRes.matchedModel === 'rte') {
-      aiRes.matchedModel = 'te';
-      aiRes.explanation = `Straight Tuck End Box verified. CAD vector geometry confirms both top and bottom tuck flaps are aligned on the same panel face.`;
     }
   }
   return aiRes;
@@ -1226,55 +1543,80 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     unit: 'mm'
   };
 
-  // Determine secondary runner-up box (box just below with lower confidence score)
-  let runnerUpKey = null;
-  if (localMatch && localMatch.allRankings) {
-    const candidate = localMatch.allRankings.find(r => r.key !== primaryBox.boxModelKey);
+  const BOX_KEYS = ['rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'rsc'];
+  const CONTAINER_KEYS = ['can', 'slim_can', 'water_bottle', 'tube'];
+
+  const isBoxPrimary = BOX_KEYS.includes(primaryBox.boxModelKey);
+
+  // Determine secondary runner-up model (natural counterpart paired for structural comparison)
+  const naturalCounterparts = {
+    te: 'rte',
+    rte: 'te',
+    auto_lock: 'rte',
+    cosmetic: 'te',
+    cosmetic_b: 'rsc',
+    button_hole: 'rte',
+    rsc: 'rte',
+    can: 'slim_can',
+    slim_can: 'can',
+    water_bottle: 'can',
+    tube: 'can'
+  };
+
+  // Dedicated candidate pool: When a box dieline is detected, the candidate pool and dropdown strictly contains BOX models.
+  // Cans, water bottles, and squeeze tubes will NEVER clash with or corrupt box dielines.
+  const candidatePool = isBoxPrimary
+    ? DIRECTORY_BOXES.filter(b => BOX_KEYS.includes(b.boxModelKey))
+    : DIRECTORY_BOXES.filter(b => CONTAINER_KEYS.includes(b.boxModelKey));
+
+  let runnerUpKey = naturalCounterparts[primaryBox.boxModelKey];
+  if (!runnerUpKey && localMatch && localMatch.allRankings) {
+    const candidate = localMatch.allRankings.find(r => r.key !== primaryBox.boxModelKey && candidatePool.some(b => b.boxModelKey === r.key));
     if (candidate) runnerUpKey = candidate.key;
   }
   if (!runnerUpKey) {
-    const naturalCounterparts = {
-      te: 'rte',
-      rte: 'te',
-      auto_lock: 'rte',
-      cosmetic: 'te',
-      cosmetic_b: 'rte',
-      button_hole: 'rte'
-    };
-    runnerUpKey = naturalCounterparts[primaryBox.boxModelKey] || 'rte';
+    runnerUpKey = isBoxPrimary ? 'rte' : 'can';
   }
 
-  const secondaryBox = DIRECTORY_BOXES.find(b => b.boxModelKey === runnerUpKey) || DIRECTORY_BOXES.find(b => b.boxModelKey !== primaryBox.boxModelKey) || DIRECTORY_BOXES[1];
-  // Calculate distinct lower confidence score (e.g. 94% -> 78% or 80%)
+  const secondaryBox = candidatePool.find(b => b.boxModelKey === runnerUpKey) || candidatePool.find(b => b.boxModelKey !== primaryBox.boxModelKey) || candidatePool[1];
+  // Calculate distinct lower confidence score (e.g. 96% -> 80%)
   const secondaryConfidence = Math.max(68, Math.min(confidence - 12, Math.round(confidence * 0.83)));
 
   const primaryRecommendation = {
     rank: 1,
     matchedBox: primaryBox,
     matchedModelKey: primaryBox.boxModelKey,
+    key: primaryBox.boxModelKey,
+    name: primaryBox.name,
     matchedTitle: primaryBox.name,
     subtitle: primaryBox.subtitle,
     confidence,
     isExactMatch: confidence >= 90,
     dimensions,
     dimensionsIn,
+    defaultDims: primaryBox.defaultDims,
+    defaultDimsIn: primaryBox.defaultDimsIn,
     detectedFeatures: features,
     explanation,
     dieline2DImg: primaryBox.dieline2DImg,
     box3DImg: primaryBox.box3DImg,
-    badgeText: confidence >= 90 ? 'Most Accurate Dieline' : 'Primary Recommendation'
+    badgeText: confidence >= 90 ? 'Most Accurate Match' : 'Primary Recommendation'
   };
 
   const secondaryRecommendation = {
     rank: 2,
     matchedBox: secondaryBox,
     matchedModelKey: secondaryBox.boxModelKey,
+    key: secondaryBox.boxModelKey,
+    name: secondaryBox.name,
     matchedTitle: secondaryBox.name,
     subtitle: secondaryBox.subtitle,
     confidence: secondaryConfidence,
     isExactMatch: false,
-    dimensions,
-    dimensionsIn,
+    dimensions: secondaryBox.defaultDims || dimensions,
+    dimensionsIn: secondaryBox.defaultDimsIn || dimensionsIn,
+    defaultDims: secondaryBox.defaultDims,
+    defaultDimsIn: secondaryBox.defaultDimsIn,
     detectedFeatures: secondaryBox.structureFeatures ? secondaryBox.structureFeatures.slice(0, 2) : [secondaryBox.subtitle],
     explanation: `Alternative structural candidate with ${secondaryConfidence}% confidence based on panel geometry and closure profile.`,
     dieline2DImg: secondaryBox.dieline2DImg,
@@ -1282,12 +1624,75 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     badgeText: 'Alternative Recommendation'
   };
 
+  // Rank and dynamically compute non-hardcoded confidence scores for all remaining candidates in the active pool
+  const remainingRankings = (localMatch?.allRankings || [])
+    .filter(r => r.key !== primaryBox.boxModelKey && r.key !== secondaryBox.boxModelKey && candidatePool.some(b => b.boxModelKey === r.key));
+
+  // Ensure all candidates in the category pool are represented
+  candidatePool.forEach(b => {
+    if (b.boxModelKey !== primaryBox.boxModelKey && 
+        b.boxModelKey !== secondaryBox.boxModelKey && 
+        !remainingRankings.some(r => r.key === b.boxModelKey)) {
+      remainingRankings.push({ key: b.boxModelKey, name: b.name, score: 0 });
+    }
+  });
+
+  const maxRunnerUpScore = remainingRankings.length > 0 ? Math.max(1, ...remainingRankings.map(r => r.score || 0)) : 1;
+
+  const candidateRecommendations = remainingRankings.map((cand, idx) => {
+    const box = candidatePool.find(b => b.boxModelKey === cand.key);
+    const rank = idx + 3;
+
+    // Dynamic, mathematically derived non-hardcoded confidence score
+    const relativeScoreRatio = Math.max(0, Math.min(1, (cand.score || 0) / maxRunnerUpScore));
+    const baseDecay = secondaryConfidence - 7 - (idx * 5.2);
+    const scoreBoost = Math.round(relativeScoreRatio * 10);
+    const candConfidence = Math.max(18, Math.min(secondaryConfidence - 3, Math.round(baseDecay + scoreBoost)));
+
+    const candDims = box?.defaultDims || { L: 120, W: 60, H: 160, unit: 'mm' };
+    const candDimsIn = box?.defaultDimsIn || {
+      L: Math.round((candDims.L / 25.4) * 10000) / 10000,
+      W: Math.round((candDims.W / 25.4) * 10000) / 10000,
+      H: Math.round((candDims.H / 25.4) * 10000) / 10000,
+      unit: 'mm'
+    };
+
+    return {
+      rank,
+      matchedBox: box,
+      matchedModelKey: cand.key,
+      key: cand.key,
+      name: box?.name || cand.key,
+      matchedTitle: box?.name || cand.key,
+      subtitle: box?.subtitle || 'Parametric packaging template',
+      confidence: candConfidence,
+      isExactMatch: false,
+      dimensions: candDims,
+      dimensionsIn: candDimsIn,
+      defaultDims: candDims,
+      defaultDimsIn: candDimsIn,
+      detectedFeatures: box?.structureFeatures || [box?.subtitle || 'Standard profile'],
+      explanation: `Alternative candidate from our parametric directory with ${candConfidence}% confidence.`,
+      dieline2DImg: box?.dieline2DImg,
+      box3DImg: box?.box3DImg,
+      badgeText: `Candidate (${candConfidence}% Match)`
+    };
+  });
+
+  const allCandidates = [
+    primaryRecommendation,
+    secondaryRecommendation,
+    ...candidateRecommendations
+  ];
+
   return {
     ...primaryRecommendation,
     primaryRecommendation,
     secondaryRecommendation,
+    allCandidates,
     recommendations: [primaryRecommendation, secondaryRecommendation],
-    suggestions: DIRECTORY_BOXES.filter(b => b.boxModelKey !== primaryBox.boxModelKey && b.boxModelKey !== secondaryBox.boxModelKey).slice(0, 2).map(b => ({
+    suggestions: candidateRecommendations,
+    allDirectoryBoxes: DIRECTORY_BOXES.map(b => ({
       key: b.boxModelKey,
       name: b.name,
       subtitle: b.subtitle,
@@ -1295,12 +1700,6 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
       box3DImg: b.box3DImg,
       defaultDims: b.defaultDims,
       defaultDimsIn: b.defaultDimsIn
-    })),
-    allDirectoryBoxes: DIRECTORY_BOXES.map(b => ({
-      key: b.boxModelKey,
-      name: b.name,
-      dieline2DImg: b.dieline2DImg,
-      box3DImg: b.box3DImg
     }))
   };
 }

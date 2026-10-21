@@ -7,6 +7,7 @@ import { generateButtonHoleDieline } from "./buttonHoleDielineGenerator.js";
 import { generateRSCDielineDXF } from "./rscDielineGenerator.js";
 import { generateCanDieline } from "./canDielineGenerator.js";
 import { generateWaterBottleDieline } from "./waterBottleDielineGenerator.js";
+import { generateSipperBottleDieline } from "./sipperBottleDielineGenerator.js";
 import { generateTubeDieline } from "./tubeDielineGenerator.js";
 import { generateSlimCanDieline } from "./slimCanDielineGenerator.js";
 
@@ -27,6 +28,9 @@ export const BOX_GENERATOR_REGISTRY = {
   slim_can: (params) => generateSlimCanDieline(params),
   slim_355ml_can: (params) => generateSlimCanDieline(params),
   water_bottle: (params) => generateWaterBottleDieline(params),
+  sipper_water_bottle: (params) => generateSipperBottleDieline(params),
+  water_bottle_handle: (params) => generateSipperBottleDieline(params),
+  sipper_bottle: (params) => generateSipperBottleDieline(params),
   tube: (params) => generateTubeDieline(params),
   toothpaste_tube: (params) => generateTubeDieline(params)
 };

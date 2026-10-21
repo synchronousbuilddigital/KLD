@@ -33,6 +33,7 @@ export const mockupCategories: MockupCategory[] = [
       { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
       { id: 5, name: 'Mailer / Tray Box', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
       { id: 6, name: 'Button Hole Box', animation: 'Snap lock 1-2-3 bottom and button hole notch', imageUrl: '/images/boxes/button_hole_white.jpg', whiteImageUrl: '/images/boxes/button_hole_white.jpg', kraftImageUrl: '/images/boxes/button_hole_kraft.jpg', boxModelKey: 'button_hole', gridSize: 'large' },
+      { id: 7, name: 'Square Shipping Box', animation: 'Equal width flaps meet at center', imageUrl: '/images/boxes/rsc_kraft.jpg', whiteImageUrl: '/images/boxes/rsc_white.jpg', kraftImageUrl: '/images/boxes/rsc_kraft.jpg', boxModelKey: 'rsc', gridSize: 'large' },
     ]
   },
   {
@@ -66,6 +67,7 @@ export const mockupCategories: MockupCategory[] = [
     name: 'Bottle Mockups',
     variants: [
       { id: 101, name: 'Plastic Mineral Water Bottle', animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label', imageUrl: '/images/water_bottle.png', whiteImageUrl: '/images/water_bottle.png', kraftImageUrl: '/images/water_bottle.png', boxModelKey: 'water_bottle', isFeatured: true, gridSize: 'large' },
+      { id: 102, name: 'Sipper Water Bottle with Handle', animation: 'Aluminum sports bottle with loop handle cap & 251x227mm wrap label', imageUrl: '/images/sipper_water_bottle.png', whiteImageUrl: '/images/sipper_water_bottle.png', kraftImageUrl: '/images/sipper_water_bottle.png', boxModelKey: 'sipper_water_bottle', isFeatured: true, gridSize: 'large' },
       { id: 1, name: 'Cosmetic Serum Bottle', animation: 'Pipette extracts liquid', imageUrl: '/mockups/generated_box.png' },
       { id: 2, name: 'Dropper Bottle', animation: 'Dropper lifts and squeezes', imageUrl: '/mockups/generated_box.png' },
       { id: 3, name: 'Pump Bottle', animation: 'Pump depresses and pops up', imageUrl: '/mockups/generated_box.png' },
@@ -197,6 +199,7 @@ export const mockupCategories: MockupCategory[] = [
     name: 'Water Bottle Mockups',
     variants: [
       { id: 101, name: 'Plastic Mineral Water Bottle', animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label', imageUrl: '/images/water_bottle.png', whiteImageUrl: '/images/water_bottle.png', kraftImageUrl: '/images/water_bottle.png', boxModelKey: 'water_bottle', isFeatured: true, gridSize: 'large' },
+      { id: 102, name: 'Sipper Water Bottle with Handle', animation: 'Aluminum sports bottle with loop handle cap & 251x227mm wrap label', imageUrl: '/images/sipper_water_bottle.png', whiteImageUrl: '/images/sipper_water_bottle.png', kraftImageUrl: '/images/sipper_water_bottle.png', boxModelKey: 'sipper_water_bottle', isFeatured: true, gridSize: 'large' },
       { id: 1, name: 'Sports Bottle', animation: 'Squeeze nozzle pops up', imageUrl: '/mockups/generated_box.png' },
       { id: 2, name: 'Gym Bottle', animation: 'Shaker ball bounces inside', imageUrl: '/mockups/generated_box.png' },
       { id: 3, name: 'Stainless Bottle', animation: 'Metallic reflection sweep', imageUrl: '/mockups/generated_box.png' },

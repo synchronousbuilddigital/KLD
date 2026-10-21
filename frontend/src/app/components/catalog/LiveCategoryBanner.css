@@ -1,0 +1,623 @@
+/* Live Category Banner Styling */
+
+.live-banner-wrapper {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Neo-Brutalist / Modern Card Frame */
+.live-banner-card {
+  position: relative;
+  border-radius: 28px;
+  border: 1.5px solid #18181b;
+  box-shadow: 4px 6px 0px #18181b;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.live-banner-card:hover {
+  box-shadow: 5px 8px 0px #18181b;
+}
+
+/* Subtle background architectural grid */
+.live-banner-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.live-banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 36px;
+  gap: 32px;
+}
+
+@media (min-width: 900px) {
+  .live-banner-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 36px 44px;
+    gap: 40px;
+    min-height: 270px;
+  }
+}
+
+/* --- Left Column: Text & Prompt Bar --- */
+.live-banner-text-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 580px;
+}
+
+/* Breadcrumbs */
+.live-banner-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #71717a;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.live-crumb-link {
+  color: #52525b;
+  transition: color 0.15s ease;
+  cursor: pointer;
+}
+
+.live-crumb-link:hover {
+  color: #18181b;
+  text-decoration: underline;
+}
+
+.live-crumb-sep {
+  opacity: 0.4;
+}
+
+.live-crumb-active {
+  color: #18181b;
+  font-weight: 600;
+}
+
+/* Title with Arrow Icon */
+.live-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #18181b;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+
+@media (min-width: 640px) {
+  .live-banner-title {
+    font-size: 32px;
+  }
+}
+
+.live-banner-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.2s ease;
+}
+
+.live-banner-card:hover .live-banner-arrow {
+  transform: translateX(3px);
+}
+
+/* Description */
+.live-banner-desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #4b5563;
+  margin-bottom: 20px;
+  max-width: 520px;
+}
+
+/* Prompt / Search Input Bar inside Banner */
+.live-banner-search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #d4d4d8;
+  border-radius: 14px;
+  padding: 4px 6px 4px 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+  max-width: 480px;
+}
+
+.live-banner-search-box:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.live-search-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.live-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: #18181b;
+  font-weight: 500;
+  padding: 8px 0;
+}
+
+.live-search-input::placeholder {
+  color: #9ca3af;
+  font-size: 12.5px;
+}
+
+.live-search-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.live-search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+}
+
+.live-search-btn:hover {
+  background: #e4e4e7;
+  transform: scale(1.05);
+}
+
+/* Quick Filter Chips */
+.live-banner-chips-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.live-chips-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 2px;
+}
+
+.live-chip-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #3f3f46;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: all 0.15s ease;
+}
+
+.live-chip-pill:hover {
+  background: #ffffff;
+  border-color: #71717a;
+  color: #18181b;
+  transform: translateY(-1px);
+}
+
+.live-chip-pill.active {
+  background: #18181b;
+  color: #ffffff;
+  border-color: #18181b;
+}
+
+/* --- Right Column: Live Packaging Mockup Stage --- */
+.live-banner-stage-col {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 280px;
+  margin-left: auto;
+  margin-right: auto;
+  user-select: none;
+}
+
+@media (min-width: 900px) {
+  .live-banner-stage-col {
+    margin: 0;
+    width: 480px;
+    height: 290px;
+  }
+}
+
+.live-stage-badge {
+  position: absolute;
+  top: -12px;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4b5563;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 3px 9px;
+  border-radius: 9999px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  z-index: 10;
+}
+
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* Toast Badge that shows "Design Applied" */
+.live-applied-toast {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #18181b;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  z-index: 25;
+  animation: toastPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toastPop {
+  0% { transform: translateY(-8px) scale(0.9); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Click Ripple Wave */
+.live-click-ripple {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  margin-top: -22px;
+  border-radius: 9999px;
+  border: 2px solid #6366f1;
+  pointer-events: none;
+  z-index: 20;
+  animation: clickRipple 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes clickRipple {
+  0% { transform: scale(0.2); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Packaging Items Stage */
+.live-stage-items-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-mockup-item {
+  position: absolute;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+}
+
+.live-mockup-item:hover {
+  transform: scale(1.05) translateY(-4px) !important;
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.12));
+}
+
+.live-mockup-asset-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-mockup-image {
+  max-height: 185px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.08));
+  transition: transform 0.3s ease;
+}
+
+/* Ground Soft Ambient Shadow */
+.live-mockup-ground-shadow {
+  position: absolute;
+  bottom: -10px;
+  left: 15%;
+  right: 15%;
+  height: 12px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
+  border-radius: 9999px;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+/* Branding Label Overlays appearing on objects */
+.live-label-overlay {
+  position: absolute;
+  top: 32%;
+  left: 20%;
+  right: 20%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.live-label-overlay.hidden {
+  opacity: 0;
+  transform: scale(0.85) translateY(6px);
+}
+
+.live-label-overlay.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  animation: labelWipe 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes labelWipe {
+  0% { opacity: 0; transform: scale(0.88) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Color Themes for the Labels */
+.live-label-overlay.kraft {
+  background: rgba(245, 238, 225, 0.94);
+  border: 1px solid #b45309;
+  color: #451a03;
+}
+
+.live-label-overlay.white {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #18181b;
+  color: #18181b;
+}
+
+.live-label-overlay.dark {
+  background: rgba(24, 24, 27, 0.92);
+  border: 1px solid #a1a1aa;
+  color: #fafafa;
+}
+
+.live-label-overlay.metallic {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.9) 0%, rgba(13, 148, 136, 0.95) 100%);
+  border: 1px solid #5eead4;
+  color: #ffffff;
+}
+
+.live-label-overlay.clean {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #38bdf8;
+  color: #0369a1;
+}
+
+/* Shine Light Sweep across label */
+.live-label-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.live-label-overlay.visible .live-label-shine {
+  animation: shineSweep 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+}
+
+@keyframes shineSweep {
+  0% { transform: translateX(-120%) rotate(15deg); }
+  100% { transform: translateX(200%) rotate(15deg); }
+}
+
+.live-label-badge {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.live-label-brand {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.live-label-sub {
+  font-size: 7.5px;
+  font-weight: 600;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+}
+
+.live-label-keylines {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.live-label-keylines span {
+  width: 14px;
+  height: 1.5px;
+  background: currentColor;
+  opacity: 0.35;
+  border-radius: 1px;
+}
+
+/* The Animated Virtual Cursor */
+.live-animated-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 30;
+  transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.live-cursor-icon {
+  width: 22px;
+  height: 22px;
+  color: #18181b;
+  fill: #18181b;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
+  transition: transform 0.15s ease;
+}
+
+.live-animated-cursor.clicking .live-cursor-icon {
+  transform: scale(0.8) translate(-1px, -1px);
+}
+
+.live-cursor-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #6366f1;
+  box-shadow: 0 0 10px 4px rgba(99, 102, 241, 0.5);
+  opacity: 0.85;
+}
+
+.live-stage-hint {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 10px;
+  color: #9ca3af;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 2px 8px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+/* --- Sub-bar below Banner --- */
+.live-subbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 8px 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.live-subbar-count {
+  font-size: 15px;
+}
+
+.live-subbar-custom-cta {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.live-subbar-custom-cta:hover {
+  background: #f5f3ff;
+}
+
+.live-new-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #9333ea;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  margin-right: 8px;
+  letter-spacing: 0.04em;
+}
+
+.live-subbar-sort {
+  display: flex;
+  align-items: center;
+}
+
+.live-sort-pill {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #18181b;
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
+  padding: 5px 12px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}

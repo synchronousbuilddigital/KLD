@@ -12,6 +12,8 @@ import BeverageCan3D, { BeverageCan3DRef, CanvasDecal } from './components/3d/Be
 import CanLabelCanvas from './components/3d/CanLabelCanvas';
 import PlasticWaterBottle3D, { PlasticWaterBottle3DRef } from './components/3d/PlasticWaterBottle3D';
 import WaterBottleLabelCanvas from './components/3d/WaterBottleLabelCanvas';
+import SipperWaterBottle3D, { SipperWaterBottle3DRef } from './components/3d/SipperWaterBottle3D';
+import SipperWaterBottleLabelCanvas from './components/3d/SipperWaterBottleLabelCanvas';
 import { packagingSymbols } from '../lib/packagingSymbols';
 import { useBoxStore } from '../lib/useBoxStore';
 import { mockupService } from '../services/mockups';
@@ -19,7 +21,7 @@ import './MockupGenerator.css';
 
 interface MockupGeneratorProps {
   onBack: () => void;
-  initialModel?: string; // 'can' | 'water_bottle'
+  initialModel?: string; // 'can' | 'water_bottle' | 'sipper_water_bottle'
 }
 
 // Vector Shapes matching EditorModal
@@ -57,9 +59,9 @@ const CAN_PACKAGE_COLORS = [
 ];
 
 export default function MockupGenerator({ onBack, initialModel = 'can' }: MockupGeneratorProps) {
-  // Model state: 'can' or 'water_bottle'
-  const [activeModel, setActiveModel] = useState<'can' | 'water_bottle'>(
-    initialModel === 'water_bottle' ? 'water_bottle' : 'can'
+  // Model state: 'can', 'water_bottle', or 'sipper_water_bottle'
+  const [activeModel, setActiveModel] = useState<'can' | 'water_bottle' | 'sipper_water_bottle'>(
+    initialModel === 'sipper_water_bottle' ? 'sipper_water_bottle' : initialModel === 'water_bottle' ? 'water_bottle' : 'can'
   );
 
   // Navigation step: 'landing' (Image 1) or 'editor' (Image 2)
@@ -69,7 +71,7 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
   const [packageColor, setPackageColor] = useState<string>('#ffffff');
   const [canMaterialType, setCanMaterialType] = useState<'metal_matt' | 'metal_gloss'>('metal_matt');
   const [bottleMaterialType, setBottleMaterialType] = useState<'plastic_glossy' | 'frosted'>('plastic_glossy');
-  const [capColor, setCapColor] = useState<string>('#ffffff');
+  const [capColor, setCapColor] = useState<string>('#18181b');
 
   // Editor Tabs: 'Uploads' | 'Elements' | 'Text' | 'Tools'
   const [activeTab, setActiveTab] = useState<'Uploads' | 'Elements' | 'Text' | 'Tools'>('Uploads');
@@ -100,10 +102,13 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
   const previewCanRef = useRef<BeverageCan3DRef>(null);
   const mainBottleRef = useRef<PlasticWaterBottle3DRef>(null);
   const previewBottleRef = useRef<PlasticWaterBottle3DRef>(null);
+  const mainSipperRef = useRef<SipperWaterBottle3DRef>(null);
+  const previewSipperRef = useRef<SipperWaterBottle3DRef>(null);
 
   const isCan = activeModel === 'can';
-  const labelWidth = isCan ? 784 : 918;
-  const labelHeight = isCan ? 472 : 174;
+  const isSipper = activeModel === 'sipper_water_bottle';
+  const labelWidth = isCan ? 784 : isSipper ? 949 : 918;
+  const labelHeight = isCan ? 472 : isSipper ? 858 : 174;
 
   // Selected Decal for Editing
   const selectedDecal = decals.find(d => d.id === selectedDecalId);
@@ -140,10 +145,10 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
       id: Math.random().toString(36).substring(2, 9),
       type: 'image',
       url,
-      x: isCan ? 180 + (Math.random() * 40 - 20) : 390 + (Math.random() * 40 - 20),
-      y: isCan ? 80 : 18,
-      width: isCan ? 320 : 138,
-      height: isCan ? 320 : 138,
+      x: isCan ? 180 + (Math.random() * 40 - 20) : isSipper ? 295 + (Math.random() * 30 - 15) : 390 + (Math.random() * 40 - 20),
+      y: isCan ? 80 : isSipper ? 249 : 18,
+      width: isCan ? 320 : isSipper ? 360 : 138,
+      height: isCan ? 320 : isSipper ? 360 : 138,
       rotation: 0,
     };
     pushHistory([...decals, newDecal]);
@@ -156,10 +161,10 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
       id: Math.random().toString(36).substring(2, 9),
       type: 'shape',
       shapeType,
-      x: isCan ? 290 : 410,
-      y: isCan ? 150 : 35,
-      width: shapeType === 'line' || shapeType === 'dashed-line' ? 240 : 180,
-      height: shapeType === 'line' || shapeType === 'dashed-line' ? 30 : 180,
+      x: isCan ? 290 : isSipper ? 350 : 410,
+      y: isCan ? 150 : isSipper ? 280 : 35,
+      width: shapeType === 'line' || shapeType === 'dashed-line' ? (isSipper ? 380 : 240) : (isSipper ? 250 : 180),
+      height: shapeType === 'line' || shapeType === 'dashed-line' ? 30 : (isSipper ? 250 : 180),
       rotation: 0,
       fillColor: '#3b82f6',
       strokeColor: '#1d4ed8',
@@ -175,10 +180,10 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
       id: Math.random().toString(36).substring(2, 9),
       type: 'symbol',
       svgContent,
-      x: isCan ? 320 : 420,
-      y: isCan ? 160 : 45,
-      width: 120,
-      height: 120,
+      x: isCan ? 320 : isSipper ? 385 : 420,
+      y: isCan ? 160 : isSipper ? 300 : 45,
+      width: isSipper ? 180 : 120,
+      height: isSipper ? 180 : 120,
       rotation: 0,
       fillColor: '#0f172a',
     };
@@ -192,15 +197,15 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
       id: Math.random().toString(36).substring(2, 9),
       type: 'text',
       text: preset === 'heading' ? 'COLD BREW SODA' : preset === 'subheading' ? '100% NATURAL SPARKLING' : '12 FL OZ (355 ML) • RECYCLE',
-      fontSize: preset === 'heading' ? 36 : preset === 'subheading' ? 22 : 15,
+      fontSize: preset === 'heading' ? (isSipper ? 46 : 36) : preset === 'subheading' ? (isSipper ? 28 : 22) : (isSipper ? 18 : 15),
       fontFamily: 'Inter',
       fontWeight: preset === 'heading' ? 'bold' : preset === 'subheading' ? '600' : 'normal',
       fillColor: '#0f172a',
       textAlign: 'center',
-      x: isCan ? 180 : 300,
-      y: isCan ? (preset === 'heading' ? 140 : preset === 'subheading' ? 210 : 280) : (preset === 'heading' ? 30 : preset === 'subheading' ? 75 : 120),
-      width: isCan ? 420 : 320,
-      height: 50,
+      x: isCan ? 180 : isSipper ? 225 : 300,
+      y: isCan ? (preset === 'heading' ? 140 : preset === 'subheading' ? 210 : 280) : isSipper ? (preset === 'heading' ? 260 : preset === 'subheading' ? 340 : 420) : (preset === 'heading' ? 30 : preset === 'subheading' ? 75 : 120),
+      width: isCan ? 420 : isSipper ? 500 : 320,
+      height: isSipper ? 65 : 50,
       rotation: 0,
     };
     pushHistory([...decals, newDecal]);
@@ -256,11 +261,13 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
   const handleExport = () => {
     const screenshot = isCan
       ? mainCanRef.current?.getScreenshot()
+      : isSipper
+      ? mainSipperRef.current?.getScreenshot()
       : mainBottleRef.current?.getScreenshot();
 
     if (screenshot) {
       const link = document.createElement('a');
-      link.download = isCan ? 'kld_12oz_soda_can.png' : 'kld_water_bottle.png';
+      link.download = isCan ? 'kld_12oz_soda_can.png' : isSipper ? 'kld_sipper_water_bottle.png' : 'kld_water_bottle.png';
       link.href = screenshot;
       link.click();
     }
@@ -268,11 +275,11 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
 
   // Save to global workspace store
   const handleSaveToWorkspace = async () => {
-    const currentModel = isCan ? 'can' : 'water_bottle';
-    const categoryName = isCan ? '12 oz Aluminum Soda Can' : 'Plastic Mineral Water Bottle';
-    const dimL = isCan ? 207 : 243;
-    const dimW = isCan ? 125 : 46;
-    const dimH = isCan ? 122 : 46;
+    const currentModel = isCan ? 'can' : isSipper ? 'sipper_water_bottle' : 'water_bottle';
+    const categoryName = isCan ? '12 oz Aluminum Soda Can' : isSipper ? 'Sipper Water Bottle with Handle' : 'Plastic Mineral Water Bottle';
+    const dimL = isCan ? 207 : isSipper ? 251 : 243;
+    const dimW = isCan ? 125 : isSipper ? 227 : 46;
+    const dimH = isCan ? 122 : isSipper ? 260 : 46;
     const targetId = 'saved-' + Date.now();
     const targetName = `${categoryName} (${dimL}×${dimW}×${dimH}mm)`;
 
@@ -287,6 +294,20 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
         decalsByModel: {
           ...useBoxStore.getState().decalsByModel,
           can: decals,
+        }
+      });
+    } else if (isSipper) {
+      useBoxStore.setState({
+        boxModel: 'sipper_water_bottle',
+        L: 251 / 25.4,
+        W: 227 / 25.4,
+        H: 260 / 25.4,
+        packageColor: packageColor,
+        capColor: capColor,
+        materialType: bottleMaterialType,
+        decalsByModel: {
+          ...useBoxStore.getState().decalsByModel,
+          sipper_water_bottle: decals,
         }
       });
     } else {
@@ -593,7 +614,18 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
 
             {/* 3D Model Canvas */}
             <div className="relative w-full h-full flex items-center justify-center">
-              {isCan ? (
+              {isSipper ? (
+                <SipperWaterBottle3D
+                  ref={mainSipperRef}
+                  decals={decals}
+                  labelColor={packageColor}
+                  capColor={capColor}
+                  interactive={true}
+                  autoRotate={false}
+                  showPlaceholder={decals.length === 0}
+                  className="w-full h-full"
+                />
+              ) : isCan ? (
                 <BeverageCan3D
                   ref={mainCanRef}
                   decals={decals}
@@ -967,7 +999,20 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
         {/* Center Workspace: 2D Unwrapped Label Canvas matching Screenshot 2 */}
         <div className="flex-1 relative overflow-hidden flex flex-col bg-[#f4f4f6]">
           <div className="flex-1 relative overflow-hidden flex items-center justify-center p-6">
-            {isCan ? (
+            {isSipper ? (
+              <SipperWaterBottleLabelCanvas
+                labelWidthMm={251}
+                labelHeightMm={227}
+                decals={decals}
+                labelColor={packageColor}
+                onUpdateDecal={handleUpdateDecal}
+                onRemoveDecal={handleRemoveDecal}
+                onDuplicateDecal={handleDuplicateDecal}
+                selectedId={selectedDecalId}
+                onSelectDecal={setSelectedDecalId}
+                zoom={canvasZoom}
+              />
+            ) : isCan ? (
               <CanLabelCanvas
                 labelWidthPx={784}
                 labelHeightPx={472}
@@ -1081,7 +1126,19 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
             </div>
 
             <div className="w-full h-full relative">
-              {isCan ? (
+              {isSipper ? (
+                <SipperWaterBottle3D
+                  ref={previewSipperRef}
+                  decals={decals}
+                  labelColor={packageColor}
+                  capColor={capColor}
+                  interactive={true}
+                  autoRotate={true}
+                  autoRotateSpeed={0.8}
+                  showPlaceholder={decals.length === 0}
+                  className="w-full h-full"
+                />
+              ) : isCan ? (
                 <BeverageCan3D
                   ref={previewCanRef}
                   decals={decals}

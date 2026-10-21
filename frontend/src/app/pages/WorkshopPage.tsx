@@ -114,6 +114,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
     const categoryName = 
       currentModel === 'can' || currentModel === 'soda_can' ? '12 oz Aluminum Soda Can' :
       currentModel === 'water_bottle' ? 'Plastic Mineral Water Bottle' :
+      currentModel === 'rsc' ? 'Square Shipping Box' :
       currentModel === 'rte' ? 'Reverse Tuck End Box' :
       currentModel === 'te' ? 'Straight Tuck End Box' :
       currentModel === 'auto_lock' ? 'Auto Lock Bottom Box' :
@@ -570,6 +571,9 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         {(store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can") && (
                           <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>661 × 548 px</span>
                         )}
+                        {(store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle") && (
+                          <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>949 × 858 px</span>
+                        )}
                         {(store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
                           <span style={{ fontSize: "13px", fontWeight: "600", color: "#6366f1" }}>170 × 503 px</span>
                         )}
@@ -591,17 +595,17 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                         <MaterialDropdown />
                       </div>
 
-                      {/* Bottle Cap Color (for Water Bottle or Tube) */}
-                      {(store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
+                      {/* Bottle Cap Color (for Water Bottle, Sipper Bottle, or Tube) */}
+                      {(store.boxModel === "water_bottle" || store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
                         <div style={{ background: "#f9fafb", borderRadius: "16px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ fontSize: "12px", color: "#6b7280", fontWeight: "600" }}>
-                              {store.boxModel === "water_bottle" ? "Bottle cap color" : "Tube cap color"}
+                              {store.boxModel === "tube" || store.boxModel === "toothpaste_tube" ? "Tube cap color" : "Bottle cap color"}
                             </span>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: store.capColor || "#ffffff", border: "1px solid #d1d5db" }} />
+                              <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: store.capColor || "#18181b", border: "1px solid #d1d5db" }} />
                               <span style={{ fontSize: "11px", color: "#4b5563", fontWeight: "700", fontFamily: "monospace" }}>
-                                {(store.capColor || "#ffffff").toUpperCase()}
+                                {(store.capColor || "#18181b").toUpperCase()}
                               </span>
                             </div>
                           </div>
@@ -627,7 +631,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                             >
                               <input
                                 type="color"
-                                value={store.capColor || "#ffffff"}
+                                value={store.capColor || "#18181b"}
                                 onChange={(e) => store.setCapColor && store.setCapColor(e.target.value)}
                                 style={{ opacity: 0, position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "pointer" }}
                               />
@@ -635,15 +639,15 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
                             {/* Preset Swatches */}
                             {[
+                              { name: "Jet Black", color: "#18181b" },
                               { name: "Pure White", color: "#ffffff" },
                               { name: "Sky Blue", color: "#38bdf8" },
                               { name: "Royal Blue", color: "#2563eb" },
                               { name: "Emerald Green", color: "#16a34a" },
                               { name: "Crimson Red", color: "#dc2626" },
                               { name: "Bright Yellow", color: "#eab308" },
-                              { name: "Jet Black", color: "#18181b" },
                             ].map((item) => {
-                              const isSelected = (store.capColor || "#ffffff").toLowerCase() === item.color.toLowerCase();
+                              const isSelected = (store.capColor || "#18181b").toLowerCase() === item.color.toLowerCase();
                               return (
                                 <div
                                   key={item.color}
@@ -677,10 +681,10 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                           display: "flex", 
                           alignItems: "center", 
                           justifyContent: "space-between", 
-                          cursor: (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") ? "default" : "pointer" 
+                          cursor: (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle" || store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") ? "default" : "pointer" 
                         }}
                         onClick={(e) => {
-                          if (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") return;
+                          if (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle" || store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") return;
                           e.preventDefault();
                           const rect = e.currentTarget.getBoundingClientRect();
                           setContextMenu({
@@ -692,14 +696,16 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                       >
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                           <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {(store.boxModel === "tube" || store.boxModel === "toothpaste_tube" || store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can")
+                            {(store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube" || store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can")
                               ? "Size"
                               : (store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "water_bottle")
                               ? "Container specifications"
                               : "Custom size"}
                           </span>
                           <span style={{ fontSize: "15px", fontWeight: "600", color: "#111827" }}>
-                            {store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can"
+                            {store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle"
+                              ? "1000 ml"
+                              : store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can"
                               ? "355 ml (12 oz Slim)"
                               : store.boxModel === "tube" || store.boxModel === "toothpaste_tube"
                               ? "75 ml"
@@ -712,7 +718,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                                   : `${store.L.toFixed(4)} x ${store.W.toFixed(4)} x ${store.H.toFixed(4)} in`)}
                           </span>
                         </div>
-                        {!(store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can" || store.boxModel === "water_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
+                        {!(store.boxModel === "can" || store.boxModel === "soda_can" || store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can" || store.boxModel === "water_bottle" || store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle" || store.boxModel === "tube" || store.boxModel === "toothpaste_tube") && (
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
                         )}
                       </div>
@@ -728,7 +734,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#9ca3af", marginTop: "24px" }}>
                       <span style={{ fontSize: "13px" }}>
-                        Model ID: {store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can" ? "550035 (355ml Slim Can)" : store.boxModel === "tube" || store.boxModel === "toothpaste_tube" ? "602620" : store.boxModel === "can" || store.boxModel === "soda_can" ? "550034 (12 oz Aluminum Can)" : store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
+                        Model ID: {store.boxModel === "sipper_water_bottle" || store.boxModel === "water_bottle_handle" || store.boxModel === "sipper_bottle" ? "516050" : store.boxModel === "slim_can" || store.boxModel === "slim_355ml_can" ? "550035 (355ml Slim Can)" : store.boxModel === "tube" || store.boxModel === "toothpaste_tube" ? "602620" : store.boxModel === "can" || store.boxModel === "soda_can" ? "550034 (12 oz Aluminum Can)" : store.boxModel === "water_bottle" ? "530040 (PET Mineral Water Bottle)" : store.boxModel === "rte" ? "150010" : "150020"}
                       </span>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     </div>
@@ -980,7 +986,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               <div style={{ display: "flex", alignItems: "center", gap: "12px", background: t.bgPanel, padding: "8px 24px", borderRadius: "12px", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
                 <button onClick={() => setZoomLevel(Math.max(0.2, zoomLevel - 0.1))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>−</button>
                 <button onClick={() => setZoomLevel(Math.min(5, zoomLevel + 0.1))} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>+</button>
-                {!(store.boxModel === 'tube' || store.boxModel === 'toothpaste_tube' || store.boxModel === 'water_bottle' || store.boxModel === 'can' || store.boxModel === 'soda_can' || store.boxModel === 'slim_can' || store.boxModel === 'slim_355ml_can') ? (
+                {!(store.boxModel === 'tube' || store.boxModel === 'toothpaste_tube' || store.boxModel === 'sipper_water_bottle' || store.boxModel === 'water_bottle_handle' || store.boxModel === 'sipper_bottle' || store.boxModel === 'water_bottle' || store.boxModel === 'can' || store.boxModel === 'soda_can' || store.boxModel === 'slim_can' || store.boxModel === 'slim_355ml_can') ? (
                   <>
                     <div style={{ width: "2px", height: "16px", background: t.border, margin: "0 4px" }} />
                     <span style={{ fontSize: "12px", color: t.textMuted, fontWeight: "600" }}>Open</span>

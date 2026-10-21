@@ -596,6 +596,15 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
   else if (panelInput === "bot-lock-2") panel = "p2_bot_auto";
   else if (panelInput === "bot-lock-3") panel = "p3_bot_auto";
   else if (panelInput === "bot-lock-4") panel = "p4_bot_auto";
+  else if (panelInput === "top-flap-1") panel = "p1_top_flap";
+  else if (panelInput === "top-flap-2") panel = "p2_top_flap";
+  else if (panelInput === "top-flap-3") panel = "p3_top_flap";
+  else if (panelInput === "top-flap-4") panel = "p4_top_flap";
+  else if (panelInput === "bot-flap-1") panel = "p1_bot_flap";
+  else if (panelInput === "bot-flap-2") panel = "p2_bot_flap";
+  else if (panelInput === "bot-flap-3") panel = "p3_bot_flap";
+  else if (panelInput === "bot-flap-4") panel = "p4_bot_flap";
+  else if (panelInput === "glue-flap") panel = "p1_glue";
 
   const { x1, x2, x3, x4, x5, yTop, yBot } = dims || {};
   const nT = Math.max(0.015, Number(T) || 0.0197);
@@ -642,6 +651,14 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
   else if (panel === "p1_bot_sec1") { scaleX = L/manuL; cx = -((decal.x-x1)*scaleX - L/2); cy = (decal.y-yBot)*scaleY; rotZ = Math.PI; }
   else if (panel === "p1_bot_sec2") { scaleX = L/manuL; cx = -((decal.x-x1)*scaleX - L/2); cy = (decal.y-(yBot+sec1L))*scaleY; rotZ = Math.PI; }
   else if (panel === "p1_bot_sec3") { scaleX = L/manuL; cx = -((decal.x-x1)*scaleX - L/2); cy = (decal.y-(yBot+sec1L+sec2L))*scaleY; rotZ = Math.PI; }
+  else if (panel === "p1_top_flap") { scaleX = L/manuL; cx = (decal.x - (x1 + x2)/2)*scaleX; cy = (yTop - decal.y)*scaleY; }
+  else if (panel === "p2_top_flap") { scaleX = W/manuW; cx = (decal.x - (x2 + x3)/2)*scaleX; cy = (yTop - decal.y)*scaleY; }
+  else if (panel === "p3_top_flap") { scaleX = L/manuL; cx = (decal.x - (x3 + x4)/2)*scaleX; cy = (yTop - decal.y)*scaleY; }
+  else if (panel === "p4_top_flap") { scaleX = W/manuW; cx = (decal.x - (x4 + x5)/2)*scaleX; cy = (yTop - decal.y)*scaleY; }
+  else if (panel === "p1_bot_flap") { scaleX = L/manuL; cx = -((decal.x - (x1 + x2)/2)*scaleX); cy = (decal.y - yBot)*scaleY; rotZ = Math.PI; }
+  else if (panel === "p2_bot_flap") { scaleX = W/manuW; cx = -((decal.x - (x2 + x3)/2)*scaleX); cy = (decal.y - yBot)*scaleY; rotZ = Math.PI; }
+  else if (panel === "p3_bot_flap") { scaleX = L/manuL; cx = -((decal.x - (x3 + x4)/2)*scaleX); cy = (decal.y - yBot)*scaleY; rotZ = Math.PI; }
+  else if (panel === "p4_bot_flap") { scaleX = W/manuW; cx = -((decal.x - (x4 + x5)/2)*scaleX); cy = (decal.y - yBot)*scaleY; rotZ = Math.PI; }
   
   return { cx, cy, rotZ, scaleX, scaleY_sign, scaleY };
 }
@@ -661,6 +678,15 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   else if (normDecalPanel === "bot-lock-2") normDecalPanel = "p2_bot_auto";
   else if (normDecalPanel === "bot-lock-3") normDecalPanel = "p3_bot_auto";
   else if (normDecalPanel === "bot-lock-4") normDecalPanel = "p4_bot_auto";
+  else if (normDecalPanel === "top-flap-1") normDecalPanel = "p1_top_flap";
+  else if (normDecalPanel === "top-flap-2") normDecalPanel = "p2_top_flap";
+  else if (normDecalPanel === "top-flap-3") normDecalPanel = "p3_top_flap";
+  else if (normDecalPanel === "top-flap-4") normDecalPanel = "p4_top_flap";
+  else if (normDecalPanel === "bot-flap-1") normDecalPanel = "p1_bot_flap";
+  else if (normDecalPanel === "bot-flap-2") normDecalPanel = "p2_bot_flap";
+  else if (normDecalPanel === "bot-flap-3") normDecalPanel = "p3_bot_flap";
+  else if (normDecalPanel === "bot-flap-4") normDecalPanel = "p4_bot_flap";
+  else if (normDecalPanel === "glue-flap") normDecalPanel = "p1_glue";
 
   let normPanel = panel;
   if (normPanel === "top-cover") normPanel = "p1_top_cover";
@@ -671,6 +697,15 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   else if (normPanel === "bot-lock-2") normPanel = "p2_bot_auto";
   else if (normPanel === "bot-lock-3") normPanel = "p3_bot_auto";
   else if (normPanel === "bot-lock-4") normPanel = "p4_bot_auto";
+  else if (normPanel === "top-flap-1") normPanel = "p1_top_flap";
+  else if (normPanel === "top-flap-2") normPanel = "p2_top_flap";
+  else if (normPanel === "top-flap-3") normPanel = "p3_top_flap";
+  else if (normPanel === "top-flap-4") normPanel = "p4_top_flap";
+  else if (normPanel === "bot-flap-1") normPanel = "p1_bot_flap";
+  else if (normPanel === "bot-flap-2") normPanel = "p2_bot_flap";
+  else if (normPanel === "bot-flap-3") normPanel = "p3_bot_flap";
+  else if (normPanel === "bot-flap-4") normPanel = "p4_bot_flap";
+  else if (normPanel === "glue-flap") normPanel = "p1_glue";
 
   if (normDecalPanel && normDecalPanel !== normPanel) {
     return null;

@@ -298,7 +298,7 @@ export function getAutoLockBottomGeometry(L, W, H, glueTab) {
   };
 }
 
-// Regular Slotted Carton (RSC) Geometry
+// Square Shipping Box (RSC) Geometry
 export function getRscGeometry(L, W, H, glueTab) {
   const g = glueTab;
   const flapH = W / 2;

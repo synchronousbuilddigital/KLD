@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 import Box3D, { BoxState } from '../models/Box3D';
 import Bottle3D from '../models/Bottle3D';
 import WaterBottle3D from '../models/WaterBottle3D';
+import SipperWaterBottle3D from '../models/SipperWaterBottle3D';
 import Can3D from '../models/Can3D';
 import Tube3D from '../models/Tube3D';
 import Cup3D from '../models/Cup3D';
@@ -142,6 +143,9 @@ export default function HoverPreviewCard({ item, targetRect, posX = 0, posY = 0,
           }
           if (lbl.includes('supplement')) {
             return <div style={{ transform: 'scale(0.75)' }}><Bottle3D /></div>;
+          }
+          if (lbl.includes('sipper') || key === 'sipper_water_bottle' || key === 'sipper_bottle') {
+            return <div style={{ transform: 'scale(0.75)' }}><SipperWaterBottle3D /></div>;
           }
           if (lbl.includes('water bottle')) {
             return <div style={{ transform: 'scale(0.75)' }}><WaterBottle3D /></div>;

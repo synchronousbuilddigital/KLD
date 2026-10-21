@@ -6,7 +6,9 @@ import { generateAutoLockDieline } from "../lib/autoLockDielineGenerator";
 import { generateCosmeticBoxDieline } from "../lib/cosmeticBoxDielineGenerator";
 import { generateCosmeticBoxBDieline } from "../lib/cosmeticBoxBDielineGenerator";
 import { generateButtonHoleDieline } from "../lib/buttonHoleDielineGenerator";
+import { generateRSCDielineDXF } from "../lib/rscDielineGenerator";
 import { generateWaterBottleDieline } from "../lib/waterBottleDielineGenerator";
+import { generateSipperBottleDieline } from "../lib/sipperBottleDielineGenerator";
 import { generateCanDieline } from "../lib/canDielineGenerator";
 import { generateSlimCanDieline } from "../lib/slimCanDielineGenerator";
 import { generateTubeDieline } from "../lib/tubeDielineGenerator";
@@ -150,6 +152,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     if (boxModel === 'tube' || boxModel === 'toothpaste_tube') {
       return generateTubeDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
     }
+    if (boxModel === 'sipper_water_bottle' || boxModel === 'water_bottle_handle' || boxModel === 'sipper_bottle') {
+      return generateSipperBottleDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
+    }
     if (boxModel === 'water_bottle') {
       return generateWaterBottleDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed });
     }
@@ -173,6 +178,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     }
     if (boxModel === 'button_hole') {
       return generateButtonHoleDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
+    }
+    if (boxModel === 'rsc') {
+      return generateRSCDielineDXF({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
     }
     return generateRTEDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, method: generatorMethod, windowDecals });
   }, [manuL, manuW, manuH, T, glueFlapWidth, bleed, generatorMethod, boxModel, windowDecals]);
@@ -558,7 +566,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && (boxModel === 'water_bottle' || boxModel === 'can' || boxModel === 'soda_can' || boxModel === 'beverage_can') && (
+        {isEditorMode && (boxModel === 'sipper_water_bottle' || boxModel === 'water_bottle_handle' || boxModel === 'sipper_bottle' || boxModel === 'water_bottle' || boxModel === 'can' || boxModel === 'soda_can' || boxModel === 'beverage_can') && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"
@@ -660,7 +668,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && boxModel !== 'slim_can' && boxModel !== 'slim_355ml_can' && boxModel !== 'tube' && boxModel !== 'toothpaste_tube' && (
+        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'sipper_water_bottle' && boxModel !== 'water_bottle_handle' && boxModel !== 'sipper_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && boxModel !== 'slim_can' && boxModel !== 'slim_355ml_can' && boxModel !== 'tube' && boxModel !== 'toothpaste_tube' && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"

@@ -1,6 +1,6 @@
 /**
- * Regular Slotted Carton (RSC) Parametric DXF Dieline Generator for BoxCraft Pro.
- * Generates CAD-standard cut paths, crease lines, and bleed boundary for RSC boxes.
+ * Square Shipping Box (RSC) Parametric DXF Dieline Generator for BoxCraft Pro.
+ * Generates CAD-standard cut paths, crease lines, and bleed boundary for square shipping boxes.
  * Input dimensions (L, W, H, T, glueFlapWidth, bleed) are in inches.
  */
 export function generateRSCDielineDXF({
@@ -134,9 +134,11 @@ export function generateRSCDielineDXF({
       L: nL,
       W: nW,
       H: nH,
+      x0: 0,
       x1, x2, x3, x4, x5,
       yTop: y1,
-      yBot: y2
+      yBot: y2,
+      flapH
     }
   };
 }

@@ -958,7 +958,13 @@ export default function App() {
     return (
       <MockupGenerator 
         onBack={() => setCurrentView('landing')} 
-        initialModel={useBoxStore.getState().boxModel === 'water_bottle' ? 'water_bottle' : 'can'} 
+        initialModel={
+          useBoxStore.getState().boxModel === 'sipper_water_bottle' || useBoxStore.getState().boxModel === 'water_bottle_handle'
+            ? 'sipper_water_bottle'
+            : useBoxStore.getState().boxModel === 'water_bottle'
+            ? 'water_bottle'
+            : 'can'
+        } 
       />
     );
   }

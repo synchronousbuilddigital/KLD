@@ -52,6 +52,7 @@ interface AiStudioPageProps {
 }
 
 const BOX_TITLES: Record<string, string> = {
+  rsc: 'Square Shipping Box',
   rte: 'Reverse Tuck End Box',
   te: 'Straight Tuck End Box',
   auto_lock: 'Auto Lock Bottom Box',

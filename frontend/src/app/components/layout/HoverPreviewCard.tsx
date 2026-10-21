@@ -6,6 +6,7 @@ import './HoverPreviewCard.css';
 const Box3D = lazy(() => import('./models/Box3D'));
 const Bottle3D = lazy(() => import('./models/Bottle3D'));
 const WaterBottle3D = lazy(() => import('./models/WaterBottle3D'));
+const SipperWaterBottle3D = lazy(() => import('./models/SipperWaterBottle3D'));
 const Can3D = lazy(() => import('./models/Can3D'));
 const Tube3D = lazy(() => import('./models/Tube3D'));
 const Cup3D = lazy(() => import('./models/Cup3D'));
@@ -174,6 +175,9 @@ export default function HoverPreviewCard({ item, hoveredNode, onMouseEnter, onMo
             }
             if (matches('supplement', 'jar')) {
               return <div style={{ transform: 'scale(0.85)' }}><SupplementJar3D /></div>;
+            }
+            if (matches('sipper', 'handle')) {
+              return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><SipperWaterBottle3D /></div>;
             }
             if (matches('water')) {
               return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WaterBottle3D /></div>;

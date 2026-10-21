@@ -20,6 +20,7 @@ const DEFAULT_CATALOG_ITEMS = [
       { id: 4, name: 'Cosmetic Box', animation: 'Internal platform flaps fold securely', imageUrl: '/images/boxes/cosmetic_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_kraft.jpg', boxModelKey: 'cosmetic', gridSize: 'large' },
       { id: 5, name: 'Mailer / Tray Box', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
       { id: 6, name: 'Button Hole Box', animation: 'Snap lock 1-2-3 bottom and button hole notch', imageUrl: '/images/boxes/button_hole_white.jpg', whiteImageUrl: '/images/boxes/button_hole_white.jpg', kraftImageUrl: '/images/boxes/button_hole_kraft.jpg', boxModelKey: 'button_hole', gridSize: 'large' },
+      { id: 7, name: 'Square Shipping Box', animation: 'Equal width flaps meet at center', imageUrl: '/images/boxes/rsc_kraft.jpg', whiteImageUrl: '/images/boxes/rsc_white.jpg', kraftImageUrl: '/images/boxes/rsc_kraft.jpg', boxModelKey: 'rsc', gridSize: 'large' },
     ],
   },
   {
@@ -71,6 +72,7 @@ const DEFAULT_CATALOG_ITEMS = [
     boxModelKey: 'bottle',
     variants: [
       { id: 101, name: 'Plastic Mineral Water Bottle', animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label', imageUrl: '/images/water_bottle.png', whiteImageUrl: '/images/water_bottle.png', kraftImageUrl: '/images/water_bottle.png', boxModelKey: 'water_bottle', isFeatured: true, gridSize: 'large' },
+      { id: 102, name: 'Sipper Water Bottle with Handle', animation: 'Aluminum sports bottle with loop handle cap & 251x227mm wrap label', imageUrl: '/images/sipper_water_bottle.png', whiteImageUrl: '/images/sipper_water_bottle.png', kraftImageUrl: '/images/sipper_water_bottle.png', boxModelKey: 'sipper_water_bottle', isFeatured: true, gridSize: 'large' },
       { id: 1, name: 'Cosmetic Serum Bottle', animation: 'Pipette extracts liquid', imageUrl: '/images/bottle.png' },
       { id: 2, name: 'Dropper Bottle', animation: 'Dropper lifts and squeezes', imageUrl: '/images/bottle.png' },
       { id: 3, name: 'Pump Bottle', animation: 'Pump depresses and pops up', imageUrl: '/images/bottle.png' },
@@ -448,6 +450,74 @@ const ensureCatalogSeeded = async () => {
           invalidateCatalogCache();
           console.log('🌱 Added Button Hole Box to box-mockups in database');
         }
+
+        const rscVariant = boxItem.variants && boxItem.variants.find(v => v.boxModelKey === 'rsc' || (v.name && (v.name.includes('RSC') || v.name.includes('Slotted Carton') || v.name.includes('Shipping Box'))));
+        if (!rscVariant) {
+          boxItem.variants.push({
+            id: 7,
+            name: 'Square Shipping Box',
+            animation: 'Equal width flaps meet at center',
+            imageUrl: '/images/boxes/rsc_kraft.jpg',
+            whiteImageUrl: '/images/boxes/rsc_white.jpg',
+            kraftImageUrl: '/images/boxes/rsc_kraft.jpg',
+            boxModelKey: 'rsc',
+            gridSize: 'large'
+          });
+          await boxItem.save();
+          invalidateCatalogCache();
+          console.log('🌱 Added Square Shipping Box to box-mockups in database');
+        } else if (rscVariant.name !== 'Square Shipping Box') {
+          rscVariant.name = 'Square Shipping Box';
+          rscVariant.boxModelKey = 'rsc';
+          rscVariant.imageUrl = '/images/boxes/rsc_kraft.jpg';
+          rscVariant.whiteImageUrl = '/images/boxes/rsc_white.jpg';
+          rscVariant.kraftImageUrl = '/images/boxes/rsc_kraft.jpg';
+          await boxItem.save();
+          invalidateCatalogCache();
+          console.log('🌱 Updated Square Shipping Box in box-mockups in database');
+        }
+      }
+
+      const bottleItem = await CatalogItem.findOne({ itemId: 'bottle-mockups' });
+      if (bottleItem && bottleItem.variants) {
+        let changed = false;
+        const hasWaterBottle = bottleItem.variants.some(v => v.boxModelKey === 'water_bottle' || (v.name && v.name.includes('Mineral Water Bottle')));
+        if (!hasWaterBottle) {
+          bottleItem.variants.unshift({
+            id: 101,
+            name: 'Plastic Mineral Water Bottle',
+            animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label',
+            imageUrl: '/images/water_bottle.png',
+            whiteImageUrl: '/images/water_bottle.png',
+            kraftImageUrl: '/images/water_bottle.png',
+            boxModelKey: 'water_bottle',
+            isFeatured: true,
+            gridSize: 'large'
+          });
+          changed = true;
+        }
+
+        const hasSipper = bottleItem.variants.some(v => v.boxModelKey === 'sipper_water_bottle' || (v.name && v.name.toLowerCase().includes('sipper')));
+        if (!hasSipper) {
+          bottleItem.variants.splice(1, 0, {
+            id: 102,
+            name: 'Sipper Water Bottle with Handle',
+            animation: 'Aluminum sports bottle with loop handle cap & 251x227mm wrap label',
+            imageUrl: '/images/sipper_water_bottle.png',
+            whiteImageUrl: '/images/sipper_water_bottle.png',
+            kraftImageUrl: '/images/sipper_water_bottle.png',
+            boxModelKey: 'sipper_water_bottle',
+            isFeatured: true,
+            gridSize: 'large'
+          });
+          changed = true;
+        }
+
+        if (changed) {
+          await bottleItem.save();
+          invalidateCatalogCache();
+          console.log('🌱 Updated bottle-mockups in database');
+        }
       }
     }
     isCatalogSeeded = true;
@@ -473,7 +543,7 @@ const getPublicCatalog = async (req, res) => {
 
     const items = await CatalogItem.find({ active: true }).sort({ order: 1, createdAt: 1 }).lean();
     
-    // Ensure box-mockups has cosmetic_b and button_hole variants
+    // Ensure box-mockups has cosmetic_b, button_hole, and rsc (Square Shipping Box) variants
     const boxMockup = items.find(i => i.itemId === 'box-mockups');
     if (boxMockup && boxMockup.variants) {
       const cB = boxMockup.variants.find(v => v.boxModelKey === 'cosmetic_b');
@@ -500,6 +570,56 @@ const getPublicCatalog = async (req, res) => {
           whiteImageUrl: '/images/boxes/button_hole_white.jpg',
           kraftImageUrl: '/images/boxes/button_hole_kraft.jpg',
           boxModelKey: 'button_hole',
+          gridSize: 'large'
+        });
+      }
+      const rscV = boxMockup.variants.find(v => v.boxModelKey === 'rsc' || (v.name && (v.name.includes('RSC') || v.name.includes('Slotted Carton') || v.name.includes('Shipping Box'))));
+      if (!rscV) {
+        boxMockup.variants.push({
+          id: 7,
+          name: 'Square Shipping Box',
+          animation: 'Equal width flaps meet at center',
+          imageUrl: '/images/boxes/rsc_kraft.jpg',
+          whiteImageUrl: '/images/boxes/rsc_white.jpg',
+          kraftImageUrl: '/images/boxes/rsc_kraft.jpg',
+          boxModelKey: 'rsc',
+          gridSize: 'large'
+        });
+      } else {
+        rscV.name = 'Square Shipping Box';
+        rscV.boxModelKey = 'rsc';
+        rscV.imageUrl = '/images/boxes/rsc_kraft.jpg';
+        rscV.whiteImageUrl = '/images/boxes/rsc_white.jpg';
+        rscV.kraftImageUrl = '/images/boxes/rsc_kraft.jpg';
+      }
+    }
+
+    const bottleMockup = items.find(i => i.itemId === 'bottle-mockups');
+    if (bottleMockup && bottleMockup.variants) {
+      if (!bottleMockup.variants.some(v => v.boxModelKey === 'water_bottle' || (v.name && v.name.includes('Mineral Water Bottle')))) {
+        bottleMockup.variants.unshift({
+          id: 101,
+          name: 'Plastic Mineral Water Bottle',
+          animation: 'Realistic PET plastic with ribbed grip & 243x46mm wrap label',
+          imageUrl: '/images/water_bottle.png',
+          whiteImageUrl: '/images/water_bottle.png',
+          kraftImageUrl: '/images/water_bottle.png',
+          boxModelKey: 'water_bottle',
+          isFeatured: true,
+          gridSize: 'large'
+        });
+      }
+      const hasSipper = bottleMockup.variants.some(v => v.boxModelKey === 'sipper_water_bottle' || (v.name && v.name.toLowerCase().includes('sipper')));
+      if (!hasSipper) {
+        bottleMockup.variants.splice(1, 0, {
+          id: 102,
+          name: 'Sipper Water Bottle with Handle',
+          animation: 'Aluminum sports bottle with loop handle cap & 251x227mm wrap label',
+          imageUrl: '/images/sipper_water_bottle.png',
+          whiteImageUrl: '/images/sipper_water_bottle.png',
+          kraftImageUrl: '/images/sipper_water_bottle.png',
+          boxModelKey: 'sipper_water_bottle',
+          isFeatured: true,
           gridSize: 'large'
         });
       }

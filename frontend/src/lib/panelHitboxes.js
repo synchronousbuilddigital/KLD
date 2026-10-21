@@ -4,6 +4,13 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
   
   const rect = (x, y, w, h) => `M ${x} ${y} L ${x+w} ${y} L ${x+w} ${y+h} L ${x} ${y+h} Z`;
 
+  if (boxModel === 'sipper_water_bottle' || boxModel === 'water_bottle_handle' || boxModel === 'sipper_bottle') {
+    return [
+      { id: "p1-label", name: "Sipper Bottle Wrap Label", path: rect(x1, yTop, L, W) },
+      { id: "glue-flap", name: "Glue Overlap", path: rect(0, yTop, glueFlapWidth || 0.25, W) }
+    ];
+  }
+
   if (boxModel === 'water_bottle') {
     return [
       { id: "p1-label", name: "Bottle Wrap Label", path: rect(x1, yTop, L, W) },
@@ -147,6 +154,19 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
     panels.push({ id: "bot-lock-3", name: "Bottom Lock Flap 3", path: rect(x3, yBot, L, lockD) });
     panels.push({ id: "bot-lock-4", name: "Bottom Lock Flap 4", path: rect(x4, yBot, W, lockD * 0.6) });
     
+  } else if (boxModel === 'rsc') {
+    // Square Shipping Box (RSC)
+    const flapH = W / 2;
+    panels.push({ id: "top-flap-1", name: "Top Front Flap", path: rect(x1, yTop - flapH, L, flapH) });
+    panels.push({ id: "top-flap-2", name: "Top Right Flap", path: rect(x2, yTop - flapH, W, flapH) });
+    panels.push({ id: "top-flap-3", name: "Top Back Flap", path: rect(x3, yTop - flapH, L, flapH) });
+    panels.push({ id: "top-flap-4", name: "Top Left Flap", path: rect(x4, yTop - flapH, W, flapH) });
+
+    panels.push({ id: "bot-flap-1", name: "Bottom Front Flap", path: rect(x1, yBot, L, flapH) });
+    panels.push({ id: "bot-flap-2", name: "Bottom Right Flap", path: rect(x2, yBot, W, flapH) });
+    panels.push({ id: "bot-flap-3", name: "Bottom Back Flap", path: rect(x3, yBot, L, flapH) });
+    panels.push({ id: "bot-flap-4", name: "Bottom Left Flap", path: rect(x4, yBot, W, flapH) });
+
   } else {
     // Reverse Tuck End (Default)
     panels.push({ id: "top-tuck", name: "Top Tuck Flap", path: getTuckFlap(x1, L, true) });

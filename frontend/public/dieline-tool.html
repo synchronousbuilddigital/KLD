@@ -3207,7 +3207,7 @@
       },
       rsc: {
         key: 'rsc',
-        label: 'Regular Slotted Carton',
+        label: 'Square Shipping Box',
         computeFlatDimensions(L, W, H, glueTab) {
           const g = glueTab !== undefined ? glueTab : GLUE_TAB_W;
           const flapH = W / 2;
@@ -8133,7 +8133,7 @@
         // --- glued cartons & corrugated shippers (panel strips) ---
 
         rsc: {
-          label: 'Regular Slotted Container', build: function (L, W, H) {
+          label: 'Square Shipping Box', build: function (L, W, H) {
             const d = W / 2, f = { type: 'rect', depth: d, gap: 1.5 };
             return strip([{ w: W, top: f, bottom: f }, { w: L, top: f, bottom: f }, { w: W, top: f, bottom: f }, { w: L, top: f, bottom: f }, { w: GT, taper: 4 }], H);
           }

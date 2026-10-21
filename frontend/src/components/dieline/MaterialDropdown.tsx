@@ -58,6 +58,16 @@ export const materialCategories = [
       { name: "Frosted Plastic (Matte PET)", thickness: 0.005, type: "frosted" },
       { name: "Custom plastic film", isCustom: true, min: 0.002, max: 0.02, type: "plastic_glossy" }
     ]
+  },
+  {
+    id: "metal",
+    name: "Metal & Aluminum",
+    color: "#f1f5f9",
+    options: [
+      { name: "Metal matt", thickness: 0.008, type: "metal_matt" },
+      { name: "Metal glossy", thickness: 0.008, type: "metal_glossy" },
+      { name: "Powder coated", thickness: 0.012, type: "powder_coated" }
+    ]
   }
 ];
 

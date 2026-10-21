@@ -729,8 +729,10 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
             let categoryName = d.category;
             if (!categoryName || categoryName === 'BOX' || categoryName === 'Custom Box' || categoryName === 'box' || categoryName === 'DIELINE' || categoryName === 'MOCKUP') {
-              if (boxModel === 'water_bottle') categoryName = 'Plastic Mineral Water Bottle';
+              if (boxModel === 'sipper_water_bottle' || boxModel === 'water_bottle_handle') categoryName = 'Sipper Water Bottle with Handle';
+              else if (boxModel === 'water_bottle') categoryName = 'Plastic Mineral Water Bottle';
               else if (boxModel === 'can' || boxModel === 'soda_can') categoryName = '12 oz Aluminum Soda Can';
+              else if (boxModel === 'rsc') categoryName = 'Square Shipping Box';
               else if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
               else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
               else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';
@@ -789,6 +791,7 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
                 const cat = item.category.toLowerCase();
                 if (cat.includes('bottle')) boxModel = 'water_bottle';
                 else if (cat.includes('can')) boxModel = 'can';
+                else if (cat.includes('rsc') || cat.includes('shipping') || cat.includes('carton')) boxModel = 'rsc';
                 else if (cat.includes('reverse') || cat.includes('rte')) boxModel = 'rte';
                 else if (cat.includes('straight') || cat.includes('te')) boxModel = 'te';
                 else if (cat.includes('auto') || cat.includes('lock')) boxModel = 'auto_lock';
@@ -799,8 +802,10 @@ export default function WorkspacePage({ onNavigate, onOpenStudioWithBox }: Works
 
               let categoryName = item.category;
               if (!categoryName || categoryName === 'BOX' || categoryName === 'Custom Box' || categoryName === 'box' || categoryName === 'DIELINE' || categoryName === 'MOCKUP') {
-                if (boxModel === 'water_bottle') categoryName = 'Plastic Mineral Water Bottle';
+                if (boxModel === 'sipper_water_bottle' || boxModel === 'water_bottle_handle') categoryName = 'Sipper Water Bottle with Handle';
+                else if (boxModel === 'water_bottle') categoryName = 'Plastic Mineral Water Bottle';
                 else if (boxModel === 'can' || boxModel === 'soda_can') categoryName = '12 oz Aluminum Soda Can';
+                else if (boxModel === 'rsc') categoryName = 'Square Shipping Box';
                 else if (boxModel === 'rte') categoryName = 'Reverse Tuck End Box';
                 else if (boxModel === 'te') categoryName = 'Straight Tuck End Box';
                 else if (boxModel === 'auto_lock') categoryName = 'Auto Lock Bottom Box';

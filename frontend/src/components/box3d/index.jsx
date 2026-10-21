@@ -19,15 +19,17 @@ import RTEBox3DViewer      from "./RTEBox3DViewer";
 import TEBox3DViewer       from "./TEBox3DViewer";
 import AutoLockBox3DViewer from "./AutoLockBox3DViewer";
 
+import RSCBox3DViewer      from "./RSCBox3DViewer";
 import CosmeticBox3DViewer  from "./CosmeticBox3DViewer";
 import CosmeticBBox3DViewer from "./CosmeticBBox3DViewer";
 import ButtonHoleBox3DViewer from "./ButtonHoleBox3DViewer";
 import WaterBottle3DViewer from "./WaterBottle3DViewer";
+import SipperWaterBottle3DViewer from "./SipperWaterBottle3DViewer";
 import Can3DViewer         from "./Can3DViewer";
 import SlimCan3DViewer     from "./SlimCan3DViewer";
 import Tube3DViewer        from "./Tube3DViewer";
 
-export { RTEBox3DViewer, TEBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, Can3DViewer, SlimCan3DViewer, Tube3DViewer };
+export { RTEBox3DViewer, TEBox3DViewer, RSCBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, SipperWaterBottle3DViewer, Can3DViewer, SlimCan3DViewer, Tube3DViewer };
 
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
@@ -49,8 +51,10 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
 
   const showWatermark = props.showWatermark !== undefined ? props.showWatermark : !isLoggedIn;
 
+  if (model === "rsc") return <RSCBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "slim_can" || model === "slim_355ml_can") return <SlimCan3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "can" || model === "soda_can" || model === "beverage_can") return <Can3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
+  if (model === "sipper_water_bottle" || model === "water_bottle_handle" || model === "sipper_bottle") return <SipperWaterBottle3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "water_bottle") return <WaterBottle3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "tube" || model === "toothpaste_tube") return <Tube3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;
   if (model === "te") return <TEBox3DViewer activeAnimation={activeAnimation} useStore={useStore} showWatermark={showWatermark} {...props} />;

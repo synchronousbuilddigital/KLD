@@ -62,6 +62,18 @@ export const TemplateDetailCard = ({
             />
           ) : (
             <svg viewBox="0 0 100 100" className="w-full h-full transition-transform duration-300 scale-[1.0] group-hover/detail:scale-[1.05]">
+            {type === 'rsc' && (
+              <g strokeWidth="0.8" fill="none">
+                <rect x="25" y="32" width="56" height="36" stroke="#EF4444" strokeDasharray="1.5 1.5" />
+                <line x1="39" y1="32" x2="39" y2="68" stroke="#EF4444" strokeDasharray="1.5 1.5" />
+                <line x1="53" y1="32" x2="53" y2="68" stroke="#EF4444" strokeDasharray="1.5 1.5" />
+                <line x1="67" y1="32" x2="67" y2="68" stroke="#EF4444" strokeDasharray="1.5 1.5" />
+                <path d="M25,32 h-5 l-2,4 v28 l2,4 h5" stroke="#4F46E5" />
+                <path d="M25,32 v-16 h13 v16 M39,32 v-16 h13 v16 M53,32 v-16 h13 v16 M67,32 v-16 h14 v16" stroke="#4F46E5" />
+                <path d="M25,68 v16 h13 v-16 M39,68 v16 h13 v-16 M53,68 v16 h13 v-16 M67,68 v16 h14 v-16" stroke="#4F46E5" />
+                <line x1="81" y1="32" x2="81" y2="68" stroke="#4F46E5" />
+              </g>
+            )}
             {type === 'straight' && (
               <g strokeWidth="0.8" fill="none">
                 <path d="M25,25 h50 M25,75 h50 M40,20 v60 M60,20 v60 M75,25 v50 M25,25 v50" stroke="#EF4444" strokeDasharray="1.5 1.5" />
@@ -106,7 +118,14 @@ export const TemplateDetailCard = ({
           ) : (
             <svg viewBox="0 0 100 100" className="w-full h-full max-h-[135px] drop-shadow-md transition-transform duration-300 group-hover/detail:-translate-y-1.5 group-hover/detail:scale-105">
             <ellipse cx="60" cy="88" rx="20" ry="4" fill="rgba(0,0,0,0.1)" />
-            {type === 'cosmetic' || type === 'cosmetic_b' ? (
+            {type === 'rsc' ? (
+              <>
+                <polygon points="20,40 55,30 80,38 45,48" fill="#dcb386" />
+                <polygon points="20,40 45,48 45,86 20,78" fill="#c89a63" />
+                <polygon points="45,48 80,38 80,76 45,86" fill="#b58556" />
+                <line x1="50" y1="39" x2="50" y2="47" stroke="#966d43" strokeWidth="1" />
+              </>
+            ) : type === 'cosmetic' || type === 'cosmetic_b' ? (
               <>
                 <path d="M35,35 L65,30 L65,18 L35,22 Z" fill="#D97706" />
                 <path d="M35,22 L50,10 L65,18 Z" fill="#F59E0B" />
@@ -224,6 +243,7 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
                       className="overflow-hidden"
                     >
                       <div className="flex flex-col gap-1 px-4 py-2 ml-4 border-l-2 border-zinc-200">
+                        <button onClick={() => setSelectedBoxModel('rsc')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-amber-700 font-semibold hover:bg-amber-50">Square Shipping Box</button>
                         <button onClick={() => setSelectedBoxModel('te')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Straight Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('rte')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Reverse Tuck End Box</button>
                         <button onClick={() => setSelectedBoxModel('auto_lock')} className="text-left py-1.5 px-3 rounded-lg text-xs font-medium text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50">Auto Lock Bottom Box</button>
@@ -244,15 +264,16 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-[32px] md:text-[36px] font-bold tracking-tight" style={{ color: 'var(--ink)' }}>Dieline & Box Templates</h1>
               <span className="text-xs px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 font-bold border border-indigo-200">
-                4 Box Designs Available
+                Production Ready CAD Dielines
               </span>
             </div>
             <p className="text-sm md:text-base mb-6 max-w-2xl" style={{ color: 'var(--ink)', opacity: 0.7 }}>
-              Browse our complete collection of 4 production-ready dieline templates for standard tuck end, auto-lock, and custom handle boxes with live 3D studio previewers.
+              Browse our complete collection of production-ready dieline templates for square shipping boxes, standard tuck end, auto-lock, and custom boxes with live 3D studio previewers.
             </p>
 
-            {/* GRID OF 4 ACTIVE BOX CARDS */}
+            {/* GRID OF ACTIVE BOX CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <TemplateDetailCard title="Square Shipping Box" type="rsc" onClick={() => setSelectedBoxModel('rsc')} />
               <TemplateDetailCard title="Straight Tuck End Box" type="straight" onClick={() => setSelectedBoxModel('te')} />
               <TemplateDetailCard title="Reverse Tuck End Box" type="reverse" onClick={() => setSelectedBoxModel('rte')} />
               <TemplateDetailCard title="Auto Lock Bottom Box" type="auto_lock" onClick={() => setSelectedBoxModel('auto_lock')} />
