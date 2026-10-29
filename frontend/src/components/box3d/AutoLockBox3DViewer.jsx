@@ -179,6 +179,9 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
 export default function AutoLockBox3DViewer({
   zoom = 1,
   overrideL, overrideW, overrideH,
+  L: propL,
+  W: propW,
+  H: propH,
   overrideLayout,
   activeAnimation = "none",
   progress = 0,
@@ -186,12 +189,13 @@ export default function AutoLockBox3DViewer({
   colorOverride = null,
   disableZoom = false,
   useStore = useBoxStore,
-  showWatermark = false
+  showWatermark = false,
+  ...restProps
 }) {
   const store = useStore();
-  const L = overrideL || store.L;
-  const W = overrideW || store.W;
-  const H = overrideH || store.H;
+  const L = overrideL || propL || store.L || 4.7244;
+  const W = overrideW || propW || store.W || 2.3622;
+  const H = overrideH || propH || store.H || 6.2992;
   const nT = store.T;
   let manuL = L, manuW = W, manuH = H;
   if (store.sizeMode === "inner") {

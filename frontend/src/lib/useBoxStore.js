@@ -176,7 +176,7 @@ const createRSCDefaultState = () => ({
   materialType: "corrugated",
   materialName: "B-flute",
   isCustomMaterial: false,
-  materialColor: "#c89a63",
+  materialColor: "#986c40",
   materialCategory: "corrugated",
   generatorMethod: "dxf",
   packageColor: null,

@@ -388,7 +388,7 @@ export default function RSCBox3DViewer({
         gl={{ preserveDrawingBuffer: true, antialias: true }}
       >
         <LightingPreset preset={lightingPreset} />
-        <Environment preset="studio" />
+        <Environment preset="studio" environmentIntensity={0.35} />
 
         <group position={[0, -H * 0.1, 0]}>
           {sceneInstances.map((inst, idx) =>

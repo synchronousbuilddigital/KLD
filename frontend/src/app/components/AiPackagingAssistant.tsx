@@ -670,7 +670,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
       const matchMsg: Message = {
         id: 'msg-detect-' + Date.now(),
         sender: 'assistant',
-        text: result.explanation || `Dieline analyzed. Identified nearest match from our packaging directory: **${result.matchedTitle}** (${result.confidence}% Match).`,
+        text: `We found matching packaging for your design: **${result.matchedTitle}**`,
         dielineMatch: result,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -780,12 +780,6 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         <div className="ai-header-title">
           <Sparkles style={{ width: '16px', height: '16px', color: '#2563eb' }} />
           <span>AI Packaging Design</span>
-        </div>
-        
-        {/* Sleek V2 Precision Badge (V1 Abstract toggle removed) */}
-        <div className="ai-precision-badge" title="AI Precision Mode: Multi-panel 3D packaging layout generation">
-          <span className="ai-precision-pulse" />
-          <span>V2 Precision</span>
         </div>
 
         <div className="ai-header-actions">
@@ -1105,12 +1099,12 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                               <ScanLine style={{ width: '16px', height: '16px' }} />
                             </div>
                             <div>
-                              <div className="ai-dieline-header-title">CAD Structural Topology Scan</div>
-                              <div className="ai-dieline-header-subtitle">2 box models matched from our parametric directory</div>
+                              <div className="ai-dieline-header-title">Matching Packaging</div>
+                              <div className="ai-dieline-header-subtitle">Found models that match your design</div>
                             </div>
                           </div>
                           <div className="ai-match-count-badge">
-                            2 Box Fits
+                            2 Matches
                           </div>
                         </div>
 
@@ -1132,7 +1126,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                               </div>
                               <div style={{ fontSize: '10px', color: '#059669', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <CheckCircle2 style={{ width: '12px', height: '12px' }} />
-                                <span>CAD topology matched with our directory box</span>
+                                <span>Matched to 3D template</span>
                               </div>
                             </div>
                           </div>
@@ -1156,18 +1150,17 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                                       {isPrimary ? (
                                         <>
                                           <Sparkles style={{ width: '10px', height: '10px', color: '#059669' }} />
-                                          <span>#1 Best Match • Most Accurate</span>
+                                          <span>Best Match</span>
                                         </>
                                       ) : (
                                         <>
                                           <Layers style={{ width: '10px', height: '10px', color: '#2563eb' }} />
-                                          <span>#2 Alternative Fit • Runner-Up</span>
+                                          <span>Alternative</span>
                                         </>
                                       )}
                                     </div>
                                     <div className="ai-rec-box-name">
                                       <span>{rec.matchedTitle}</span>
-                                      <span className="ai-rec-code-tag">{rec.matchedModelKey}</span>
                                     </div>
                                     {rec.subtitle && (
                                       <div className="ai-rec-subtitle">{rec.subtitle}</div>
@@ -1204,28 +1197,17 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                                   </div>
                                 </div>
 
-                                {/* Dimensions & Structural Specifications */}
-                                <div className="ai-rec-specs-box">
-                                  {rec.dimensions && (
+                                {/* Dimensions */}
+                                {rec.dimensions && (
+                                  <div className="ai-rec-specs-box">
                                     <div className="ai-rec-dims-row">
                                       <span style={{ fontWeight: '700', color: '#64748b' }}>Dimensions:</span>
                                       <span className="ai-rec-dim-tag">
                                         <span>📏 {rec.dimensions.L} × {rec.dimensions.W} × {rec.dimensions.H} mm</span>
                                       </span>
                                     </div>
-                                  )}
-
-                                  {rec.detectedFeatures && rec.detectedFeatures.length > 0 && (
-                                    <div className="ai-rec-features-list">
-                                      {rec.detectedFeatures.map((feat: string, fIdx: number) => (
-                                        <div key={fIdx} className="ai-rec-feature-item">
-                                          <span style={{ color: isPrimary ? '#059669' : '#2563eb', fontWeight: '800' }}>•</span>
-                                          <span>{feat}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
 
                                 {/* Active canvas banner */}
                                 {isApplied && (
@@ -1292,9 +1274,9 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                               <div className="ai-dieline-dropdown-header">
                                 <div className="ai-dieline-dropdown-title">
                                   <SlidersHorizontal style={{ width: '13px', height: '13px', color: '#6366f1' }} />
-                                  <span>Other Packaging Directory Models ({otherCandidates.length})</span>
+                                  <span>Other Packaging Models ({otherCandidates.length})</span>
                                 </div>
-                                <span className="ai-dieline-dropdown-hint">Select a model to view & switch</span>
+                                <span className="ai-dieline-dropdown-hint">Select a model to preview</span>
                               </div>
 
                               <div className="ai-dieline-select-wrapper">
@@ -1326,11 +1308,10 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                                     <div className="ai-rec-title-group">
                                       <div className="ai-rec-rank-pill candidate">
                                         <Layers style={{ width: '10px', height: '10px', color: '#6366f1' }} />
-                                        <span>#{selectedCand.rank || 3} Directory Fit • Dynamic Score</span>
+                                        <span>Option #{selectedCand.rank || 3}</span>
                                       </div>
                                       <div className="ai-rec-box-name">
                                         <span>{selectedCand.matchedTitle || selectedCand.name}</span>
-                                        <span className="ai-rec-code-tag">{selectedCand.matchedModelKey || selectedCand.key}</span>
                                       </div>
                                       {selectedCand.subtitle && (
                                         <div className="ai-rec-subtitle">{selectedCand.subtitle}</div>
@@ -1367,34 +1348,17 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                                     </div>
                                   </div>
 
-                                  {/* Dimensions & Features */}
-                                  <div className="ai-rec-specs-box">
-                                    {(selectedCand.dimensions || selectedCand.defaultDims) && (
+                                  {/* Dimensions */}
+                                  {(selectedCand.dimensions || selectedCand.defaultDims) && (
+                                    <div className="ai-rec-specs-box">
                                       <div className="ai-rec-dims-row">
                                         <span style={{ fontWeight: '700', color: '#64748b' }}>Dimensions:</span>
                                         <span className="ai-rec-dim-tag">
                                           <span>📏 {(selectedCand.dimensions || selectedCand.defaultDims).L} × {(selectedCand.dimensions || selectedCand.defaultDims).W} × {(selectedCand.dimensions || selectedCand.defaultDims).H} mm</span>
                                         </span>
                                       </div>
-                                    )}
-
-                                    {selectedCand.explanation && (
-                                      <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', margin: '4px 0 6px' }}>
-                                        {selectedCand.explanation}
-                                      </div>
-                                    )}
-
-                                    {selectedCand.detectedFeatures && selectedCand.detectedFeatures.length > 0 && (
-                                      <div className="ai-rec-features-list">
-                                        {selectedCand.detectedFeatures.map((feat: string, fIdx: number) => (
-                                          <div key={fIdx} className="ai-rec-feature-item">
-                                            <span style={{ color: '#6366f1', fontWeight: '800' }}>•</span>
-                                            <span>{feat}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
+                                    </div>
+                                  )}
 
                                   {/* Active status */}
                                   {isSelectedApplied && (

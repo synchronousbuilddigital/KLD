@@ -134,8 +134,8 @@ export function createProceduralTexture(materialCategory, packageColor, showWate
   let r, g, b;
   switch (materialCategory) {
     case "kraft_cardboard":
-    case "kraft_paperboard": r = 203; g = 171; b = 125; break; // Warm natural tan (matches Pacdora)
-    case "corrugated":       r = 188; g = 149; b = 104; break; // Classic corrugated brown
+    case "kraft_paperboard": r = 185; g = 145; b = 98; break; // Warm natural kraft
+    case "corrugated":       r = 152; g = 108; b = 64; break; // Rich earthy corrugated kraft cardboard
     case "art_paper":        r = 255; g = 255; b = 255; break;
     case "white_paperboard": 
     default:                 r = 253; g = 251; b = 247; break;
@@ -160,8 +160,10 @@ export function createProceduralTexture(materialCategory, packageColor, showWate
   const data     = imgData.data;
 
   let noiseMultiplier = 0;
-  if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard" || materialCategory === "corrugated") {
+  if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") {
     noiseMultiplier = 12; // Softer multiplier
+  } else if (materialCategory === "corrugated") {
+    noiseMultiplier = 14; // Rich organic paper grain
   } else if (materialCategory === "white_paperboard") {
     noiseMultiplier = 1;
   } else if (materialCategory === "art_paper") {
@@ -173,11 +175,15 @@ export function createProceduralTexture(materialCategory, packageColor, showWate
     let intensity = 0;
     if (noiseMultiplier > 0) {
       intensity = (noiseVal - 0.5) * noiseMultiplier;
-      // Removed the harsh 0.02 random specks to ensure smooth kraft texture
     }
-    data[i]     = Math.min(255, Math.max(0, r + intensity));
-    data[i + 1] = Math.min(255, Math.max(0, g + intensity));
-    data[i + 2] = Math.min(255, Math.max(0, b + intensity));
+    // Subtle dark organic pulp specks for authentic corrugated cardboard
+    let speckle = 0;
+    if (materialCategory === "corrugated" && Math.random() < 0.007) {
+      speckle = -24;
+    }
+    data[i]     = Math.min(255, Math.max(0, r + intensity + speckle));
+    data[i + 1] = Math.min(255, Math.max(0, g + intensity + speckle * 0.88));
+    data[i + 2] = Math.min(255, Math.max(0, b + intensity + speckle * 0.65));
     data[i + 3] = 255;
   }
   noiseCtx.putImageData(imgData, 0, 0);
@@ -187,20 +193,39 @@ export function createProceduralTexture(materialCategory, packageColor, showWate
   ctx.drawImage(noiseCanvas, 0, 0, 1024, 1024);
 
   if (materialCategory === "corrugated") {
-    // Generate soft rolling gradients for flutes
-    const fluteWidth = 22; // Pixel width of each flute
+    // Generate authentic soft corrugated flute waves (subtle depth without white glare)
+    const fluteWidth = 20; // Natural width of each flute rib
     for (let x = 0; x < 1024; x++) {
-      // Sine wave from -1 to 1 based on x position
       const wave = Math.sin((x / fluteWidth) * Math.PI * 2);
-      
-      // Shade based on wave (negative = valley, positive = peak)
-      const alpha = Math.abs(wave) * 0.12; 
       if (wave < 0) {
-        ctx.fillStyle = `rgba(0,0,0,${alpha * 0.9})`; // Shadow in the valley
+        // Natural ambient occlusion shadow in valley
+        const shadowAlpha = Math.abs(wave) * 0.09;
+        ctx.fillStyle = `rgba(45, 25, 8, ${shadowAlpha})`;
+        ctx.fillRect(x, 0, 1, 1024);
       } else {
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.7})`; // Highlight on the peak
+        // Warm cardboard highlight (NOT pure white!)
+        const crestAlpha = wave * 0.04;
+        ctx.fillStyle = `rgba(180, 135, 85, ${crestAlpha})`;
+        ctx.fillRect(x, 0, 1, 1024);
       }
-      ctx.fillRect(x, 0, 1, 1024);
+    }
+
+    // Add fine organic recycled kraft pulp flecks
+    ctx.fillStyle = "rgba(55, 30, 10, 0.12)";
+    for (let i = 0; i < 350; i++) {
+      const fx = Math.random() * 1024;
+      const fy = Math.random() * 1024;
+      const fw = 1 + Math.random() * 2;
+      const fh = 1 + Math.random() * 3;
+      ctx.fillRect(fx, fy, fw, fh);
+    }
+    ctx.fillStyle = "rgba(220, 175, 120, 0.08)";
+    for (let i = 0; i < 200; i++) {
+      const fx = Math.random() * 1024;
+      const fy = Math.random() * 1024;
+      const fw = 1 + Math.random() * 2;
+      const fh = 1 + Math.random() * 2;
+      ctx.fillRect(fx, fy, fw, fh);
     }
   }
 
@@ -259,11 +284,11 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
   let bumpScale = 0.0;
   
   if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") {
-    roughness = 0.92; // Slightly softer reflection
-    bumpScale = 0.002; // Very subtle bump, matching soft fibrous kraft
+    roughness = 0.94; // Soft fibrous kraft
+    bumpScale = 0.0018; // Very subtle bump
   } else if (materialCategory === "corrugated") {
-    roughness = 0.90;
-    bumpScale = 0.009;
+    roughness = 0.98; // Realistic matte non-reflective corrugated cardboard
+    bumpScale = 0.0012; // Natural paper tooth without overblown highlights
   } else if (materialCategory === "white_paperboard") {
     roughness = 0.70; // Soft smooth finish
     bumpScale = 0.0005; // Almost perfectly flat
@@ -280,17 +305,17 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
 
   let insideHex = "#fdfbf7";
   if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") insideHex = "#dcb98e";
-  if (materialCategory === "corrugated")       insideHex = "#c19a6b";
+  if (materialCategory === "corrugated")       insideHex = "#8f6236";
   if (materialCategory === "art_paper")        insideHex = "#ffffff";
   if (insideColor && insideColor !== "transparent") insideHex = insideColor;
 
   const inside = new THREE.MeshStandardMaterial({
-    color: insideHex, roughness: 0.95, metalness: 0.0, side: THREE.DoubleSide,
+    color: insideHex, roughness: 0.98, metalness: 0.0, side: THREE.DoubleSide,
   });
 
   let edgeHex = "#ebe5dc";
   if (materialCategory === "kraft_paperboard" || materialCategory === "kraft_cardboard") edgeHex = "#bfa079";
-  if (materialCategory === "corrugated")       edgeHex = "#a8865c";
+  if (materialCategory === "corrugated")       edgeHex = "#7b5129";
   if (materialCategory === "art_paper")        edgeHex = "#f5f5f5";
   if (packageColor && packageColor !== "transparent") edgeHex = packageColor;
   
@@ -306,12 +331,12 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
     eCtx.fillRect(0, 0, 256, 32);
     
     // Top and bottom liners
-    eCtx.fillStyle = "rgba(0,0,0,0.15)";
+    eCtx.fillStyle = "rgba(0,0,0,0.18)";
     eCtx.fillRect(0, 0, 256, 4);
     eCtx.fillRect(0, 28, 256, 4);
     
     // Wavy inner flute
-    eCtx.strokeStyle = "rgba(0,0,0,0.25)";
+    eCtx.strokeStyle = "rgba(0,0,0,0.30)";
     eCtx.lineWidth = 3;
     eCtx.beginPath();
     for (let x = 0; x <= 256; x++) {
@@ -329,7 +354,7 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
 
   const edgeProps = edgeMap ? { map: edgeMap } : {};
   const edge = new THREE.MeshStandardMaterial({
-    color: edgeHex, roughness: 0.9, metalness: 0.0, ...edgeProps
+    color: edgeHex, roughness: 0.95, metalness: 0.0, ...edgeProps
   });
   
   const flap = new THREE.MeshStandardMaterial({
@@ -346,9 +371,9 @@ export function LightingPreset({ preset }) {
   if (preset === "warm") {
     return (
       <>
-        <ambientLight intensity={0.80} color="#fff6e8" />
-        <directionalLight position={[10, 14, 10]} intensity={1.1} color="#fff0d8" castShadow />
-        <directionalLight position={[-5, 6, -4]}  intensity={0.25} color="#c8d8ff" />
+        <ambientLight intensity={0.65} color="#fff6e8" />
+        <directionalLight position={[10, 14, 10]} intensity={0.9} color="#fff0d8" castShadow />
+        <directionalLight position={[-5, 6, -4]}  intensity={0.20} color="#c8d8ff" />
       </>
     );
   }
@@ -356,18 +381,18 @@ export function LightingPreset({ preset }) {
     return (
       <>
         <ambientLight intensity={0.15} />
-        <spotLight position={[6, 14, 8]} intensity={2.0} angle={0.28} penumbra={0.9} castShadow />
-        <pointLight position={[-4, -6, 4]} intensity={0.3} color="#4488ff" />
+        <spotLight position={[6, 14, 8]} intensity={1.8} angle={0.28} penumbra={0.9} castShadow />
+        <pointLight position={[-4, -6, 4]} intensity={0.25} color="#4488ff" />
       </>
     );
   }
-  // default: studio
+  // default: studio - balanced, rich illumination without washed out highlights
   return (
     <>
-      <ambientLight intensity={0.60} color="#ffffff" />
-      <directionalLight position={[8, 12, 12]}  intensity={0.40} castShadow />
-      <directionalLight position={[-8, 6, 8]}   intensity={0.15} color="#f0f5ff" />
-      <directionalLight position={[0, 10, -15]} intensity={0.35} color="#ffffff" />
+      <ambientLight intensity={0.42} color="#ffffff" />
+      <directionalLight position={[8, 12, 12]}  intensity={0.45} castShadow />
+      <directionalLight position={[-8, 6, 8]}   intensity={0.20} color="#f0f5ff" />
+      <directionalLight position={[0, 10, -15]} intensity={0.25} color="#ffffff" />
     </>
   );
 }

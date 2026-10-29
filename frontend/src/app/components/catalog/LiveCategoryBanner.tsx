@@ -77,23 +77,12 @@ const CATEGORY_CONFIGS: Record<string, CategoryBannerConfig> = {
     accentColor: '#2563eb',
     breadcrumb: 'Bottles',
     title: 'Customize & download bottle mockups',
-    description: 'Whether you want to design a glass or plastic bottle mockup with a dropper, spray, or pump for your drinks or cosmetics. Find the perfect bottle mockup for your branding design on Keyline Design.',
-    searchPlaceholder: 'Try 4+ words (e.g. glass cosmetic serum bottle with pump)...',
-    chips: ['Plastic Water Bottle', 'Cosmetic Serum', 'Dropper Bottle', 'Wine Bottle', 'Amber Glass'],
+    description: 'Whether you want to design a plastic mineral water bottle with ribbed grip or an aluminum sports sipper bottle with loop handle. Find your branding design on Keyline Design.',
+    searchPlaceholder: 'Try 4+ words (e.g. plastic mineral water bottle or sports sipper)...',
+    chips: ['Plastic Water Bottle', 'Sipper Water Bottle', 'Wrap Label', 'Aluminum Finish'],
     items: [
       {
         id: 'bottle-center',
-        label: 'Glass Wine Bottle',
-        image: '/images/bottle.png',
-        brandText: 'ESTATE RESERVE',
-        subText: 'VINTAGE 2026 • OAK AGED',
-        badgeText: 'Gold Foil',
-        theme: 'dark',
-        size: { w: 100, h: 200 },
-        offset: { x: 30, y: -20, zIndex: 2 }
-      },
-      {
-        id: 'bottle-right',
         label: 'Mineral Water Bottle',
         image: '/images/water_bottle.png',
         brandText: 'KLD PURE SPRING',
@@ -101,52 +90,18 @@ const CATEGORY_CONFIGS: Record<string, CategoryBannerConfig> = {
         badgeText: 'Clear Wrap',
         theme: 'clean',
         size: { w: 90, h: 180 },
-        offset: { x: 110, y: 5, zIndex: 3 }
+        offset: { x: 45, y: -10, zIndex: 2 }
       },
       {
         id: 'bottle-left',
-        label: 'Apothecary Jar',
-        image: '/images/supplement.png',
-        brandText: 'ORGANIC BOTANICALS',
-        subText: 'DAILY NOURISHMENT',
-        badgeText: 'Matte Glass',
+        label: 'Sipper Sports Bottle',
+        image: '/images/sipper_water_bottle.png',
+        brandText: 'KLD HYDRO SPORT',
+        subText: 'ALUMINUM SPORTS BOTTLE',
+        badgeText: 'Loop Handle',
         theme: 'white',
-        size: { w: 105, h: 135 },
-        offset: { x: -45, y: 35, zIndex: 1 }
-      }
-    ]
-  },
-  'water-bottle-mockups': {
-    bgColor: '#F0F9FF',
-    borderColor: '#18181b',
-    accentColor: '#0284c7',
-    breadcrumb: 'Water Bottles',
-    title: 'Customize & download water bottle mockups',
-    description: 'High-clarity PET and sports drink water bottles with 360-degree wrap labels, ribbed grip physics, and parametric vector dieline outputs.',
-    searchPlaceholder: 'Try 4+ words (e.g. 500ml mineral water bottle ribbed grip)...',
-    chips: ['500ml PET Bottle', 'Sports Cap', 'Wrap Label', 'Transparent Plastic'],
-    items: [
-      {
-        id: 'wb-center',
-        label: 'PET Water Bottle',
-        image: '/images/water_bottle.png',
-        brandText: 'KLD MOUNTAIN SPRING',
-        subText: '100% RECYCLED PET • 500 ML',
-        badgeText: 'High Gloss',
-        theme: 'clean',
-        size: { w: 110, h: 200 },
-        offset: { x: 40, y: -15, zIndex: 2 }
-      },
-      {
-        id: 'wb-left',
-        label: 'Glass Bottle',
-        image: '/images/bottle.png',
-        brandText: 'ARTESIAN SPARKLING',
-        subText: 'BOTANICAL INFUSION',
-        badgeText: 'Embossed',
-        theme: 'dark',
         size: { w: 95, h: 185 },
-        offset: { x: -35, y: 10, zIndex: 1 }
+        offset: { x: -35, y: 20, zIndex: 3 }
       }
     ]
   },
@@ -156,9 +111,9 @@ const CATEGORY_CONFIGS: Record<string, CategoryBannerConfig> = {
     accentColor: '#d97706',
     breadcrumb: 'Cans',
     title: 'Customize & download can mockups',
-    description: 'Keyline Design offers a variety of can mockups and jar mockups, including beer, soda, sparkling water, and slim cans available in aluminum, tin, and metallic finishes. Start designing now!',
-    searchPlaceholder: 'Try 4+ words (e.g. 12 oz soda can with metallic finish)...',
-    chips: ['12 oz Soda Can', '355mL Slim Can', 'Cold Brew Coffee', 'Energy Drink', 'Craft Beer'],
+    description: 'Keyline Design offers 12 oz soda cans and 355mL slim beverage cans with realistic metallic reflections and parametric vector dielines.',
+    searchPlaceholder: 'Try 4+ words (e.g. 12 oz soda can or 355ml slim can)...',
+    chips: ['12 oz Soda Can', '355mL Slim Can', 'Aluminum Finish', 'Pull-Tab'],
     items: [
       {
         id: 'can-center',
@@ -177,21 +132,10 @@ const CATEGORY_CONFIGS: Record<string, CategoryBannerConfig> = {
         image: '/images/can.png',
         brandText: 'CRISP CITRUS SODA',
         subText: 'ZERO SUGAR • REFRESHING',
-        badgeText: 'Condensation',
+        badgeText: 'Aluminum Finish',
         theme: 'white',
-        size: { w: 120, h: 165 },
+        size: { w: 110, h: 165 },
         offset: { x: -45, y: 15, zIndex: 2 }
-      },
-      {
-        id: 'can-right',
-        label: 'Tin Canister',
-        image: '/images/supplement.png',
-        brandText: 'DARK ROAST COFFEE',
-        subText: 'SINGLE ORIGIN 250G',
-        badgeText: 'Tin Finish',
-        theme: 'dark',
-        size: { w: 105, h: 135 },
-        offset: { x: 120, y: 35, zIndex: 1 }
       }
     ]
   },
@@ -201,42 +145,20 @@ const CATEGORY_CONFIGS: Record<string, CategoryBannerConfig> = {
     accentColor: '#ea580c',
     breadcrumb: 'Tubes',
     title: 'Customize & download tube mockups',
-    description: 'Whether you need plastic or aluminum tube mockups, find and design striking cosmetic, skincare, and toothpaste tube packaging to promote your brand with instant 3D rendering.',
-    searchPlaceholder: 'Try 4+ words (e.g. cosmetic skincare cream tube screw cap)...',
-    chips: ['Toothpaste Tube', 'Cosmetic Cream Tube', 'Sunscreen Tube', 'Hand Cream', 'Matte Finish'],
+    description: 'Design striking 75ml toothpaste and squeeze tube packaging to promote your brand with instant 3D rendering and vector dielines.',
+    searchPlaceholder: 'Try 4+ words (e.g. 75ml toothpaste squeeze tube ribbed cap)...',
+    chips: ['Toothpaste Tube', '75ml Squeeze Tube', 'Ribbed Cap', 'Crimp Seal'],
     items: [
       {
         id: 'tube-center',
         label: '75ml Squeeze Tube',
         image: '/images/toothpaste_tube_mockup.png',
-        brandText: 'LUMINOUS FLORA',
-        subText: 'GENTLE BOTANICAL CARE',
+        brandText: 'LUMINOUS CARE',
+        subText: 'HERBAL BOTANICAL FORMULA',
         badgeText: 'Soft Touch',
         theme: 'white',
         size: { w: 110, h: 195 },
-        offset: { x: 35, y: -15, zIndex: 3 }
-      },
-      {
-        id: 'tube-right',
-        label: 'Cosmetic Travel Tube',
-        image: '/images/tube.png',
-        brandText: 'MINERAL SHIELD',
-        subText: 'SPF 50+ DAY CREAM',
-        badgeText: 'UV Gloss',
-        theme: 'clean',
-        size: { w: 100, h: 180 },
-        offset: { x: 115, y: 15, zIndex: 2 }
-      },
-      {
-        id: 'tube-left',
-        label: 'Beauty Jar',
-        image: '/images/supplement.png',
-        brandText: 'NIGHT RECOVERY',
-        subText: 'HYDRATION BALM',
-        badgeText: 'Frosted Glass',
-        theme: 'dark',
-        size: { w: 100, h: 130 },
-        offset: { x: -45, y: 40, zIndex: 1 }
+        offset: { x: 10, y: -10, zIndex: 3 }
       }
     ]
   },
@@ -484,25 +406,13 @@ export const LiveCategoryBanner: React.FC<LiveCategoryBannerProps> = ({
         </div>
       </div>
 
-      {/* --- SUB-BAR (Under Banner: Counts, Custom Dimensions CTA, Sort) --- */}
+      {/* --- SUB-BAR (Under Banner: Counts, Sort) --- */}
       <div className="live-subbar-row">
         {/* Left: Dynamic Mockup Count */}
         <div className="live-subbar-count">
           <span className="font-bold text-zinc-900">{totalCount}</span>
           <span className="text-zinc-600 ml-1">{config.breadcrumb} Mockups</span>
         </div>
-
-        {/* Middle: Custom Dimensions & Shape Feature Link */}
-        <button 
-          onClick={onOpenCustomizer}
-          className="live-subbar-custom-cta group"
-          title="Open Custom Box Dimension Builder"
-        >
-          <span className="live-new-badge">New</span>
-          <span className="font-semibold text-purple-700 group-hover:text-purple-900">Customize a model your way:</span>
-          <span className="text-purple-600 underline font-medium ml-1">dimensions & shape</span>
-          <ArrowRight className="w-3.5 h-3.5 text-purple-600 group-hover:translate-x-0.5 transition-transform ml-1" />
-        </button>
 
         {/* Right: Sort Indicator / Quick Toggle */}
         <div className="live-subbar-sort">

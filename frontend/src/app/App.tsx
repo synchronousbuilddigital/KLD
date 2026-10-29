@@ -27,6 +27,9 @@ import { useBoxStore } from '../lib/useBoxStore';
 import { uploadService } from '../services/upload';
 
 import { CustomDesignModal } from './pages/EditorModal';
+import { useMobileDetection } from './components/mobile/useMobileDetection';
+import MobileAppShell from './components/mobile/MobileAppShell';
+import DesktopReturnPill from './components/mobile/DesktopReturnPill';
 
 const slideUpVariant = {
   initial: { opacity: 0, y: 40 },
@@ -408,6 +411,7 @@ export default function App() {
     return 'landing';
   };
 
+  const { isMobileScreen, isMobileAppActive, switchToDesktop, switchToMobile } = useMobileDetection();
   const [currentView, setCurrentView] = useState<'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop'>(getViewFromUrl);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(() => {
     const path = window.location.pathname.replace('/', '').toLowerCase();
@@ -442,14 +446,21 @@ export default function App() {
       setActiveDielineBox({ isOpen: true, model });
     };
 
+    const handleNavigate = (e: any) => {
+      const target = typeof e?.detail === 'string' ? e.detail : e?.detail?.view || 'landing';
+      navigateTo(target, e?.detail);
+    };
+
     window.addEventListener('open-sign-in-modal', handleOpenSignIn);
     window.addEventListener('auth-change', handleAuthChange);
     window.addEventListener('open-box-studio', handleOpenBoxStudio as EventListener);
+    window.addEventListener('navigate', handleNavigate as EventListener);
 
     return () => {
       window.removeEventListener('open-sign-in-modal', handleOpenSignIn);
       window.removeEventListener('auth-change', handleAuthChange);
       window.removeEventListener('open-box-studio', handleOpenBoxStudio as EventListener);
+      window.removeEventListener('navigate', handleNavigate as EventListener);
     };
   }, []);
 
@@ -630,6 +641,19 @@ export default function App() {
     // Clear legacy maintenanceMode flag from browser cache
     localStorage.removeItem('maintenanceMode');
   }, []);
+
+  if (isMobileAppActive) {
+    return (
+      <>
+        <MobileAppShell
+          onSwitchToDesktop={switchToDesktop}
+          onOpenSignIn={() => setIsSignInModalOpen(true)}
+          initialCategoryId={activeCategoryId}
+        />
+        {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
+      </>
+    );
+  }
 
   if (activeCategoryId) {
     return <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />;
@@ -1347,6 +1371,11 @@ export default function App() {
             initialModel={activeDielineBox.model}
           />
         </React.Suspense>
+      )}
+
+      {/* Floating pill for mobile screens when desktop view is active */}
+      {isMobileScreen && !isMobileAppActive && (
+        <DesktopReturnPill onReturnToMobile={switchToMobile} />
       )}
 
       {/* Global Sign In / Create Account Modal */}

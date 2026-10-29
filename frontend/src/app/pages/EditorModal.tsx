@@ -9,6 +9,7 @@ import { generateRTEDieline } from "../../lib/rteDielineGenerator";
 import { packagingSymbols } from "../../lib/packagingSymbols";
 import { exportSuperPDF } from "../../lib/exportUtils";
 import { mockupService } from "../../services/mockups";
+import { useMobileDetection } from "../components/mobile/useMobileDetection";
 const IconUpload = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
 const IconLayers = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
 const IconSparkles = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18"/><path d="M3 12h18"/><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>;
@@ -127,6 +128,10 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const activeDecal = useMemo(() => decals.find(d => d.id === activeDecalId), [decals, activeDecalId]);
+
+  const { isMobileAppActive } = useMobileDetection();
+  const isMobile = isMobileAppActive;
+  const [mobileView, setMobileView] = useState<'canvas' | 'tools' | 'preview'>('canvas');
 
   const [expandedSection, setExpandedSection] = useState(null);
 
@@ -493,71 +498,175 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
       <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundImage: `url("data:image/svg+xml,%3Csvg width='30' height='30' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='15' cy='15' r='1.5' fill='${store.theme === 'dark' ? '%23ffffff' : '%23000000'}'/%3E%3C/svg%3E")`, opacity: 0.1, pointerEvents: "none" }} />
 
       {/* Top Header */}
-      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "70px", backgroundColor: t.bgPanel, borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", zIndex: 50 }}>
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: isMobile ? "54px" : "70px", backgroundColor: t.bgPanel, borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "0 12px" : "0 24px", zIndex: 50 }}>
         
         {/* Header Left */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: t.textMain, color: t.bgPanel, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>K</div>
-          <div style={{ fontWeight: "700", fontSize: "20px" }}>
-            Keyline Design
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "16px" }}>
+          {isMobile ? (
+            <button
+              onClick={handleCloseClick}
+              style={{ background: "none", border: "none", cursor: "pointer", color: t.textMain, padding: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}
+              title="Close"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          ) : (
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: t.textMain, color: t.bgPanel, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>K</div>
+          )}
+          <div style={{ fontWeight: "700", fontSize: isMobile ? "15px" : "20px" }}>
+            {isMobile ? "2D Dieline Studio" : "Keyline Design"}
           </div>
-          <div style={{ height: "20px", width: "1px", backgroundColor: t.border }}></div>
-          <div style={{ color: t.textMuted, fontSize: "14px", fontWeight: "500" }}>Mockup Generator</div>
+          {!isMobile && (
+            <>
+              <div style={{ height: "20px", width: "1px", backgroundColor: t.border }}></div>
+              <div style={{ color: t.textMuted, fontSize: "14px", fontWeight: "500" }}>Mockup Generator</div>
+            </>
+          )}
         </div>
 
         {/* Header Middle (Undo/Redo & Save Status) */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <div style={{ display: "flex", gap: "12px", borderRight: `1px solid ${t.border}`, paddingRight: "16px" }}>
-            <button onClick={handleUndo} style={{ background: "none", border: "none", cursor: historyIndex > -1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex > -1 ? 1 : 0.3, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}><IconUndo /><span style={{fontSize:"10px"}}>Undo</span></button>
-            <button onClick={handleRedo} style={{ background: "none", border: "none", cursor: historyIndex < history.length - 1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex < history.length - 1 ? 1 : 0.3, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}><IconRedo /><span style={{fontSize:"10px"}}>Redo</span></button>
+        {!isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div style={{ display: "flex", gap: "12px", borderRight: `1px solid ${t.border}`, paddingRight: "16px" }}>
+              <button onClick={handleUndo} style={{ background: "none", border: "none", cursor: historyIndex > -1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex > -1 ? 1 : 0.3, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}><IconUndo /><span style={{fontSize:"10px"}}>Undo</span></button>
+              <button onClick={handleRedo} style={{ background: "none", border: "none", cursor: historyIndex < history.length - 1 ? "pointer" : "default", color: t.textMuted, opacity: historyIndex < history.length - 1 ? 1 : 0.3, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}><IconRedo /><span style={{fontSize:"10px"}}>Redo</span></button>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#10b981", fontSize: "12px", fontWeight: "600" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+              All changes saved
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#10b981", fontSize: "12px", fontWeight: "600" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-            All changes saved
-          </div>
-        </div>
+        )}
 
         {/* Header Right */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <button style={{ padding: "8px 16px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg> Print
-          </button>
-          
-          <button style={{ padding: "8px 16px", backgroundColor: t.inputBg, color: t.textMain, border: `1px solid ${t.border}`, borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <IconSparkles /> AI Assistant
-          </button>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "16px" }}>
+          {!isMobile && (
+            <>
+              <button style={{ padding: "8px 16px", backgroundColor: "#3b82f6", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg> Print
+              </button>
+              
+              <button style={{ padding: "8px 16px", backgroundColor: t.inputBg, color: t.textMain, border: `1px solid ${t.border}`, borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <IconSparkles /> AI Assistant
+              </button>
+            </>
+          )}
 
-          <button onClick={handleSaveAndExit} disabled={isSaving} style={{ padding: "8px 16px", backgroundColor: t.inputBg, color: t.textMain, border: `1px solid ${t.border}`, borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>
+          <button onClick={handleSaveAndExit} disabled={isSaving} style={{ padding: isMobile ? "6px 14px" : "8px 16px", backgroundColor: "#00c48c", color: "#ffffff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", fontSize: isMobile ? "12px" : "14px", boxShadow: "0 2px 8px rgba(0, 196, 140, 0.3)" }}>
             {isSaving ? "Saving..." : "Save"}
           </button>
 
-          <button onClick={() => store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>
-            {store.theme === 'dark' ? 
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg> :
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            }
-          </button>
-          
-          <button onClick={() => setIsExportModalOpen(true)} style={{ padding: "8px 20px", backgroundColor: "#5b5fc7", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", boxShadow: "0 4px 12px rgba(91, 95, 199, 0.3)" }}>
-            Super export
-          </button>
+          {!isMobile && (
+            <>
+              <button onClick={() => store.toggleTheme()} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted }}>
+                {store.theme === 'dark' ? 
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg> :
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                }
+              </button>
+              
+              <button onClick={() => setIsExportModalOpen(true)} style={{ padding: "8px 20px", backgroundColor: "#5b5fc7", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", boxShadow: "0 4px 12px rgba(91, 95, 199, 0.3)" }}>
+                Super export
+              </button>
 
-          <div style={{ height: "24px", width: "1px", backgroundColor: t.border, margin: "0 4px" }}></div>
+              <div style={{ height: "24px", width: "1px", backgroundColor: t.border, margin: "0 4px" }}></div>
 
-          <button onClick={handleCloseClick} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }}>
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+              <button onClick={handleCloseClick} style={{ background: "none", border: "none", cursor: "pointer", color: t.textMuted, padding: "4px" }}>
+                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
+      {/* Mobile Sub-Header Switcher */}
+      {isMobile && (
+        <div style={{ position: "absolute", top: "54px", left: 0, width: "100%", height: "44px", backgroundColor: t.bgPanel, borderBottom: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "space-around", padding: "0 8px", zIndex: 49 }}>
+          <button
+            onClick={() => setMobileView('canvas')}
+            style={{
+              flex: 1,
+              padding: "6px 8px",
+              margin: "0 3px",
+              borderRadius: "8px",
+              border: "none",
+              background: mobileView === 'canvas' ? t.activeBg : 'transparent',
+              color: mobileView === 'canvas' ? t.cyan : t.textMuted,
+              fontWeight: mobileView === 'canvas' ? "700" : "500",
+              fontSize: "11px",
+              cursor: "pointer"
+            }}
+          >
+            ✏️ 2D Canvas
+          </button>
+          <button
+            onClick={() => setMobileView('tools')}
+            style={{
+              flex: 1,
+              padding: "6px 8px",
+              margin: "0 3px",
+              borderRadius: "8px",
+              border: "none",
+              background: mobileView === 'tools' ? t.activeBg : 'transparent',
+              color: mobileView === 'tools' ? t.cyan : t.textMuted,
+              fontWeight: mobileView === 'tools' ? "700" : "500",
+              fontSize: "11px",
+              cursor: "pointer"
+            }}
+          >
+            🎨 Add Elements
+          </button>
+          <button
+            onClick={() => setMobileView('preview')}
+            style={{
+              flex: 1,
+              padding: "6px 8px",
+              margin: "0 3px",
+              borderRadius: "8px",
+              border: "none",
+              background: mobileView === 'preview' ? t.activeBg : 'transparent',
+              color: mobileView === 'preview' ? t.cyan : t.textMuted,
+              fontWeight: mobileView === 'preview' ? "700" : "500",
+              fontSize: "11px",
+              cursor: "pointer"
+            }}
+          >
+            📦 3D Preview
+          </button>
+        </div>
+      )}
+
       {/* Main Workspace */}
-      <div style={{ position: "absolute", top: "70px", left: 0, width: "100%", height: "calc(100vh - 70px)", display: "flex", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: isMobile ? "98px" : "70px", left: 0, width: "100%", height: isMobile ? "calc(100vh - 98px)" : "calc(100vh - 70px)", display: "flex", overflow: "hidden" }}>
         
         {/* Floating Left Section */}
-        <div style={{ position: "absolute", left: "24px", top: "24px", bottom: "24px", display: "flex", gap: "16px", zIndex: 40, pointerEvents: "none" }}>
+        <div style={isMobile ? {
+          position: "absolute",
+          left: 0,
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100%",
+          display: mobileView === 'tools' ? "flex" : "none",
+          gap: "8px",
+          padding: "8px",
+          zIndex: 40,
+          pointerEvents: "auto",
+          backgroundColor: t.bgCanvas
+        } : {
+          position: "absolute",
+          left: "24px",
+          top: "24px",
+          bottom: "24px",
+          display: "flex",
+          gap: "16px",
+          zIndex: 40,
+          pointerEvents: "none"
+        }}>
           
           {/* Left Navbar */}
-          <div className="glass-panel" style={{ width: "80px", display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0", pointerEvents: "auto", gap: "4px" }}>
+          <div className="glass-panel" style={{ width: isMobile ? "64px" : "80px", display: "flex", flexDirection: "column", alignItems: "center", padding: isMobile ? "10px 0" : "16px 0", pointerEvents: "auto", gap: "4px" }}>
             {[
               { name: "Uploads", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.5 19h-11a5.5 5.5 0 0 1-1.34-10.83A7.5 7.5 0 0 1 19.66 9.6 5.5 5.5 0 0 1 17.5 19z" fill="currentColor" stroke="none" /><path d="M12 15V8M9 11l3-3 3 3" stroke={activeTab === "Uploads" ? "#ffffff" : t.bgPanel} strokeWidth="2" fill="none" /></svg> },
               { name: "Elements", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="5" /><rect x="11" y="11" width="8" height="8" rx="1" /></svg> },
@@ -575,7 +684,7 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   onClick={() => setActiveTab(tab.name)}
                   style={{ 
                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    width: "64px", cursor: "pointer", borderRadius: "12px",
+                    width: isMobile ? "52px" : "64px", cursor: "pointer", borderRadius: "12px",
                     color: isActive ? t.cyan : t.textMain,
                     transition: "all 0.2s ease",
                     padding: "8px 0"
@@ -584,20 +693,20 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
                   <div style={{ marginBottom: "4px" }}>
                     {tab.icon}
                   </div>
-                  <span style={{ fontSize: "11px", fontWeight: isActive ? "600" : "500", color: isActive ? t.cyan : t.textMuted }}>
+                  <span style={{ fontSize: "10px", fontWeight: isActive ? "600" : "500", color: isActive ? t.cyan : t.textMuted }}>
                     {tab.name}
                   </span>
                 </div>
               );
             })}
             <div style={{ flex: 1 }}></div>
-            <div onClick={() => setActiveTab("AI Logo")} style={{ width: "48px", height: "48px", borderRadius: "50%", background: "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", pointerEvents: "auto", color: "#fff" }}>
+            <div onClick={() => setActiveTab("AI Logo")} style={{ width: "40px", height: "40px", borderRadius: "50%", background: "linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", pointerEvents: "auto", color: "#fff" }}>
               <IconSparkles />
             </div>
           </div>
 
           {/* Left Panel Content */}
-          <div className="glass-panel" style={{ width: "320px", display: "flex", flexDirection: "column", pointerEvents: "auto", overflow: "hidden" }}>
+          <div className="glass-panel" style={{ flex: 1, width: isMobile ? "calc(100% - 72px)" : "320px", display: "flex", flexDirection: "column", pointerEvents: "auto", overflow: "hidden" }}>
             <div style={{ padding: "24px", fontSize: "16px", fontWeight: "700", borderBottom: `1px solid ${t.border}` }}>
                {activeTab === "Elements" ? "Elements" : activeTab === "Uploads" ? "Upload images" : activeTab === "Text" ? "Text" : activeTab === "Tools" ? "Tools" : activeTab}
             </div>
@@ -861,7 +970,17 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         </div>
 
         {/* Center Canvas */}
-        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+        <div style={{ 
+          position: "absolute", 
+          top: 0, 
+          left: 0, 
+          width: "100%", 
+          height: "100%", 
+          display: (!isMobile || mobileView === 'canvas') ? "flex" : "none", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          zIndex: 10 
+        }}>
           <div 
             style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: activeTool === "hand" ? (isPanning ? "grabbing" : "grab") : "default" }}
             onPointerDown={handlePointerDown}
@@ -893,7 +1012,17 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         </div>
 
         {/* Bottom Floating Pill (Zoom / Pan) */}
-        <div style={{ position: "absolute", bottom: "32px", left: "50%", transform: "translateX(-50%)", zIndex: 40, display: "flex", alignItems: "center", gap: "16px", padding: "12px 24px" }} className="glass-panel">
+        <div style={{ 
+          position: "absolute", 
+          bottom: isMobile ? "16px" : "32px", 
+          left: "50%", 
+          transform: "translateX(-50%)", 
+          zIndex: 40, 
+          display: (!isMobile || mobileView === 'canvas') ? "flex" : "none", 
+          alignItems: "center", 
+          gap: isMobile ? "10px" : "16px", 
+          padding: isMobile ? "8px 16px" : "12px 24px" 
+        }} className="glass-panel">
           <div style={{ display: "flex", gap: "12px", borderRight: `1px solid ${t.border}`, paddingRight: "16px" }}>
             <button onClick={() => setActiveTool("pointer")} style={{ background: "none", border: "none", cursor: "pointer", color: activeTool === "pointer" ? t.cyan : t.textMuted }}><IconPointer /></button>
             <button onClick={() => setActiveTool("hand")} style={{ background: "none", border: "none", cursor: "pointer", color: activeTool === "hand" ? t.cyan : t.textMuted }}><IconHand /></button>
@@ -906,7 +1035,31 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         </div>
 
         {/* Floating Right Section */}
-        <div style={{ position: "absolute", right: "24px", top: "24px", bottom: "24px", width: "360px", display: "flex", flexDirection: "column", zIndex: 40, pointerEvents: "none" }}>
+        <div style={isMobile ? {
+          position: "absolute",
+          left: 0,
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "100%",
+          display: mobileView === 'preview' ? "flex" : "none",
+          flexDirection: "column",
+          zIndex: 40,
+          pointerEvents: "auto",
+          padding: "12px",
+          backgroundColor: t.bgCanvas
+        } : {
+          position: "absolute",
+          right: "24px",
+          top: "24px",
+          bottom: "24px",
+          width: "360px",
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 40,
+          pointerEvents: "none"
+        }}>
           
           <div className="glass-panel" style={{ flex: 1, pointerEvents: "auto", display: "flex", flexDirection: "column", overflowY: "auto", padding: "24px" }}>
             

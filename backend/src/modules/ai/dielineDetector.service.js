@@ -1522,7 +1522,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     confidence = visionRes.confidence || 88;
     features = visionRes.detectedFeatures || localMatch.detectedSignatures || [];
     dimensions = visionRes.dimensions || localMatch.estimatedDims || { L: 120, W: 60, H: 160, unit: 'mm' };
-    explanation = visionRes.explanation || `Visual scan matched with directory template.`;
+    explanation = visionRes.explanation || `Matched closest packaging template.`;
   } else {
     // Other files (e.g. PDF or JSON)
     localMatch = matchGeometryToDirectoryBoxes({ width: 300, height: 250, aspectRatio: 1.2, diagonal45Count: 0, circleOrArcCount: 0 }, filename);
@@ -1530,7 +1530,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     confidence = localMatch.confidence;
     features = localMatch.detectedSignatures;
     dimensions = localMatch.estimatedDims;
-    explanation = `Analyzed file specifications for ${filename}. Matched closest directory packaging structure.`;
+    explanation = `Matched closest packaging template.`;
   }
 
   const primaryBox = DIRECTORY_BOXES.find(b => b.boxModelKey === matchedKey) || DIRECTORY_BOXES[0];
@@ -1600,7 +1600,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     explanation,
     dieline2DImg: primaryBox.dieline2DImg,
     box3DImg: primaryBox.box3DImg,
-    badgeText: confidence >= 90 ? 'Most Accurate Match' : 'Primary Recommendation'
+    badgeText: 'Best Match'
   };
 
   const secondaryRecommendation = {
@@ -1618,10 +1618,10 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     defaultDims: secondaryBox.defaultDims,
     defaultDimsIn: secondaryBox.defaultDimsIn,
     detectedFeatures: secondaryBox.structureFeatures ? secondaryBox.structureFeatures.slice(0, 2) : [secondaryBox.subtitle],
-    explanation: `Alternative structural candidate with ${secondaryConfidence}% confidence based on panel geometry and closure profile.`,
+    explanation: `Alternative option: ${secondaryBox.name}.`,
     dieline2DImg: secondaryBox.dieline2DImg,
     box3DImg: secondaryBox.box3DImg,
-    badgeText: 'Alternative Recommendation'
+    badgeText: 'Alternative'
   };
 
   // Rank and dynamically compute non-hardcoded confidence scores for all remaining candidates in the active pool
@@ -1664,7 +1664,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
       key: cand.key,
       name: box?.name || cand.key,
       matchedTitle: box?.name || cand.key,
-      subtitle: box?.subtitle || 'Parametric packaging template',
+      subtitle: box?.subtitle || 'Packaging template',
       confidence: candConfidence,
       isExactMatch: false,
       dimensions: candDims,
@@ -1672,10 +1672,10 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
       defaultDims: candDims,
       defaultDimsIn: candDimsIn,
       detectedFeatures: box?.structureFeatures || [box?.subtitle || 'Standard profile'],
-      explanation: `Alternative candidate from our parametric directory with ${candConfidence}% confidence.`,
+      explanation: `Alternative option: ${box?.name || cand.key}.`,
       dieline2DImg: box?.dieline2DImg,
       box3DImg: box?.box3DImg,
-      badgeText: `Candidate (${candConfidence}% Match)`
+      badgeText: 'Alternative'
     };
   });
 

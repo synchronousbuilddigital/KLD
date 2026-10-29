@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef, us
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-export type DecalType = 'image' | 'text' | 'shape' | 'symbol';
+export type DecalType = 'image' | 'upload' | 'text' | 'shape' | 'symbol';
 
 export interface CanvasDecal {
   id: string;
@@ -12,8 +12,15 @@ export interface CanvasDecal {
   width: number;
   height: number;
   rotation?: number;
+  surface?: string;
+  isWrap?: boolean;
+  opacity?: number | string;
   // Images
   url?: string;
+  src?: string;
+  image?: string;
+  preview?: string;
+  dataUrl?: string;
   // Text
   text?: string;
   content?: string;
@@ -634,8 +641,8 @@ export const SipperWaterBottle3D = forwardRef<SipperWaterBottle3DRef, SipperWate
     labelTexture.colorSpace = THREE.SRGBColorSpace;
     labelTexture.wrapS = THREE.RepeatWrapping;
     labelTexture.wrapT = THREE.ClampToEdgeWrapping;
-    labelTexture.generateMipmaps = true;
-    labelTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    labelTexture.generateMipmaps = false;
+    labelTexture.minFilter = THREE.LinearFilter;
     labelTexture.magFilter = THREE.LinearFilter;
     labelTexture.anisotropy = renderer.capabilities.getMaxAnisotropy?.() || 8;
     labelTextureRef.current = labelTexture;

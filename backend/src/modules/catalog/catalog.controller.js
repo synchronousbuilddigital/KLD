@@ -328,11 +328,12 @@ const DEFAULT_CATALOG_ITEMS = [
     ],
   },
   {
-    itemId: 'pizza-box-mockups',
+    itemId: 'pizza-packaging-mockups',
     title: 'Pizza Box Mockups',
-    subtitle: 'E-Flute Corrugated Folding Pizza Boxes',
+    subtitle: 'Takeout, Delivery & Corrugated Pizza Cartons',
     img: '/images/catalog/pizza-packaging-mockups.png',
     group: 'boxes',
+    badge: '🍕 HOT',
     tag: '3D Studio',
     active: true,
     order: 11,
@@ -361,11 +362,12 @@ const DEFAULT_CATALOG_ITEMS = [
     ],
   },
   {
-    itemId: 'supplement-jar-mockups',
-    title: 'Supplement Jar Mockups',
-    subtitle: 'Pharma & Vitamin Pill Containers',
+    itemId: 'supplement-bottle-mockups',
+    title: 'Supplement Box Mockups',
+    subtitle: 'Pharma, Health & Vitamin Packaging',
     img: '/images/catalog/supplement-bottle-mockups.png',
     group: 'containers',
+    badge: '💊 POPULAR',
     tag: '3D Studio',
     active: true,
     order: 12,
@@ -517,6 +519,26 @@ const ensureCatalogSeeded = async () => {
           await bottleItem.save();
           invalidateCatalogCache();
           console.log('🌱 Updated bottle-mockups in database');
+        }
+      }
+
+      const pizzaItem = await CatalogItem.findOne({ $or: [{ itemId: 'pizza-packaging-mockups' }, { itemId: 'pizza-box-mockups' }] });
+      if (!pizzaItem) {
+        const defPizza = DEFAULT_CATALOG_ITEMS.find(i => i.itemId === 'pizza-packaging-mockups');
+        if (defPizza) {
+          await CatalogItem.create(defPizza);
+          invalidateCatalogCache();
+          console.log('🌱 Seeded pizza-packaging-mockups into database');
+        }
+      }
+
+      const suppItem = await CatalogItem.findOne({ $or: [{ itemId: 'supplement-bottle-mockups' }, { itemId: 'supplement-jar-mockups' }] });
+      if (!suppItem) {
+        const defSupp = DEFAULT_CATALOG_ITEMS.find(i => i.itemId === 'supplement-bottle-mockups');
+        if (defSupp) {
+          await CatalogItem.create(defSupp);
+          invalidateCatalogCache();
+          console.log('🌱 Seeded supplement-bottle-mockups into database');
         }
       }
     }

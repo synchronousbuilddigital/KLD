@@ -380,7 +380,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       materialType: "corrugated",
       materialName: "B-flute",
       isCustomMaterial: false,
-      materialColor: "#c89a63",
+      materialColor: "#986c40",
       materialCategory: "corrugated",
       packageColor: null,
       insideColor: null,
@@ -422,6 +422,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
         style={{ textDecoration: 'none' }}
       onMouseEnter={() => setHoveredVariant(variant)}
       onMouseLeave={() => setHoveredVariant(null)}
+      onTouchStart={() => setHoveredVariant(variant)}
       onClick={handleClick}
     >
       <div
@@ -1002,9 +1003,37 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
       <BackgroundCanvas position="fixed" zIndex={-1} />
       <Header activeNav="models" onNavigate={onBack} />
 
-      <div className="flex flex-1 overflow-hidden relative z-10">
-        {/* Sidebar Index */}
-        <aside className="w-[300px] shrink-0 border-r overflow-y-auto py-8 px-6" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-primary)' }}>
+      {/* Mobile Horizontal Category Bar (Visible on mobile/tablet < md) */}
+      <div className="md:hidden w-full bg-white/95 backdrop-blur-md border-b border-zinc-200/80 px-3 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none z-20 sticky top-0 shadow-xs">
+        {categories.map((cat) => {
+          const isActive = cat.id === activeCategoryId;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setActiveCategoryId(cat.id);
+                setExpandedCategoryId(cat.id);
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                isActive
+                  ? 'bg-zinc-900 text-white shadow-xs scale-100'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 active:scale-95'
+              }`}
+            >
+              <span>{cat.name.replace(' Mockups', '')}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                isActive ? 'bg-white/20 text-white' : 'bg-zinc-200 text-zinc-600'
+              }`}>
+                {cat.variants.length}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative z-10">
+        {/* Desktop Sidebar Index (Hidden on mobile < md) */}
+        <aside className="hidden md:block w-[300px] shrink-0 border-r overflow-y-auto py-8 px-6" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--bg-primary)' }}>
           <h2 className="text-sm font-bold uppercase tracking-wider mb-6 px-4" style={{ color: 'var(--ink)', opacity: 0.5 }}>Categories</h2>
           <nav className="flex flex-col gap-1">
             {categories.map((cat) => {
@@ -1058,7 +1087,7 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
         </aside>
 
         {/* Main Content Pane */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-10 bg-transparent flex flex-col items-center">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-10 bg-transparent flex flex-col items-center w-full">
           <div className="w-full max-w-[1240px] flex flex-col items-center">
             {/* Live Interactive & Autonomous Animated Category Banner */}
             <LiveCategoryBanner

@@ -199,14 +199,19 @@ export default function SipperWaterBottleLabelCanvas({
                   </div>
                 )}
 
-                {((decal.type === 'image' || decal.type === 'upload' || (!decal.type && (decal.url || decal.src || decal.image || decal.preview || decal.dataUrl))) && (decal.url || decal.src || decal.image || decal.preview || decal.dataUrl)) && (
-                  <img
-                    src={(decal.url || decal.src || decal.image || decal.preview || decal.dataUrl)!}
-                    alt="Decal"
-                    className="w-full h-full object-contain pointer-events-none select-none"
-                    draggable={false}
-                  />
-                )}
+                {(() => {
+                  const imgUrl = decal.url || decal.src || decal.image || decal.preview || decal.dataUrl;
+                  const isImg = decal.type === 'image' || decal.type === 'upload' || (!decal.type && Boolean(imgUrl));
+                  if (!isImg || !imgUrl) return null;
+                  return (
+                    <img
+                      src={imgUrl}
+                      alt="Decal"
+                      className="w-full h-full object-contain pointer-events-none select-none"
+                      draggable={false}
+                    />
+                  );
+                })()}
 
                 {decal.type === 'symbol' && (decal.svgString || decal.svgContent) && (
                   <div
