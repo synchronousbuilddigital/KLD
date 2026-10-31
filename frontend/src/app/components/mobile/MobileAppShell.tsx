@@ -11,14 +11,13 @@ import MobileModelDetailSheet from './MobileModelDetailSheet';
 import { MockupVariant } from '../../data/mockupData';
 
 interface MobileAppShellProps {
-  onSwitchToDesktop: () => void;
+  onSwitchToDesktop?: () => void;
   onOpenSignIn: () => void;
   initialCategoryId?: string | null;
   initialModelKey?: string | null;
 }
 
 export const MobileAppShell: React.FC<MobileAppShellProps> = ({
-  onSwitchToDesktop,
   onOpenSignIn,
   initialCategoryId,
   initialModelKey,
@@ -71,7 +70,6 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
       <MobileHeader
         activeTab={activeTab}
         onSearchClick={() => setActiveTab('models')}
-        onSwitchToDesktop={onSwitchToDesktop}
         onOpenProfile={() => setActiveTab('profile')}
         onOpenSignIn={onOpenSignIn}
         onLogoClick={() => setActiveTab('home')}
@@ -121,7 +119,6 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
 
         {activeTab === 'profile' && (
           <MobileProfileTab
-            onSwitchToDesktop={onSwitchToDesktop}
             onOpenSignIn={onOpenSignIn}
             onNavigateTab={(tab) => setActiveTab(tab)}
           />

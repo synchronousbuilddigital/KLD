@@ -8,17 +8,19 @@ export function useMobileDetection() {
     return window.innerWidth < MOBILE_BREAKPOINT;
   });
 
-  const [viewModeOverride, setViewModeOverride] = useState<'mobile' | 'desktop' | null>(() => {
+  const [viewModeOverride, setViewModeOverride] = useState<'mobile' | null>(() => {
     if (typeof window === 'undefined') return null;
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get('view');
-    if (viewParam === 'desktop') return 'desktop';
     if (viewParam === 'mobile') return 'mobile';
-    const stored = sessionStorage.getItem('kld_view_mode');
-    return stored === 'desktop' || stored === 'mobile' ? stored : null;
+    return null;
   });
 
   useEffect(() => {
+    // Clear any legacy desktop override from session storage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('kld_view_mode');
+    }
     const handleResize = () => {
       setIsMobileScreen(window.innerWidth < MOBILE_BREAKPOINT);
     };
@@ -27,26 +29,12 @@ export function useMobileDetection() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const setViewMode = (mode: 'mobile' | 'desktop' | 'auto') => {
-    if (mode === 'auto') {
-      sessionStorage.removeItem('kld_view_mode');
-      setViewModeOverride(null);
-    } else {
-      sessionStorage.setItem('kld_view_mode', mode);
-      setViewModeOverride(mode);
-    }
-  };
-
-  const isMobileAppActive = viewModeOverride === 'desktop' 
-    ? false 
-    : (viewModeOverride === 'mobile' || isMobileScreen);
+  const isMobileAppActive = isMobileScreen || viewModeOverride === 'mobile';
 
   return {
     isMobileScreen,
     viewModeOverride,
     isMobileAppActive,
-    switchToDesktop: () => setViewMode('desktop'),
-    switchToMobile: () => setViewMode('mobile'),
-    resetToAuto: () => setViewMode('auto'),
+    switchToMobile: () => setViewModeOverride('mobile'),
   };
 }

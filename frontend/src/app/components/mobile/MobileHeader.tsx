@@ -1,11 +1,11 @@
 import React from 'react';
-import { Search, Monitor, User, LogIn, Sparkles } from 'lucide-react';
+import { Search, User, LogIn, Sparkles } from 'lucide-react';
 import AnimatedLogo from '../layout/AnimatedLogo';
 
 interface MobileHeaderProps {
   activeTab: string;
   onSearchClick: () => void;
-  onSwitchToDesktop: () => void;
+  onSwitchToDesktop?: () => void;
   onOpenProfile: () => void;
   onOpenSignIn: () => void;
   onLogoClick?: () => void;
@@ -14,7 +14,6 @@ interface MobileHeaderProps {
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
   activeTab,
   onSearchClick,
-  onSwitchToDesktop,
   onOpenProfile,
   onOpenSignIn,
   onLogoClick,
@@ -47,16 +46,6 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           title="Search Packaging Models"
         >
           <Search className="w-4 h-4" />
-        </button>
-
-        {/* Switch to Desktop View */}
-        <button
-          onClick={onSwitchToDesktop}
-          className="px-2.5 py-1 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-semibold flex items-center gap-1 transition-all active:scale-95 border border-zinc-200/60"
-          title="View Full Desktop Website"
-        >
-          <Monitor className="w-3.5 h-3.5 text-zinc-500" />
-          <span className="hidden xs:inline">Desktop</span>
         </button>
 
         {/* User Account / Sign In */}

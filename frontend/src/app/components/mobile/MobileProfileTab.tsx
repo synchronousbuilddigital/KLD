@@ -1,15 +1,14 @@
 import React from 'react';
-import { User, Shield, LogOut, LogIn, Monitor, Sparkles, Folder, CheckCircle2 } from 'lucide-react';
+import { User, Shield, LogOut, LogIn, Sparkles, Folder, CheckCircle2 } from 'lucide-react';
 import { MobileTab } from './MobileTabBar';
 
 interface MobileProfileTabProps {
-  onSwitchToDesktop: () => void;
+  onSwitchToDesktop?: () => void;
   onOpenSignIn: () => void;
   onNavigateTab?: (tab: MobileTab) => void;
 }
 
 export const MobileProfileTab: React.FC<MobileProfileTabProps> = ({
-  onSwitchToDesktop,
   onOpenSignIn,
   onNavigateTab,
 }) => {
@@ -109,23 +108,6 @@ export const MobileProfileTab: React.FC<MobileProfileTabProps> = ({
             </button>
           </>
         )}
-      </div>
-
-      {/* View Mode Switcher */}
-      <div className="bg-white rounded-3xl border border-zinc-200/80 shadow-xs p-4 flex flex-col space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-xs font-bold text-zinc-900">Desktop View</h4>
-            <p className="text-[11px] text-zinc-500">Switch to the full unscaled desktop browser layout</p>
-          </div>
-          <button
-            onClick={onSwitchToDesktop}
-            className="px-3.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold flex items-center gap-1.5 border border-zinc-200 active:scale-95 transition-all"
-          >
-            <Monitor className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Switch</span>
-          </button>
-        </div>
       </div>
     </div>
   );

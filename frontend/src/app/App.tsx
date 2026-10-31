@@ -411,7 +411,7 @@ export default function App() {
     return 'landing';
   };
 
-  const { isMobileScreen, isMobileAppActive, switchToDesktop, switchToMobile } = useMobileDetection();
+  const { isMobileScreen, isMobileAppActive, switchToMobile } = useMobileDetection();
   const [currentView, setCurrentView] = useState<'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop'>(getViewFromUrl);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(() => {
     const path = window.location.pathname.replace('/', '').toLowerCase();
@@ -646,7 +646,6 @@ export default function App() {
     return (
       <>
         <MobileAppShell
-          onSwitchToDesktop={switchToDesktop}
           onOpenSignIn={() => setIsSignInModalOpen(true)}
           initialCategoryId={activeCategoryId}
         />
