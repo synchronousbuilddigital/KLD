@@ -1,14 +1,17 @@
 import React from 'react';
 import { User, Shield, LogOut, LogIn, Monitor, Sparkles, Folder, CheckCircle2 } from 'lucide-react';
+import { MobileTab } from './MobileTabBar';
 
 interface MobileProfileTabProps {
   onSwitchToDesktop: () => void;
   onOpenSignIn: () => void;
+  onNavigateTab?: (tab: MobileTab) => void;
 }
 
 export const MobileProfileTab: React.FC<MobileProfileTabProps> = ({
   onSwitchToDesktop,
   onOpenSignIn,
+  onNavigateTab,
 }) => {
   const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
   const currentUser = (() => {
@@ -53,6 +56,19 @@ export const MobileProfileTab: React.FC<MobileProfileTabProps> = ({
 
       {/* Primary Account Actions */}
       <div className="bg-white rounded-3xl border border-zinc-200/80 shadow-xs p-2 space-y-1">
+        {onNavigateTab && (
+          <button
+            onClick={() => onNavigateTab('workspace')}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl hover:bg-zinc-50 text-xs font-semibold text-zinc-900 active:scale-98 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <Folder className="w-4 h-4 text-emerald-600" />
+              <span>My Workspace</span>
+            </div>
+            <span>›</span>
+          </button>
+        )}
+
         {!isLoggedIn ? (
           <button
             onClick={onOpenSignIn}

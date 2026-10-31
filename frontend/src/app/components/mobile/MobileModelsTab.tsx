@@ -1,17 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Sparkles, Eye, Box, X } from 'lucide-react';
+import { Search, Sparkles, Eye, Box, X, Layers } from 'lucide-react';
 import { mockupCategories, MockupVariant } from '../../data/mockupData';
+import { MobileTab } from './MobileTabBar';
 
 interface MobileModelsTabProps {
   onSelectModel: (model: MockupVariant, catName: string) => void;
   onOpenInStudio: (modelKey: string) => void;
   initialCategoryId?: string | null;
+  onNavigateTab?: (tab: MobileTab) => void;
 }
 
 export const MobileModelsTab: React.FC<MobileModelsTabProps> = ({ 
   onSelectModel, 
   onOpenInStudio, 
-  initialCategoryId 
+  initialCategoryId,
+  onNavigateTab
 }) => {
   const [selectedCatId, setSelectedCatId] = useState<string>(initialCategoryId || 'all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -66,7 +69,26 @@ export const MobileModelsTab: React.FC<MobileModelsTabProps> = ({
   }, [allVariants, selectedCatId, searchQuery]);
 
   return (
-    <div className="flex flex-col space-y-4 pb-24 px-4 pt-3">
+    <div className="flex flex-col space-y-3.5 pb-24 px-4 pt-3 select-none">
+      {/* 3D Models vs CAD Dielines Switcher */}
+      {onNavigateTab && (
+        <div className="flex bg-zinc-200/80 p-0.5 rounded-xl text-xs font-semibold">
+          <button
+            className="flex-1 py-1.5 rounded-lg bg-white text-zinc-900 shadow-xs flex items-center justify-center gap-1.5"
+          >
+            <Box className="w-3.5 h-3.5 text-zinc-900" />
+            <span>3D Models</span>
+          </button>
+          <button
+            onClick={() => onNavigateTab('dielines')}
+            className="flex-1 py-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <Layers className="w-3.5 h-3.5 text-amber-600" />
+            <span>CAD Dielines</span>
+          </button>
+        </div>
+      )}
+
       {/* Search Input */}
       <div className="relative w-full">
         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-400">

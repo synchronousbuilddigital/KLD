@@ -8,6 +8,7 @@ interface MobileHeaderProps {
   onSwitchToDesktop: () => void;
   onOpenProfile: () => void;
   onOpenSignIn: () => void;
+  onLogoClick?: () => void;
 }
 
 export const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -16,6 +17,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   onSwitchToDesktop,
   onOpenProfile,
   onOpenSignIn,
+  onLogoClick,
 }) => {
   const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
   const currentUser = (() => {
@@ -32,7 +34,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
     <header className="sticky top-0 z-40 bg-[#FAF8F4]/90 backdrop-blur-md border-b border-zinc-200/80 px-4 py-2.5 flex items-center justify-between shadow-2xs">
       {/* Authentic Desktop Animated 3D Logo */}
       <div className="flex items-center gap-2 cursor-pointer scale-90 -ml-1">
-        <AnimatedLogo onClick={() => window.location.href = '/'} />
+        <AnimatedLogo onClick={onLogoClick || (() => window.location.href = '/')} />
       </div>
 
       {/* Action Controls */}

@@ -5,6 +5,7 @@ import MobileHomeTab from './MobileHomeTab';
 import MobileModelsTab from './MobileModelsTab';
 import MobileDielinesTab from './MobileDielinesTab';
 import MobileStudioTab from './MobileStudioTab';
+import MobileWorkspaceTab from './MobileWorkspaceTab';
 import MobileProfileTab from './MobileProfileTab';
 import MobileModelDetailSheet from './MobileModelDetailSheet';
 import { MockupVariant } from '../../data/mockupData';
@@ -39,7 +40,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab') as MobileTab;
-      if (['home', 'models', 'studio', 'dielines', 'profile'].includes(tabParam)) return tabParam;
+      if (['home', 'models', 'studio', 'workspace', 'dielines', 'profile'].includes(tabParam)) return tabParam;
       if (urlParams.get('model')) return 'studio';
       if (initialCategoryId) return 'models';
     }
@@ -73,6 +74,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
         onSwitchToDesktop={onSwitchToDesktop}
         onOpenProfile={() => setActiveTab('profile')}
         onOpenSignIn={onOpenSignIn}
+        onLogoClick={() => setActiveTab('home')}
       />
 
       {/* Main Tab Viewport */}
@@ -90,6 +92,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
             onSelectModel={handleSelectModel}
             onOpenInStudio={handleOpenInStudio}
             initialCategoryId={initialCategoryId}
+            onNavigateTab={(tab) => setActiveTab(tab)}
           />
         )}
 
@@ -98,6 +101,14 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
             key={studioModelKey}
             initialModelKey={studioModelKey}
             onNavigateTab={(tab) => setActiveTab(tab)}
+          />
+        )}
+
+        {activeTab === 'workspace' && (
+          <MobileWorkspaceTab
+            onNavigateTab={(tab) => setActiveTab(tab)}
+            onOpenInStudio={handleOpenInStudio}
+            onOpenSignIn={onOpenSignIn}
           />
         )}
 
@@ -112,6 +123,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
           <MobileProfileTab
             onSwitchToDesktop={onSwitchToDesktop}
             onOpenSignIn={onOpenSignIn}
+            onNavigateTab={(tab) => setActiveTab(tab)}
           />
         )}
       </main>

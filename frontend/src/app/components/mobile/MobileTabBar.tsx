@@ -1,7 +1,7 @@
 import React from 'react';
-import { Home, Box, Layers, User, Wand2 } from 'lucide-react';
+import { Home, Box, Layers, User, Wand2, Folder } from 'lucide-react';
 
-export type MobileTab = 'home' | 'models' | 'studio' | 'dielines' | 'profile';
+export type MobileTab = 'home' | 'models' | 'studio' | 'workspace' | 'dielines' | 'profile';
 
 interface MobileTabBarProps {
   activeTab: MobileTab;
@@ -13,7 +13,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeTab, onChangeT
     { id: 'home' as MobileTab, label: 'Home', icon: Home },
     { id: 'models' as MobileTab, label: '3D Models', icon: Box },
     { id: 'studio' as MobileTab, label: 'Studio', icon: Wand2, isCenter: true },
-    { id: 'dielines' as MobileTab, label: 'Dielines', icon: Layers },
+    { id: 'workspace' as MobileTab, label: 'Workspace', icon: Folder },
     { id: 'profile' as MobileTab, label: 'Account', icon: User },
   ];
 

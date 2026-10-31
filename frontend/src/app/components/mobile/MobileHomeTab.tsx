@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, Box, Layers, Wand2, Search, Sliders, Eye } from 'lucide-react';
+import { 
+  Sparkles, 
+  ArrowRight, 
+  Box, 
+  Layers, 
+  Wand2, 
+  Search, 
+  Folder, 
+  ChevronRight, 
+  RotateCw 
+} from 'lucide-react';
 import Mobile3DViewer from './Mobile3DViewer';
 import { mockupCategories, MockupVariant } from '../../data/mockupData';
 import { MobileTab } from './MobileTabBar';
@@ -38,10 +48,10 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
   ];
 
   return (
-    <div className="flex flex-col space-y-5 pb-24 px-4 pt-3">
+    <div className="flex flex-col space-y-4 pb-28 px-4 pt-3 select-none">
       {/* Search Input Bar */}
       <div className="relative w-full">
-        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-zinc-400">
+        <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-zinc-400">
           <Search className="w-4 h-4" />
         </div>
         <input
@@ -49,12 +59,12 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search 3D packaging models, dielines, bottles..."
-          className="w-full pl-9 pr-4 py-2.5 bg-white text-xs font-medium text-zinc-900 placeholder-zinc-400 rounded-2xl border border-zinc-200/80 shadow-2xs focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+          className="w-full pl-10 pr-4 py-2.5 bg-white text-xs font-medium text-zinc-900 placeholder-zinc-400 rounded-xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] focus:border-zinc-400 transition-all outline-none"
         />
         {searchQuery && (
           <button 
             onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 right-3 flex items-center text-xs text-zinc-500 hover:text-zinc-700"
+            className="absolute inset-y-0 right-3 flex items-center text-xs text-zinc-400 hover:text-zinc-600 font-medium"
           >
             Clear
           </button>
@@ -72,98 +82,131 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
               <div
                 key={item.id}
                 onClick={() => onSelectModel(item, item.categoryName)}
-                className="bg-white p-2.5 rounded-2xl border border-zinc-200/80 shadow-2xs active:scale-98 transition-all flex flex-col cursor-pointer hover:border-indigo-300"
+                className="bg-white p-3 rounded-2xl border border-zinc-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-all flex flex-col cursor-pointer hover:border-zinc-300"
               >
-                <div className="h-24 bg-zinc-50 rounded-xl overflow-hidden flex items-center justify-center p-2 mb-2">
+                <div className="h-24 bg-[#f8f7f5] rounded-xl overflow-hidden flex items-center justify-center p-2 mb-2">
                   <img
                     src={item.imageUrl || '/images/boxes/rte_white.jpg'}
                     alt={item.name}
                     className="max-h-full max-w-full object-contain"
                   />
                 </div>
-                <span className="text-[10px] text-indigo-600 font-semibold">{item.categoryName}</span>
-                <h4 className="text-xs font-bold text-zinc-900 truncate">{item.name}</h4>
+                <span className="text-[10px] text-zinc-500 font-semibold">{item.categoryName}</span>
+                <h4 className="text-xs font-bold text-zinc-900 truncate mt-0.5">{item.name}</h4>
               </div>
             ))}
           </div>
         </div>
       ) : (
         <>
-          {/* Quick Action Tiles */}
-          <div className="grid grid-cols-3 gap-2.5">
+          {/* Quick Action Cards - Professional 2x2 Grid */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* 3D Studio Card */}
             <button
               onClick={() => onNavigateTab('studio')}
-              className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-3 rounded-2xl text-white text-left flex flex-col justify-between shadow-2xs active:scale-95 transition-all group"
+              className="bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-all hover:border-zinc-300 text-left flex flex-col justify-between group"
             >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center mb-3">
-                <Box className="w-4 h-4 text-white" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100/60 flex items-center justify-center">
+                  <Wand2 className="w-4 h-4 text-indigo-600" />
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-600 transition-colors" />
               </div>
               <div>
-                <span className="text-[11px] font-bold block leading-tight">3D Studio</span>
-                <span className="text-[9px] text-indigo-100 block">Live Viewer</span>
+                <span className="text-xs font-bold text-zinc-900 block leading-tight">3D Studio</span>
+                <span className="text-[10px] text-zinc-500 font-medium block mt-0.5">Interactive 3D Editor</span>
               </div>
             </button>
 
+            {/* 3D Models Catalog Card */}
             <button
               onClick={() => onNavigateTab('models')}
-              className="bg-zinc-950 p-3 rounded-2xl text-white text-left flex flex-col justify-between shadow-2xs active:scale-95 transition-all group"
+              className="bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-all hover:border-zinc-300 text-left flex flex-col justify-between group"
             >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center mb-3">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-xl bg-zinc-100 border border-zinc-200/60 flex items-center justify-center">
+                  <Box className="w-4 h-4 text-zinc-900" />
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-600 transition-colors" />
               </div>
               <div>
-                <span className="text-[11px] font-bold block leading-tight">All Models</span>
-                <span className="text-[9px] text-zinc-400 block">Catalog</span>
+                <span className="text-xs font-bold text-zinc-900 block leading-tight">3D Models</span>
+                <span className="text-[10px] text-zinc-500 font-medium block mt-0.5">Full Packaging Catalog</span>
               </div>
             </button>
 
+            {/* CAD Dielines Card */}
             <button
               onClick={() => onNavigateTab('dielines')}
-              className="bg-gradient-to-br from-[#c89a63] to-[#a37542] p-3 rounded-2xl text-white text-left flex flex-col justify-between shadow-2xs active:scale-95 transition-all group"
+              className="bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-all hover:border-zinc-300 text-left flex flex-col justify-between group"
             >
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center mb-3">
-                <Layers className="w-4 h-4 text-white" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center">
+                  <Layers className="w-4 h-4 text-amber-700" />
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-600 transition-colors" />
               </div>
               <div>
-                <span className="text-[11px] font-bold block leading-tight">CAD Dielines</span>
-                <span className="text-[9px] text-amber-100 block">Vector CAD</span>
+                <span className="text-xs font-bold text-zinc-900 block leading-tight">CAD Dielines</span>
+                <span className="text-[10px] text-zinc-500 font-medium block mt-0.5">Parametric 2D Vectors</span>
+              </div>
+            </button>
+
+            {/* My Workspace Card */}
+            <button
+              onClick={() => onNavigateTab('workspace')}
+              className="bg-white p-3.5 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-all hover:border-zinc-300 text-left flex flex-col justify-between group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center">
+                  <Folder className="w-4 h-4 text-emerald-600" />
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-600 transition-colors" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-zinc-900 block leading-tight">My Workspace</span>
+                <span className="text-[10px] text-zinc-500 font-medium block mt-0.5">Saved Designs & Drafts</span>
               </div>
             </button>
           </div>
 
-          {/* Real Interactive 3D Stage Card */}
-          <div className="bg-zinc-950 text-white rounded-3xl p-4 shadow-xl border border-zinc-800 flex flex-col relative overflow-hidden">
+          {/* Real Interactive 3D Stage Card - Sleek Dark Studio Theme */}
+          <div className="bg-[#121316] text-white rounded-3xl p-4 shadow-xl shadow-zinc-950/15 border border-zinc-800 flex flex-col relative overflow-hidden">
             {/* Top Stage Header */}
-            <div className="flex items-center justify-between mb-2 z-10">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 font-mono">
-                  Interactive 3D Stage
-                </span>
+            <div className="flex items-center justify-between mb-2.5 z-10">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>3D LIVE STAGE</span>
               </div>
 
               {/* Substrate Pill Switcher */}
-              <div className="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800 p-0.5 rounded-full">
+              <div className="flex items-center gap-0.5 bg-zinc-900/90 border border-zinc-800 p-0.5 rounded-full">
                 <button
                   onClick={() => setFeaturedSubstrate('white')}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition-all ${
-                    featuredSubstrate === 'white' ? 'bg-white text-zinc-950 shadow-xs' : 'text-zinc-400 hover:text-white'
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] transition-all ${
+                    featuredSubstrate === 'white' 
+                      ? 'bg-white text-zinc-950 font-bold shadow-xs' 
+                      : 'text-zinc-400 hover:text-white font-medium'
                   }`}
                 >
                   White
                 </button>
                 <button
                   onClick={() => setFeaturedSubstrate('kraft')}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition-all ${
-                    featuredSubstrate === 'kraft' ? 'bg-[#c89a63] text-white shadow-xs' : 'text-zinc-400 hover:text-white'
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] transition-all ${
+                    featuredSubstrate === 'kraft' 
+                      ? 'bg-[#c89a63] text-zinc-950 font-bold shadow-xs' 
+                      : 'text-zinc-400 hover:text-white font-medium'
                   }`}
                 >
                   Kraft
                 </button>
                 <button
                   onClick={() => setFeaturedSubstrate('metal')}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition-all ${
-                    featuredSubstrate === 'metal' ? 'bg-indigo-600 text-white shadow-xs' : 'text-zinc-400 hover:text-white'
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] transition-all ${
+                    featuredSubstrate === 'metal' 
+                      ? 'bg-zinc-200 text-zinc-950 font-bold shadow-xs' 
+                      : 'text-zinc-400 hover:text-white font-medium'
                   }`}
                 >
                   Metal
@@ -171,10 +214,10 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
               </div>
             </div>
 
-            {/* Quick Model Tabs (Sipper, Can, Box) */}
-            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto scrollbar-none py-1">
+            {/* Quick Model Tabs */}
+            <div className="flex items-center gap-1.5 mb-2.5 overflow-x-auto scrollbar-none py-0.5">
               {[
-                { key: 'sipper_water_bottle', label: '1000ml Sipper Bottle' },
+                { key: 'sipper_water_bottle', label: '1000ml Bottle' },
                 { key: 'can', label: '12oz Can' },
                 { key: 'rte', label: 'Reverse Tuck Box' },
                 { key: 'rsc', label: 'Shipping Box' },
@@ -184,10 +227,10 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
                   <button
                     key={m.key}
                     onClick={() => setFeaturedModel(m.key)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border ${
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-medium whitespace-nowrap transition-all border ${
                       isActive 
-                        ? 'bg-zinc-800 text-amber-400 border-amber-500/40 shadow-xs' 
-                        : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:text-white'
+                        ? 'bg-white text-zinc-950 font-semibold border-white shadow-xs' 
+                        : 'bg-zinc-900/90 text-zinc-400 border-zinc-800 hover:text-zinc-200'
                     }`}
                   >
                     {m.label}
@@ -197,7 +240,7 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
             </div>
 
             {/* Live 3D Model Display */}
-            <div className="relative w-full h-[240px] rounded-2xl bg-gradient-to-b from-zinc-900 via-zinc-950 to-black overflow-hidden flex items-center justify-center border border-zinc-800/60">
+            <div className="relative w-full h-[240px] rounded-2xl bg-gradient-to-b from-[#1b1c20] via-[#131417] to-[#0b0b0d] overflow-hidden flex items-center justify-center border border-zinc-800/80">
               <Mobile3DViewer
                 key={`${featuredModel}-${featuredSubstrate}`}
                 modelType={featuredModel}
@@ -205,53 +248,58 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
                 height={240}
                 autoRotate={true}
               />
+              {/* Interaction Hint Pill */}
+              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-medium text-zinc-300 flex items-center gap-1.5 pointer-events-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                <span>Touch & Spin 360°</span>
+              </div>
             </div>
 
             {/* Bottom Card Controls */}
-            <div className="flex items-center justify-between pt-3 z-10">
+            <div className="flex items-center justify-between pt-3.5 z-10">
               <div>
                 <h3 className="text-xs font-bold text-white leading-tight">
-                  {featuredModel === 'sipper_water_bottle' ? 'Sipper Water Bottle with Handle' : featuredModel === 'can' ? '12 oz Soda Can' : featuredModel === 'rsc' ? 'Square Shipping Box' : 'Reverse Tuck End Box'}
+                  {featuredModel === 'sipper_water_bottle' ? 'Sipper Water Bottle with Handle' : featuredModel === 'can' ? '12 oz Aluminum Soda Can' : featuredModel === 'rsc' ? 'Square Shipping Box' : 'Reverse Tuck End Box'}
                 </h3>
-                <span className="text-[10px] text-zinc-400">Touch & rotate with single finger</span>
+                <span className="text-[10px] text-zinc-400 font-medium">Real-time WebGL studio render</span>
               </div>
               <button
                 onClick={() => onOpenInStudio(featuredModel)}
-                className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-100 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
               >
                 <span>Edit 3D</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 text-zinc-900" />
               </button>
             </div>
           </div>
 
           {/* Packaging Categories Header */}
           <div className="flex items-center justify-between pt-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-800 font-mono">
+            <h3 className="text-xs font-bold text-zinc-900 tracking-tight">
               Packaging Categories
             </h3>
             <button
               onClick={() => onNavigateTab('models')}
-              className="text-xs font-semibold text-indigo-600 flex items-center gap-1 hover:underline"
+              className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 flex items-center gap-1 transition-colors"
             >
               <span>View All</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Desktop-Aligned Packaging Categories Grid */}
+          {/* Packaging Categories Grid */}
           <div className="grid grid-cols-2 gap-2.5">
             {categoriesList.map((cat) => (
               <div
                 key={cat.id}
                 onClick={() => onOpenInStudio(cat.key)}
-                className="bg-white p-3 rounded-2xl border border-zinc-200/80 shadow-2xs active:scale-98 transition-all flex flex-col justify-between cursor-pointer group hover:border-indigo-300"
+                className="bg-white p-3 rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-all flex flex-col justify-between cursor-pointer group hover:border-zinc-300"
               >
-                <div className="h-24 bg-gradient-to-b from-zinc-50 to-zinc-100/60 rounded-xl overflow-hidden flex items-center justify-center p-2 mb-2 group-hover:scale-102 transition-transform">
+                <div className="h-26 bg-[#f8f7f5] rounded-xl overflow-hidden flex items-center justify-center p-2 mb-2 group-hover:scale-[1.02] transition-transform">
                   <img
                     src={cat.img}
                     alt={cat.name}
-                    className="max-h-full max-w-full object-contain drop-shadow-xs"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
                 <div>

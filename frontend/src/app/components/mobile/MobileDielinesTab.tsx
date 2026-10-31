@@ -304,6 +304,25 @@ export const MobileDielinesTab: React.FC<MobileDielinesTabProps> = ({
   return (
     <div className="flex flex-col space-y-3 pb-24 px-3 pt-2 select-none font-sans text-zinc-900">
       
+      {/* 3D Models vs CAD Dielines Switcher */}
+      {onNavigateTab && (
+        <div className="flex bg-zinc-200/80 p-0.5 rounded-xl text-xs font-semibold">
+          <button
+            onClick={() => onNavigateTab('models')}
+            className="flex-1 py-1.5 rounded-lg text-zinc-600 hover:text-zinc-900 flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <Box className="w-3.5 h-3.5 text-zinc-700" />
+            <span>3D Models</span>
+          </button>
+          <button
+            className="flex-1 py-1.5 rounded-lg bg-white text-zinc-900 shadow-xs flex items-center justify-center gap-1.5"
+          >
+            <Layers className="w-3.5 h-3.5 text-amber-600" />
+            <span>CAD Dielines</span>
+          </button>
+        </div>
+      )}
+
       {/* 1. MODEL SELECTOR CAROUSEL */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-3 px-3">
         {boxModels.map((m) => {
