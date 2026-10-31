@@ -1,4 +1,5 @@
 import { rawAutoLockPaths } from './autoLockDielineRaw.js';
+import { chainCutPaths } from './dielinePathUtils.js';
 
 export function generateAutoLockDieline({ L, W, H, glueFlapWidth = 16.0, windowDecals = [] }) {
   const nL = Number(L);
@@ -175,8 +176,8 @@ export function generateAutoLockDieline({ L, W, H, glueFlapWidth = 16.0, windowD
   return {
     width: x5, 
     height: yBot + (mapY(300) - mapY(241.85)), 
-    cutPaths,
-    bleedPaths, 
+    cutPaths: chainCutPaths(cutPaths, 1.0),
+    bleedPaths: chainCutPaths(bleedPaths, 1.0), 
     foldLines,
     dimensions: { L: nL, W: nW, H: nH, x1, x2, x3, x4, x5, yTop, yBot }
   };

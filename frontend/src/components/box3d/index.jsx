@@ -28,8 +28,9 @@ import SipperWaterBottle3DViewer from "./SipperWaterBottle3DViewer";
 import Can3DViewer         from "./Can3DViewer";
 import SlimCan3DViewer     from "./SlimCan3DViewer";
 import Tube3DViewer        from "./Tube3DViewer";
+import FEFCO0300ShoeBox3DViewer from "./FEFCO0300ShoeBox3DViewer";
 
-export { RTEBox3DViewer, TEBox3DViewer, RSCBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, SipperWaterBottle3DViewer, Can3DViewer, SlimCan3DViewer, Tube3DViewer };
+export { RTEBox3DViewer, TEBox3DViewer, RSCBox3DViewer, AutoLockBox3DViewer, CosmeticBox3DViewer, CosmeticBBox3DViewer, ButtonHoleBox3DViewer, WaterBottle3DViewer, SipperWaterBottle3DViewer, Can3DViewer, SlimCan3DViewer, Tube3DViewer, FEFCO0300ShoeBox3DViewer };
 
 export default function Box3DViewer({ boxModelOverride = null, activeAnimation = 'none', useStore = useBoxStore, ...props }) {
   const store = useStore();
@@ -73,5 +74,6 @@ export default function Box3DViewer({ boxModelOverride = null, activeAnimation =
   if (model === "cosmetic") return <CosmeticBox3DViewer {...commonProps} />;
   if (model === "cosmetic_b") return <CosmeticBBox3DViewer {...commonProps} />;
   if (model === "button_hole") return <ButtonHoleBox3DViewer {...commonProps} />;
+  if (model === "fefco_0300" || model === "shoe_box_with_lid" || model === "shoebox") return <FEFCO0300ShoeBox3DViewer {...commonProps} />;
   return <RTEBox3DViewer {...commonProps} />;
 }

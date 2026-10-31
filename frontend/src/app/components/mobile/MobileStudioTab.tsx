@@ -91,10 +91,11 @@ export const MobileStudioTab: React.FC<MobileStudioTabProps> = ({
     { key: 'cosmetic', name: 'Cosmetic Box', category: 'Boxes', modelId: '150050', labelDim: 'Parametric Dieline' },
     { key: 'cosmetic_b', name: 'Mailer / Tray Box', category: 'Boxes', modelId: '150060', labelDim: 'Parametric Dieline' },
     { key: 'button_hole', name: 'Button Hole Box', category: 'Boxes', modelId: '150070', labelDim: 'Parametric Dieline' },
+    { key: 'fefco_0300', name: 'FEFCO 0300 Shoe Box with Lid', category: 'Boxes', modelId: '150080', labelDim: 'Parametric Dieline' },
   ];
 
   const activeModelInfo = modelsList.find(m => m.key === currentModel) || modelsList[0];
-  const isBoxModel = ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole'].includes(currentModel);
+  const isBoxModel = ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300', 'shoe_box_with_lid'].includes(currentModel);
   const isCylinder = ['can', 'soda_can', 'slim_can', 'slim_355ml_can', 'sipper_water_bottle', 'water_bottle', 'tube'].includes(currentModel);
   const hasCapColor = ['sipper_water_bottle', 'water_bottle', 'tube'].includes(currentModel);
 

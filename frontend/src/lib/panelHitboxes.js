@@ -25,6 +25,24 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
     ];
   }
 
+  if (boxModel === 'fefco_0300' || boxModel === 'shoe_box_with_lid') {
+    const b = dimensions?.base || {};
+    const l = dimensions?.lid || {};
+    const p = [];
+    if (b.floor) p.push({ id: "base-floor", name: "Base Floor", path: rect(b.floor.x, b.floor.y, b.floor.w, b.floor.h) });
+    if (b.wallTop) p.push({ id: "base-front", name: "Base Front Wall", path: rect(b.wallTop.x, b.wallTop.y, b.wallTop.w, b.wallTop.h) });
+    if (b.wallBot) p.push({ id: "base-back", name: "Base Back Wall", path: rect(b.wallBot.x, b.wallBot.y, b.wallBot.w, b.wallBot.h) });
+    if (b.wallLeft) p.push({ id: "base-left", name: "Base Left Wall", path: rect(b.wallLeft.x, b.wallLeft.y, b.wallLeft.w, b.wallLeft.h) });
+    if (b.wallRight) p.push({ id: "base-right", name: "Base Right Wall", path: rect(b.wallRight.x, b.wallRight.y, b.wallRight.w, b.wallRight.h) });
+
+    if (l.roof) p.push({ id: "lid-top", name: "Lid Top (Roof)", path: rect(l.roof.x, l.roof.y, l.roof.w, l.roof.h) });
+    if (l.wallTop) p.push({ id: "lid-front", name: "Lid Front Wall", path: rect(l.wallTop.x, l.wallTop.y, l.wallTop.w, l.wallTop.h) });
+    if (l.wallBot) p.push({ id: "lid-back", name: "Lid Back Wall", path: rect(l.wallBot.x, l.wallBot.y, l.wallBot.w, l.wallBot.h) });
+    if (l.wallLeft) p.push({ id: "lid-left", name: "Lid Left Wall", path: rect(l.wallLeft.x, l.wallLeft.y, l.wallLeft.w, l.wallLeft.h) });
+    if (l.wallRight) p.push({ id: "lid-right", name: "Lid Right Wall", path: rect(l.wallRight.x, l.wallRight.y, l.wallRight.w, l.wallRight.h) });
+    return p;
+  }
+
   const panels = [];
   
   // Main Panels

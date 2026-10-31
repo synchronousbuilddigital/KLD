@@ -1,3 +1,4 @@
+import { chainCutPaths } from './dielinePathUtils.js';
 // ============================================================================
 // generateCosmeticBoxBDieline - 2D Dieline Generator (Mailer / Tray Style)
 // ============================================================================
@@ -4211,9 +4212,9 @@ export function generateCosmeticBoxBDieline({ L, W, H, T = 0.5, glueFlapWidth = 
   const nH = isProbablyInches ? Number(H) * MM_TO_IN : Number(H);
   const thickness = isProbablyInches ? (Number(T) || 0.0197) * MM_TO_IN : (Number(T) || 0.5);
 
-  const rawCutPaths = buildLinePaths(CUT_SEGMENTS, nL, nW, nH, thickness);
+  const rawCutPaths = chainCutPaths(buildLinePaths(CUT_SEGMENTS, nL, nW, nH, thickness), 1.0);
   const rawFoldLines = buildFoldLines(FOLD_SEGMENTS, nL, nW, nH, thickness);
-  const rawBleedPaths = buildLinePaths(BLEED_SEGMENTS, nL, nW, nH, thickness);
+  const rawBleedPaths = chainCutPaths(buildLinePaths(BLEED_SEGMENTS, nL, nW, nH, thickness), 1.0);
 
   const scaleFactor = isProbablyInches ? (1 / MM_TO_IN) : 1;
 

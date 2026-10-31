@@ -1061,11 +1061,11 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                         dimensionsIn: rec1.dimensionsIn,
                         detectedFeatures: [
                           altBox.key === 'rte' ? 'Top and bottom tuck flaps fold in reverse/opposite directions' : 'Top and bottom flaps fold towards same front face',
-                          'Alternative 4-panel folding carton profile'
+                          'Suggested 4-panel folding carton profile'
                         ],
                         dieline2DImg: altBox.dieline2DImg,
                         box3DImg: altBox.box3DImg,
-                        badgeText: 'Alternative Recommendation'
+                        badgeText: 'Suggested Match'
                       };
                     }
 
@@ -1155,7 +1155,7 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
                                       ) : (
                                         <>
                                           <Layers style={{ width: '10px', height: '10px', color: '#2563eb' }} />
-                                          <span>Alternative</span>
+                                          <span>Suggested Match</span>
                                         </>
                                       )}
                                     </div>

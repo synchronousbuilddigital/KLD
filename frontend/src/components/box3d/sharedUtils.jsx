@@ -645,6 +645,59 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
     return { cx, cy, rotZ, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
   }
 
+  // FEFCO 0300 Shoe Box with Lid Panel Mappings
+  if (dims?.base && dims?.lid) {
+    const mapBox = (box) => {
+      if (!box) return { cx: 0, cy: 0, rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+      const panelCenterX = box.x + box.w / 2;
+      const panelCenterY = box.y + box.h / 2;
+      return {
+        cx: decal.x - panelCenterX,
+        cy: panelCenterY - decal.y,
+        rotZ: decal.rotation || 0,
+        scaleX: 1,
+        scaleY_sign: 1,
+        scaleY: 1
+      };
+    };
+
+    if (panel === "base-floor" || panel === "p1") return mapBox(dims.base.floor);
+    if (panel === "base-front" || panel === "p1_top_flap") {
+      const b = dims.base.wallTop;
+      return { cx: decal.x - (b.x + b.w / 2), cy: decal.y - b.y, rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+    if (panel === "base-back"  || panel === "p1_bot_flap") {
+      const b = dims.base.wallBot;
+      return { cx: -(decal.x - (b.x + b.w / 2)), cy: (b.y + b.h) - decal.y, rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+    if (panel === "base-left"  || panel === "p4") {
+      const b = dims.base.wallLeft;
+      return { cx: (b.x + b.w) - decal.x, cy: decal.y - (b.y + b.h / 2), rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+    if (panel === "base-right" || panel === "p2") {
+      const b = dims.base.wallRight;
+      return { cx: decal.x - b.x, cy: decal.y - (b.y + b.h / 2), rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+
+    if (panel === "lid-top"   || panel === "top-cover") return mapBox(dims.lid.roof);
+    if (panel === "lid-front" || panel === "lid_wall_top") {
+      const b = dims.lid.wallTop;
+      return { cx: decal.x - (b.x + b.w / 2), cy: decal.y - b.y, rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+    if (panel === "lid-back"  || panel === "lid_wall_bot") {
+      const b = dims.lid.wallBot;
+      return { cx: -(decal.x - (b.x + b.w / 2)), cy: (b.y + b.h) - decal.y, rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+    if (panel === "lid-left"  || panel === "lid_wall_left") {
+      const b = dims.lid.wallLeft;
+      return { cx: (b.x + b.w) - decal.x, cy: decal.y - (b.y + b.h / 2), rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+    if (panel === "lid-right" || panel === "lid_wall_right") {
+      const b = dims.lid.wallRight;
+      return { cx: decal.x - b.x, cy: decal.y - (b.y + b.h / 2), rotZ: decal.rotation || 0, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
+    }
+  }
+
   // The main panels are scaled vertically by H / manuH.
   // The top and bottom flaps are proportional to the box depth (W), so they scale vertically by W / manuW.
   if (panel.includes("top") || panel.includes("bot")) {
@@ -893,6 +946,23 @@ export function getOverlappingDecals(panel, decals, dims, W, T) {
     if (panel === "p1_bot_sec1") return ov(d, x1, x2, yBot, yBot + sec1L);
     if (panel === "p1_bot_sec2") return ov(d, x1, x2, yBot + sec1L, yBot + sec1L + sec2L);
     if (panel === "p1_bot_sec3") return ov(d, x1, x2, yBot + sec1L + sec2L, yBot + sec1L + sec2L + sec3L);
+
+    if (dims?.base && dims?.lid) {
+      const checkPanelBox = (box) => {
+        if (!box) return false;
+        return ov(d, box.x, box.x + box.w, box.y, box.y + box.h);
+      };
+      if (panel === "base-floor" || panel === "p1") return checkPanelBox(dims.base.floor);
+      if (panel === "base-front" || panel === "p1_top_flap") return checkPanelBox(dims.base.wallTop);
+      if (panel === "base-back"  || panel === "p1_bot_flap") return checkPanelBox(dims.base.wallBot);
+      if (panel === "base-left"  || panel === "p4") return checkPanelBox(dims.base.wallLeft);
+      if (panel === "base-right" || panel === "p2") return checkPanelBox(dims.base.wallRight);
+      if (panel === "lid-top"   || panel === "top-cover") return checkPanelBox(dims.lid.roof);
+      if (panel === "lid-front" || panel === "lid_wall_top") return checkPanelBox(dims.lid.wallTop);
+      if (panel === "lid-back"  || panel === "lid_wall_bot") return checkPanelBox(dims.lid.wallBot);
+      if (panel === "lid-left"  || panel === "lid_wall_left") return checkPanelBox(dims.lid.wallLeft);
+      if (panel === "lid-right" || panel === "lid_wall_right") return checkPanelBox(dims.lid.wallRight);
+    }
 
     return false;
   });

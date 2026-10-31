@@ -44,6 +44,18 @@ const CATEGORY_ITEMS = [
 
 const DEFAULT_DIELINES: CatalogItemData[] = [
   {
+    itemId: 'fefco_0300',
+    title: 'FEFCO 0300 Shoe Box with Lid',
+    subtitle: 'Two-Piece Telescope Box • 3D Studio',
+    img: '/images/boxes/fefco_0300_white.png',
+    dieline2DImg: '/images/dielines/fefco_0300.svg',
+    box3DImg: '/images/boxes/fefco_0300_white.png',
+    group: 'dielines',
+    boxModelKey: 'fefco_0300',
+    active: true,
+    order: 0,
+  },
+  {
     itemId: 'rsc',
     title: 'Square Shipping Box',
     subtitle: 'Corrugated Shipping Box • 3D Studio',

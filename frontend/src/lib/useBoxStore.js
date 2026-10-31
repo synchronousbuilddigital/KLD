@@ -165,6 +165,24 @@ const createTubeDefaultState = () => ({
   capColor: "#ffffff"
 });
 
+const createFEFCO0300DefaultState = () => ({
+  L: 11.8898,
+  W: 8.0315,
+  H: 2.4016,
+  T: 0.059,
+  glueFlapWidth: 2.4016,
+  bleed: 0.125,
+  sizeMode: "manufacture",
+  materialType: "corrugated",
+  materialName: "E-flute (1.5mm)",
+  isCustomMaterial: false,
+  materialColor: "#ffffff",
+  materialCategory: "corrugated",
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
+});
+
 const createRSCDefaultState = () => ({
   L: 12.0079,
   W: 12.0079,
@@ -201,6 +219,8 @@ export const useBoxStore = create((set) => ({
   savedState: {
     dieline: {
       rsc: createRSCDefaultState(),
+      fefco_0300: createFEFCO0300DefaultState(),
+      shoe_box_with_lid: createFEFCO0300DefaultState(),
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
@@ -217,6 +237,8 @@ export const useBoxStore = create((set) => ({
     },
     mockup: {
       rsc: createRSCDefaultState(),
+      fefco_0300: createFEFCO0300DefaultState(),
+      shoe_box_with_lid: createFEFCO0300DefaultState(),
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),

@@ -16,7 +16,7 @@ import { setLargeData } from "../../lib/idbStorage";
 interface BoxStudioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "rsc";
+  initialModel?: "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "rsc" | "fefco_0300" | "shoe_box_with_lid";
   boxTitle?: string;
 }
 
@@ -200,7 +200,9 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
     auto_lock: "Auto Lock Bottom Box",
     cosmetic: "Cosmetic Box",
     cosmetic_b: "Mailer / Tray Box",
-    button_hole: "Button Hole Box"
+    button_hole: "Button Hole Box",
+    fefco_0300: "FEFCO 0300 Shoe Box with Lid",
+    shoe_box_with_lid: "FEFCO 0300 Shoe Box with Lid"
   };
 
   const currentTitle = modelLabels[store.boxModel] || boxTitle;
@@ -590,6 +592,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 unit={unit}
                 materialType={store.materialCategory}
                 isEditorMode={true}
+                colorDieline={true}
                 activeColor={store.packageColor}
                 activeSurface="Outside"
               />

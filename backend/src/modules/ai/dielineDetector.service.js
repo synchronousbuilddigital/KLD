@@ -104,6 +104,22 @@ const DIRECTORY_BOXES = [
     ]
   },
   {
+    itemId: 'fefco_0300',
+    boxModelKey: 'fefco_0300',
+    name: 'FEFCO 0300 Shoe Box with Lid',
+    subtitle: 'Two-Piece Telescope Box • Separate Tray & Fitted Lid',
+    description: 'FEFCO 0300 standard telescope box consisting of a base tray and a fitted telescope lid. Classic packaging for footwear, apparel, electronics, and luxury retail gift sets.',
+    dieline2DImg: '/images/dielines/fefco_0300.svg',
+    box3DImg: '/images/boxes/fefco_0300_white.png',
+    defaultDims: { L: 302, W: 204, H: 61, unit: 'mm' },
+    defaultDimsIn: { L: 11.8898, W: 8.0315, H: 2.4016 },
+    structureFeatures: [
+      'Two-piece telescope design (separate base tray and telescoping lid)',
+      'Corner glue flaps on both tray and lid for rigid structural corners',
+      'Lid dimensions slightly larger (+6mm) to slide snugly over base body'
+    ]
+  },
+  {
     itemId: 'rsc',
     boxModelKey: 'rsc',
     name: 'Square Shipping Box (RSC)',
@@ -1543,7 +1559,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     unit: 'mm'
   };
 
-  const BOX_KEYS = ['rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'rsc'];
+  const BOX_KEYS = ['rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'rsc', 'fefco_0300', 'shoe_box_with_lid'];
   const CONTAINER_KEYS = ['can', 'slim_can', 'water_bottle', 'tube'];
 
   const isBoxPrimary = BOX_KEYS.includes(primaryBox.boxModelKey);
@@ -1557,6 +1573,8 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     cosmetic_b: 'rsc',
     button_hole: 'rte',
     rsc: 'rte',
+    fefco_0300: 'cosmetic_b',
+    cosmetic_b: 'fefco_0300',
     can: 'slim_can',
     slim_can: 'can',
     water_bottle: 'can',

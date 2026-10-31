@@ -1,3 +1,4 @@
+import { chainCutPaths } from './dielinePathUtils.js';
 import { rawButtonHolePaths } from './buttonHoleDielineRaw.js';
 
 export function generateButtonHoleDieline({ L, W, H, glueFlapWidth, windowDecals = [] }) {
@@ -179,8 +180,8 @@ export function generateButtonHoleDieline({ L, W, H, glueFlapWidth, windowDecals
   return {
     width: x5, 
     height: totalHeight, 
-    cutPaths,
-    bleedPaths, 
+    cutPaths: chainCutPaths(cutPaths, 1.0),
+    bleedPaths: chainCutPaths(bleedPaths, 1.0), 
     foldLines,
     dimensions: { L: nL, W: nW, H: nH, x1, x2, x3, x4, x5, yTop, yBot }
   };

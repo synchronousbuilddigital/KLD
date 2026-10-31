@@ -10,6 +10,7 @@ import { generateWaterBottleDieline } from "./waterBottleDielineGenerator.js";
 import { generateSipperBottleDieline } from "./sipperBottleDielineGenerator.js";
 import { generateTubeDieline } from "./tubeDielineGenerator.js";
 import { generateSlimCanDieline } from "./slimCanDielineGenerator.js";
+import { generateFEFCO0300Dieline } from "./fefco0300DielineGenerator.js";
 
 /**
  * Registry of box dieline algorithms.
@@ -23,6 +24,8 @@ export const BOX_GENERATOR_REGISTRY = {
   cosmetic_b: (params) => generateCosmeticBoxBDieline(params),
   button_hole: (params) => generateButtonHoleDieline(params),
   rsc: (params) => generateRSCDielineDXF(params),
+  fefco_0300: (params) => generateFEFCO0300Dieline(params),
+  shoe_box_with_lid: (params) => generateFEFCO0300Dieline(params),
   can: (params) => generateCanDieline(params),
   soda_can: (params) => generateCanDieline(params),
   slim_can: (params) => generateSlimCanDieline(params),

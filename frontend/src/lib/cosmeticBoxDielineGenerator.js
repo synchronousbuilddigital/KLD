@@ -1,3 +1,4 @@
+import { chainCutPaths } from './dielinePathUtils.js';
 // ============================================================================
 // Cosmetic Box - 2D Dieline Generator
 // ============================================================================
@@ -85,9 +86,9 @@ export function generateCosmeticBoxDieline({ L, W, H, T = 0.5 }) {
   const nH = Number(H);
   const thickness = Number(T);
 
-  const cutPaths = buildLinePaths(CUT_SEGMENTS, nL, nW, nH, thickness);
+  const cutPaths = chainCutPaths(buildLinePaths(CUT_SEGMENTS, nL, nW, nH, thickness), 1.0);
   const foldLines = buildFoldLines(FOLD_SEGMENTS, nL, nW, nH, thickness);
-  const bleedPaths = buildLinePaths(BLEED_SEGMENTS, nL, nW, nH, thickness);
+  const bleedPaths = chainCutPaths(buildLinePaths(BLEED_SEGMENTS, nL, nW, nH, thickness), 1.0);
 
   let maxX = -Infinity, maxY = -Infinity, minX = Infinity, minY = Infinity;
   for (const seg of [...CUT_SEGMENTS, ...FOLD_SEGMENTS, ...BLEED_SEGMENTS]) {

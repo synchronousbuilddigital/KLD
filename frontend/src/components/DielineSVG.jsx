@@ -12,9 +12,11 @@ import { generateSipperBottleDieline } from "../lib/sipperBottleDielineGenerator
 import { generateCanDieline } from "../lib/canDielineGenerator";
 import { generateSlimCanDieline } from "../lib/slimCanDielineGenerator";
 import { generateTubeDieline } from "../lib/tubeDielineGenerator";
+import { generateFEFCO0300Dieline } from "../lib/fefco0300DielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
+import { chainCutPaths } from "../lib/dielinePathUtils";
 
 const EditableText = React.memo(({ decal, activeDecalId, setDecals }) => {
   const contentRef = useRef(decal.content || "Your text here");
@@ -106,7 +108,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
   const {
     isEditorMode, decals = emptyArray, setDecals, activeColor, activeSurface,
-    activeDecalId, setActiveDecalId, colorDieline = false,
+    activeDecalId, setActiveDecalId, colorDieline = isEditorMode,
     useStore = useBoxStore
   } = props;
 
@@ -182,10 +184,30 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     if (boxModel === 'rsc') {
       return generateRSCDielineDXF({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
     }
+    if (boxModel === 'fefco_0300' || boxModel === 'shoe_box_with_lid') {
+      return generateFEFCO0300Dieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
+    }
     return generateRTEDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, method: generatorMethod, windowDecals });
   }, [manuL, manuW, manuH, T, glueFlapWidth, bleed, generatorMethod, boxModel, windowDecals]);
 
   const { width, height, cutPaths, bleedPaths, foldLines, dimensions } = dieline;
+
+  const effectiveCutPaths = useMemo(() => {
+    return chainCutPaths(cutPaths);
+  }, [cutPaths]);
+
+  const effectiveBleedPaths = useMemo(() => {
+    return chainCutPaths(bleedPaths);
+  }, [bleedPaths]);
+
+  const materialColor = useMemo(() => {
+    const col = activeColor !== undefined && activeColor !== null ? activeColor : packageColor;
+    if (col && col !== "transparent") return col;
+    if (materialCategory === "white_paperboard" || materialCategory === "art_paper") return "#ffffff";
+    if (materialCategory === "corrugated") return "#c19a6b";
+    if (materialCategory === "kraft_paperboard") return "#cbab7d";
+    return "#C6A075";
+  }, [activeColor, packageColor, materialCategory]);
   const x0 = dimensions.x0 !== undefined ? dimensions.x0 : 0;
   const { x1, x2, x3, x4, x5, yTop, yBot } = dimensions;
 
@@ -234,9 +256,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const [textureDataUrl, setTextureDataUrl] = useState("");
 
   useEffect(() => {
-    // Only apply color to the 2D dieline texture if colorDieline is true
-    const colorToUse = colorDieline ? (activeColor !== undefined ? activeColor : packageColor) : "transparent";
-    const catToUse = materialCategory || "white_paperboard";
+    const col = activeColor !== undefined && activeColor !== null ? activeColor : packageColor;
+    const colorToUse = (colorDieline || (col && col !== "transparent")) ? col : "transparent";
+    const catToUse = materialCategory || "kraft";
     const canvas = generateCardboardCanvas(catToUse, colorToUse);
     if (canvas) {
       setTextureDataUrl(canvas.toDataURL("image/jpeg", 0.6));
@@ -483,8 +505,10 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
             <path d="M 0 0 L 6 3 L 0 6 z" fill={textMuted} />
           </marker>
           <pattern id="kraft-pattern" width="6" height="6" patternUnits="userSpaceOnUse">
-            {textureDataUrl && (
+            {textureDataUrl ? (
               <image href={textureDataUrl} width="6" height="6" preserveAspectRatio="none" />
+            ) : (
+              <rect width="6" height="6" fill={materialColor} />
             )}
           </pattern>
 
@@ -496,7 +520,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
         {showBleedLine && (
           <g className="dieline-vector" stroke={bleedColor} strokeWidth={strokeW * 1.5} fill="none" strokeLinejoin="round" strokeLinecap="round" opacity={0.7}>
-            {bleedPaths.map((p, i) => <path key={`bleed-${i}`} d={p} />)}
+            {effectiveBleedPaths.map((p, i) => <path key={`bleed-${i}`} d={p} />)}
           </g>
         )}
 
@@ -505,13 +529,13 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           className="dieline-cut-paths"
           stroke={trimColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
-          fill={isEditorMode ? "url(#kraft-pattern)" : (packageColor && packageColor !== "transparent" ? packageColor : "none")}
+          fill="url(#kraft-pattern)"
           strokeLinejoin="round"
           strokeLinecap="round"
           filter={isEditorMode ? "drop-shadow(0px 8px 16px rgba(0,0,0,0.15))" : undefined}
           style={{ transition: "fill 0.3s ease-in-out" }}
         >
-          {cutPaths.map((p, i) => <path key={`cut-${i}`} d={p} />)}
+          {effectiveCutPaths.map((p, i) => <path key={`cut-${i}`} d={p} />)}
         </g>
 
         <g

@@ -34,6 +34,7 @@ export const mockupCategories: MockupCategory[] = [
       { id: 5, name: 'Mailer / Tray Box', animation: 'Roll end tray and tuck front closure', imageUrl: '/images/boxes/cosmetic_b_white.jpg', whiteImageUrl: '/images/boxes/cosmetic_b_white.jpg', kraftImageUrl: '/images/boxes/cosmetic_b_kraft.jpg', boxModelKey: 'cosmetic_b', gridSize: 'large' },
       { id: 6, name: 'Button Hole Box', animation: 'Snap lock 1-2-3 bottom and button hole notch', imageUrl: '/images/boxes/button_hole_white.jpg', whiteImageUrl: '/images/boxes/button_hole_white.jpg', kraftImageUrl: '/images/boxes/button_hole_kraft.jpg', boxModelKey: 'button_hole', gridSize: 'large' },
       { id: 7, name: 'Square Shipping Box', animation: 'Equal width flaps meet at center', imageUrl: '/images/boxes/rsc_kraft.jpg', whiteImageUrl: '/images/boxes/rsc_white.jpg', kraftImageUrl: '/images/boxes/rsc_kraft.jpg', boxModelKey: 'rsc', gridSize: 'large' },
+      { id: 8, name: 'FEFCO 0300 shoe box with lid mockup', animation: 'Telescope lid smoothly lifts and separates from base tray', imageUrl: '/images/boxes/fefco_0300_white.png', whiteImageUrl: '/images/boxes/fefco_0300_white.png', kraftImageUrl: '/images/boxes/fefco_0300_kraft.png', boxModelKey: 'fefco_0300', isFeatured: true, gridSize: 'large', description: 'FEFCO 0300 two-piece telescope box with separate tray and fitted lid for footwear, retail gifts, and luxury packaging.', dimensions: '11.89 × 8.03 × 2.40 in (302 × 204 × 61 mm)', material: 'E-flute Corrugated / Rigid Boxboard (1.5mm)' },
     ]
   },
   {
