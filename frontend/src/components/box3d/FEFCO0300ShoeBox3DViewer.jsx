@@ -356,25 +356,39 @@ function TelescopeLidKinematics({
 // ─────────────────────────────────────────────────────────────────────────────
 // SMOOTH AUTO-FRAMING CAMERA RIG
 // ─────────────────────────────────────────────────────────────────────────────
-function CameraRig({ progress }) {
-  const { camera } = useThree();
+function CameraRig({ progress, L, W, H }) {
+  const { camera, controls } = useThree();
   const lastProgressRef = useRef(progress);
-  const targetDistRef = useRef(THREE.MathUtils.lerp(50, 26, progress));
+
+  const maxDim = Math.max(L, W, H);
+  const closedDist = maxDim * 2.2;
+  const openDist = maxDim * 4.2;
+  const getTargetDist = (p) => THREE.MathUtils.lerp(openDist, closedDist, p);
+
+  const targetDistRef = useRef(getTargetDist(progress));
 
   useEffect(() => {
     if (Math.abs(progress - lastProgressRef.current) > 0.001) {
       lastProgressRef.current = progress;
-      targetDistRef.current = THREE.MathUtils.lerp(50, 26, progress);
+      targetDistRef.current = getTargetDist(progress);
     }
-  }, [progress]);
+  }, [progress, L, W, H]);
 
   useFrame(() => {
+    const targetY = (H / 2) * stageProgress(progress, 0.35, 0.85);
+    const targetVec = new THREE.Vector3(0, targetY, 0);
+
+    if (controls) {
+      controls.target.copy(targetVec);
+    }
+
     if (targetDistRef.current !== null) {
-      const currentDist = camera.position.length();
+      const offset = camera.position.clone().sub(targetVec);
+      const currentDist = offset.length();
       if (Math.abs(currentDist - targetDistRef.current) > 0.1) {
-        const dir = camera.position.clone().normalize();
+        const dir = offset.normalize();
         const newDist = THREE.MathUtils.lerp(currentDist, targetDistRef.current, 0.08);
-        camera.position.copy(dir.multiplyScalar(newDist));
+        camera.position.copy(targetVec.clone().add(dir.multiplyScalar(newDist)));
       } else {
         targetDistRef.current = null;
       }
@@ -487,6 +501,17 @@ export default function FEFCO0300ShoeBox3DViewer({
   const midX = (xFlatLid / 2) * (1 - stageProgress(progress, 0.40, 0.80));
   const targetY = (H / 2) * stageProgress(progress, 0.35, 0.85);
 
+  const maxDim = Math.max(L, W, H);
+  const initialDist = THREE.MathUtils.lerp(maxDim * 4.2, maxDim * 2.2, progress);
+  const initialDir = useMemo(() => new THREE.Vector3(18, 26, 40).normalize(), []);
+  const initialCamPos = useMemo(() => {
+    return [
+      initialDir.x * initialDist,
+      targetY + initialDir.y * initialDist,
+      initialDir.z * initialDist,
+    ];
+  }, [initialDist, initialDir, targetY]);
+
   // Single shoe box instance rendering
   const renderShoeBox = (key, pos, rot) => (
     <group key={key} position={pos} rotation={rot}>
@@ -540,7 +565,7 @@ export default function FEFCO0300ShoeBox3DViewer({
   );
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%", minHeight: "350px" }}>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
       {/* Interactive Lid Quick Toggle Pill */}
       {progress >= 0.75 && (
         <div 
@@ -576,7 +601,7 @@ export default function FEFCO0300ShoeBox3DViewer({
       )}
 
       <Canvas
-        camera={{ position: [18, 26, 40], fov: 40 }}
+        camera={{ position: initialCamPos, fov: 40 }}
         shadows
         gl={{ antialias: true, preserveDrawingBuffer: true }}
       >
@@ -584,19 +609,19 @@ export default function FEFCO0300ShoeBox3DViewer({
           makeDefault
           enableDamping
           dampingFactor={0.06}
-          minDistance={8}
-          maxDistance={70}
+          minDistance={Math.max(2, maxDim * 0.5)}
+          maxDistance={maxDim * 8}
           target={[0, targetY, 0]}
         />
 
         <LightingPreset preset={store.lightingPreset || "studio"} />
 
-        <CameraRig progress={progress} />
+        <CameraRig progress={progress} L={L} W={W} H={H} />
 
         <SceneAnimator activeAnimation={activeAnimation}>
           <group position={[-midX, 0, 0]}>
             {sceneInstances.map((inst, i) =>
-              renderShoeBox(`box-${i}`, inst.position, inst.rotation)
+              renderShoeBox(`box-${i}`, inst.pos || inst.position || [0, 0, 0], inst.rot || inst.rotation || [0, 0, 0])
             )}
           </group>
         </SceneAnimator>

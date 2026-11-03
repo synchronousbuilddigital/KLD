@@ -1,4 +1,3 @@
-import { chainCutPaths } from './dielinePathUtils.js';
 // ============================================================================
 // Cosmetic Box - 2D Dieline Generator
 // ============================================================================
@@ -43,6 +42,88 @@ const CUT_SEGMENTS = [[5.0,67.86949563,22.8,63.1],[22.8,63.1,23.8,62.35],[23.8,6
 const FOLD_SEGMENTS = [[94.5,25.75,100.0,25.75],[129.1,25.75,123.6,25.75],[22.8,63.1,22.8,183.7],[58.4,63.1,58.4,183.7],[59.65,63.1,92.93466881,63.1],[94.0,62.6,94.0,184.2],[92.93466881,183.7,59.65,183.7],[130.66533119,63.1,164.7,63.1],[164.7,183.7,130.66533119,183.7],[129.6,184.2,129.6,62.6],[129.6,62.6,94.0,62.6],[129.6,27.75,117.75,27.75],[105.85,27.75,94.0,27.75],[94.0,184.2,129.6,184.2],[100.0,219.05,123.6,219.05],[57.9,63.1,22.8,63.1],[22.8,183.7,57.9,183.7],[57.4,51.1,23.8,51.1],[23.8,195.7,57.4,195.7],[57.4,16.5,23.8,16.5],[23.8,230.3,57.4,230.3]];
 const BLEED_SEGMENTS = [[3.7059044,63.039867,18.799999,58.995415],[18.799999,58.995415,18.799999,7.875],[26.674999,-0.0,54.525002,-0.0],[62.400002,7.875,62.400002,43.530434],[68.935856,41.099998,89.0,41.099998],[89.0,41.099998,89.0,26.410255],[89.0,26.410255,89.5,25.544231],[89.5,25.544231,89.5,22.75],[99.5,12.75,124.1,12.75],[134.10001,22.75,134.10001,25.544231],[134.10001,25.544231,134.60001,26.410255],[134.60001,26.410255,134.60001,41.099998],[134.60001,41.099998,154.66414,41.099998],[164.40785,48.850494,165.49934,53.578266],[165.49934,53.578266,168.95,57.028931],[168.95,57.028931,168.95,59.92408],[168.95,59.92408,169.7,60.42408],[169.7,60.42408,169.7,186.37592],[169.7,186.37592,168.95,186.87592],[168.95,186.87592,168.95,189.77106],[168.95,189.77106,165.49933,193.22173],[165.49933,193.22173,164.40785,197.94949],[154.66414,205.7,134.60001,205.7],[134.60001,205.7,134.60001,224.8],[134.60001,224.8,134.07535,224.8],[124.1,234.05,99.5,234.05],[89.524666,224.8,89.0,224.8],[89.0,224.8,89.0,205.7],[89.0,205.7,68.93586,205.7],[62.400002,203.26955,62.400002,238.925],[54.525002,246.8,26.674999,246.8],[18.799999,238.925,18.799999,187.80458],[18.799999,187.80458,0.0,182.76715],[0.0,182.76715,0.0,64.03286],[0.0,64.03286,3.7059044,63.039867],[3.7059044,63.039867,3.7059044,63.039867],"M18.799999,7.875 C18.799999,5.7003781 19.56884367,3.8442228 21.106533,2.3065341 ","M21.106533,2.3065341 C22.64422233,0.7688447 24.50037767,0 26.674999,-0 ","M54.525002,-0 C56.69962067,0 58.55577467,0.7688447 60.093464,2.3065341 ","M60.093464,2.3065341 C61.631156,3.84422582 62.400002,5.70038112 62.400002,7.875 ","M62.400002,43.530434 C62.50136867,43.44356533 62.60494,43.35806133 62.710716,43.273922 ","M62.710716,43.273922 C64.53271,41.824642 66.60775667,41.10000067 68.935856,41.099998 ","M89.5,22.75 C89.5,19.98857133 90.47630833,17.63154867 92.428925,15.678932 ","M92.428925,15.678932 C94.38154633,13.72631067 96.73857133,12.75 99.5,12.75 ","M124.1,12.75 C126.86142,12.75 129.21844333,13.72631067 131.17107,15.678932 ","M131.17107,15.678932 C133.12369667,17.63155867 134.10001,19.98858133 134.10001,22.75 ","M154.66414,41.099998 C156.99225333,41.10000067 159.06730667,41.82464067 160.8893,43.273918 ","M160.8893,43.273918 C162.71128667,44.723198 163.88413667,46.58205667 164.40785,48.850494 ","M164.40785,197.94949 C163.88415,200.21792333 162.71129333,202.07678667 160.88928,203.52608 ","M160.88928,203.52608 C159.06728,204.97536 156.99223333,205.7 154.66414,205.7 ","M134.07535,224.8 C133.91261,227.24060667 132.94451667,229.34763333 131.17107,231.12108 ","M131.17107,231.12108 C129.21845,233.07369333 126.86142667,234.05 124.1,234.05 ","M99.5,234.05 C96.738566,234.05 94.381541,233.07369333 92.428925,231.12108 ","M92.428925,231.12108 C90.65549233,229.34765333 89.687406,227.24062667 89.524666,224.8 ","M68.93586,205.7 C66.60777267,205.7 64.532726,204.97535333 62.71072,203.52606 ","M62.71072,203.52606 C62.604956,203.44193333 62.50138333,203.35643 62.400002,203.26955 ","M62.400002,238.925 C62.400002,241.09962667 61.631156,242.95578333 60.093464,244.49347 ","M60.093464,244.49347 C58.55577467,246.03115667 56.69962067,246.8 54.525002,246.8 ","M26.674999,246.8 C24.50037767,246.8 22.64422233,246.03115667 21.106533,244.49347 ","M21.106533,244.49347 C19.56884367,242.95578333 18.799999,241.09962667 18.799999,238.925 "];
 
+
+function getSegPts(seg) {
+  if (Array.isArray(seg)) return [{ x: seg[0], y: seg[1] }, { x: seg[2], y: seg[3] }];
+  const nums = seg.match(/[-+]?[0-9]*\.?[0-9]+/g);
+  const pts = [];
+  if (!nums) return pts;
+  for (let i = 0; i < nums.length; i += 2) pts.push({ x: parseFloat(nums[i]), y: parseFloat(nums[i+1]) });
+  return pts;
+}
+
+const PERIMETER_CHAIN_INDICES = [
+  { i: 0, rev: false }, { i: 1, rev: false }, { i: 2, rev: false }, { i: 68, rev: true },
+  { i: 3, rev: false }, { i: 69, rev: true }, { i: 4, rev: false }, { i: 5, rev: false },
+  { i: 6, rev: false }, { i: 7, rev: false }, { i: 8, rev: false }, { i: 9, rev: false },
+  { i: 70, rev: true }, { i: 10, rev: false }, { i: 11, rev: false }, { i: 12, rev: false },
+  { i: 90, rev: false }, { i: 13, rev: false }, { i: 91, rev: false }, { i: 71, rev: false },
+  { i: 14, rev: false }, { i: 15, rev: false }, { i: 16, rev: false }, { i: 72, rev: true },
+  { i: 17, rev: false }, { i: 73, rev: true }, { i: 18, rev: false }, { i: 19, rev: false },
+  { i: 20, rev: false }, { i: 74, rev: false }, { i: 92, rev: false }, { i: 93, rev: false },
+  { i: 21, rev: false }, { i: 22, rev: false }, { i: 23, rev: false }, { i: 75, rev: true },
+  { i: 24, rev: false }, { i: 25, rev: false }, { i: 26, rev: false }, { i: 27, rev: false },
+  { i: 28, rev: false }, { i: 29, rev: false }, { i: 30, rev: false }, { i: 31, rev: false },
+  { i: 32, rev: false }, { i: 76, rev: true }, { i: 33, rev: false }, { i: 34, rev: false },
+  { i: 35, rev: false }, { i: 94, rev: false }, { i: 36, rev: false }, { i: 95, rev: false },
+  { i: 77, rev: false }, { i: 37, rev: false }, { i: 38, rev: false }, { i: 39, rev: false },
+  { i: 78, rev: true }, { i: 40, rev: false }, { i: 79, rev: true }, { i: 41, rev: false },
+  { i: 42, rev: false }, { i: 43, rev: false }, { i: 80, rev: false }, { i: 96, rev: false },
+  { i: 97, rev: false }, { i: 44, rev: false }, { i: 45, rev: false }, { i: 46, rev: false },
+  { i: 81, rev: true }, { i: 47, rev: false }, { i: 48, rev: false }, { i: 49, rev: false },
+  { i: 50, rev: false }, { i: 51, rev: false }, { i: 52, rev: false }, { i: 82, rev: true },
+  { i: 53, rev: false }, { i: 83, rev: true }, { i: 54, rev: false }, { i: 55, rev: false },
+  { i: 56, rev: false }, { i: 57, rev: false }
+];
+
+function buildPerimeterPath(L, W, H, thickness) {
+  const pts = [];
+  for (let step = 0; step < PERIMETER_CHAIN_INDICES.length; step++) {
+    const { i, rev } = PERIMETER_CHAIN_INDICES[step];
+    const segPts = getSegPts(CUT_SEGMENTS[i]);
+    const ordered = rev ? [...segPts].reverse() : segPts;
+    const startIdx = step === 0 ? 0 : 1;
+    for (let k = startIdx; k < ordered.length; k++) {
+      pts.push(transformPoint(ordered[k].x, ordered[k].y, L, W, H, thickness));
+    }
+  }
+  return 'M ' + pts.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' L ') + ' Z';
+}
+
+function buildInternalCuts(L, W, H, thickness) {
+  const hole1Pts = [...getSegPts(CUT_SEGMENTS[86]), ...getSegPts(CUT_SEGMENTS[87]).slice(1)];
+  const tHole1 = hole1Pts.map(p => transformPoint(p.x, p.y, L, W, H, thickness));
+  const hole1Str = 'M ' + tHole1.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' L ') + ' Z';
+
+  const hole2Pts = [...getSegPts(CUT_SEGMENTS[88]), ...getSegPts(CUT_SEGMENTS[89]).slice(1)];
+  const tHole2 = hole2Pts.map(p => transformPoint(p.x, p.y, L, W, H, thickness));
+  const hole2Str = 'M ' + tHole2.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' L ') + ' Z';
+
+  const tuckPts = [
+    { x: CUT_SEGMENTS[59][0], y: CUT_SEGMENTS[59][1] },
+    { x: CUT_SEGMENTS[59][2], y: CUT_SEGMENTS[59][3] },
+    { x: CUT_SEGMENTS[60][2], y: CUT_SEGMENTS[60][3] },
+    { x: CUT_SEGMENTS[61][2], y: CUT_SEGMENTS[61][3] }
+  ].map(p => transformPoint(p.x, p.y, L, W, H, thickness));
+  const tuckStr = 'M ' + tuckPts.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' L ');
+
+  const bSlit1 = [
+    ...getSegPts(CUT_SEGMENTS[62]),
+    ...getSegPts(CUT_SEGMENTS[84]).slice(1),
+    ...getSegPts(CUT_SEGMENTS[63]).slice(1)
+  ].map(p => transformPoint(p.x, p.y, L, W, H, thickness));
+  const bSlit1Str = 'M ' + bSlit1.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' L ');
+
+  const bSlit2 = [
+    ...getSegPts(CUT_SEGMENTS[64]),
+    ...getSegPts(CUT_SEGMENTS[85]).reverse().slice(1),
+    ...getSegPts(CUT_SEGMENTS[65]).slice(1)
+  ].map(p => transformPoint(p.x, p.y, L, W, H, thickness));
+  const bSlit2Str = 'M ' + bSlit2.map(p => `${p.x.toFixed(4)},${p.y.toFixed(4)}`).join(' L ');
+
+  return { hole1Str, hole2Str, tuckStr, bSlit1Str, bSlit2Str };
+}
+
 function transformSVGPath(pathStr, L, W, H, thickness) {
   return pathStr.replace(/([A-Za-z])([^A-Za-z]*)/g, (match, cmd, args) => {
     if (cmd.toUpperCase() === 'Z') return cmd;
@@ -86,9 +167,16 @@ export function generateCosmeticBoxDieline({ L, W, H, T = 0.5 }) {
   const nH = Number(H);
   const thickness = Number(T);
 
-  const cutPaths = chainCutPaths(buildLinePaths(CUT_SEGMENTS, nL, nW, nH, thickness), 1.0);
+  const perim = buildPerimeterPath(nL, nW, nH, thickness);
+  const { hole1Str, hole2Str, tuckStr, bSlit1Str, bSlit2Str } = buildInternalCuts(nL, nW, nH, thickness);
+  const cutPaths = [
+    `${perim} ${hole1Str} ${hole2Str}`,
+    tuckStr,
+    bSlit1Str,
+    bSlit2Str
+  ];
   const foldLines = buildFoldLines(FOLD_SEGMENTS, nL, nW, nH, thickness);
-  const bleedPaths = chainCutPaths(buildLinePaths(BLEED_SEGMENTS, nL, nW, nH, thickness), 1.0);
+  const bleedPaths = buildLinePaths(BLEED_SEGMENTS, nL, nW, nH, thickness);
 
   let maxX = -Infinity, maxY = -Infinity, minX = Infinity, minY = Infinity;
   for (const seg of [...CUT_SEGMENTS, ...FOLD_SEGMENTS, ...BLEED_SEGMENTS]) {

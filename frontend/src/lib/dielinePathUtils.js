@@ -9,14 +9,13 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
     return cutPaths || [];
   }
 
-  // If all paths are already closed (e.g. FEFCO 0300 or RSC where every path ends with Z),
-  // return as-is
-  const allAlreadyClosed = cutPaths.length <= 4 && cutPaths.every(p => {
+  // If paths already contain a closed loop (ends with Z/z) or are pre-assembled, return as-is
+  const hasClosedPath = cutPaths.some(p => {
     if (typeof p !== 'string') return false;
     const t = p.trim();
     return t.endsWith('Z') || t.endsWith('z');
   });
-  if (allAlreadyClosed) {
+  if (hasClosedPath) {
     return cutPaths;
   }
 

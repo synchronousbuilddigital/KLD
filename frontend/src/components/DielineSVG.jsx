@@ -193,12 +193,22 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const { width, height, cutPaths, bleedPaths, foldLines, dimensions } = dieline;
 
   const effectiveCutPaths = useMemo(() => {
+    if (!cutPaths || !Array.isArray(cutPaths)) return cutPaths || [];
+    if (boxModel === 'cosmetic') return cutPaths;
+    if (cutPaths.some(p => typeof p === 'string' && (p.trim().endsWith('Z') || p.trim().endsWith('z')))) {
+      return cutPaths;
+    }
     return chainCutPaths(cutPaths);
-  }, [cutPaths]);
+  }, [cutPaths, boxModel]);
 
   const effectiveBleedPaths = useMemo(() => {
+    if (!bleedPaths || !Array.isArray(bleedPaths)) return bleedPaths || [];
+    if (boxModel === 'cosmetic') return bleedPaths;
+    if (bleedPaths.some(p => typeof p === 'string' && (p.trim().endsWith('Z') || p.trim().endsWith('z')))) {
+      return bleedPaths;
+    }
     return chainCutPaths(bleedPaths);
-  }, [bleedPaths]);
+  }, [bleedPaths, boxModel]);
 
   const materialColor = useMemo(() => {
     const col = activeColor !== undefined && activeColor !== null ? activeColor : packageColor;
@@ -530,6 +540,7 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           stroke={trimColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
           fill="url(#kraft-pattern)"
+          fillRule="evenodd"
           strokeLinejoin="round"
           strokeLinecap="round"
           filter={isEditorMode ? "drop-shadow(0px 8px 16px rgba(0,0,0,0.15))" : undefined}
