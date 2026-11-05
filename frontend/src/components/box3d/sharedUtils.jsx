@@ -645,6 +645,64 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
     return { cx, cy, rotZ, scaleX: 1, scaleY_sign: 1, scaleY: 1 };
   }
 
+  // FEFCO 0426 Pizza Box / Roll-End Tray Panel Mappings
+  if (dims?.floor && dims?.lid) {
+    if (panel === "base-floor" || panel === "floor") {
+      const b = dims.floor;
+      return {
+        cx: decal.x - (b.x + b.w / 2),
+        cy: (b.y + b.h / 2) - decal.y,
+        rotZ: decal.rotation || 0,
+        scaleX: 1, scaleY_sign: 1, scaleY: 1
+      };
+    }
+    if (panel === "lid-top" || panel === "lid") {
+      const b = dims.lid;
+      return {
+        cx: decal.x - (b.x + b.w / 2),
+        cy: (W / 2) - (decal.y - (b.y + b.h / 2)),
+        rotZ: decal.rotation || 0,
+        scaleX: 1, scaleY_sign: 1, scaleY: 1
+      };
+    }
+    if (panel === "front-wall" || panel === "front") {
+      const b = dims.front;
+      return {
+        cx: decal.x - (b.x + b.w / 2),
+        cy: (H / 2) - (decal.y - (b.y + b.h / 2)),
+        rotZ: decal.rotation || 0,
+        scaleX: 1, scaleY_sign: 1, scaleY: 1
+      };
+    }
+    if (panel === "back-wall" || panel === "back") {
+      const b = dims.back;
+      return {
+        cx: -(decal.x - (b.x + b.w / 2)),
+        cy: (H / 2) - (decal.y - (b.y + b.h / 2)),
+        rotZ: (decal.rotation || 0) + Math.PI,
+        scaleX: 1, scaleY_sign: 1, scaleY: 1
+      };
+    }
+    if (panel === "left-wall" || panel === "leftWall") {
+      const b = dims.leftWall;
+      return {
+        cx: -(decal.y - (b.y + b.h / 2)),
+        cy: (H / 2) - (decal.x - (b.x + b.w / 2)),
+        rotZ: decal.rotation || 0,
+        scaleX: 1, scaleY_sign: 1, scaleY: 1
+      };
+    }
+    if (panel === "right-wall" || panel === "rightWall") {
+      const b = dims.rightWall;
+      return {
+        cx: decal.y - (b.y + b.h / 2),
+        cy: (H / 2) - (decal.x - (b.x + b.w / 2)),
+        rotZ: decal.rotation || 0,
+        scaleX: 1, scaleY_sign: 1, scaleY: 1
+      };
+    }
+  }
+
   // FEFCO 0300 Shoe Box with Lid Panel Mappings
   if (dims?.base && dims?.lid) {
     const mapBox = (box) => {
@@ -829,7 +887,7 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   }
 
   const nT = Math.max(0.015, Number(T) || 0.0197);
-  const depth = isFlatGeometry ? Math.max(0.015, nT) : nT * 0.1;
+  const depth = isFlatGeometry ? Math.max(0.015, nT) : Math.max(0.2, nT * 2.5);
   const zPos  = isFlatGeometry ? 0 : (isInside ? 0 : nT);
 
   return (
@@ -946,6 +1004,20 @@ export function getOverlappingDecals(panel, decals, dims, W, T) {
     if (panel === "p1_bot_sec1") return ov(d, x1, x2, yBot, yBot + sec1L);
     if (panel === "p1_bot_sec2") return ov(d, x1, x2, yBot + sec1L, yBot + sec1L + sec2L);
     if (panel === "p1_bot_sec3") return ov(d, x1, x2, yBot + sec1L + sec2L, yBot + sec1L + sec2L + sec3L);
+
+    // FEFCO 0426 Pizza Box / Roll-End Tray Panel Mappings
+    if (dims?.floor && dims?.lid) {
+      const checkPanelBox = (box) => {
+        if (!box) return false;
+        return ov(d, box.x, box.x + box.w, box.y, box.y + box.h);
+      };
+      if (panel === "base-floor" || panel === "floor") return checkPanelBox(dims.floor);
+      if (panel === "lid-top" || panel === "lid") return checkPanelBox(dims.lid);
+      if (panel === "front-wall" || panel === "front") return checkPanelBox(dims.front);
+      if (panel === "back-wall" || panel === "back") return checkPanelBox(dims.back);
+      if (panel === "left-wall" || panel === "leftWall") return checkPanelBox(dims.leftWall);
+      if (panel === "right-wall" || panel === "rightWall") return checkPanelBox(dims.rightWall);
+    }
 
     if (dims?.base && dims?.lid) {
       const checkPanelBox = (box) => {
