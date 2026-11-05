@@ -122,35 +122,62 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   const lidGeom = new THREE.ExtrudeGeometry(lidShape, extrudeSettings);
   assignMaterialGroups(lidGeom, nT);
 
-  // 8. Lid Side Dust Flaps (Length = W * 0.96, Height = H * 0.88 with rounded front corner)
-  const flapL = W * 0.96;
-  const flapH = H * 0.88;
+  // 8. Lid Side Dust Flaps (exact Pacdora FEFCO 0426 DXF contour: 20° chamfer + R15mm convex corner)
+  const scale = H / 2.0472;
+  const flapL = W * 0.98;
+  const flapH = Math.min(H * 0.97, 1.988 * scale);
+  const rFlap = Math.min(0.5906 * scale, flapH * 0.4);
+  const chamferX = 0.5827 * scale;
+  const chamferY = 1.5984 * scale;
+  const arcCenterX = (28.88 / 25.4) * scale;
+  const arcCenterY = (35.5 / 25.4) * scale;
+
   const flapShape = new THREE.Shape();
+  // Start at hinge end along fold (0, 0)
   flapShape.moveTo(0, 0);
-  flapShape.lineTo(flapL * 0.82, 0);
-  flapShape.quadraticCurveTo(flapL, 0, flapL, flapH * 0.5);
-  flapShape.lineTo(flapL, flapH);
-  flapShape.lineTo(0, flapH);
+  // Chamfer at 20° out towards outer edge
+  flapShape.lineTo(chamferX, chamferY);
+  // Smooth convex corner fillet to outer edge
+  flapShape.absarc(arcCenterX, arcCenterY, rFlap, (180 + 20) * Math.PI / 180, 270 * Math.PI / 180, false);
+  // Straight outer edge
+  flapShape.lineTo(flapL - arcCenterX, flapH);
+  // Smooth convex corner fillet to front chamfer
+  flapShape.absarc(flapL - arcCenterX, arcCenterY, rFlap, 270 * Math.PI / 180, (360 - 20) * Math.PI / 180, false);
+  // Front chamfer down to fold
+  flapShape.lineTo(flapL, 0);
   flapShape.closePath();
   const lidSideFlapGeom = new THREE.ExtrudeGeometry(flapShape, extrudeSettings);
   assignMaterialGroups(lidSideFlapGeom, nT);
 
-  // 9. Lid Front Tuck Flap (Width = L * 0.95, Height = H * 0.9 with rounded corners & notch)
-  const tuckW = L * 0.95;
-  const tuckH = H * 0.9;
-  const r = Math.min(tuckH * 0.35, 0.6);
+  // 9. Lid Front Tuck Flap (exact Pacdora FEFCO 0426 DXF contour: 20° tapered sides + R15mm convex corners + center thumb notch)
+  const tuckW = L * (202.0 / 205.0);
+  const tuckH = Math.min(H * 0.97, 1.988 * scale);
+  const rTuck = Math.min(0.5906 * scale, tuckH * 0.4);
+  const halfTuckW = tuckW / 2;
+  const tuckChamferX = 0.5827 * scale;
+  const tuckChamferY = 1.5984 * scale;
+  const tuckArcCenterX = (28.88 / 25.4) * scale;
+  const tuckArcCenterY = (35.5 / 25.4) * scale;
+
   const tuckShape = new THREE.Shape();
-  tuckShape.moveTo(-tuckW / 2 + r, 0);
-  tuckShape.lineTo( tuckW / 2 - r, 0);
-  tuckShape.quadraticCurveTo(tuckW / 2, 0, tuckW / 2, r);
-  tuckShape.lineTo(tuckW / 2, tuckH);
-  // Center thumb notch at base
-  const notchR = Math.min(tuckW * 0.05, 0.3);
-  tuckShape.lineTo( notchR, tuckH);
-  tuckShape.absarc(0, tuckH, notchR, 0, Math.PI, false);
-  tuckShape.lineTo(-tuckW / 2, tuckH);
-  tuckShape.lineTo(-tuckW / 2, r);
-  tuckShape.quadraticCurveTo(-tuckW / 2, 0, -tuckW / 2 + r, 0);
+  // Start at left corner along fold line (-halfTuckW, 0)
+  tuckShape.moveTo(-halfTuckW, 0);
+  // Left chamfer at 20° inward
+  tuckShape.lineTo(-halfTuckW + tuckChamferX, tuckChamferY);
+  // Left corner smooth convex fillet
+  tuckShape.absarc(-halfTuckW + tuckArcCenterX, tuckArcCenterY, rTuck, (180 + 20) * Math.PI / 180, 270 * Math.PI / 180, false);
+  // Straight bottom tip
+  tuckShape.lineTo(halfTuckW - tuckArcCenterX, tuckH);
+  // Right corner smooth convex fillet
+  tuckShape.absarc(halfTuckW - tuckArcCenterX, tuckArcCenterY, rTuck, 270 * Math.PI / 180, (360 - 20) * Math.PI / 180, false);
+  // Right chamfer back to fold line
+  tuckShape.lineTo(halfTuckW, 0);
+
+  // Center thumb notch cutout on fold line
+  const notchR = Math.min(0.2953 * scale, tuckW * 0.05);
+  tuckShape.lineTo(notchR, 0);
+  tuckShape.absarc(0, 0, notchR, 0, Math.PI, false);
+  tuckShape.lineTo(-halfTuckW, 0);
   tuckShape.closePath();
   const tuckFlapGeom = new THREE.ExtrudeGeometry(tuckShape, extrudeSettings);
   assignMaterialGroups(tuckFlapGeom, nT);
@@ -315,9 +342,10 @@ export default function PizzaBox3DViewer({
   const lidSideFlapAngle = stageProgress(progress, 0.55, 0.75) * (Math.PI / 2);
   const baseLidHingeAngle = stageProgress(progress, 0.65, 0.98) * (Math.PI / 2);
 
-  // When lifted in closed mode: lid lifts up ~42°
-  const liftAngle = isLidLifted ? 0.75 : 0;
-  const effectiveLidAngle = Math.max(0, baseLidHingeAngle - liftAngle);
+  // When lifted in closed mode: lid opens back by ~116° (2.02 rad) to expose interior cavity cleanly
+  const openOffset = isLidLifted ? 2.02 : 0;
+  const effectiveLidAngle = baseLidHingeAngle - openOffset;
+  const effectiveLidFlapAngle = Math.max(lidSideFlapAngle, isLidLifted ? Math.PI / 2 : 0);
 
   // Layout instances
   const layout = overrideLayout || store?.sceneLayout || "single";
@@ -549,7 +577,7 @@ export default function PizzaBox3DViewer({
                     </mesh>
 
                     {/* Lid Left Dust Flap (folds down inside left wall) */}
-                    <group position={[-L / 2, 0, 0]} rotation={[0, 0, -lidSideFlapAngle]}>
+                    <group position={[-L / 2, 0, 0]} rotation={[0, 0, -effectiveLidFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -560,7 +588,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Right Dust Flap (folds down inside right wall) */}
-                    <group position={[L / 2, 0, 0]} rotation={[0, 0, lidSideFlapAngle]}>
+                    <group position={[L / 2, 0, 0]} rotation={[0, 0, effectiveLidFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -571,7 +599,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Front Tuck Flap (at [0, 0, -W], folds down into front rollover slot) */}
-                    <group position={[0, 0, -W]} rotation={[lidSideFlapAngle, 0, 0]}>
+                    <group position={[0, 0, -W]} rotation={[effectiveLidFlapAngle, 0, 0]}>
                       <mesh
                         geometry={geoms.tuckFlapGeom}
                         material={matArray}

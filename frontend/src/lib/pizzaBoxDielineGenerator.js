@@ -91,11 +91,8 @@ export function generatePizzaBoxDieline({ L = 8.0709, W = 8.1496, H = 2.0472, T 
         const my = cy + el[6] * Math.sin(midA);
         const mp = mapPt(mx, my);
 
-        const v1 = { x: ep.x - sp.x, y: ep.y - sp.y };
-        const v2 = { x: mp.x - sp.x, y: mp.y - sp.y };
-        const cp = v1.x * v2.y - v1.y * v2.x;
-        const sweepFlag = cp > 0 ? 1 : 0;
         const largeArc = diff > Math.PI ? 1 : 0;
+        const sweepFlag = 1; // Outward convex fillet curves for all CAD contours
 
         d += ` A ${r.toFixed(4)} ${r.toFixed(4)} 0 ${largeArc} ${sweepFlag} ${ep.x.toFixed(4)} ${ep.y.toFixed(4)}`;
       }
