@@ -92,16 +92,17 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   rollShape.moveTo(-rollW / 2, 0);
   rollShape.lineTo( rollW / 2, 0);
   rollShape.lineTo( rollW / 2, H);
-  // Add locking tab contours at the top of the rollover wall
+  // Add locking tab contours at the top of the rollover wall (flush into floor slots, no bottom protrusion)
   const tabW = Math.min(rollW * 0.16, 1.4);
   const tabGap = rollW * 0.22;
+  const tabTipH = H + Math.min(nT * 0.5, 0.02);
   rollShape.lineTo( tabGap + tabW, H);
-  rollShape.lineTo( tabGap + tabW * 0.9, H + 0.35);
-  rollShape.lineTo( tabGap + tabW * 0.1, H + 0.35);
+  rollShape.lineTo( tabGap + tabW * 0.9, tabTipH);
+  rollShape.lineTo( tabGap + tabW * 0.1, tabTipH);
   rollShape.lineTo( tabGap, H);
   rollShape.lineTo(-tabGap, H);
-  rollShape.lineTo(-tabGap - tabW * 0.1, H + 0.35);
-  rollShape.lineTo(-tabGap - tabW * 0.9, H + 0.35);
+  rollShape.lineTo(-tabGap - tabW * 0.1, tabTipH);
+  rollShape.lineTo(-tabGap - tabW * 0.9, tabTipH);
   rollShape.lineTo(-tabGap - tabW, H);
   rollShape.lineTo(-rollW / 2, H);
   rollShape.closePath();
@@ -565,7 +566,7 @@ export default function PizzaBox3DViewer({
                     </mesh>
 
                     {/* Lid Left Dust Flap (folds down inside left wall) */}
-                    <group position={[-L / 2, 0, 0]} rotation={[0, 0, -effectiveLidFlapAngle]}>
+                    <group position={[-L / 2 + nT * 1.5, 0, 0]} rotation={[0, 0, -effectiveLidFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -576,7 +577,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Right Dust Flap (folds down inside right wall) */}
-                    <group position={[L / 2, 0, 0]} rotation={[0, 0, effectiveLidFlapAngle]}>
+                    <group position={[L / 2 - nT * 2.5, 0, 0]} rotation={[0, 0, effectiveLidFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -586,8 +587,8 @@ export default function PizzaBox3DViewer({
                       />
                     </group>
 
-                    {/* Lid Front Tuck Flap (at [0, 0, -W], folds down into front rollover slot) */}
-                    <group position={[0, 0, -W]} rotation={[effectiveLidFlapAngle, 0, 0]}>
+                    {/* Lid Front Tuck Flap (folds down inside front rollover slot) */}
+                    <group position={[0, 0, -W + nT * 2.0]} rotation={[effectiveLidFlapAngle, 0, 0]}>
                       <mesh
                         geometry={geoms.tuckFlapGeom}
                         material={matArray}
