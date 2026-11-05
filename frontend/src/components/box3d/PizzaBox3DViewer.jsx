@@ -122,62 +122,50 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   const lidGeom = new THREE.ExtrudeGeometry(lidShape, extrudeSettings);
   assignMaterialGroups(lidGeom, nT);
 
-  // 8. Lid Side Dust Flaps (exact Pacdora FEFCO 0426 DXF contour: 20° chamfer + R15mm convex corner)
-  const scale = H / 2.0472;
-  const flapL = W * 0.98;
-  const flapH = Math.min(H * 0.97, 1.988 * scale);
-  const rFlap = Math.min(0.5906 * scale, flapH * 0.4);
-  const chamferX = 0.5827 * scale;
-  const chamferY = 1.5984 * scale;
-  const arcCenterX = (28.88 / 25.4) * scale;
-  const arcCenterY = (35.5 / 25.4) * scale;
+  // 8. Lid Side Dust Flaps (exact match to 2D dieline: 20° chamfer + smooth convex R15mm fillet)
+  const flapL = (7.8543 / 8.1496) * W;
+  const flapH = (1.9881 / 2.0472) * H;
+  const R_flap = (0.5906 / 2.0472) * H;
+  const chamferDx = (0.5822 / 2.0472) * H;
+  const chamferDy = (1.5996 / 2.0472) * H;
+  const arcDx = (1.1371 / 2.0472) * H;
 
   const flapShape = new THREE.Shape();
   // Start at hinge end along fold (0, 0)
   flapShape.moveTo(0, 0);
   // Chamfer at 20° out towards outer edge
-  flapShape.lineTo(chamferX, chamferY);
-  // Smooth convex corner fillet to outer edge
-  flapShape.absarc(arcCenterX, arcCenterY, rFlap, (180 + 20) * Math.PI / 180, 270 * Math.PI / 180, false);
+  flapShape.lineTo(chamferDx, chamferDy);
+  // Smooth convex corner fillet tangent to outer edge (clockwise: 160° down to 90°)
+  flapShape.absarc(arcDx, flapH - R_flap, R_flap, 160 * Math.PI / 180, 90 * Math.PI / 180, true);
   // Straight outer edge
-  flapShape.lineTo(flapL - arcCenterX, flapH);
-  // Smooth convex corner fillet to front chamfer
-  flapShape.absarc(flapL - arcCenterX, arcCenterY, rFlap, 270 * Math.PI / 180, (360 - 20) * Math.PI / 180, false);
+  flapShape.lineTo(flapL - arcDx, flapH);
+  // Smooth convex corner fillet to front chamfer (clockwise: 90° down to 20°)
+  flapShape.absarc(flapL - arcDx, flapH - R_flap, R_flap, 90 * Math.PI / 180, 20 * Math.PI / 180, true);
   // Front chamfer down to fold
   flapShape.lineTo(flapL, 0);
   flapShape.closePath();
   const lidSideFlapGeom = new THREE.ExtrudeGeometry(flapShape, extrudeSettings);
   assignMaterialGroups(lidSideFlapGeom, nT);
 
-  // 9. Lid Front Tuck Flap (exact Pacdora FEFCO 0426 DXF contour: 20° tapered sides + R15mm convex corners + center thumb notch)
-  const tuckW = L * (202.0 / 205.0);
-  const tuckH = Math.min(H * 0.97, 1.988 * scale);
-  const rTuck = Math.min(0.5906 * scale, tuckH * 0.4);
-  const halfTuckW = tuckW / 2;
-  const tuckChamferX = 0.5827 * scale;
-  const tuckChamferY = 1.5984 * scale;
-  const tuckArcCenterX = (28.88 / 25.4) * scale;
-  const tuckArcCenterY = (35.5 / 25.4) * scale;
+  // 9. Lid Front Tuck Flap (exact match to 2D dieline: 20° tapered sides + smooth convex R15mm fillets)
+  const tuckW = (7.9528 / 8.0709) * L;
+  const halfW = tuckW / 2;
+  const tuckH = (1.9881 / 2.0472) * H;
+  const R_tuck = (0.5906 / 2.0472) * H;
 
   const tuckShape = new THREE.Shape();
-  // Start at left corner along fold line (-halfTuckW, 0)
-  tuckShape.moveTo(-halfTuckW, 0);
+  // Start at left corner along fold line (-halfW, 0)
+  tuckShape.moveTo(-halfW, 0);
   // Left chamfer at 20° inward
-  tuckShape.lineTo(-halfTuckW + tuckChamferX, tuckChamferY);
-  // Left corner smooth convex fillet
-  tuckShape.absarc(-halfTuckW + tuckArcCenterX, tuckArcCenterY, rTuck, (180 + 20) * Math.PI / 180, 270 * Math.PI / 180, false);
+  tuckShape.lineTo(-halfW + chamferDx, chamferDy);
+  // Left corner smooth convex fillet tangent to bottom tip (clockwise: 160° down to 90°)
+  tuckShape.absarc(-halfW + arcDx, tuckH - R_tuck, R_tuck, 160 * Math.PI / 180, 90 * Math.PI / 180, true);
   // Straight bottom tip
-  tuckShape.lineTo(halfTuckW - tuckArcCenterX, tuckH);
-  // Right corner smooth convex fillet
-  tuckShape.absarc(halfTuckW - tuckArcCenterX, tuckArcCenterY, rTuck, 270 * Math.PI / 180, (360 - 20) * Math.PI / 180, false);
+  tuckShape.lineTo(halfW - arcDx, tuckH);
+  // Right corner smooth convex fillet to right chamfer (clockwise: 90° down to 20°)
+  tuckShape.absarc(halfW - arcDx, tuckH - R_tuck, R_tuck, 90 * Math.PI / 180, 20 * Math.PI / 180, true);
   // Right chamfer back to fold line
-  tuckShape.lineTo(halfTuckW, 0);
-
-  // Center thumb notch cutout on fold line
-  const notchR = Math.min(0.2953 * scale, tuckW * 0.05);
-  tuckShape.lineTo(notchR, 0);
-  tuckShape.absarc(0, 0, notchR, 0, Math.PI, false);
-  tuckShape.lineTo(-halfTuckW, 0);
+  tuckShape.lineTo(halfW, 0);
   tuckShape.closePath();
   const tuckFlapGeom = new THREE.ExtrudeGeometry(tuckShape, extrudeSettings);
   assignMaterialGroups(tuckFlapGeom, nT);
