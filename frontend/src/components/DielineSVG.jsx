@@ -13,6 +13,7 @@ import { generateCanDieline } from "../lib/canDielineGenerator";
 import { generateSlimCanDieline } from "../lib/slimCanDielineGenerator";
 import { generateTubeDieline } from "../lib/tubeDielineGenerator";
 import { generateFEFCO0300Dieline } from "../lib/fefco0300DielineGenerator";
+import { generatePizzaBoxDieline } from "../lib/pizzaBoxDielineGenerator";
 import { useBoxStore } from "../lib/useBoxStore";
 import { generateCardboardCanvas } from "../lib/textureGenerator";
 import { generatePanelHitboxes } from "../lib/panelHitboxes";
@@ -183,6 +184,9 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     }
     if (boxModel === 'rsc') {
       return generateRSCDielineDXF({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
+    }
+        if (boxModel === 'pizza_box' || boxModel === 'fefco_0426' || boxModel === 'pizza') {
+      return generatePizzaBoxDieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
     }
     if (boxModel === 'fefco_0300' || boxModel === 'shoe_box_with_lid') {
       return generateFEFCO0300Dieline({ L: manuL, W: manuW, H: manuH, T, glueFlapWidth, bleed, windowDecals });
@@ -539,14 +543,19 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           className="dieline-cut-paths"
           stroke={trimColor}
           strokeWidth={isEditorMode ? strokeW * 0.8 : strokeW}
-          fill="url(#kraft-pattern)"
           fillRule="evenodd"
           strokeLinejoin="round"
           strokeLinecap="round"
           filter={isEditorMode ? "drop-shadow(0px 8px 16px rgba(0,0,0,0.15))" : undefined}
           style={{ transition: "fill 0.3s ease-in-out" }}
         >
-          {effectiveCutPaths.map((p, i) => <path key={`cut-${i}`} d={p} />)}
+          {effectiveCutPaths.map((p, i) => (
+            <path
+              key={`cut-${i}`}
+              d={p}
+              fill={i === 0 ? "url(#kraft-pattern)" : "none"}
+            />
+          ))}
         </g>
 
         <g
@@ -562,7 +571,49 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           ))}
         </g>
 
-        {showBasicDims && !isEditorMode && (
+        {showBasicDims && !isEditorMode && (boxModel === 'pizza_box' || boxModel === 'fefco_0426' || boxModel === 'pizza') && (
+          <g
+            stroke={activeDimColor}
+            strokeWidth={strokeW}
+            strokeDasharray={`${strokeW * 2},${strokeW * 2}`}
+            fill={activeDimColor}
+            fontSize={fontSizeBasic}
+            fontFamily="sans-serif"
+            fontWeight="bold"
+          >
+            {/* Horizontal Width Across Floor (205 mm / 8.0709 in) */}
+            <line x1={x1 + 0.08} y1={yTop + (yBot - yTop) * 0.28} x2={x2 - 0.08} y2={yTop + (yBot - yTop) * 0.28} markerStart="url(#arrow-cyan-start)" markerEnd="url(#arrow-cyan-end)" />
+            <text
+              x={(x1 + x2) / 2} y={yTop + (yBot - yTop) * 0.28 - 0.1}
+              textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${(x1 + x2) / 2}px ${yTop + (yBot - yTop) * 0.28 - 0.1}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuL.toFixed(4)} in` : `${(manuL * 25.4).toFixed(1)} mm`}
+            </text>
+
+            {/* Vertical Length / Depth Along Floor (207 mm / 8.1496 in) */}
+            <line x1={x2 - 0.4} y1={yTop + 0.08} x2={x2 - 0.4} y2={yBot - 0.08} markerStart="url(#arrow-cyan-start)" markerEnd="url(#arrow-cyan-end)" />
+            <text
+              x={x2 - 0.52} y={(yTop + yBot) / 2}
+              textAnchor="end" alignmentBaseline="middle" stroke="none"
+              style={{ transformOrigin: `${x2 - 0.52}px ${(yTop + yBot) / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(1)} mm`}
+            </text>
+
+            {/* Wall Height On Front Wall (52 mm / 2.0472 in) */}
+            <line x1={x1 + (x2 - x1) * 0.18} y1={(dimensions?.yFrontTop ?? (yTop - manuH)) + 0.06} x2={x1 + (x2 - x1) * 0.18} y2={yTop - 0.06} markerStart="url(#arrow-cyan-start)" markerEnd="url(#arrow-cyan-end)" />
+            <text
+              x={x1 + (x2 - x1) * 0.18 + 0.12} y={((dimensions?.yFrontTop ?? (yTop - manuH)) + yTop) / 2}
+              alignmentBaseline="middle" stroke="none"
+              style={{ transformOrigin: `${x1 + (x2 - x1) * 0.18 + 0.12}px ${((dimensions?.yFrontTop ?? (yTop - manuH)) + yTop) / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuH.toFixed(4)} in` : `${(manuH * 25.4).toFixed(1)} mm`}
+            </text>
+          </g>
+        )}
+
+        {showBasicDims && !isEditorMode && boxModel !== 'pizza_box' && boxModel !== 'fefco_0426' && boxModel !== 'pizza' && (
           <g
             stroke={activeDimColor}
             strokeWidth={strokeW}
@@ -703,7 +754,52 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
           </g>
         )}
 
-        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'sipper_water_bottle' && boxModel !== 'water_bottle_handle' && boxModel !== 'sipper_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && boxModel !== 'slim_can' && boxModel !== 'slim_355ml_can' && boxModel !== 'tube' && boxModel !== 'toothpaste_tube' && (
+        {isEditorMode && (boxModel === 'pizza_box' || boxModel === 'fefco_0426' || boxModel === 'pizza') && (
+          <g
+            className="editor-measurements"
+            stroke="#4a90e2"
+            strokeWidth={strokeW * 0.4}
+            fill="#4a90e2"
+            fontSize={fontSizeBasic * 0.55}
+            fontFamily="'Inter', sans-serif"
+            fontWeight="500"
+          >
+            {/* Floor Width: 205 mm */}
+            <line x1={x1 + 0.1} y1={yTop + (yBot - yTop) * 0.28} x2={(x1 + x2) / 2 - 0.4} y2={yTop + (yBot - yTop) * 0.28} markerStart="url(#arrow-blue-start)" />
+            <line x1={(x1 + x2) / 2 + 0.4} y1={yTop + (yBot - yTop) * 0.28} x2={x2 - 0.1} y2={yTop + (yBot - yTop) * 0.28} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={(x1 + x2) / 2} y={yTop + (yBot - yTop) * 0.28 + 0.05}
+              alignmentBaseline="middle" textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${(x1 + x2) / 2}px ${yTop + (yBot - yTop) * 0.28 + 0.05}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuL.toFixed(4)} in` : `${(manuL * 25.4).toFixed(0)} mm`}
+            </text>
+
+            {/* Floor Depth: 207 mm */}
+            <line x1={x2 - 0.4} y1={yTop + 0.1} x2={x2 - 0.4} y2={(yTop + yBot) / 2 - 0.25} markerStart="url(#arrow-blue-start)" />
+            <line x1={x2 - 0.4} y1={(yTop + yBot) / 2 + 0.25} x2={x2 - 0.4} y2={yBot - 0.1} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x2 - 0.4} y={(yTop + yBot) / 2}
+              alignmentBaseline="middle" textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${x2 - 0.4}px ${(yTop + yBot) / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuW.toFixed(4)} in` : `${(manuW * 25.4).toFixed(0)} mm`}
+            </text>
+
+            {/* Wall Height: 52 mm in Front Wall */}
+            <line x1={x1 + (x2 - x1) * 0.18} y1={(dimensions?.yFrontTop ?? (yTop - manuH)) + 0.08} x2={x1 + (x2 - x1) * 0.18} y2={((dimensions?.yFrontTop ?? (yTop - manuH)) + yTop) / 2 - 0.2} markerStart="url(#arrow-blue-start)" />
+            <line x1={x1 + (x2 - x1) * 0.18} y1={((dimensions?.yFrontTop ?? (yTop - manuH)) + yTop) / 2 + 0.2} x2={x1 + (x2 - x1) * 0.18} y2={yTop - 0.08} markerEnd="url(#arrow-blue-end)" />
+            <text
+              x={x1 + (x2 - x1) * 0.18} y={((dimensions?.yFrontTop ?? (yTop - manuH)) + yTop) / 2}
+              alignmentBaseline="middle" textAnchor="middle" stroke="none"
+              style={{ transformOrigin: `${x1 + (x2 - x1) * 0.18}px ${((dimensions?.yFrontTop ?? (yTop - manuH)) + yTop) / 2}px`, transform: activeSurface === 'Inside' ? 'scaleX(-1)' : 'none' }}
+            >
+              {currentUnit === 'in' ? `${manuH.toFixed(4)} in` : `${(manuH * 25.4).toFixed(0)} mm`}
+            </text>
+          </g>
+        )}
+
+        {isEditorMode && boxModel !== 'water_bottle' && boxModel !== 'sipper_water_bottle' && boxModel !== 'water_bottle_handle' && boxModel !== 'sipper_bottle' && boxModel !== 'can' && boxModel !== 'soda_can' && boxModel !== 'beverage_can' && boxModel !== 'slim_can' && boxModel !== 'slim_355ml_can' && boxModel !== 'tube' && boxModel !== 'toothpaste_tube' && boxModel !== 'pizza_box' && boxModel !== 'fefco_0426' && boxModel !== 'pizza' && (
           <g
             className="editor-measurements"
             stroke="#4a90e2"

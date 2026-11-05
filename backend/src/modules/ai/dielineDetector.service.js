@@ -104,6 +104,22 @@ const DIRECTORY_BOXES = [
     ]
   },
   {
+    itemId: 'pizza_box',
+    boxModelKey: 'pizza_box',
+    name: 'Pizza Box (FEFCO 0426)',
+    subtitle: 'Corrugated Pizza & Food Carton • Tray with Self-Locking Walls & Hinged Lid',
+    description: 'FEFCO 0426 standard roll-end tray with double rollover front self-locking walls and a hinged lid. Ideal for pizza takeout, flat bakeries, mailer kits, and food delivery.',
+    dieline2DImg: '/images/dielines/pizza_box.svg',
+    box3DImg: '/images/pizza_box.png',
+    defaultDims: { L: 207, W: 205, H: 52, unit: 'mm' },
+    defaultDimsIn: { L: 8.1496, W: 8.0709, H: 2.0472 },
+    structureFeatures: [
+      'Tray with front rollover self-locking walls that snap into floor slots without adhesive',
+      'One-piece unibody blank with hinged top lid and side dust flaps',
+      'Wide flat proportions (L, W substantially greater than H) standard for pizza delivery'
+    ]
+  },
+  {
     itemId: 'fefco_0300',
     boxModelKey: 'fefco_0300',
     name: 'FEFCO 0300 Shoe Box with Lid',
@@ -1558,7 +1574,7 @@ async function detectUploadedDieline(fileBuffer, originalName, mimeType) {
     unit: 'mm'
   };
 
-  const BOX_KEYS = ['rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'rsc', 'fefco_0300', 'shoe_box_with_lid'];
+  const BOX_KEYS = ['rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'rsc', 'fefco_0300', 'shoe_box_with_lid', 'pizza_box', 'fefco_0426'];
   const CONTAINER_KEYS = ['can', 'slim_can', 'water_bottle', 'tube'];
 
   const isBoxPrimary = BOX_KEYS.includes(primaryBox.boxModelKey);

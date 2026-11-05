@@ -266,8 +266,12 @@ function classifyPrompt(text) {
 
   const accentColor = '#d97706'; // neutral accent; AI image drives actual look
 
-  // FLAT / PIZZA / FOOD DELIVERY BOXES → auto_lock (wide & flat)
-  if (t.match(/\bpizza\b|\bflat box\b|\bmailer\b|\bfood delivery\b|\btakeout\b/)) {
+  // FEFCO 0426 PIZZA BOX
+  if (t.match(/\bpizza\b|\bfefco.?0426\b/)) {
+    return { model: 'pizza_box', L_mm: 207, W_mm: 205, H_mm: 52, primaryColor, accentColor, artworkFace: 'lid-top' };
+  }
+  // FLAT / MAILER / FOOD DELIVERY BOXES → auto_lock
+  if (t.match(/\bflat box\b|\bmailer\b|\bfood delivery\b|\btakeout\b/)) {
     return { model: 'auto_lock', L_mm: 300, W_mm: 300, H_mm: 45, primaryColor, accentColor, artworkFace: 'top' };
   }
   // STRAIGHT TUCK → te

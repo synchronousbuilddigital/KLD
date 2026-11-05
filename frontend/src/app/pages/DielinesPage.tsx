@@ -44,6 +44,18 @@ const CATEGORY_ITEMS = [
 
 const DEFAULT_DIELINES: CatalogItemData[] = [
   {
+    itemId: 'pizza_box',
+    title: 'Pizza Box (FEFCO 0426)',
+    subtitle: 'Tray with Self-Locking Walls & Hinged Lid • 3D Studio',
+    img: '/images/pizza_box.png',
+    dieline2DImg: '/images/dielines/pizza_box.svg',
+    box3DImg: '/images/pizza_box.png',
+    group: 'dielines',
+    boxModelKey: 'pizza_box',
+    active: true,
+    order: 0,
+  },
+  {
     itemId: 'fefco_0300',
     title: 'FEFCO 0300 Shoe Box with Lid',
     subtitle: 'Two-Piece Telescope Box • 3D Studio',

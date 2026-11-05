@@ -277,28 +277,18 @@ export const mockupCategories: MockupCategory[] = [
   },
   {
     id: 'pizza-packaging-mockups',
-    name: 'Pizza Packaging Mockups',
+    name: 'Pizza Box Mockups',
     variants: [
-      { id: 1, name: 'Classic Pizza Box', animation: 'Lid flips up 90 degrees', imageUrl: '/images/pizza_box.png' },
-      { id: 2, name: 'Slice Box', animation: 'Triangular lid opens', imageUrl: '/images/pizza_box.png' },
-      { id: 3, name: 'Hexagonal Pizza Box', animation: 'Six-sided fold unfolds', imageUrl: '/images/pizza_box.png' },
-      { id: 4, name: 'Window Pizza Box', animation: 'Clear plastic window shines', imageUrl: '/images/pizza_box.png' },
-      { id: 5, name: 'Premium Pizza Carton', animation: 'Tear-away corner rips', imageUrl: '/images/pizza_box.png' },
-      { id: 6, name: 'Deep Dish Box', animation: 'Tall walls assemble', imageUrl: '/images/pizza_box.png' },
-      { id: 7, name: 'Delivery Box', animation: 'Steam escapes from vents', imageUrl: '/images/pizza_box.png' },
-      { id: 8, name: 'Fold Flat Pizza Box', animation: 'Collapses into 2D sheet', imageUrl: '/images/pizza_box.png' },
-      { id: 9, name: 'Eco Pizza Box', animation: 'Molded fiber texture reveals', imageUrl: '/images/pizza_box.png' },
-      { id: 10, name: 'Carry Handle Pizza Box', animation: 'Handle pops up from top', imageUrl: '/images/pizza_box.png' },
-      { id: 11, name: 'Family Pack Box', animation: 'Double tier separates', imageUrl: '/images/pizza_box.png' },
-      { id: 12, name: 'Smart Vent Box', animation: 'Vents pop open dynamically', imageUrl: '/images/pizza_box.png' },
-      { id: 13, name: 'Gourmet Pizza Box', animation: 'Magnetic flap opens', imageUrl: '/images/pizza_box.png' },
-      { id: 14, name: 'Sleeve Pizza Box', animation: 'Tray slides out from sleeve', imageUrl: '/images/pizza_box.png' },
-      { id: 15, name: 'Magnetic Pizza Box', animation: 'Lid snaps shut', imageUrl: '/images/pizza_box.png' },
-      { id: 16, name: 'Dual Compartment Box', animation: 'Center divider pops up', imageUrl: '/images/pizza_box.png' },
-      { id: 17, name: 'Luxury Pizza Box', animation: 'Gold foil shines on lid', imageUrl: '/images/pizza_box.png' },
-      { id: 18, name: 'Hinged Pizza Box', animation: 'Smooth back hinge pivot', imageUrl: '/images/pizza_box.png' },
-      { id: 19, name: 'Floating Pizza Box', animation: 'Hovering box opening', imageUrl: '/images/pizza_box.png' },
-      { id: 20, name: 'Animated Opening Pizza Box', animation: 'Full breakdown animation', imageUrl: '/images/pizza_box.png' },
+      {
+        id: 1,
+        name: 'Pizza Box (FEFCO 0426)',
+        animation: 'Lid flips up 90 degrees with roll-end locking tray',
+        imageUrl: '/images/catalog/pizza-packaging-mockups.png',
+        kraftImageUrl: '/images/catalog/pizza-packaging-mockups.png',
+        boxModelKey: 'pizza_box',
+        gridSize: 'large',
+        isFeatured: true
+      }
     ]
   },
   {

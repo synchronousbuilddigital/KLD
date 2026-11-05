@@ -25,6 +25,18 @@ export function generatePanelHitboxes(L, W, H, T, dimensions, glueFlapWidth, box
     ];
   }
 
+    if (boxModel === 'pizza_box' || boxModel === 'fefco_0426' || boxModel === 'pizza') {
+    const d = dimensions || {};
+    const p = [];
+    if (d.floor) p.push({ id: "base-floor", name: "Tray Bottom Floor", path: rect(d.floor.x, d.floor.y, d.floor.w, d.floor.h) });
+    if (d.lid) p.push({ id: "lid-top", name: "Lid Top (Cover)", path: rect(d.lid.x, d.lid.y, d.lid.w, d.lid.h) });
+    if (d.front) p.push({ id: "front-wall", name: "Front Wall", path: rect(d.front.x, d.front.y, d.front.w, d.front.h) });
+    if (d.back) p.push({ id: "back-wall", name: "Rear Hinge Wall", path: rect(d.back.x, d.back.y, d.back.w, d.back.h) });
+    if (d.leftWall) p.push({ id: "left-wall", name: "Left Wall", path: rect(d.leftWall.x, d.leftWall.y, d.leftWall.w, d.leftWall.h) });
+    if (d.rightWall) p.push({ id: "right-wall", name: "Right Wall", path: rect(d.rightWall.x, d.rightWall.y, d.rightWall.w, d.rightWall.h) });
+    return p;
+  }
+
   if (boxModel === 'fefco_0300' || boxModel === 'shoe_box_with_lid') {
     const b = dimensions?.base || {};
     const l = dimensions?.lid || {};

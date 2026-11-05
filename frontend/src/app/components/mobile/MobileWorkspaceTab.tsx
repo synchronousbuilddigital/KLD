@@ -243,7 +243,7 @@ export const MobileWorkspaceTab: React.FC<MobileWorkspaceTabProps> = ({
       // Tab filter
       if (activeFilter === 'favorites') return !!item.isFavorite;
       if (activeFilter === 'boxes') {
-        return ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300'].includes(item.boxModel || '');
+        return ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300', 'pizza_box', 'fefco_0426', 'pizza'].includes(item.boxModel || '');
       }
       if (activeFilter === 'cylinders') {
         return ['can', 'soda_can', 'slim_can', 'sipper_water_bottle', 'water_bottle', 'tube'].includes(item.boxModel || '');
@@ -263,7 +263,7 @@ export const MobileWorkspaceTab: React.FC<MobileWorkspaceTabProps> = ({
       case 'tube': return '/images/toothpaste_tube_mockup.png';
       case 'rsc': return '/images/boxes/rsc_kraft.jpg';
       case 'te': return '/images/boxes/ste_white.jpg';
-      case 'fefco_0300': return '/images/boxes/fefco_0300_white.png';
+      case 'fefco_0300', 'pizza_box', 'fefco_0426', 'pizza': return '/images/boxes/fefco_0300_white.png';
       default: return '/images/boxes/rte_white.jpg';
     }
   };
@@ -360,7 +360,7 @@ export const MobileWorkspaceTab: React.FC<MobileWorkspaceTabProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5">
         {[
           { id: 'all', label: 'All Projects', count: items.length },
-          { id: 'boxes', label: 'Boxes', count: items.filter(i => ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300'].includes(i.boxModel || '')).length },
+          { id: 'boxes', label: 'Boxes', count: items.filter(i => ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300', 'pizza_box', 'fefco_0426', 'pizza'].includes(i.boxModel || '')).length },
           { id: 'cylinders', label: 'Bottles & Cans', count: items.filter(i => ['can', 'soda_can', 'slim_can', 'sipper_water_bottle', 'water_bottle', 'tube'].includes(i.boxModel || '')).length },
           { id: 'favorites', label: 'Favorites', count: items.filter(i => i.isFavorite).length },
         ].map(tab => {

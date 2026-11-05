@@ -46,11 +46,12 @@ export const MobileDielinesTab: React.FC<MobileDielinesTabProps> = ({
     { key: 'cosmetic', name: 'Cosmetic Box', shortName: 'Cosmetic', type: 'Beauty Box', defaultDim: { L: 3.15, W: 3.15, H: 5.12 } },
     { key: 'cosmetic_b', name: 'Mailer / Tray Box', shortName: 'Mailer Tray', type: 'E-commerce Box', defaultDim: { L: 8.27, W: 5.91, H: 2.36 } },
     { key: 'button_hole', name: 'Button Hole Box', shortName: 'Button Hole', type: 'Snap-Lock Box', defaultDim: { L: 4.00, W: 2.50, H: 6.00 } },
+    { key: 'pizza_box', name: 'Pizza Box (FEFCO 0426)', shortName: 'Pizza Box', type: 'Roll End Tray', defaultDim: { L: 8.15, W: 8.07, H: 2.05 } },
     { key: 'fefco_0300', name: 'FEFCO 0300 Shoe Box with Lid', shortName: 'Shoe Box', type: 'Telescope Box', defaultDim: { L: 11.89, W: 8.03, H: 2.40 } },
   ];
 
   const [activeModelKey, setActiveModelKey] = useState<string>(() => {
-    return ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300', 'shoe_box_with_lid'].includes(store.boxModel)
+    return ['rte', 'te', 'rsc', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'fefco_0300', 'shoe_box_with_lid', 'pizza_box', 'fefco_0426', 'pizza'].includes(store.boxModel)
       ? store.boxModel
       : 'rte';
   });

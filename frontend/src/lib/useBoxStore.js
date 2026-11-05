@@ -165,6 +165,24 @@ const createTubeDefaultState = () => ({
   capColor: "#ffffff"
 });
 
+const createPizzaBoxDefaultState = () => ({
+  L: 205 / 25.4, // 8.0709 in (Width across front - 205 mm)
+  W: 207 / 25.4, // 8.1496 in (Depth / Length - 207 mm)
+  H: 52 / 25.4,  // 2.0472 in (Wall height - 52 mm)
+  T: 0.059,      // 1.5mm E-flute
+  glueFlapWidth: 0,
+  bleed: 2 / 25.4,
+  sizeMode: "manufacture",
+  materialType: "corrugated_kraft",
+  materialName: "E-flute Kraft Corrugated (1.5mm)",
+  isCustomMaterial: false,
+  materialColor: "#d2b48c",
+  materialCategory: "kraft_cardboard",
+  generatorMethod: "dxf",
+  packageColor: null,
+  insideColor: null
+});
+
 const createFEFCO0300DefaultState = () => ({
   L: 11.8898,
   W: 8.0315,
@@ -221,6 +239,9 @@ export const useBoxStore = create((set) => ({
       rsc: createRSCDefaultState(),
       fefco_0300: createFEFCO0300DefaultState(),
       shoe_box_with_lid: createFEFCO0300DefaultState(),
+      pizza_box: createPizzaBoxDefaultState(),
+      fefco_0426: createPizzaBoxDefaultState(),
+      pizza: createPizzaBoxDefaultState(),
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),
@@ -239,6 +260,9 @@ export const useBoxStore = create((set) => ({
       rsc: createRSCDefaultState(),
       fefco_0300: createFEFCO0300DefaultState(),
       shoe_box_with_lid: createFEFCO0300DefaultState(),
+      pizza_box: createPizzaBoxDefaultState(),
+      fefco_0426: createPizzaBoxDefaultState(),
+      pizza: createPizzaBoxDefaultState(),
       rte: createDefaultState(),
       te: createDefaultState(),
       auto_lock: createDefaultState(),

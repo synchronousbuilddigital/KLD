@@ -12,14 +12,19 @@ interface CategoryItem {
 }
 
 const mapCatalogItems = (items: any[]): CategoryItem[] => {
-  return items.map((item) => ({
-    id: item.itemId || item._id || item.title.toLowerCase().replace(/\s+/g, '-'),
-    title: item.title,
-    count: item.variants && item.variants.length > 0 
-      ? `${item.variants.length} Models` 
-      : (item.subtitle || 'Active'),
-    img: item.img || '/images/box.png',
-  }));
+  return items.map((item) => {
+    const isPizza = item.itemId === 'pizza-packaging-mockups' || item.itemId === 'pizza-box-mockups' || item.title?.toLowerCase().includes('pizza');
+    return {
+      id: item.itemId || item._id || item.title.toLowerCase().replace(/\s+/g, '-'),
+      title: isPizza ? 'Pizza Box Mockups' : item.title,
+      count: isPizza 
+        ? '1 Model'
+        : (item.variants && item.variants.length > 0 
+          ? `${item.variants.length} Models` 
+          : (item.subtitle || 'Active')),
+      img: isPizza ? '/images/catalog/pizza-packaging-mockups.png' : (item.img || '/images/box.png'),
+    };
+  });
 };
 
 const containerVariants = {

@@ -186,6 +186,7 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isSlimCan = variant.boxModelKey === 'slim_can' || variant.boxModelKey === 'slim_355ml_can' || variant.name.toLowerCase().includes('slim can') || (activeCategoryId?.includes('can') && variant.id === 2);
   const is12ozSodaCan = !isSlimCan && (variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('soda can') || (activeCategoryId?.includes('can') && variant.id === 1));
   const isCan = isSlimCan || is12ozSodaCan || variant.boxModelKey === 'can' || variant.name.toLowerCase().includes('can');
+  const isPizzaBox = variant.boxModelKey === 'pizza_box' || variant.boxModelKey === 'fefco_0426' || variant.name.toLowerCase().includes('pizza') || activeCategoryId?.includes('pizza');
   const isTube = variant.boxModelKey === 'tube' || variant.boxModelKey === 'toothpaste_tube' || variant.name.toLowerCase().includes('tube') || activeCategoryId?.includes('tube');
   const isToothpasteTube = isTube && (variant.id === 1 || variant.name.toLowerCase().includes('toothpaste'));
 
@@ -222,7 +223,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
     }
   }
 
-  const currentImage = isSipperWaterBottle
+  const currentImage = isPizzaBox
+    ? (variant.imageUrl || '/images/catalog/pizza-packaging-mockups.png')
+    : isSipperWaterBottle
     ? '/images/sipper_water_bottle.png'
     : isSlimCan
     ? '/images/kld_slim_can_mockup.png'
@@ -241,6 +244,30 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       : (variant.whiteImageUrl || (isBox && BOX_MOCKUP_IMAGES[boxType]?.white) || defaultImage));
 
   const handleClick = () => {
+    if (isPizzaBox) {
+      useBoxStore.setState({
+        boxModel: 'pizza_box',
+        activeProjectId: null,
+        activeProjectName: null,
+        L: 205 / 25.4,
+        W: 207 / 25.4,
+        H: 52 / 25.4,
+        T: 0.059,
+        glueFlapWidth: 0,
+        bleed: 2 / 25.4,
+        sizeMode: "manufacture",
+        materialType: "corrugated_kraft",
+        materialName: "E-flute Kraft Corrugated (1.5mm)",
+        isCustomMaterial: false,
+        materialColor: "#d2b48c",
+        materialCategory: "kraft_cardboard",
+        packageColor: null,
+        insideColor: null,
+        decalsByModel: { ...useBoxStore.getState().decalsByModel, pizza_box: useBoxStore.getState().decalsByModel?.pizza_box || [] }
+      });
+      window.dispatchEvent(new CustomEvent('navigate', { detail: 'workshop' }));
+      return;
+    }
     if (isSlimCan) {
       useBoxStore.setState({
         boxModel: 'slim_can',
@@ -895,6 +922,28 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
       return {
         ...cat,
         variants: updatedVariants
+      };
+    }
+
+    const isPizzaCategory = cat.id === 'pizza-packaging-mockups' || cat.id === 'pizza-box-mockups' || cat.id === 'pizza_box' || cat.name?.toLowerCase().includes('pizza');
+    if (isPizzaCategory) {
+      const pizzaVariant: MockupVariant = {
+        id: 1,
+        name: 'Pizza Box (FEFCO 0426)',
+        animation: 'Lid flips up 90 degrees with roll-end locking tray',
+        imageUrl: '/images/catalog/pizza-packaging-mockups.png',
+        whiteImageUrl: '/images/catalog/pizza-packaging-mockups.png',
+        kraftImageUrl: '/images/catalog/pizza-packaging-mockups.png',
+        boxModelKey: 'pizza_box',
+        isFeatured: true,
+        gridSize: 'large'
+      };
+
+      return {
+        ...cat,
+        name: 'Pizza Box Mockups',
+        title: 'Pizza Box Mockups',
+        variants: [pizzaVariant]
       };
     }
 
