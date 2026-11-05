@@ -434,7 +434,7 @@ export default function PizzaBox3DViewer({
                     <mesh
                       geometry={geoms.cornerTabGeom}
                       material={matArray}
-                      rotation={[Math.PI / 2, 0, Math.PI / 2]}
+                      rotation={[-Math.PI / 2, Math.PI, -Math.PI / 2]}
                       castShadow
                       receiveShadow
                     />
@@ -445,7 +445,7 @@ export default function PizzaBox3DViewer({
                     <mesh
                       geometry={geoms.cornerTabGeom}
                       material={matArray}
-                      rotation={[Math.PI / 2, 0, -Math.PI / 2]}
+                      rotation={[-Math.PI / 2, 0, Math.PI / 2]}
                       castShadow
                       receiveShadow
                     />
@@ -472,7 +472,7 @@ export default function PizzaBox3DViewer({
                     <mesh
                       geometry={geoms.cornerTabGeom}
                       material={matArray}
-                      rotation={[Math.PI / 2, 0, -Math.PI / 2]}
+                      rotation={[-Math.PI / 2, 0, -Math.PI / 2]}
                       castShadow
                       receiveShadow
                     />
@@ -483,7 +483,7 @@ export default function PizzaBox3DViewer({
                     <mesh
                       geometry={geoms.cornerTabGeom}
                       material={matArray}
-                      rotation={[Math.PI / 2, 0, Math.PI / 2]}
+                      rotation={[-Math.PI / 2, Math.PI, Math.PI / 2]}
                       castShadow
                       receiveShadow
                     />
@@ -564,7 +564,7 @@ export default function PizzaBox3DViewer({
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
-                        rotation={[-Math.PI / 2, 0, -Math.PI / 2]}
+                        rotation={[-Math.PI / 2, Math.PI, Math.PI / 2]}
                         castShadow
                         receiveShadow
                       />

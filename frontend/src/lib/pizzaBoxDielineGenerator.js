@@ -75,13 +75,28 @@ export function generatePizzaBoxDieline({ L = 8.0709, W = 8.1496, H = 2.0472, T 
         d += ` L ${ep.x.toFixed(4)} ${ep.y.toFixed(4)}`;
       } else {
         const r = el[6] * scale;
-        const sAngle = el[7];
-        const eAngle = el[8];
-        let sweepAngle = eAngle - sAngle;
-        if (sweepAngle < 0) sweepAngle += 360;
-        const largeArc = sweepAngle > 180 ? 1 : 0;
-        // DXF inverted in Y: CCW in CAD becomes CW in SVG (sweep 1), reversed is sweep 0
-        const sweepFlag = rev ? 0 : 1;
+        const sA = el[7] * Math.PI / 180;
+        const eA = el[8] * Math.PI / 180;
+        let diff = eA - sA;
+        while (diff < 0) diff += 2 * Math.PI;
+        while (diff > 2 * Math.PI) diff -= 2 * Math.PI;
+
+        // Calculate arc midpoint to determine exact convex curvature direction in SVG space
+        const midA = sA + diff / 2;
+        // In compact CAD, arc center is derived from start point and angle:
+        // sx = cx + r*cos(sA), sy = cy + r*sin(sA) => cx = sx - r*cos(sA), cy = sy - r*sin(sA)
+        const cx = sx - el[6] * Math.cos(sA);
+        const cy = sy - el[6] * Math.sin(sA);
+        const mx = cx + el[6] * Math.cos(midA);
+        const my = cy + el[6] * Math.sin(midA);
+        const mp = mapPt(mx, my);
+
+        const v1 = { x: ep.x - sp.x, y: ep.y - sp.y };
+        const v2 = { x: mp.x - sp.x, y: mp.y - sp.y };
+        const cp = v1.x * v2.y - v1.y * v2.x;
+        const sweepFlag = cp > 0 ? 1 : 0;
+        const largeArc = diff > Math.PI ? 1 : 0;
+
         d += ` A ${r.toFixed(4)} ${r.toFixed(4)} 0 ${largeArc} ${sweepFlag} ${ep.x.toFixed(4)} ${ep.y.toFixed(4)}`;
       }
     }
