@@ -186,51 +186,6 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SMOOTH AUTO-FRAMING CAMERA RIG
-// ─────────────────────────────────────────────────────────────────────────────
-function CameraRig({ progress, L, W, H }) {
-  const { camera, controls } = useThree();
-  const lastProgressRef = useRef(progress);
-
-  const maxDim = Math.max(L, W, H);
-  const closedDist = maxDim * 2.2;
-  const openDist = maxDim * 3.8;
-  const getTargetDist = (p) => THREE.MathUtils.lerp(openDist, closedDist, p);
-
-  const targetDistRef = useRef(getTargetDist(progress));
-
-  useEffect(() => {
-    if (Math.abs(progress - lastProgressRef.current) > 0.001) {
-      lastProgressRef.current = progress;
-      targetDistRef.current = getTargetDist(progress);
-    }
-  }, [progress, L, W, H]);
-
-  useFrame(() => {
-    const targetY = (H / 2) * stageProgress(progress, 0.35, 0.85);
-    const targetVec = new THREE.Vector3(0, targetY, 0);
-
-    if (controls) {
-      controls.target.copy(targetVec);
-    }
-
-    if (targetDistRef.current !== null) {
-      const offset = camera.position.clone().sub(targetVec);
-      const currentDist = offset.length();
-      if (Math.abs(currentDist - targetDistRef.current) > 0.1) {
-        const dir = offset.normalize();
-        const newDist = THREE.MathUtils.lerp(currentDist, targetDistRef.current, 0.08);
-        camera.position.copy(targetVec.clone().add(dir.multiplyScalar(newDist)));
-      } else {
-        targetDistRef.current = null;
-      }
-    }
-  });
-
-  return null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // MAIN PIZZA BOX 3D VIEWER COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function PizzaBox3DViewer({
@@ -343,9 +298,9 @@ export default function PizzaBox3DViewer({
   }, [layout, L, W, H]);
 
   const maxDim = Math.max(L, W, H);
-  const initialDist = THREE.MathUtils.lerp(maxDim * 3.8, maxDim * 2.2, progress);
+  const initialDist = maxDim * 2.4;
   const initialDir = useMemo(() => new THREE.Vector3(18, 22, 32).normalize(), []);
-  const targetY = (H / 2) * stageProgress(progress, 0.35, 0.85);
+  const targetY = H / 2;
 
   const initialCamPos = useMemo(() => {
     return [
@@ -406,8 +361,6 @@ export default function PizzaBox3DViewer({
         />
 
         <LightingPreset preset={store?.lightingPreset || "studio"} />
-
-        <CameraRig progress={progress} L={L} W={W} H={H} />
 
         <SceneAnimator activeAnimation={activeAnimation}>
           <group position={[0, 0, 0]}>
