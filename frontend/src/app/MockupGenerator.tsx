@@ -695,12 +695,6 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
                   <Maximize2 className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Watermark Free Crown Badge */}
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-gray-200/80 px-4 py-2.5 flex items-center gap-2">
-                <Crown className="w-4 h-4 fill-amber-500 text-amber-500" />
-                <span className="text-[12px] font-semibold text-zinc-800">Watermark free</span>
-              </div>
             </div>
 
             {/* Right Bottom Black Circle Chat Button */}
@@ -1077,9 +1071,6 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
             >
               <Redo2 className="w-4 h-4" />
             </button>
-            <button className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg cursor-pointer" title="Comment">
-              <MessageSquare className="w-4 h-4" />
-            </button>
             <div className="w-[1px] h-4 bg-zinc-200" />
             <button
               onClick={() => setCanvasZoom((prev) => Math.max(0.4, Number((prev - 0.1).toFixed(2))))}
@@ -1104,13 +1095,6 @@ export default function MockupGenerator({ onBack, initialModel = 'can' }: Mockup
             >
               <Grid className="w-4 h-4" />
             </button>
-            <button className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg cursor-pointer" title="Toggle Visibility">
-              <Eye className="w-4 h-4" />
-            </button>
-            <div className="w-[1px] h-4 bg-zinc-200" />
-            <div className="flex items-center gap-1 text-amber-500 font-bold text-[12px] bg-amber-50 px-2 py-0.5 rounded-md">
-              <span>✦</span> 10
-            </div>
           </div>
         </div>
 

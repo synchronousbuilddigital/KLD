@@ -962,25 +962,6 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               </div>
             )}
 
-            {/* --- RIGHT FLOATING TOOLBAR --- */}
-            <div style={{ position: "absolute", right: "24px", top: "24px", zIndex: 10, display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div style={{ background: "#ffffff", border: `1px solid rgba(0,0,0,0.1)`, borderRadius: "16px", padding: "6px", display: "flex", flexDirection: "column", gap: "6px", alignItems: "center", boxShadow: `0 4px 16px rgba(0,0,0,0.06)` }}>
-                <button title="Select Tool" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#ede9fe", color: "#4f46e5", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>
-                </button>
-                <button title="Pan Canvas" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "transparent", color: "#71717a", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 11V6a2 2 0 0 0-4 0v4M14 10V4a2 2 0 0 0-4 0v6M10 10.5V5a2 2 0 0 0-4 0v9M6 14v1a6 6 0 0 0 6 6h1a6 6 0 0 0 6-6V9a2 2 0 0 0-4 0v2" /></svg>
-                </button>
-                <div style={{ width: "20px", height: "1px", background: "rgba(0,0,0,0.1)", margin: "2px 0" }} />
-                <button title="Undo" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "transparent", color: "#71717a", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10h10a5 5 0 0 1 5 5v2M3 10l5 5M3 10l5-5" /></svg>
-                </button>
-                <button title="Redo" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "transparent", color: "#71717a", opacity: 0.4, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s ease" }}>
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10h-10a5 5 0 0 0-5 5v2M21 10l-5 5M21 10l-5-5" /></svg>
-                </button>
-              </div>
-            </div>
-
             {/* Bottom Toolbar */}
             <div style={{ position: "absolute", bottom: "32px", left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", background: t.bgPanel, padding: "8px 24px", borderRadius: "12px", border: `2px solid ${t.border}`, boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
@@ -1010,9 +991,6 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                   </>
                 )}
               </div>
-              <button style={{ background: t.inputBg, border: `2px solid ${t.border}`, color: t.textMain, padding: "8px 16px", borderRadius: "12px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: `2px 3px 0px rgba(58,46,38,0.05)` }}>
-                <span style={{ color: "#eab308" }}>👑</span> Watermark free
-              </button>
             </div>
 
             {/* Help bubble bottom right */}

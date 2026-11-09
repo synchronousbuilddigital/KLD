@@ -557,19 +557,6 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
             >
               <Grid style={{ width: '16px', height: '16px' }} />
             </button>
-            <button className="ai-canvas-tool-btn" title="Position locator">
-              <MapPin style={{ width: '16px', height: '16px' }} />
-            </button>
-            <div className="ai-canvas-divider" />
-            <button className="ai-canvas-tool-btn" title="Choose 3D model">
-              <Box style={{ width: '16px', height: '16px' }} />
-            </button>
-            <button className="ai-canvas-tool-btn" title="Import media/image">
-              <ImageIcon style={{ width: '16px', height: '16px' }} />
-            </button>
-            <button className="ai-canvas-tool-btn" title="Typography text">
-              <Type style={{ width: '16px', height: '16px' }} />
-            </button>
           </div>
 
           {/* Bottom Left Zoom Controls */}
