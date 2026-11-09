@@ -413,6 +413,12 @@ export function generateTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.625
           d += ` C ${seg.pts[1][0].toFixed(5)},${seg.pts[1][1].toFixed(5)} ${seg.pts[2][0].toFixed(5)},${seg.pts[2][1].toFixed(5)} ${seg.pts[3][0].toFixed(5)},${seg.pts[3][1].toFixed(5)}`;
         }
       });
+      const firstPt = chain[0].pts[0];
+      const lastSeg = chain[chain.length - 1];
+      const lastPt = lastSeg.pts[lastSeg.pts.length - 1];
+      if (nearlyEqual(firstPt, lastPt, 0.05)) {
+        d += ' Z';
+      }
       return d;
     });
 

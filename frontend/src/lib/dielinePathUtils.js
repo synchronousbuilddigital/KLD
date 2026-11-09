@@ -9,14 +9,36 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
     return cutPaths || [];
   }
 
-  // If paths already contain a closed loop (ends with Z/z) or are pre-assembled, return as-is
+  // If paths already contain a closed loop (ends with Z/z) or start matches end, return as-is (with Z appended if needed)
   const hasClosedPath = cutPaths.some(p => {
     if (typeof p !== 'string') return false;
     const t = p.trim();
-    return t.endsWith('Z') || t.endsWith('z');
+    if (t.endsWith('Z') || t.endsWith('z')) return true;
+    const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
+    if (nums && nums.length > 4) {
+      const sx = parseFloat(nums[0]);
+      const sy = parseFloat(nums[1]);
+      const ex = parseFloat(nums[nums.length - 2]);
+      const ey = parseFloat(nums[nums.length - 1]);
+      if (Math.hypot(ex - sx, ey - sy) < tol) return true;
+    }
+    return false;
   });
   if (hasClosedPath) {
-    return cutPaths;
+    return cutPaths.map(p => {
+      if (typeof p !== 'string') return p;
+      const t = p.trim();
+      if (t.endsWith('Z') || t.endsWith('z')) return t;
+      const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
+      if (nums && nums.length > 4) {
+        const sx = parseFloat(nums[0]);
+        const sy = parseFloat(nums[1]);
+        const ex = parseFloat(nums[nums.length - 2]);
+        const ey = parseFloat(nums[nums.length - 1]);
+        if (Math.hypot(ex - sx, ey - sy) < tol) return `${t} Z`;
+      }
+      return t;
+    });
   }
 
   // 1. Extract all subpaths/segments from cutPaths
@@ -38,8 +60,8 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
       const ex = parseFloat(nums[nums.length - 2]);
       const ey = parseFloat(nums[nums.length - 1]);
       
-      // Ignore zero length segments
-      if (Math.hypot(ex - sx, ey - sy) < 1e-4) continue;
+      // Ignore zero length segments only when they have no interior points
+      if (nums.length <= 4 && Math.hypot(ex - sx, ey - sy) < 1e-4) continue;
       
       // Extract body (everything after the initial "M sx,sy" or "M sx sy")
       const bodyMatch = trimmed.match(/^[Mm]\s*[-+]?[0-9]*\.?[0-9]+[,\s]+[-+]?[0-9]*\.?[0-9]+([\s\S]*)$/);

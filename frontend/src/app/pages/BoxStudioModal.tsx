@@ -593,6 +593,7 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
                 H={store.H}
                 T={store.T}
                 unit={unit}
+                boxModel={store.boxModel}
                 materialType={store.materialCategory}
                 isEditorMode={true}
                 colorDieline={true}
