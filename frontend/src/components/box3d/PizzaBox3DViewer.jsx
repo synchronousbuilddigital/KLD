@@ -47,9 +47,9 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   // 1. Floor (Width = L along X, Depth = W along Z)
   const floorShape = new THREE.Shape();
   floorShape.moveTo(-L / 2, -W / 2);
-  floorShape.lineTo( L / 2, -W / 2);
-  floorShape.lineTo( L / 2,  W / 2);
-  floorShape.lineTo(-L / 2,  W / 2);
+  floorShape.lineTo(L / 2, -W / 2);
+  floorShape.lineTo(L / 2, W / 2);
+  floorShape.lineTo(-L / 2, W / 2);
   floorShape.closePath();
   const floorGeom = new THREE.ExtrudeGeometry(floorShape, extrudeSettings);
   assignMaterialGroups(floorGeom, nT);
@@ -57,8 +57,8 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   // 2. Side Wall (Length = W, Height = H)
   const sideWallShape = new THREE.Shape();
   sideWallShape.moveTo(-W / 2, 0);
-  sideWallShape.lineTo( W / 2, 0);
-  sideWallShape.lineTo( W / 2, H);
+  sideWallShape.lineTo(W / 2, 0);
+  sideWallShape.lineTo(W / 2, H);
   sideWallShape.lineTo(-W / 2, H);
   sideWallShape.closePath();
   const sideWallGeom = new THREE.ExtrudeGeometry(sideWallShape, extrudeSettings);
@@ -79,8 +79,8 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   // 4. Front Outer Wall (Width = L, Height = H)
   const frontWallShape = new THREE.Shape();
   frontWallShape.moveTo(-L / 2, 0);
-  frontWallShape.lineTo( L / 2, 0);
-  frontWallShape.lineTo( L / 2, H);
+  frontWallShape.lineTo(L / 2, 0);
+  frontWallShape.lineTo(L / 2, H);
   frontWallShape.lineTo(-L / 2, H);
   frontWallShape.closePath();
   const frontWallGeom = new THREE.ExtrudeGeometry(frontWallShape, extrudeSettings);
@@ -90,16 +90,16 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   const rollW = L * 0.985;
   const rollShape = new THREE.Shape();
   rollShape.moveTo(-rollW / 2, 0);
-  rollShape.lineTo( rollW / 2, 0);
-  rollShape.lineTo( rollW / 2, H);
+  rollShape.lineTo(rollW / 2, 0);
+  rollShape.lineTo(rollW / 2, H);
   // Add locking tab contours at the top of the rollover wall (flush into floor slots, no bottom protrusion)
   const tabW = Math.min(rollW * 0.16, 1.4);
   const tabGap = rollW * 0.22;
   const tabTipH = H + Math.min(nT * 0.5, 0.02);
-  rollShape.lineTo( tabGap + tabW, H);
-  rollShape.lineTo( tabGap + tabW * 0.9, tabTipH);
-  rollShape.lineTo( tabGap + tabW * 0.1, tabTipH);
-  rollShape.lineTo( tabGap, H);
+  rollShape.lineTo(tabGap + tabW, H);
+  rollShape.lineTo(tabGap + tabW * 0.9, tabTipH);
+  rollShape.lineTo(tabGap + tabW * 0.1, tabTipH);
+  rollShape.lineTo(tabGap, H);
   rollShape.lineTo(-tabGap, H);
   rollShape.lineTo(-tabGap - tabW * 0.1, tabTipH);
   rollShape.lineTo(-tabGap - tabW * 0.9, tabTipH);
@@ -116,8 +116,8 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   // 7. Top Lid (Width = L, Length = W)
   const lidShape = new THREE.Shape();
   lidShape.moveTo(-L / 2, 0);
-  lidShape.lineTo( L / 2, 0);
-  lidShape.lineTo( L / 2, W);
+  lidShape.lineTo(L / 2, 0);
+  lidShape.lineTo(L / 2, W);
   lidShape.lineTo(-L / 2, W);
   lidShape.closePath();
   const lidGeom = new THREE.ExtrudeGeometry(lidShape, extrudeSettings);
@@ -212,11 +212,11 @@ export default function PizzaBox3DViewer({
   const manuW = 8.1496;
   const manuH = 2.0472;
 
-  const rawProgress = progressOverride !== null 
-    ? progressOverride 
-    : (props.progress !== undefined 
-        ? props.progress 
-        : (store?.foldProgress !== undefined ? store.foldProgress : 1.0));
+  const rawProgress = progressOverride !== null
+    ? progressOverride
+    : (props.progress !== undefined
+      ? props.progress
+      : (store?.foldProgress !== undefined ? store.foldProgress : 1.0));
   const progress = Number(rawProgress);
 
   // Materials setup
@@ -234,9 +234,9 @@ export default function PizzaBox3DViewer({
   );
 
   const matOutside = mats.outside;
-  const matInside  = mats.inside;
-  const matEdge    = mats.edge;
-  const matArray   = [matOutside, matInside, matEdge];
+  const matInside = mats.inside;
+  const matEdge = mats.edge;
+  const matArray = [matOutside, matInside, matEdge];
 
   // Geometries builder
   const geoms = useMemo(() => {
@@ -244,8 +244,8 @@ export default function PizzaBox3DViewer({
   }, [L, W, H, nT]);
 
   // Decal dispatcher
-  const resolvedDecals = decals !== null 
-    ? decals 
+  const resolvedDecals = decals !== null
+    ? decals
     : (store?.decalsByModel?.pizza_box || store?.decalsByModel?.fefco_0426 || store?.decals || []);
   const debouncedDecals = useDebouncedDecals(resolvedDecals);
 
@@ -277,12 +277,12 @@ export default function PizzaBox3DViewer({
   // Phase 5 (0.45–0.65): Rear wall folds UP 90°
   // Phase 6 (0.55–0.75): Lid side dust flaps and front tuck flap fold 90°
   // Phase 7 (0.65–0.98): Hinged lid swings closed forward 90° over the tray
-  const sideFoldAngle    = stageProgress(progress, 0.00, 0.25) * (Math.PI / 2);
-  const cornerTabAngle   = stageProgress(progress, 0.15, 0.35) * (Math.PI / 2);
-  const frontWallAngle   = stageProgress(progress, 0.25, 0.45) * (Math.PI / 2);
-  const rolloverAngle    = stageProgress(progress, 0.35, 0.55) * Math.PI;
+  const sideFoldAngle = stageProgress(progress, 0.00, 0.25) * (Math.PI / 2);
+  const cornerTabAngle = stageProgress(progress, 0.15, 0.35) * (Math.PI / 2);
+  const frontWallAngle = stageProgress(progress, 0.25, 0.45) * (Math.PI / 2);
+  const rolloverAngle = stageProgress(progress, 0.35, 0.55) * Math.PI;
 
-  const rearWallAngle    = stageProgress(progress, 0.45, 0.65) * (Math.PI / 2);
+  const rearWallAngle = stageProgress(progress, 0.45, 0.65) * (Math.PI / 2);
   const lidSideFlapAngle = stageProgress(progress, 0.55, 0.75) * (Math.PI / 2);
   const baseLidHingeAngle = stageProgress(progress, 0.65, 0.98) * (Math.PI / 2);
 
@@ -349,7 +349,9 @@ export default function PizzaBox3DViewer({
       <Canvas
         camera={{ position: initialCamPos, fov: 38 }}
         shadows
-        gl={{ antialias: true, preserveDrawingBuffer: true }}
+        dpr={[1, 1.5]}
+        frameloop={activeAnimation && activeAnimation !== "none" ? "always" : "demand"}
+        gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
       >
         <OrbitControls
           makeDefault
@@ -564,6 +566,8 @@ export default function PizzaBox3DViewer({
           scale={maxDim * 4}
           blur={1.8}
           far={14}
+          resolution={256}
+          frames={activeAnimation && activeAnimation !== "none" ? Infinity : 1}
         />
         <Environment preset="city" />
       </Canvas>

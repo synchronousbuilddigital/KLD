@@ -603,7 +603,9 @@ export default function FEFCO0300ShoeBox3DViewer({
       <Canvas
         camera={{ position: initialCamPos, fov: 40 }}
         shadows
-        gl={{ antialias: true, preserveDrawingBuffer: true }}
+        dpr={[1, 1.5]}
+        frameloop={activeAnimation && activeAnimation !== "none" ? "always" : "demand"}
+        gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" }}
       >
         <OrbitControls
           makeDefault
@@ -632,6 +634,8 @@ export default function FEFCO0300ShoeBox3DViewer({
           scale={55}
           blur={1.8}
           far={14}
+          resolution={256}
+          frames={activeAnimation && activeAnimation !== "none" ? Infinity : 1}
         />
         <Environment preset="city" />
       </Canvas>

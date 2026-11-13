@@ -384,8 +384,10 @@ export default function RSCBox3DViewer({
     <div className="w-full h-full relative select-none">
       <Canvas
         shadows
+        dpr={[1, 1.5]}
+        frameloop={activeAnimation && activeAnimation !== "none" ? "always" : "demand"}
         camera={{ position: [cameraZ * 0.4, cameraZ * 0.35, cameraZ * 0.9], fov: 42 }}
-        gl={{ preserveDrawingBuffer: true, antialias: true }}
+        gl={{ preserveDrawingBuffer: true, antialias: true, powerPreference: "high-performance" }}
       >
         <LightingPreset preset={lightingPreset} />
         <Environment preset="studio" environmentIntensity={0.35} />
@@ -403,6 +405,8 @@ export default function RSCBox3DViewer({
           scale={maxDimension * 3.5}
           blur={1.8}
           far={maxDimension * 2}
+          resolution={256}
+          frames={activeAnimation && activeAnimation !== "none" ? Infinity : 1}
         />
 
         <OrbitControls

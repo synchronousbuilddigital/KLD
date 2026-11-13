@@ -10,8 +10,8 @@ import { generateAutoLockDieline } from '../../lib/autoLockDielineGenerator';
 import { generateCosmeticBoxDieline } from '../../lib/cosmeticBoxDielineGenerator';
 import { generateDXFString } from '../../lib/exportUtils';
 import DielineSVG from '../../components/DielineSVG';
-import EditorModal from './EditorModal';
-import BoxStudioModal from './BoxStudioModal';
+const EditorModal = React.lazy(() => import('./EditorModal'));
+const BoxStudioModal = React.lazy(() => import('./BoxStudioModal'));
 import Header from '../components/layout/Header';
 import './AiStudioPage.css';
 import { 
@@ -634,23 +634,25 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         </div>
       </div>
 
-      {isDielineStudioOpen && (
-        <BoxStudioModal
-          isOpen={isDielineStudioOpen}
-          onClose={() => setIsDielineStudioOpen(false)}
-          initialModel={store.boxModel || activeBoxModel}
-          boxTitle={BOX_TITLES[store.boxModel || activeBoxModel] || 'Dieline Studio'}
-        />
-      )}
+      <React.Suspense fallback={null}>
+        {isDielineStudioOpen && (
+          <BoxStudioModal
+            isOpen={isDielineStudioOpen}
+            onClose={() => setIsDielineStudioOpen(false)}
+            initialModel={store.boxModel || activeBoxModel}
+            boxTitle={BOX_TITLES[store.boxModel || activeBoxModel] || 'Dieline Studio'}
+          />
+        )}
 
-      {isEditorOpen && (
-        <EditorModal 
-          isOpen={isEditorOpen} 
-          onClose={() => setIsEditorOpen(false)} 
-          contextType={cardMode === '2d' ? 'dieline' : 'mockup'} 
-          isAiMode={true} 
-        />
-      )}
+        {isEditorOpen && (
+          <EditorModal 
+            isOpen={isEditorOpen} 
+            onClose={() => setIsEditorOpen(false)} 
+            contextType={cardMode === '2d' ? 'dieline' : 'mockup'} 
+            isAiMode={true} 
+          />
+        )}
+      </React.Suspense>
     </div>
   );
 }

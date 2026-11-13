@@ -118,13 +118,18 @@ export function assignMaterialGroups(geom, nT) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PROCEDURAL TEXTURE GENERATOR
+// PROCEDURAL TEXTURE GENERATOR (CACHED)
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// PROCEDURAL TEXTURE GENERATOR
-// ─────────────────────────────────────────────────────────────────────────────
+const proceduralTextureCache = new Map();
+const edgeTextureCache = new Map();
+
 export function createProceduralTexture(materialCategory, packageColor, showWatermark = false) {
   if (typeof window === "undefined") return null;
+
+  const cacheKey = `${materialCategory || 'default'}_${packageColor || 'default'}_${showWatermark ? 'wm' : 'nowm'}`;
+  if (proceduralTextureCache.has(cacheKey)) {
+    return proceduralTextureCache.get(cacheKey);
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width  = 1024;
@@ -272,6 +277,7 @@ export function createProceduralTexture(materialCategory, packageColor, showWate
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy  = 16;
   tex.colorSpace  = THREE.SRGBColorSpace;
+  proceduralTextureCache.set(cacheKey, tex);
   return tex;
 }
 
@@ -321,35 +327,41 @@ export function buildMaterials(materialCategory, texture, insideColor, packageCo
   
   let edgeMap = null;
   if (materialCategory === "corrugated" && typeof document !== "undefined") {
-    const eCanvas = document.createElement("canvas");
-    eCanvas.width = 256;
-    eCanvas.height = 32;
-    const eCtx = eCanvas.getContext("2d");
-    
-    // Base color
-    eCtx.fillStyle = edgeHex;
-    eCtx.fillRect(0, 0, 256, 32);
-    
-    // Top and bottom liners
-    eCtx.fillStyle = "rgba(0,0,0,0.18)";
-    eCtx.fillRect(0, 0, 256, 4);
-    eCtx.fillRect(0, 28, 256, 4);
-    
-    // Wavy inner flute
-    eCtx.strokeStyle = "rgba(0,0,0,0.30)";
-    eCtx.lineWidth = 3;
-    eCtx.beginPath();
-    for (let x = 0; x <= 256; x++) {
-      const y = 16 + Math.sin(x * 0.3) * 9;
-      if (x === 0) eCtx.moveTo(x, y);
-      else eCtx.lineTo(x, y);
+    const edgeKey = `${materialCategory}_${edgeHex}`;
+    if (edgeTextureCache.has(edgeKey)) {
+      edgeMap = edgeTextureCache.get(edgeKey);
+    } else {
+      const eCanvas = document.createElement("canvas");
+      eCanvas.width = 256;
+      eCanvas.height = 32;
+      const eCtx = eCanvas.getContext("2d");
+      
+      // Base color
+      eCtx.fillStyle = edgeHex;
+      eCtx.fillRect(0, 0, 256, 32);
+      
+      // Top and bottom liners
+      eCtx.fillStyle = "rgba(0,0,0,0.18)";
+      eCtx.fillRect(0, 0, 256, 4);
+      eCtx.fillRect(0, 28, 256, 4);
+      
+      // Wavy inner flute
+      eCtx.strokeStyle = "rgba(0,0,0,0.30)";
+      eCtx.lineWidth = 3;
+      eCtx.beginPath();
+      for (let x = 0; x <= 256; x++) {
+        const y = 16 + Math.sin(x * 0.3) * 9;
+        if (x === 0) eCtx.moveTo(x, y);
+        else eCtx.lineTo(x, y);
+      }
+      eCtx.stroke();
+      
+      edgeMap = new THREE.CanvasTexture(eCanvas);
+      edgeMap.wrapS = THREE.RepeatWrapping;
+      edgeMap.wrapT = THREE.RepeatWrapping;
+      edgeMap.repeat.set(10, 1);
+      edgeTextureCache.set(edgeKey, edgeMap);
     }
-    eCtx.stroke();
-    
-    edgeMap = new THREE.CanvasTexture(eCanvas);
-    edgeMap.wrapS = THREE.RepeatWrapping;
-    edgeMap.wrapT = THREE.RepeatWrapping;
-    edgeMap.repeat.set(10, 1);
   }
 
   const edgeProps = edgeMap ? { map: edgeMap } : {};
