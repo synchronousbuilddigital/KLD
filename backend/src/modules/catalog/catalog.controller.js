@@ -663,8 +663,14 @@ const getPublicCatalog = async (req, res) => {
       data: items,
     });
   } catch (error) {
-    console.error('Get public catalog error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch 3D model catalog.' });
+    console.error('Get public catalog error (falling back to memory defaults):', error);
+    // Never return 500 to clients when database is degraded or offline; return bundled default catalog
+    const fallbackItems = DEFAULT_CATALOG_ITEMS.filter(item => item.active !== false);
+    res.json({
+      success: true,
+      data: fallbackItems,
+      fallback: true,
+    });
   }
 };
 

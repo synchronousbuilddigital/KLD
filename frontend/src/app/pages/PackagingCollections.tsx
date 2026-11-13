@@ -11,51 +11,142 @@ interface CategoryItem {
   img: string;
 }
 
+export const DEFAULT_PACKAGING_COLLECTIONS: CategoryItem[] = [
+  {
+    id: 'box-mockups',
+    title: 'Box Mockups',
+    count: '7 Models',
+    img: '/images/catalog/box-mockups.png',
+  },
+  {
+    id: 'pouch-bag-mockups',
+    title: 'Pouch / Bag Mockups',
+    count: 'Stand-Up Foil Pouches & Kraft Bags',
+    img: '/images/catalog/pouch-bag-mockups.png',
+  },
+  {
+    id: 'bottle-mockups',
+    title: 'Bottle Mockups',
+    count: '2 Models',
+    img: '/images/catalog/bottle-mockups.png',
+  },
+  {
+    id: 'can-mockups',
+    title: 'Can Mockups',
+    count: '2 Models',
+    img: '/images/catalog/can-mockups.png',
+  },
+  {
+    id: 'tube-mockups',
+    title: 'Tube Mockups',
+    count: '1 Models',
+    img: '/images/catalog/tube-mockups.png',
+  },
+  {
+    id: 'cup-container-mockups',
+    title: 'Cup / Container Mockups',
+    count: 'Eco Paper Coffee Cups & Tubs',
+    img: '/images/catalog/cup-container-mockups.png',
+  },
+  {
+    id: 'food-packaging-mockups',
+    title: 'Food Packaging Mockups',
+    count: 'Takeout, Noodle & Fast Food Boxes',
+    img: '/images/catalog/food-packaging-mockups.png',
+  },
+  {
+    id: 'water-bottle-mockups',
+    title: 'Water Bottle Mockups',
+    count: 'Sport PET & Mineral Water Bottles',
+    img: '/images/catalog/water-bottle-mockups.png',
+  },
+  {
+    id: 'gift-box-mockups',
+    title: 'Gift Box Mockups',
+    count: 'Rigid Luxury & Magnetic Lid Boxes',
+    img: '/images/catalog/gift-box-mockups.png',
+  },
+  {
+    id: 'paper-bag-mockups',
+    title: 'Paper Bag Mockups',
+    count: 'Retail Shopping Bags with Handles',
+    img: '/images/catalog/paper-bag-mockups.png',
+  },
+  {
+    id: 'pizza-packaging-mockups',
+    title: 'Pizza Box Mockups',
+    count: '1 Model',
+    img: '/images/catalog/pizza-packaging-mockups.png',
+  },
+  {
+    id: 'supplement-bottle-mockups',
+    title: 'Supplement Box Mockups',
+    count: '20 Models',
+    img: '/images/catalog/supplement-bottle-mockups.png',
+  },
+];
+
 const mapCatalogItems = (items: any[]): CategoryItem[] => {
   return items.map((item) => {
-    const isPizza = item.itemId === 'pizza-packaging-mockups' || item.itemId === 'pizza-box-mockups' || item.title?.toLowerCase().includes('pizza');
+    const itemId = item.itemId || item._id || item.title.toLowerCase().replace(/\s+/g, '-');
+    const isPizza = itemId === 'pizza-packaging-mockups' || itemId === 'pizza-box-mockups' || item.title?.toLowerCase().includes('pizza');
+    const defaultMatch = DEFAULT_PACKAGING_COLLECTIONS.find(d => d.id === itemId);
+    
+    let count = defaultMatch?.count;
+    if (!count) {
+      if (isPizza) {
+        count = '1 Model';
+      } else if (item.variants && item.variants.length > 0) {
+        count = `${item.variants.length} Models`;
+      } else {
+        count = item.subtitle || 'Active';
+      }
+    }
+
     return {
-      id: item.itemId || item._id || item.title.toLowerCase().replace(/\s+/g, '-'),
+      id: itemId,
       title: isPizza ? 'Pizza Box Mockups' : item.title,
-      count: isPizza 
-        ? '1 Model'
-        : (item.variants && item.variants.length > 0 
-          ? `${item.variants.length} Models` 
-          : (item.subtitle || 'Active')),
-      img: isPizza ? '/images/catalog/pizza-packaging-mockups.png' : (item.img || '/images/box.png'),
+      count: count,
+      img: isPizza ? '/images/catalog/pizza-packaging-mockups.png' : (item.img || defaultMatch?.img || '/images/box.png'),
     };
   });
 };
 
 const containerVariants = {
-  initial: {},
-  whileInView: {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
     transition: {
-      staggerChildren: 0.05
+      staggerChildren: 0.04,
+      delayChildren: 0.05
     }
   }
 };
 
 const cardVariants = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { 
+  hidden: { opacity: 0, y: 16 },
+  visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }
+    transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
   }
 };
 
 interface Props {
   onCategorySelect?: (id: string) => void;
   showExploreButton?: boolean;
+  isModelsPage?: boolean;
 }
 
-export default function PackagingCollections({ onCategorySelect, showExploreButton }: Props) {
+export default function PackagingCollections({ onCategorySelect, showExploreButton, isModelsPage }: Props) {
   const [categories, setCategories] = useState<CategoryItem[]>(() => {
     const cached = catalogService.getCachedCatalog();
-    return cached && cached.length > 0 ? mapCatalogItems(cached.filter(item => item.group !== 'dielines')) : [];
+    if (cached && cached.length > 0) {
+      const mapped = mapCatalogItems(cached.filter(item => item.group !== 'dielines'));
+      if (mapped.length > 0) return mapped;
+    }
+    return DEFAULT_PACKAGING_COLLECTIONS;
   });
-  const [isLoading, setIsLoading] = useState<boolean>(categories.length === 0);
 
   useEffect(() => {
     let isMounted = true;
@@ -63,15 +154,14 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
     const fetchCatalog = async () => {
       try {
         const publicCatalog = await catalogService.getPublicCatalog();
-        if (isMounted) {
-          if (publicCatalog && publicCatalog.length > 0) {
-            setCategories(mapCatalogItems(publicCatalog.filter(item => item.group !== 'dielines')));
+        if (isMounted && publicCatalog && publicCatalog.length > 0) {
+          const validItems = mapCatalogItems(publicCatalog.filter(item => item.group !== 'dielines'));
+          if (validItems.length > 0) {
+            setCategories(validItems);
           }
-          setIsLoading(false);
         }
       } catch (err) {
         console.warn("Failed to fetch catalog for packaging collections", err);
-        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -89,14 +179,18 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
     };
   }, []);
 
+  const displayCategories = categories.length > 0 ? categories : DEFAULT_PACKAGING_COLLECTIONS;
+
   return (
-    <section className="pkg-collections-section" id="packaging-collections">
+    <section 
+      className={`pkg-collections-section ${isModelsPage ? 'pkg-collections-models-page' : ''}`} 
+      id="packaging-collections"
+    >
       <div className="pkg-collections-container">
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="pkg-collections-header"
         >
           <div className="flex items-center gap-3">
@@ -107,78 +201,56 @@ export default function PackagingCollections({ onCategorySelect, showExploreButt
           </div>
         </motion.div>
 
-        {isLoading && categories.length === 0 ? (
-          <div className="pkg-collections-grid">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="pkg-collections-card"
-                style={{
-                  minHeight: '165px',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                }}
-              >
-                <div className="pkg-card-left" style={{ justifyContent: 'space-between', height: '100%' }}>
-                  <div>
-                    <div style={{ height: '18px', width: '120px', background: '#e2e8f0', borderRadius: '6px', marginBottom: '8px' }}></div>
-                    <div style={{ height: '14px', width: '60px', background: '#cbd5e1', borderRadius: '4px' }}></div>
-                  </div>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#e2e8f0' }}></div>
+        <motion.div 
+          className="pkg-collections-grid"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {displayCategories.map((cat) => (
+            <motion.div
+              key={cat.id}
+              variants={cardVariants}
+              onClick={() => onCategorySelect && onCategorySelect(cat.id)}
+              className="pkg-collections-card group"
+              tabIndex={0}
+              role="button"
+            >
+              {/* Left Column: Title, Count, Arrow */}
+              <div className="pkg-card-left">
+                <div>
+                  <h3 className="pkg-card-title">
+                    {cat.title}
+                  </h3>
+                  <span className="pkg-card-count">
+                    {cat.count}
+                  </span>
                 </div>
-                <div className="pkg-card-visual" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: '80px', height: '80px', background: '#e2e8f0', borderRadius: '12px' }}></div>
+                
+                <div className="pkg-card-arrow">
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </div>
               </div>
-            ))}
-          </div>
-        ) : categories.length > 0 ? (
-          <motion.div 
-            className="pkg-collections-grid"
-            variants={containerVariants}
-            initial="initial"
-            whileInView="whileInView"
-            viewport={{ once: true, margin: "-50px" }}
-          >
-            {categories.map((cat, i) => (
-              <motion.div
-                key={cat.id}
-                variants={cardVariants}
-                onClick={() => onCategorySelect && onCategorySelect(cat.id)}
-                className="pkg-collections-card group"
-                tabIndex={0}
-                role="button"
-              >
-                {/* Left Column: Title, Count, Arrow */}
-                <div className="pkg-card-left">
-                  <div>
-                    <h3 className="pkg-card-title">
-                      {cat.title}
-                    </h3>
-                    <span className="pkg-card-count">
-                      {cat.count}
-                    </span>
-                  </div>
-                  
-                  <div className="pkg-card-arrow">
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </div>
-                </div>
 
-                {/* Right Column: 3D Mockup Visual */}
-                <div className="pkg-card-visual">
-                  <img 
-                    src={cat.img} 
-                    alt={cat.title} 
-                    className="pkg-card-img"
-                    loading="lazy"
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : null}
+              {/* Right Column: 3D Mockup Visual */}
+              <div className="pkg-card-visual">
+                <img 
+                  src={cat.img} 
+                  alt={cat.title} 
+                  className="pkg-card-img"
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback to default catalog image if specific path fails to load
+                    const target = e.currentTarget;
+                    if (!target.src.includes('box-mockups.png')) {
+                      target.src = '/images/catalog/box-mockups.png';
+                    }
+                  }}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

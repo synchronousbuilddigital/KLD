@@ -50,11 +50,155 @@ const getAuthHeaders = () => {
 
 const CATALOG_STORAGE_KEY = 'kld_cached_public_catalog';
 
+export const DEFAULT_FALLBACK_CATALOG: CatalogItemData[] = [
+  {
+    itemId: 'box-mockups',
+    title: 'Box Mockups',
+    subtitle: '7 Models',
+    img: '/images/catalog/box-mockups.png',
+    group: 'boxes',
+    badge: '🔥 MOST POPULAR',
+    tag: '3D & DXF Ready',
+    isFeatured: true,
+    active: true,
+    order: 1,
+    boxModelKey: 'rte',
+  },
+  {
+    itemId: 'pouch-bag-mockups',
+    title: 'Pouch / Bag Mockups',
+    subtitle: 'Stand-Up Foil Pouches & Kraft Bags',
+    img: '/images/catalog/pouch-bag-mockups.png',
+    group: 'pouches',
+    badge: '⚡ HIGH REVENUE',
+    tag: '3D Visualizer',
+    isFeatured: true,
+    active: true,
+    order: 2,
+    boxModelKey: 'rte',
+  },
+  {
+    itemId: 'bottle-mockups',
+    title: 'Bottle Mockups',
+    subtitle: '2 Models',
+    img: '/images/catalog/bottle-mockups.png',
+    group: 'bottles',
+    badge: '✦ PREMIUM GLASS',
+    tag: 'Pro CAD Dieline',
+    isFeatured: true,
+    active: true,
+    order: 3,
+    boxModelKey: 'bottle',
+  },
+  {
+    itemId: 'can-mockups',
+    title: 'Can Mockups',
+    subtitle: '2 Models',
+    img: '/images/catalog/can-mockups.png',
+    group: 'bottles',
+    tag: '3D Studio',
+    isFeatured: true,
+    active: true,
+    order: 4,
+    boxModelKey: 'rte',
+  },
+  {
+    itemId: 'tube-mockups',
+    title: 'Tube Mockups',
+    subtitle: '1 Models',
+    img: '/images/catalog/tube-mockups.png',
+    group: 'containers',
+    tag: '3D Studio',
+    active: true,
+    order: 5,
+    boxModelKey: 'cosmetic',
+  },
+  {
+    itemId: 'cup-container-mockups',
+    title: 'Cup / Container Mockups',
+    subtitle: 'Eco Paper Coffee Cups & Tubs',
+    img: '/images/catalog/cup-container-mockups.png',
+    group: 'containers',
+    tag: 'Vector Dieline',
+    active: true,
+    order: 6,
+    boxModelKey: 'rte',
+  },
+  {
+    itemId: 'food-packaging-mockups',
+    title: 'Food Packaging Mockups',
+    subtitle: 'Takeout, Noodle & Fast Food Boxes',
+    img: '/images/catalog/food-packaging-mockups.png',
+    group: 'boxes',
+    tag: 'Auto-Lock Dieline',
+    active: true,
+    order: 7,
+    boxModelKey: 'auto_lock',
+  },
+  {
+    itemId: 'water-bottle-mockups',
+    title: 'Water Bottle Mockups',
+    subtitle: 'Sport PET & Mineral Water Bottles',
+    img: '/images/catalog/water-bottle-mockups.png',
+    group: 'bottles',
+    tag: '3D Visualizer',
+    active: true,
+    order: 8,
+    boxModelKey: 'rte',
+  },
+  {
+    itemId: 'gift-box-mockups',
+    title: 'Gift Box Mockups',
+    subtitle: 'Rigid Luxury & Magnetic Lid Boxes',
+    img: '/images/catalog/gift-box-mockups.png',
+    group: 'boxes',
+    tag: '3D Studio',
+    active: true,
+    order: 9,
+    boxModelKey: 'te',
+  },
+  {
+    itemId: 'paper-bag-mockups',
+    title: 'Paper Bag Mockups',
+    subtitle: 'Retail Shopping Bags with Handles',
+    img: '/images/catalog/paper-bag-mockups.png',
+    group: 'pouches',
+    tag: 'Vector Blueprint',
+    active: true,
+    order: 10,
+    boxModelKey: 'rte',
+  },
+  {
+    itemId: 'pizza-packaging-mockups',
+    title: 'Pizza Box Mockups',
+    subtitle: '1 Model',
+    img: '/images/catalog/pizza-packaging-mockups.png',
+    group: 'boxes',
+    badge: '🔥 HOT',
+    tag: '3D Studio',
+    active: true,
+    order: 11,
+    boxModelKey: 'pizza_box',
+  },
+  {
+    itemId: 'supplement-bottle-mockups',
+    title: 'Supplement Box Mockups',
+    subtitle: '20 Models',
+    img: '/images/catalog/supplement-bottle-mockups.png',
+    group: 'containers',
+    badge: '💊 POPULAR',
+    tag: '3D Studio',
+    active: true,
+    order: 12,
+    boxModelKey: 'cosmetic',
+  },
+];
+
 export const catalogService = {
   /**
    * Synchronously get cached catalog from localStorage for instant 0ms rendering
    */
-  getCachedCatalog(): CatalogItemData[] | null {
+  getCachedCatalog(): CatalogItemData[] {
     try {
       const cached = localStorage.getItem(CATALOG_STORAGE_KEY);
       if (cached) {
@@ -66,7 +210,7 @@ export const catalogService = {
     } catch {
       // ignore
     }
-    return null;
+    return DEFAULT_FALLBACK_CATALOG;
   },
 
   /**
@@ -89,7 +233,7 @@ export const catalogService = {
       const response = await fetch(`${API_BASE_URL}/catalog/public`);
       if (response.ok) {
         const data = await response.json();
-        if (data.success && Array.isArray(data.data)) {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           try {
             localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(data.data));
           } catch {}
@@ -97,9 +241,9 @@ export const catalogService = {
         }
       }
     } catch (error) {
-      console.warn('Failed to fetch catalog from backend API, using cached data:', error);
+      console.warn('Failed to fetch catalog from backend API, using fallback data:', error);
     }
-    return this.getCachedCatalog() || [];
+    return this.getCachedCatalog();
   },
 
   /**
