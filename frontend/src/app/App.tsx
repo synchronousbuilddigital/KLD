@@ -2,34 +2,40 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Package, ChevronRight, ChevronDown, Check, Sliders, RefreshCw, Printer, Save, Bookmark } from 'lucide-react';
-import NewHomeLanding from './pages/NewHomeLanding';
 import PackagingCollections from './pages/PackagingCollections';
-import MockupDetails from './pages/MockupDetails';
 import BackgroundCanvas from './components/layout/BackgroundCanvas';
 import ElasticFooter from './components/layout/ElasticFooter';
 import TopDielineTemplates from './pages/TopDielineTemplates';
-import TemplateLibraryPage from './pages/TemplateLibraryPage';
-import PricingPage from './pages/PricingPage';
-import UserProfilePage from './pages/UserProfilePage';
-import ModelsPage from './pages/ModelsPage';
-import DielinesPage from './pages/DielinesPage';
-import AboutUsPage from './pages/AboutUsPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import WorkspacePage from './pages/WorkspacePage';
 import RTEBoxPrototype from './pages/RTEBoxPrototype';
 import { getRscGeometry } from '../geometry';
-import WorkshopPage from './pages/WorkshopPage';
-import AiStudioPage from './pages/AiStudioPage';
-import SignInModal from './components/modals/SignInModal';
-const BoxStudioModal = React.lazy(() => import('./pages/BoxStudioModal').then(module => ({ default: module.BoxStudioModal })));
-import MockupGenerator from './MockupGenerator';
 import { useBoxStore } from '../lib/useBoxStore';
 import { uploadService } from '../services/upload';
-
-import { CustomDesignModal } from './pages/EditorModal';
 import { useMobileDetection } from './components/mobile/useMobileDetection';
 import MobileAppShell from './components/mobile/MobileAppShell';
-import DesktopReturnPill from './components/mobile/DesktopReturnPill';
+
+// Code-split heavy desktop routes and modals so initial mobile payload is ultra-lightweight
+const MockupDetails = React.lazy(() => import('./pages/MockupDetails'));
+const WorkshopPage = React.lazy(() => import('./pages/WorkshopPage'));
+const ModelsPage = React.lazy(() => import('./pages/ModelsPage'));
+const DielinesPage = React.lazy(() => import('./pages/DielinesPage'));
+const PricingPage = React.lazy(() => import('./pages/PricingPage'));
+const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage'));
+const UserProfilePage = React.lazy(() => import('./pages/UserProfilePage'));
+const AboutUsPage = React.lazy(() => import('./pages/AboutUsPage'));
+const WorkspacePage = React.lazy(() => import('./pages/WorkspacePage'));
+const AiStudioPage = React.lazy(() => import('./pages/AiStudioPage'));
+const MockupGenerator = React.lazy(() => import('./MockupGenerator'));
+const SignInModal = React.lazy(() => import('./components/modals/SignInModal'));
+const DesktopReturnPill = React.lazy(() => import('./components/mobile/DesktopReturnPill'));
+const NewHomeLanding = React.lazy(() => import('./pages/NewHomeLanding'));
+const BoxStudioModal = React.lazy(() => import('./pages/BoxStudioModal').then(module => ({ default: module.BoxStudioModal })));
+
+const ViewLoading = () => (
+  <div className="min-h-screen bg-white flex flex-col items-center justify-center font-sans text-zinc-900">
+    <div className="w-9 h-9 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin mb-3"></div>
+    <span className="text-xs font-semibold text-zinc-500">Loading...</span>
+  </div>
+);
 
 const slideUpVariant = {
   initial: { opacity: 0, y: 40 },
@@ -649,29 +655,53 @@ export default function App() {
           onOpenSignIn={() => setIsSignInModalOpen(true)}
           initialCategoryId={activeCategoryId}
         />
-        {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
+        {isSignInModalOpen && (
+          <React.Suspense fallback={null}>
+            <SignInModal onClose={() => setIsSignInModalOpen(false)} />
+          </React.Suspense>
+        )}
       </>
     );
   }
 
   if (activeCategoryId) {
-    return <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />
+      </React.Suspense>
+    );
   }
 
   if (currentView === 'mockups') {
-    return <WorkshopPage onBack={() => navigateTo('landing')} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <WorkshopPage onBack={() => navigateTo('landing')} />
+      </React.Suspense>
+    );
   }
 
   if (currentView === 'models') {
-    return <ModelsPage onNavigate={navigateTo} onCategorySelect={(id) => handleCategorySelect(id)} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <ModelsPage onNavigate={navigateTo} onCategorySelect={(id) => handleCategorySelect(id)} />
+      </React.Suspense>
+    );
   }
 
   if (currentView === 'dielines' || currentView === 'library') {
-    return <DielinesPage onNavigate={navigateTo} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <DielinesPage onNavigate={navigateTo} />
+      </React.Suspense>
+    );
   }
 
   if (currentView === 'pricing') {
-    return <PricingPage onNavigate={navigateTo} onBack={() => navigateTo('landing')} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <PricingPage onNavigate={navigateTo} onBack={() => navigateTo('landing')} />
+      </React.Suspense>
+    );
   }
 
   if (currentView === 'admin') {
@@ -742,23 +772,16 @@ export default function App() {
     }
 
     return (
-      <>
+      <React.Suspense fallback={<ViewLoading />}>
         <AdminDashboardPage onBack={() => navigateTo('landing')} />
         {activeDielineBox.isOpen && (
-          <React.Suspense fallback={
-            <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
-              <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-              <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading 3D Studio...</h2>
-            </div>
-          }>
-            <BoxStudioModal
-              isOpen={activeDielineBox.isOpen}
-              onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
-              initialModel={activeDielineBox.model}
-            />
-          </React.Suspense>
+          <BoxStudioModal
+            isOpen={activeDielineBox.isOpen}
+            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+            initialModel={activeDielineBox.model}
+          />
         )}
-      </>
+      </React.Suspense>
     );
   }
 
@@ -772,15 +795,23 @@ export default function App() {
       } catch {}
     }
 
-    if (userRole === 'ADMIN') {
-      return <AdminDashboardPage onBack={() => navigateTo('landing')} />;
-    }
-
-    return <UserProfilePage onBack={() => navigateTo('landing')} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        {userRole === 'ADMIN' ? (
+          <AdminDashboardPage onBack={() => navigateTo('landing')} />
+        ) : (
+          <UserProfilePage onBack={() => navigateTo('landing')} />
+        )}
+      </React.Suspense>
+    );
   }
 
   if (currentView === 'about') {
-    return <AboutUsPage onNavigate={navigateTo} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <AboutUsPage onNavigate={navigateTo} />
+      </React.Suspense>
+    );
   }
 
 
@@ -868,25 +899,9 @@ export default function App() {
     }
   };
 
-  if (currentView === 'models') {
-    return <ModelsPage onNavigate={navigateTo} onCategorySelect={(id) => handleCategorySelect(id)} />;
-  }
-
-  if (currentView === 'dielines' || currentView === 'library') {
-    return <DielinesPage onNavigate={navigateTo} />;
-  }
-
-  if (currentView === 'pricing') {
-    return <PricingPage onNavigate={navigateTo} onBack={() => navigateTo('landing')} />;
-  }
-
-  if (currentView === 'profile') {
-    return <UserProfilePage onBack={() => navigateTo('landing')} />;
-  }
-
   if (currentView === 'workspace') {
     return (
-      <>
+      <React.Suspense fallback={<ViewLoading />}>
         <WorkspacePage 
           onNavigate={(v, extra) => navigateTo(v as any, extra)} 
           onBack={() => navigateTo('landing')} 
@@ -949,51 +964,51 @@ export default function App() {
           }} 
         />
         {activeDielineBox.isOpen && (
-          <React.Suspense fallback={
-            <div className="fixed inset-0 z-[999999] bg-[#eeeeee] flex flex-col items-center justify-center font-sans text-zinc-900 overflow-hidden w-full h-full">
-              <div className="w-12 h-12 border-4 border-zinc-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-              <h2 className="text-xl font-bold tracking-tight text-zinc-800">Loading Studio...</h2>
-            </div>
-          }>
-            <BoxStudioModal
-              isOpen={activeDielineBox.isOpen}
-              onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
-              initialModel={activeDielineBox.model}
-            />
-          </React.Suspense>
+          <BoxStudioModal
+            isOpen={activeDielineBox.isOpen}
+            onClose={() => setActiveDielineBox({ isOpen: false, model: 'rte' })}
+            initialModel={activeDielineBox.model}
+          />
         )}
         {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
-      </>
+      </React.Suspense>
     );
   }
 
-
   if (currentView === 'aistudio' || currentView === 'ai-studio') {
     return (
-      <AiStudioPage 
-        onBack={() => setCurrentView('landing')} 
-        onNavigateToWorkshop={() => setCurrentView('workshop')}
-      />
+      <React.Suspense fallback={<ViewLoading />}>
+        <AiStudioPage 
+          onBack={() => setCurrentView('landing')} 
+          onNavigateToWorkshop={() => setCurrentView('workshop')}
+        />
+      </React.Suspense>
     );
   }
 
   if (currentView === 'mockup-generator' || currentView === 'mockup_generator' || currentView === 'mockupgenerator' || currentView === 'can-mockup') {
     return (
-      <MockupGenerator 
-        onBack={() => setCurrentView('landing')} 
-        initialModel={
-          useBoxStore.getState().boxModel === 'sipper_water_bottle' || useBoxStore.getState().boxModel === 'water_bottle_handle'
-            ? 'sipper_water_bottle'
-            : useBoxStore.getState().boxModel === 'water_bottle'
-            ? 'water_bottle'
-            : 'can'
-        } 
-      />
+      <React.Suspense fallback={<ViewLoading />}>
+        <MockupGenerator 
+          onBack={() => setCurrentView('landing')} 
+          initialModel={
+            useBoxStore.getState().boxModel === 'sipper_water_bottle' || useBoxStore.getState().boxModel === 'water_bottle_handle'
+              ? 'sipper_water_bottle'
+              : useBoxStore.getState().boxModel === 'water_bottle'
+              ? 'water_bottle'
+              : 'can'
+          } 
+        />
+      </React.Suspense>
     );
   }
 
   if (currentView === 'workshop') {
-    return <WorkshopPage onBack={() => setCurrentView('landing')} />;
+    return (
+      <React.Suspense fallback={<ViewLoading />}>
+        <WorkshopPage onBack={() => setCurrentView('landing')} />
+      </React.Suspense>
+    );
   }
 
   return (
@@ -1374,11 +1389,17 @@ export default function App() {
 
       {/* Floating pill for mobile screens when desktop view is active */}
       {isMobileScreen && !isMobileAppActive && (
-        <DesktopReturnPill onReturnToMobile={switchToMobile} />
+        <React.Suspense fallback={null}>
+          <DesktopReturnPill onReturnToMobile={switchToMobile} />
+        </React.Suspense>
       )}
 
       {/* Global Sign In / Create Account Modal */}
-      {isSignInModalOpen && <SignInModal onClose={() => setIsSignInModalOpen(false)} />}
+      {isSignInModalOpen && (
+        <React.Suspense fallback={null}>
+          <SignInModal onClose={() => setIsSignInModalOpen(false)} />
+        </React.Suspense>
+      )}
     </>
   );
 }

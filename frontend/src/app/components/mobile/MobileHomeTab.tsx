@@ -10,9 +10,10 @@ import {
   ChevronRight, 
   RotateCw 
 } from 'lucide-react';
-import Mobile3DViewer from './Mobile3DViewer';
 import { mockupCategories, MockupVariant } from '../../data/mockupData';
 import { MobileTab } from './MobileTabBar';
+
+const LazyMobile3DViewer = React.lazy(() => import('./Mobile3DViewer'));
 
 interface MobileHomeTabProps {
   onNavigateTab: (tab: MobileTab) => void;
@@ -27,7 +28,15 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
 }) => {
   const [featuredModel, setFeaturedModel] = useState<string>('sipper_water_bottle');
   const [featuredSubstrate, setFeaturedSubstrate] = useState<'white' | 'kraft' | 'metal'>('white');
+  const [is3DActive, setIs3DActive] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const getFeaturedModelImage = (model: string, substrate: string) => {
+    if (model === 'can') return '/images/can.png';
+    if (model === 'rsc') return substrate === 'white' ? '/images/boxes/rsc_white.jpg' : '/images/boxes/rsc_kraft.jpg';
+    if (model === 'rte') return substrate === 'kraft' ? '/images/boxes/rte_kraft.jpg' : '/images/boxes/rte_white.jpg';
+    return '/images/sipper_water_bottle.png';
+  };
 
   // Collect all real models across categories
   const allModels = mockupCategories.flatMap(cat => 
@@ -239,21 +248,50 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
               })}
             </div>
 
-            {/* Live 3D Model Display */}
-            <div className="relative w-full h-[240px] rounded-2xl bg-gradient-to-b from-[#1b1c20] via-[#131417] to-[#0b0b0d] overflow-hidden flex items-center justify-center border border-zinc-800/80">
-              <Mobile3DViewer
-                key={`${featuredModel}-${featuredSubstrate}`}
-                modelType={featuredModel}
-                substrate={featuredSubstrate}
-                height={240}
-                autoRotate={true}
-              />
-              {/* Interaction Hint Pill */}
-              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-medium text-zinc-300 flex items-center gap-1.5 pointer-events-none">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                <span>Touch & Spin 360°</span>
+            {/* Live 3D Model Display (Instant Image Poster with On-Demand 3D Spin) */}
+            {is3DActive ? (
+              <div className="relative w-full h-[240px] rounded-2xl bg-gradient-to-b from-[#1b1c20] via-[#131417] to-[#0b0b0d] overflow-hidden flex items-center justify-center border border-zinc-800/80">
+                <React.Suspense fallback={
+                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 gap-2">
+                    <div className="w-6 h-6 border-2 border-zinc-600 border-t-emerald-400 rounded-full animate-spin" />
+                    <span className="text-[10px] font-medium">Loading 3D Stage...</span>
+                  </div>
+                }>
+                  <LazyMobile3DViewer
+                    key={`${featuredModel}-${featuredSubstrate}`}
+                    modelType={featuredModel}
+                    substrate={featuredSubstrate}
+                    height={240}
+                    autoRotate={true}
+                  />
+                </React.Suspense>
+                {/* Interaction Hint Pill */}
+                <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-medium text-zinc-300 flex items-center gap-1.5 pointer-events-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                  <span>Touch & Spin 360°</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div 
+                onClick={() => setIs3DActive(true)}
+                className="relative w-full h-[240px] rounded-2xl bg-gradient-to-b from-[#1b1c20] via-[#131417] to-[#0b0b0d] overflow-hidden flex items-center justify-center border border-zinc-800/80 cursor-pointer group"
+              >
+                <img
+                  src={getFeaturedModelImage(featuredModel, featuredSubstrate)}
+                  alt={featuredModel}
+                  className="h-[170px] w-auto max-w-[85%] object-contain transition-transform duration-500 group-hover:scale-105 filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]"
+                  loading="eager"
+                  width="170"
+                  height="170"
+                />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition-colors flex items-end justify-center pb-3">
+                  <div className="px-3.5 py-1.5 rounded-full bg-zinc-950/85 backdrop-blur-md border border-white/20 text-white text-[11px] font-semibold flex items-center gap-2 shadow-xl group-hover:border-emerald-400/80 group-hover:bg-zinc-950 transition-all">
+                    <RotateCw className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Tap to Spin 360°</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Bottom Card Controls */}
             <div className="flex items-center justify-between pt-3.5 z-10">
@@ -300,6 +338,9 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
                     src={cat.img}
                     alt={cat.name}
                     className="max-h-full max-w-full object-contain"
+                    width="120"
+                    height="100"
+                    loading="lazy"
                   />
                 </div>
                 <div>

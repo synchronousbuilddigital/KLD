@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import MobileHeader from './MobileHeader';
 import MobileTabBar, { MobileTab } from './MobileTabBar';
 import MobileHomeTab from './MobileHomeTab';
-import MobileModelsTab from './MobileModelsTab';
-import MobileDielinesTab from './MobileDielinesTab';
-import MobileStudioTab from './MobileStudioTab';
-import MobileWorkspaceTab from './MobileWorkspaceTab';
-import MobileProfileTab from './MobileProfileTab';
-import MobileModelDetailSheet from './MobileModelDetailSheet';
 import { MockupVariant } from '../../data/mockupData';
+
+const MobileModelsTab = React.lazy(() => import('./MobileModelsTab'));
+const MobileDielinesTab = React.lazy(() => import('./MobileDielinesTab'));
+const MobileStudioTab = React.lazy(() => import('./MobileStudioTab'));
+const MobileWorkspaceTab = React.lazy(() => import('./MobileWorkspaceTab'));
+const MobileProfileTab = React.lazy(() => import('./MobileProfileTab'));
+const MobileModelDetailSheet = React.lazy(() => import('./MobileModelDetailSheet'));
 
 interface MobileAppShellProps {
   onSwitchToDesktop?: () => void;
@@ -85,44 +86,51 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
           />
         )}
 
-        {activeTab === 'models' && (
-          <MobileModelsTab
-            onSelectModel={handleSelectModel}
-            onOpenInStudio={handleOpenInStudio}
-            initialCategoryId={initialCategoryId}
-            onNavigateTab={(tab) => setActiveTab(tab)}
-          />
-        )}
+        <React.Suspense fallback={
+          <div className="flex flex-col items-center justify-center p-12 text-zinc-400 gap-3 min-h-[300px]">
+            <div className="w-8 h-8 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+            <span className="text-xs font-semibold text-zinc-600">Loading tab...</span>
+          </div>
+        }>
+          {activeTab === 'models' && (
+            <MobileModelsTab
+              onSelectModel={handleSelectModel}
+              onOpenInStudio={handleOpenInStudio}
+              initialCategoryId={initialCategoryId}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
 
-        {activeTab === 'studio' && (
-          <MobileStudioTab
-            key={studioModelKey}
-            initialModelKey={studioModelKey}
-            onNavigateTab={(tab) => setActiveTab(tab)}
-          />
-        )}
+          {activeTab === 'studio' && (
+            <MobileStudioTab
+              key={studioModelKey}
+              initialModelKey={studioModelKey}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
 
-        {activeTab === 'workspace' && (
-          <MobileWorkspaceTab
-            onNavigateTab={(tab) => setActiveTab(tab)}
-            onOpenInStudio={handleOpenInStudio}
-            onOpenSignIn={onOpenSignIn}
-          />
-        )}
+          {activeTab === 'workspace' && (
+            <MobileWorkspaceTab
+              onNavigateTab={(tab) => setActiveTab(tab)}
+              onOpenInStudio={handleOpenInStudio}
+              onOpenSignIn={onOpenSignIn}
+            />
+          )}
 
-        {activeTab === 'dielines' && (
-          <MobileDielinesTab
-            onOpenInStudio={handleOpenInStudio}
-            onNavigateTab={(tab) => setActiveTab(tab)}
-          />
-        )}
+          {activeTab === 'dielines' && (
+            <MobileDielinesTab
+              onOpenInStudio={handleOpenInStudio}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
 
-        {activeTab === 'profile' && (
-          <MobileProfileTab
-            onOpenSignIn={onOpenSignIn}
-            onNavigateTab={(tab) => setActiveTab(tab)}
-          />
-        )}
+          {activeTab === 'profile' && (
+            <MobileProfileTab
+              onOpenSignIn={onOpenSignIn}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+        </React.Suspense>
       </main>
 
       {/* Bottom Navigation Tab Bar */}
@@ -135,13 +143,17 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
       />
 
       {/* Bottom Model Detail Sheet Drawer */}
-      <MobileModelDetailSheet
-        model={inspectModel}
-        categoryName={inspectCategoryName}
-        isOpen={Boolean(inspectModel)}
-        onClose={() => setInspectModel(null)}
-        onOpenInStudio={handleOpenInStudio}
-      />
+      {inspectModel && (
+        <React.Suspense fallback={null}>
+          <MobileModelDetailSheet
+            model={inspectModel}
+            categoryName={inspectCategoryName}
+            isOpen={Boolean(inspectModel)}
+            onClose={() => setInspectModel(null)}
+            onOpenInStudio={handleOpenInStudio}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 };
