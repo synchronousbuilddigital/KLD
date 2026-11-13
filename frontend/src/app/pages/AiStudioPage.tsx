@@ -59,8 +59,13 @@ const BOX_TITLES: Record<string, string> = {
   cosmetic: 'Cosmetic Box',
   cosmetic_b: 'Mailer / Tray Box',
   button_hole: 'Button Hole Box',
+  pizza_box: 'Pizza Box (FEFCO 0426)',
+  fefco_0300: 'Shoe Box with Lid (FEFCO 0300)',
   water_bottle: 'Water Bottle',
-  can: 'Beverage Can'
+  sipper_water_bottle: 'Sipper Water Bottle with Handle',
+  can: 'Beverage Can',
+  slim_can: 'Slim / Sleek Can',
+  tube: 'Toothpaste & Squeeze Tube'
 };
 
 export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioPageProps) {

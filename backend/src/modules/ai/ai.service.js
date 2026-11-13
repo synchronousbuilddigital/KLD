@@ -97,7 +97,7 @@ Your task is to analyze user prompts and orchestrate a 3-layer design system.
 Always return a valid JSON object matching this exact schema:
 {
   "reply": "Conversational explanation of the design concept...",
-  "model": "rte" | "te" | "auto_lock" | "cosmetic",
+  "model": "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "rsc" | "pizza_box" | "fefco_0300" | "can" | "slim_can" | "water_bottle" | "sipper_water_bottle" | "tube",
   "dimensions": { "L": number_in_inches, "W": number, "H": number, "unit": "mm" | "in" | "cm" },
   "baseColor": "#hex",
   "artworkPrompt": "The visual description of the 2D flat illustration (e.g. 'A beautiful traditional Japanese mountain with ink brush strokes, centered on a sage green watercolor background, wide sprawling composition'). Do NOT include words like 'packaging layout' or 'box' in this string, or the image AI will literally draw a 3D box. Do not include text.",
@@ -270,24 +270,53 @@ function classifyPrompt(text) {
   if (t.match(/\bpizza\b|\bfefco.?0426\b/)) {
     return { model: 'pizza_box', L_mm: 207, W_mm: 205, H_mm: 52, primaryColor, accentColor, artworkFace: 'lid-top' };
   }
-  // FLAT / MAILER / FOOD DELIVERY BOXES → auto_lock
-  if (t.match(/\bflat box\b|\bmailer\b|\bfood delivery\b|\btakeout\b/)) {
-    return { model: 'auto_lock', L_mm: 300, W_mm: 300, H_mm: 45, primaryColor, accentColor, artworkFace: 'top' };
+  // FEFCO 0300 SHOE BOX WITH LID
+  if (t.match(/\bshoe\b|\bsneaker\b|\bfootwear\b|\bfefco.?0300\b|\bshoebox\b|\btelescope box\b/)) {
+    return { model: 'fefco_0300', L_mm: 302, W_mm: 204, H_mm: 61, primaryColor, accentColor, artworkFace: 'lid-top' };
+  }
+  // CAN / BEVERAGE CAN
+  if (t.match(/\bslim.?can\b|\bsleek.?can\b|\benergy drink\b|\bseltzer\b/)) {
+    return { model: 'slim_can', L_mm: 175, W_mm: 145, H_mm: 156, primaryColor, accentColor, artworkFace: 'wrap' };
+  }
+  if (t.match(/\bsoda.?can\b|\bbeer.?can\b|\bcan\b|\baluminum can\b/)) {
+    return { model: 'can', L_mm: 207, W_mm: 125, H_mm: 122, primaryColor, accentColor, artworkFace: 'wrap' };
+  }
+  // WATER BOTTLES
+  if (t.match(/\bsipper\b|\bsports bottle\b|\bgym bottle\b|\bhydro.?flask\b|\bhandle bottle\b/)) {
+    return { model: 'sipper_water_bottle', L_mm: 251, W_mm: 227, H_mm: 245, primaryColor, accentColor, artworkFace: 'wrap' };
+  }
+  if (t.match(/\bmineral water\b|\bwater bottle\b|\bpet bottle\b|\bplastic bottle\b/)) {
+    return { model: 'water_bottle', L_mm: 243, W_mm: 46, H_mm: 240, primaryColor, accentColor, artworkFace: 'wrap' };
+  }
+  // SQUEEZE TUBE
+  if (t.match(/\btoothpaste\b|\bsqueeze tube\b|\blotion tube\b|\bcream tube\b|\bointment\b/)) {
+    return { model: 'tube', L_mm: 90, W_mm: 133, H_mm: 155, primaryColor, accentColor, artworkFace: 'front' };
+  }
+  // SQUARE SHIPPING BOX (RSC)
+  if (t.match(/\bshipping\b|\bcorrugated\b|\brsc\b|\bcarton\b|\bpacking box\b|\bparcel\b/)) {
+    return { model: 'rsc', L_mm: 200, W_mm: 200, H_mm: 200, primaryColor, accentColor, artworkFace: 'front' };
+  }
+  // FLAT / MAILER / ROLL-END TRAY
+  if (t.match(/\bmailer\b|\bsubscription box\b|\brett\b|\broll.?end\b/)) {
+    return { model: 'cosmetic_b', L_mm: 270, W_mm: 260, H_mm: 62, primaryColor, accentColor, artworkFace: 'top' };
+  }
+  // BUTTON HOLE BOX
+  if (t.match(/\bbutton.?hole\b|\b1-2-3\b|\bsnap.?lock\b/)) {
+    return { model: 'button_hole', L_mm: 75, W_mm: 75, H_mm: 60, primaryColor, accentColor, artworkFace: 'front' };
   }
   // STRAIGHT TUCK → te
   if (t.match(/\bstraight tuck\b|\bte box\b/)) {
     return { model: 'te', L_mm: 120, W_mm: 80, H_mm: 180, primaryColor, accentColor, artworkFace: 'front' };
   }
-  // AUTO-LOCK bottom → auto_lock (user asked explicitly)
-  if (t.match(/\bauto.?lock\b|\bautolock\b/)) {
-    return { model: 'auto_lock', L_mm: 200, W_mm: 150, H_mm: 80, primaryColor, accentColor, artworkFace: 'front' };
+  // AUTO-LOCK bottom → auto_lock
+  if (t.match(/\bauto.?lock\b|\bautolock\b|\bcrash.?lock\b/)) {
+    return { model: 'auto_lock', L_mm: 120.6, W_mm: 60.6, H_mm: 161.5, primaryColor, accentColor, artworkFace: 'front' };
   }
-  // TALL / SLIM / BOTTLE / TUBE / WINE → cosmetic
-  if (t.match(/\bwine\b|\bbottle\b|\btube\b|\bcandle\b|\bperfume\b|\bcosmetic\b|\bserum\b|\bspray\b|\bflask\b/)) {
-    return { model: 'cosmetic', L_mm: 70, W_mm: 70, H_mm: 250, primaryColor, accentColor, artworkFace: 'front' };
+  // TALL / SLIM / BOTTLE / PERFUME / COSMETIC → cosmetic
+  if (t.match(/\bperfume\b|\bcosmetic\b|\bserum\b|\bspray\b|\blipstick\b|\bdropper\b/)) {
+    return { model: 'cosmetic', L_mm: 35.6, W_mm: 35.6, H_mm: 121.6, primaryColor, accentColor, artworkFace: 'front' };
   }
   // Everything else → rte (reverse tuck end, most versatile standard retail box)
-  // This includes tea, cake, shoes, electronics, snacks, gifts — anything the user describes freely
   return { model: 'rte', L_mm: 120, W_mm: 80, H_mm: 200, primaryColor, accentColor, artworkFace: 'front' };
 }
 
