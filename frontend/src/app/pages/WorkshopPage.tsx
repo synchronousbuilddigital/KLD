@@ -88,7 +88,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
     } else if (window.history.length > 1) {
       window.history.back();
     } else {
-      window.location.href = '/';
+      window.location.href = '/3d-models';
     }
   };
 
@@ -381,7 +381,7 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                   setShowExitConfirm(true);
                 }
               }}
-              title="Return to Home"
+              title="Return to Catalog"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: t.textMuted }}>
                 <path d="M19 12H5M12 19l-7-7 7-7"/>

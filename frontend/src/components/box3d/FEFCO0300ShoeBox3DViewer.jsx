@@ -275,6 +275,8 @@ function TelescopeLidKinematics({
   isPlayingAnim
 }) {
   const groupRef = useRef();
+  const isInitializedRef = useRef(false);
+  const { invalidate } = useThree();
 
   // Position of Lid when flat on floor beside base
   const gap = 0.5;
@@ -342,12 +344,35 @@ function TelescopeLidKinematics({
       }
     }
 
-    // Buttery smooth lerp
-    groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.16);
-    groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, 0.16);
-    groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.16);
-    groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRotZ, 0.16);
-    groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotX, 0.16);
+    if (!isInitializedRef.current) {
+      // Immediate placement on first frame so it NEVER gets stuck at a diagonal angle
+      isInitializedRef.current = true;
+      groupRef.current.position.set(targetX, targetY, targetZ);
+      groupRef.current.rotation.set(targetRotX, 0, targetRotZ);
+    } else if (isPlayingAnim) {
+      groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.16);
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, 0.16);
+      groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.16);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRotZ, 0.16);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotX, 0.16);
+    } else {
+      const dx = Math.abs(groupRef.current.position.x - targetX);
+      const dy = Math.abs(groupRef.current.position.y - targetY);
+      const drz = Math.abs(groupRef.current.rotation.z - targetRotZ);
+      const drx = Math.abs(groupRef.current.rotation.x - targetRotX);
+      
+      if (dx > 0.005 || dy > 0.005 || drz > 0.005 || drx > 0.005) {
+        groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.25);
+        groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, targetY, 0.25);
+        groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.25);
+        groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRotZ, 0.25);
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotX, 0.25);
+        invalidate();
+      } else {
+        groupRef.current.position.set(targetX, targetY, targetZ);
+        groupRef.current.rotation.set(targetRotX, 0, targetRotZ);
+      }
+    }
   });
 
   return <group ref={groupRef}>{children}</group>;
@@ -357,7 +382,7 @@ function TelescopeLidKinematics({
 // SMOOTH AUTO-FRAMING CAMERA RIG
 // ─────────────────────────────────────────────────────────────────────────────
 function CameraRig({ progress, L, W, H }) {
-  const { camera, controls } = useThree();
+  const { camera, controls, invalidate } = useThree();
   const lastProgressRef = useRef(progress);
 
   const maxDim = Math.max(L, W, H);
@@ -389,6 +414,7 @@ function CameraRig({ progress, L, W, H }) {
         const dir = offset.normalize();
         const newDist = THREE.MathUtils.lerp(currentDist, targetDistRef.current, 0.08);
         camera.position.copy(targetVec.clone().add(dir.multiplyScalar(newDist)));
+        invalidate();
       } else {
         targetDistRef.current = null;
       }

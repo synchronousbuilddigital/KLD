@@ -426,6 +426,13 @@ export default function App() {
     }
     return null;
   });
+  const [lastSelectedCategory, setLastSelectedCategory] = useState<string | null>(() => {
+    const path = window.location.pathname.replace('/', '').toLowerCase();
+    if (path.startsWith('mockup/')) {
+      return path.split('/')[1] || null;
+    }
+    return null;
+  });
   const [stepIndex, setStepIndex] = useState(0);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' }>({
@@ -473,6 +480,7 @@ export default function App() {
   const handleCategorySelect = (id: string | null) => {
     setActiveCategoryId(id);
     if (id) {
+      setLastSelectedCategory(id);
       window.history.pushState(null, '', `/mockup/${id}`);
     } else {
       const targetPath = currentView === 'models' ? '/3d-models' : '/';
@@ -480,9 +488,20 @@ export default function App() {
     }
   };
 
+  const returnToCatalog = () => {
+    if (lastSelectedCategory) {
+      handleCategorySelect(lastSelectedCategory);
+    } else {
+      navigateTo('models');
+    }
+  };
+
   const navigateTo = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop', extra?: any) => {
     setIsSignInModalOpen(false); // Close any open sign-in modal when navigating
     setCurrentView(view);
+    if (extra?.categoryId) {
+      setLastSelectedCategory(extra.categoryId);
+    }
     setActiveCategoryId(null);
     let targetPath = '/';
     if (view === 'admin') targetPath = '/admin';
@@ -675,7 +694,7 @@ export default function App() {
   if (currentView === 'mockups') {
     return (
       <React.Suspense fallback={<ViewLoading />}>
-        <WorkshopPage onBack={() => navigateTo('landing')} />
+        <WorkshopPage onBack={returnToCatalog} />
       </React.Suspense>
     );
   }
@@ -990,7 +1009,7 @@ export default function App() {
     return (
       <React.Suspense fallback={<ViewLoading />}>
         <MockupGenerator 
-          onBack={() => setCurrentView('landing')} 
+          onBack={returnToCatalog} 
           initialModel={
             useBoxStore.getState().boxModel === 'sipper_water_bottle' || useBoxStore.getState().boxModel === 'water_bottle_handle'
               ? 'sipper_water_bottle'
@@ -1006,7 +1025,7 @@ export default function App() {
   if (currentView === 'workshop') {
     return (
       <React.Suspense fallback={<ViewLoading />}>
-        <WorkshopPage onBack={() => setCurrentView('landing')} />
+        <WorkshopPage onBack={returnToCatalog} />
       </React.Suspense>
     );
   }
