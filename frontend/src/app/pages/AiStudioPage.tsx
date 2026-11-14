@@ -338,24 +338,49 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         {/* --- CENTER CANVAS WORKSPACE --- */}
         <div className="ai-canvas-workspace">
           
-            {/* Pacdora 2D | 3D Interactive Card Canvas Container */}
-            <div style={{ position: 'relative', width: '580px', height: '580px', transform: 'translateX(-35px)', background: store.theme === 'dark' ? '#18181b' : '#b4bcc8', border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #94a3b8', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              
-              {/* Card Header: Clean mode badge on left + Action button & 3-way toggle on right */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: store.theme === 'dark' ? '#1f1f23' : '#ffffff', borderBottom: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #cbd5e1', zIndex: 15 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: cardMode === '3d' ? '#eff6ff' : cardMode === '2d' ? '#f5f3ff' : '#f4f4f5', color: cardMode === '3d' ? '#2563eb' : cardMode === '2d' ? '#7c3aed' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Sparkles style={{ width: '15px', height: '15px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                    <span style={{ fontSize: '13px', fontWeight: '800', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
-                      {cardMode === 'render' ? 'AI Product Render' : cardMode === '3d' ? '3D Box Model' : '2D CAD Dieline'}
-                    </span>
-                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#64748b' }}>
-                      {BOX_TITLES[store.boxModel || activeBoxModel] || 'Standard Packaging'}
-                    </span>
-                  </div>
+          {/* Subtle Ambient Radial Glow */}
+          <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '650px', height: '280px', background: 'radial-gradient(ellipse at center, rgba(147, 51, 234, 0.09) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 80%)', pointerEvents: 'none', zIndex: 0 }} />
+
+          {/* Top Engine Badge */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '14px', zIndex: 5, textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 14px', borderRadius: '20px', background: 'rgba(147, 51, 234, 0.08)', border: '1px solid rgba(147, 51, 234, 0.22)', color: '#7e22ce', fontSize: '11px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              <Sparkles style={{ width: '12px', height: '12px', color: '#9333ea' }} />
+              <span>AI Packaging Engine • Live Precision CAD</span>
+            </div>
+          </div>
+
+          {/* Interactive Card Canvas Container */}
+          <div style={{ 
+            position: 'relative', 
+            width: '600px', 
+            height: '600px', 
+            maxWidth: '92%', 
+            maxHeight: '80vh', 
+            background: store.theme === 'dark' ? '#141518' : '#FAF8F4', 
+            border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.08)', 
+            borderRadius: '24px', 
+            boxShadow: store.theme === 'dark' ? '0 25px 60px rgba(0,0,0,0.5)' : '0 25px 70px -15px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            overflow: 'hidden',
+            zIndex: 5
+          }}>
+            
+            {/* Card Header: Clean mode badge on left + Action button & 3-way toggle on right */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: store.theme === 'dark' ? '#1f1f23' : '#ffffff', borderBottom: store.theme === 'dark' ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.06)', zIndex: 15 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: cardMode === '3d' ? '#eff6ff' : cardMode === '2d' ? '#f5f3ff' : '#f4f4f5', color: cardMode === '3d' ? '#2563eb' : cardMode === '2d' ? '#7c3aed' : '#71717a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Sparkles style={{ width: '15px', height: '15px' }} />
                 </div>
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                    {cardMode === 'render' ? 'AI Product Render' : cardMode === '3d' ? '3D Box Model' : '2D CAD Dieline'}
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: '600', color: '#64748b' }}>
+                    {BOX_TITLES[store.boxModel || activeBoxModel] || 'Standard Packaging'}
+                  </span>
+                </div>
+              </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {/* Subtle, elegant header actions */}
@@ -426,11 +451,11 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
               </div>
 
               {/* Card Main Viewport */}
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: store.theme === 'dark' ? '#18181b' : '#b4bcc8' }}>
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: store.theme === 'dark' ? '#141518' : '#FAF8F4' }}>
 
                 {cardMode === 'render' ? (
                   /* AI Compositor Preview — shows bg + icon + text composited */
-                  <div style={{ width: '100%', height: '100%', background: store.theme === 'dark' ? '#1c1c1f' : '#f1f3f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: '100%', background: store.theme === 'dark' ? '#1c1c1f' : '#FAF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {displayBackgroundUrl ? (
                       <>
                         {/* 1. Base graphic */}
@@ -465,8 +490,8 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                       height: '100%', 
                       position: 'relative',
                       background: store.theme === 'dark' 
-                        ? 'radial-gradient(circle at 50% 45%, #27272a 0%, #18181b 100%)' 
-                        : 'radial-gradient(circle at 50% 45%, #b4bcc8 0%, #8896a6 100%)'
+                        ? 'radial-gradient(circle at 50% 45%, #1e2024 0%, #121316 100%)' 
+                        : 'radial-gradient(circle at 50% 40%, #ffffff 0%, #FAF8F4 70%, #efebe2 100%)'
                     }}
                     onDoubleClick={() => setIsEditorOpen(true)}
                   >
@@ -484,7 +509,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                       decals={currentDecals}
                     />
                     {/* Fold slider */}
-                    <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: store.theme === 'dark' ? '#27272a' : '#ffffff', border: store.theme === 'dark' ? '1px solid #3f3f46' : '1px solid #cbd5e1', padding: '8px 20px', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 10 }}>
+                    <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: store.theme === 'dark' ? 'rgba(30, 32, 36, 0.92)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(12px)', border: store.theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.08)', padding: '8px 22px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 12px 30px -6px rgba(0,0,0,0.12)', zIndex: 10 }}>
                       <span style={{ fontSize: '12px', fontWeight: '700', color: store.theme === 'dark' ? '#a1a1aa' : '#64748b' }}>Open</span>
                       <input type="range" min="0" max="1" step="0.01" value={foldProgress}
                         onChange={e => { setFoldProgress(parseFloat(e.target.value)); setIsPlaying(false); }}
@@ -629,7 +654,7 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         )}
 
         {/* --- RIGHT SIDEBAR ("AI packaging design") --- */}
-        <div style={{ width: '520px', minWidth: '460px', maxWidth: '620px', borderLeft: '1px solid #e4e4e7', background: '#ffffff', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ width: '520px', minWidth: '460px', maxWidth: '620px', borderLeft: store.theme === 'dark' ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.08)', boxShadow: '-4px 0 24px rgba(0,0,0,0.03)', background: store.theme === 'dark' ? '#18181b' : '#ffffff', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
           <AiPackagingAssistant 
             useStore={useBoxStore} 
             isOpen={true} 

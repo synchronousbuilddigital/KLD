@@ -108,6 +108,52 @@ export const MobileHomeTab: React.FC<MobileHomeTabProps> = ({
         </div>
       ) : (
         <>
+          {/* Featured AI Packaging Studio Banner */}
+          <div 
+            onClick={() => onNavigateTab('ai')}
+            className="relative rounded-2xl p-4 bg-gradient-to-br from-zinc-950 via-purple-950/80 to-zinc-900 text-white border border-purple-500/30 shadow-[0_4px_20px_rgba(147,51,234,0.15)] cursor-pointer active:scale-[0.99] transition-all overflow-hidden group"
+          >
+            {/* Ambient Background Glow */}
+            <div className="absolute -right-8 -top-8 w-36 h-36 bg-purple-600/20 rounded-full blur-2xl pointer-events-none group-hover:bg-purple-600/30 transition-all" />
+            <div className="absolute right-3 bottom-2 opacity-15 pointer-events-none text-purple-300">
+              <Sparkles className="w-20 h-20" />
+            </div>
+
+            <div className="relative z-10 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 text-[10px] font-bold tracking-wider uppercase">
+                  <Sparkles className="w-3 h-3 text-purple-300 animate-pulse" />
+                  <span>AI Packaging Studio</span>
+                </div>
+                <span className="text-[11px] font-semibold text-purple-300 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                  Launch Studio <ArrowRight className="w-3 h-3" />
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-base font-extrabold text-white tracking-tight leading-snug">
+                  Generate Packaging with AI
+                </h3>
+                <p className="text-[11px] text-zinc-300 font-medium leading-relaxed mt-0.5 max-w-[280px]">
+                  Describe your product or snap a photo of a box. AI generates 3D models & CAD dielines instantly.
+                </p>
+              </div>
+
+              {/* Quick suggestion pills */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                <span className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-md text-zinc-200 border border-white/10 transition-colors">
+                  🧴 Luxury Skincare
+                </span>
+                <span className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-md text-zinc-200 border border-white/10 transition-colors">
+                  🍕 Kraft Pizza Box
+                </span>
+                <span className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-md text-zinc-200 border border-white/10 transition-colors">
+                  🥤 12oz Craft Can
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Action Cards - Professional 2x2 Grid */}
           <div className="grid grid-cols-2 gap-2.5">
             {/* 3D Studio Card */}

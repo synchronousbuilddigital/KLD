@@ -6,7 +6,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #fafafa;
+  background-color: #FAF8F4;
   color: #18181b;
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
   user-select: none;
@@ -185,9 +185,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #fafafa;
-  background-image: radial-gradient(#e4e4e7 1.5px, transparent 1.5px);
-  background-size: 28px 28px;
+  background-color: #FAF8F4;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
   background-position: center;
   overflow: hidden;
 }

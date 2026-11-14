@@ -5,6 +5,7 @@ import MobileHomeTab from './MobileHomeTab';
 import { MockupVariant } from '../../data/mockupData';
 
 const MobileModelsTab = React.lazy(() => import('./MobileModelsTab'));
+const MobileAiTab = React.lazy(() => import('./MobileAiTab'));
 const MobileDielinesTab = React.lazy(() => import('./MobileDielinesTab'));
 const MobileStudioTab = React.lazy(() => import('./MobileStudioTab'));
 const MobileWorkspaceTab = React.lazy(() => import('./MobileWorkspaceTab'));
@@ -40,7 +41,7 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab') as MobileTab;
-      if (['home', 'models', 'studio', 'workspace', 'dielines', 'profile'].includes(tabParam)) return tabParam;
+      if (['home', 'models', 'ai', 'studio', 'workspace', 'dielines', 'profile'].includes(tabParam)) return tabParam;
       if (urlParams.get('model')) return 'studio';
       if (initialCategoryId) return 'models';
     }
@@ -97,6 +98,13 @@ export const MobileAppShell: React.FC<MobileAppShellProps> = ({
               onSelectModel={handleSelectModel}
               onOpenInStudio={handleOpenInStudio}
               initialCategoryId={initialCategoryId}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {activeTab === 'ai' && (
+            <MobileAiTab
+              onOpenInStudio={handleOpenInStudio}
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
