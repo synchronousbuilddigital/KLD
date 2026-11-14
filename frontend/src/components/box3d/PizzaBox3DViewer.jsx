@@ -277,32 +277,44 @@ export default function PizzaBox3DViewer({
     />
   );
 
-  // Kinematic fold sequence synchronized to packaging physics:
-  // Phase 1 (0.00–0.25): Side walls fold UP 90°
-  const sideFoldAngle = stageProgress(progress, 0.00, 0.25) * (Math.PI / 2);
-  // Phase 2 (0.12–0.28): Corner tabs fold INWARD 90°
-  const cornerTabAngle = stageProgress(progress, 0.12, 0.28) * (Math.PI / 2);
-  // Phase 3 (0.20–0.40): Front wall & Rear wall fold UP 90° together (captures rear tabs without floating)
-  const frontWallAngle = stageProgress(progress, 0.20, 0.40) * (Math.PI / 2);
-  const rearWallAngle = stageProgress(progress, 0.20, 0.40) * (Math.PI / 2);
-  // Phase 4 (0.35–0.55): Rollover wall rolls 180° inside over tabs into floor slots
-  const rolloverAngle = stageProgress(progress, 0.35, 0.55) * Math.PI;
+  // Auto-sync interactive lift state when user scrubs the slider
+  useEffect(() => {
+    if (progress < 0.95 && isLidLifted) {
+      setIsLidLifted(false);
+    }
+  }, [progress, isLidLifted]);
 
-  // Phase 5 (0.50–0.95): Hinged lid swings forward from 0° (flat open) to 90° (closed over tray)
-  const baseLidHingeAngle = stageProgress(progress, 0.50, 0.95) * (Math.PI / 2);
+  // Pacdora-Identical Unboxing Kinematics:
+  // 1. The base tray (Floor, Side walls, Front wall, Rear wall, Corner tabs, Rollover wall)
+  //    is ALWAYS 100% formed, rigid, and locked. The box structure does not dismantle when opening.
+  const sideFoldAngle = Math.PI / 2;
+  const cornerTabAngle = Math.PI / 2;
+  const frontWallAngle = Math.PI / 2;
+  const rearWallAngle = Math.PI / 2;
+  const rolloverAngle = Math.PI;
 
-  // Phase 6 (0.65–0.95): As the lid closes over tray, side dust flaps fold 90° inward
-  const lidSideFlapAngle = stageProgress(progress, 0.65, 0.95) * (Math.PI / 2);
-  // Front tuck flap folds 90° into front rollover slot as lid finishes closing
-  const lidTuckFlapAngle = stageProgress(progress, 0.70, 0.95) * (Math.PI / 2);
+  // 2. Hinged Lid Kinematics (0.0 = Open, 1.0 = Close):
+  //    - At progress = 1.0 (Close): Lid is closed flat over tray (effectiveLidAngle = Math.PI / 2).
+  //    - At progress = 0.0 (Open): Lid is hinged open backward at 110° (effectiveLidAngle = -0.35 rad).
+  const openLidAngle = -0.35;         // ~110° open backward past vertical
+  const closedLidAngle = Math.PI / 2; // Horizontal closed over tray
+  const openRatio = isLidLifted ? 1.0 : (1.0 - progress);
+  const effectiveLidAngle = THREE.MathUtils.lerp(closedLidAngle, openLidAngle, openRatio);
 
-  // When lifted in closed mode:
-  // Lid opens smoothly back by ~105° (1.85 rad) to reveal interior
-  const openOffset = isLidLifted ? 1.85 : 0;
-  const effectiveLidAngle = baseLidHingeAngle - openOffset;
-  const effectiveSideFlapAngle = isLidLifted ? (Math.PI / 2 * 0.92) : lidSideFlapAngle;
-  // Natural flap drape when lid is lifted: gentle crease angle ~22° (0.38 rad) instead of a harsh 90° sticking out
-  const effectiveTuckFlapAngle = isLidLifted ? 0.38 : lidTuckFlapAngle;
+  // 3. Flaps Kinematics (Matching real pre-creased packaging mechanics):
+  //    - In real packaging and Pacdora, the side dust flaps and front tuck flap are creased at 90° inward.
+  //    - When the box is open, they remain creased at ~86° inward relative to the lid (natural drape).
+  //    - As the lid approaches closed position (progress > 0.70), they guide into exact 90° alignment
+  //      so they tuck cleanly inside the side walls and front rollover slot without mesh collision.
+  const flapRelaxed = (Math.PI / 2) * 0.95; // ~85.5° natural inward drape
+  const flapTight = Math.PI / 2;            // 90.0° locked inside tray
+  const flapTuckFactor = stageProgress(progress, 0.70, 0.98);
+  const currentFlapAngle = isLidLifted 
+    ? flapRelaxed 
+    : THREE.MathUtils.lerp(flapRelaxed, flapTight, flapTuckFactor);
+
+  const effectiveSideFlapAngle = currentFlapAngle;
+  const effectiveTuckFlapAngle = currentFlapAngle;
 
   // Layout instances
   const layout = overrideLayout || store?.sceneLayout || "single";

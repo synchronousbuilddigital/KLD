@@ -133,8 +133,8 @@ export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
     );
   }
 
-  // 6. Authentic Box models (RSC, RTE, TE, Auto-Lock, Cosmetic, Cosmetic B, Button Hole)
-  const isKnownBox = ['rsc', 'rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole'].includes(typeKey);
+  // 6. Authentic Box models (RSC, RTE, TE, Auto-Lock, Cosmetic, Cosmetic B, Button Hole, Pizza Box, Shoe Box)
+  const isKnownBox = ['rsc', 'rte', 'te', 'auto_lock', 'cosmetic', 'cosmetic_b', 'button_hole', 'pizza_box', 'fefco_0300'].includes(typeKey);
   const boxModelKey = isKnownBox ? typeKey : (typeKey.includes('box') ? 'rte' : 'rte');
 
   // Characteristic box proportions so each box model looks distinct and authentic
@@ -143,6 +143,12 @@ export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
   if (boxModelKey === 'rsc') {
     dims = { L: 6.0, W: 6.0, H: 6.0 };
     boxZoom = 0.62;
+  } else if (boxModelKey === 'pizza_box') {
+    dims = { L: 8.0, W: 8.1, H: 2.0 };
+    boxZoom = 0.65;
+  } else if (boxModelKey === 'fefco_0300') {
+    dims = { L: 11.9, W: 8.0, H: 2.4 };
+    boxZoom = 0.58;
   } else if (boxModelKey === 'cosmetic_b') {
     dims = { L: 8.5, W: 6.0, H: 2.2 };
     boxZoom = 0.65;
