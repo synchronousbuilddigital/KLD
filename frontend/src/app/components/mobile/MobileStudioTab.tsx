@@ -489,17 +489,17 @@ export const MobileStudioTab: React.FC<MobileStudioTabProps> = ({
             <span className="hidden xs:inline">Print</span>
           </button>
 
-          {/* AI Assistant */}
+          {/* CAD / AI Assistant */}
           <button
             onClick={() => setIsAiOpen(!isAiOpen)}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all border cursor-pointer active:scale-95 ${
               isAiOpen
-                ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
-                : 'bg-zinc-800 hover:bg-zinc-700 text-purple-300 border-zinc-700/60'
+                ? 'bg-zinc-100 text-zinc-950 border-white shadow-xs'
+                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700/60'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span className="hidden xs:inline">AI</span>
+            <Layers className="w-3.5 h-3.5 text-zinc-300" />
+            <span className="hidden xs:inline">CAD AI</span>
           </button>
 
           {/* Save Project Button */}
@@ -1125,8 +1125,8 @@ export const MobileStudioTab: React.FC<MobileStudioTabProps> = ({
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
-                <h3 className="text-sm font-bold text-white">KLD AI Packaging Assistant</h3>
+                <Layers className="w-5 h-5 text-zinc-300" />
+                <h3 className="text-sm font-bold text-white">KLD Packaging CAD Assistant</h3>
               </div>
               <button
                 onClick={() => setIsAiOpen(false)}

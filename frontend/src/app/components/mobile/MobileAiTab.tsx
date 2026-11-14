@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Sparkles, 
+  Layers, 
   Send, 
   Upload, 
   Camera, 
@@ -11,14 +11,14 @@ import {
   Sliders, 
   Scissors, 
   ChevronDown, 
-  Layers,
-  Wand2,
   FileCheck,
   ScanLine,
   Check,
   RefreshCw,
   FolderOpen,
-  Info
+  Info,
+  Compass,
+  Cpu
 } from 'lucide-react';
 import { useBoxStore } from '../../../lib/useBoxStore';
 import { sendAiChatMessageV2, detectDielineFile, DielineDetectionResult } from '../../../services/ai';
@@ -100,7 +100,7 @@ const SAMPLE_DIELINES = [
 export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavigateTab }) => {
   const store = useBoxStore();
   
-  // Navigation sub-tab: 'prompt' (AI Prompt Studio) | 'detector' (AI Dieline Detector)
+  // Navigation sub-tab: 'prompt' (Parametric Studio) | 'detector' (CAD Dieline Scanner)
   const [subTab, setSubTab] = useState<'prompt' | 'detector'>('prompt');
   
   const [activeModel, setActiveModel] = useState<string>(store.boxModel || 'rte');
@@ -122,7 +122,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
     {
       id: 'welcome',
       sender: 'assistant',
-      text: 'Hello! I am your KLD AI Packaging Assistant. You can describe any product to generate 3D packaging, or switch to the AI Dieline Detector to auto-detect CAD vector nets and box structures.',
+      text: 'Hello! I am your KLD Packaging CAD Assistant. You can describe any packaging geometry to generate 3D models, or use the CAD Dieline Scanner to import and verify DXF/SVG nets.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       modelKey: 'rte'
     }
@@ -320,20 +320,20 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
 
   return (
     <div className="flex flex-col space-y-4 pb-28 px-4 pt-2 select-none">
-      {/* Top AI Studio Header */}
+      {/* Top Professional Studio Header */}
       <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
-            <Sparkles className="w-4 h-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-white shadow-xs">
+            <Layers className="w-4 h-4 text-zinc-100" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-extrabold text-zinc-900 leading-tight">AI Packaging Studio</h2>
-              <span className="px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[9px] font-bold uppercase tracking-wider">
-                Gemini 2.0
+              <h2 className="text-sm font-extrabold text-zinc-900 leading-tight">Packaging CAD Studio</h2>
+              <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-700 text-[9px] font-bold uppercase tracking-wider">
+                v2.4 Engine
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500 font-medium">Text-to-3D Packaging & Vector Dieline Engine</p>
+            <p className="text-[10px] text-zinc-500 font-medium">Vector Dielines & Parametric 3D Net Modeling</p>
           </div>
         </div>
 
@@ -348,25 +348,25 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             setDetectorResult(null);
             setDetectorFile(null);
           }}
-          className="w-7 h-7 rounded-lg bg-white border border-zinc-200 text-zinc-500 flex items-center justify-center active:scale-95 transition-all"
-          title="Reset conversation"
+          className="w-7 h-7 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-800 flex items-center justify-center active:scale-95 transition-all shadow-2xs"
+          title="Reset session"
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Primary Sub-Tab Switcher: AI Prompt Studio VS AI Dieline Detector */}
-      <div className="grid grid-cols-2 p-1 bg-zinc-200/70 rounded-2xl border border-zinc-200/80 shadow-2xs">
+      {/* Segmented Sub-Tab Switcher: Parametric Studio VS CAD Dieline Scanner */}
+      <div className="grid grid-cols-2 p-1 bg-zinc-100 rounded-2xl border border-zinc-200 shadow-2xs">
         <button
           onClick={() => setSubTab('prompt')}
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             subTab === 'prompt'
               ? 'bg-white text-zinc-950 shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-900'
+              : 'text-zinc-500 hover:text-zinc-800'
           }`}
         >
-          <Sparkles className={`w-3.5 h-3.5 ${subTab === 'prompt' ? 'text-purple-600' : 'text-zinc-400'}`} />
-          <span>AI Prompt Studio</span>
+          <Layers className={`w-3.5 h-3.5 ${subTab === 'prompt' ? 'text-zinc-950' : 'text-zinc-400'}`} />
+          <span>Parametric Studio</span>
         </button>
         
         <button
@@ -374,19 +374,19 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 relative cursor-pointer ${
             subTab === 'detector'
               ? 'bg-white text-zinc-950 shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-900'
+              : 'text-zinc-500 hover:text-zinc-800'
           }`}
         >
-          <ScanLine className={`w-3.5 h-3.5 ${subTab === 'detector' ? 'text-indigo-600' : 'text-zinc-400'}`} />
-          <span>AI Dieline Detector</span>
-          <span className="px-1.5 py-0.2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[8px] font-black rounded-full uppercase tracking-wider shadow-2xs">
-            NEW
+          <ScanLine className={`w-3.5 h-3.5 ${subTab === 'detector' ? 'text-zinc-950' : 'text-zinc-400'}`} />
+          <span>CAD Dieline Scanner</span>
+          <span className="px-1.5 py-0.2 bg-zinc-900 text-white text-[8px] font-bold rounded-full uppercase tracking-wider">
+            CAD
           </span>
         </button>
       </div>
 
       {/* ======================================================== */}
-      {/* VIEW A: AI DIELINE DETECTOR & SCANNER (HIGH VISIBILITY) */}
+      {/* VIEW A: CAD DIELINE SCANNER & NET INSPECTOR (PROFESSIONAL) */}
       {/* ======================================================== */}
       {subTab === 'detector' && (
         <div className="flex flex-col space-y-4">
@@ -399,43 +399,41 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             className="hidden"
           />
 
-          {/* Dieline Detector Hero Banner */}
-          <div className="p-4 rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-950 to-purple-950 text-white shadow-xl shadow-indigo-950/20 border border-indigo-800/50 flex flex-col space-y-3 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-44 h-44 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-indigo-300">
+          {/* Dieline Detector Hero Banner - High-End Minimalist Dark Architectural Card */}
+          <div className="p-4 rounded-3xl bg-[#121316] text-white shadow-xl shadow-zinc-950/10 border border-zinc-800 flex flex-col space-y-3 relative overflow-hidden">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-zinc-200">
                 <ScanLine className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-white">AI Dieline & CAD Detector</h3>
-                <p className="text-[10px] text-indigo-200">Neural CAD geometry recognition for 8 packaging families</p>
+                <h3 className="text-sm font-extrabold text-white tracking-tight">Vector Dieline & CAD Scanner</h3>
+                <p className="text-[10px] text-zinc-400 font-medium">Automated fold topology & parametric dimension extraction</p>
               </div>
             </div>
 
-            <p className="text-xs text-indigo-100/90 leading-relaxed">
-              Upload any CAD vector file (<span className="text-white font-bold">.DXF</span>, <span className="text-white font-bold">.SVG</span>, <span className="text-white font-bold">.PDF</span>) or flat photo. Our AI identifies fold lines, matches box topology, and creates a live 3D fold simulation.
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Upload an AutoCAD <span className="text-white font-bold">.DXF</span>, vector artwork <span className="text-white font-bold">.SVG</span>, technical sheet <span className="text-white font-bold">.PDF</span>, or high-res scan. The CAD engine maps fold axes, determines kinematics, and simulates 3D assembly.
             </p>
 
             {/* Upload Zone */}
             <div
               onClick={() => !isScanning && detectorFileInputRef.current?.click()}
-              className="mt-1 border-2 border-dashed border-indigo-400/40 hover:border-indigo-300 bg-white/5 hover:bg-white/10 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all active:scale-[0.99]"
+              className="mt-1 border-2 border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/60 hover:bg-zinc-800/60 rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all active:scale-[0.99]"
             >
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 mb-2">
-                <Upload className="w-6 h-6 animate-bounce" />
+              <div className="w-11 h-11 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-200 mb-2">
+                <Upload className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold text-white">
-                Tap to Upload Dieline or CAD Net
+                Select Dieline or CAD Net File
               </span>
-              <span className="text-[10px] text-indigo-300 mt-0.5">
-                Supports DXF, SVG, PDF, PNG & JPG
+              <span className="text-[10px] text-zinc-400 mt-0.5">
+                Supports DXF, SVG, PDF, PNG & High-Res JPG
               </span>
 
               {/* Supported Format Badges */}
               <div className="flex items-center gap-1 mt-3">
-                {['DXF CAD', 'SVG Vector', 'PDF Sheet', 'Image Scan'].map(b => (
-                  <span key={b} className="px-2 py-0.5 rounded-md bg-white/10 text-[9px] font-bold text-indigo-200">
+                {['DXF CAD', 'SVG Vector', 'PDF Sheet', 'Physical Scan'].map(b => (
+                  <span key={b} className="px-2 py-0.5 rounded-md bg-zinc-800 border border-zinc-700/70 text-[9px] font-bold text-zinc-300">
                     {b}
                   </span>
                 ))}
@@ -444,8 +442,8 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
 
             {/* Quick Test Samples */}
             <div className="flex flex-col space-y-1.5 pt-1">
-              <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
-                Or test with sample dielines:
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                Or inspect standard packaging templates:
               </span>
               <div className="grid grid-cols-2 gap-1.5">
                 {SAMPLE_DIELINES.map(sample => (
@@ -453,10 +451,10 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
                     key={sample.key}
                     onClick={() => handleApplySampleDieline(sample)}
                     disabled={isScanning}
-                    className="px-2.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-left text-white text-[10px] font-semibold flex items-center justify-between transition-all active:scale-95"
+                    className="px-2.5 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700/70 text-left text-zinc-200 hover:text-white text-[10px] font-semibold flex items-center justify-between transition-all active:scale-95 cursor-pointer"
                   >
                     <span className="truncate">{sample.name}</span>
-                    <ArrowRight className="w-3 h-3 text-indigo-300 shrink-0 ml-1" />
+                    <ArrowRight className="w-3 h-3 text-zinc-400 shrink-0 ml-1" />
                   </button>
                 ))}
               </div>
@@ -465,17 +463,17 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
 
           {/* Scanning Progress Banner */}
           {isScanning && (
-            <div className="bg-white rounded-2xl p-4 border border-indigo-200 shadow-md flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
-                <ScanLine className="w-5 h-5 animate-pulse text-indigo-600" />
+            <div className="bg-white rounded-2xl p-4 border border-zinc-200 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900 shrink-0">
+                <ScanLine className="w-5 h-5 animate-pulse text-zinc-900" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-extrabold text-indigo-900">Neural CAD Analysis</span>
-                  <span className="text-[10px] font-bold text-indigo-600 animate-pulse">Scanning...</span>
+                  <span className="text-xs font-extrabold text-zinc-900">Parametric CAD Analysis</span>
+                  <span className="text-[10px] font-bold text-zinc-600 animate-pulse">Processing...</span>
                 </div>
-                <div className="w-full bg-indigo-100 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-indigo-600 h-1.5 rounded-full animate-pulse w-3/4" />
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-zinc-900 h-1.5 rounded-full animate-pulse w-3/4" />
                 </div>
                 <p className="text-[10px] text-zinc-500 mt-1 font-medium truncate">
                   {detectorScanningStep || 'Analyzing geometry & crease lines...'}
@@ -489,18 +487,18 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             <div className="bg-white rounded-3xl p-4 border border-zinc-200 shadow-xl shadow-zinc-950/5 flex flex-col space-y-3.5">
               <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">AI CAD Match</span>
+                    <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">CAD Specification Match</span>
                     <h4 className="text-sm font-extrabold text-zinc-900 leading-tight">
                       {detectorResult.matchedTitle || MODEL_NAMES[detectorResult.matchedModelKey] || 'Custom Box Model'}
                     </h4>
                   </div>
                 </div>
 
-                <div className="px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black">
+                <div className="px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-800 text-[10px] font-black">
                   {Math.round((detectorResult.confidence > 1 ? detectorResult.confidence : detectorResult.confidence * 100))}% MATCH
                 </div>
               </div>
@@ -540,12 +538,12 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
               {detectorResult.detectedFeatures && detectorResult.detectedFeatures.length > 0 && (
                 <div className="flex flex-col space-y-1">
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                    Detected Structural Features:
+                    Structural Features Extracted:
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {detectorResult.detectedFeatures.map((feat, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-100">
-                        <Check className="w-2.5 h-2.5 text-indigo-600" />
+                      <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-zinc-100 text-zinc-800 text-[10px] font-semibold border border-zinc-200">
+                        <Check className="w-2.5 h-2.5 text-zinc-600" />
                         <span>{feat}</span>
                       </span>
                     ))}
@@ -564,11 +562,11 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
               <div className="bg-[#121316] rounded-2xl p-3 border border-zinc-800 flex flex-col space-y-2">
                 <div className="flex items-center justify-between text-white">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                    Live 3D Folded Inspection
+                    3D Kinematic Fold Inspection
                   </span>
                   <span className="text-[9px] text-emerald-400 font-bold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Synced with Dieline
+                    Verified Dieline
                   </span>
                 </div>
                 <div className="relative w-full h-[180px] rounded-xl overflow-hidden bg-radial from-zinc-800/40 to-zinc-950/90 flex items-center justify-center">
@@ -607,58 +605,58 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
           {/* Supported Box Families Guide */}
           <div className="bg-white rounded-2xl p-3.5 border border-zinc-200/80 shadow-2xs flex flex-col space-y-2">
             <div className="flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="text-xs font-extrabold text-zinc-900">Supported Packaging Formats</span>
+              <Info className="w-3.5 h-3.5 text-zinc-500" />
+              <span className="text-xs font-extrabold text-zinc-900">Supported Industry Standards</span>
             </div>
             <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Our AI detector recognizes standard ECMA, FEFCO, and custom packaging structures:
+              Compatible with ECMA, FEFCO, and bespoke packaging CAD nets:
             </p>
             <div className="grid grid-cols-2 gap-1 text-[10px] text-zinc-700 font-medium pt-1">
-              <div className="p-1.5 rounded-lg bg-zinc-50">• FEFCO 0426 Pizza Box</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• FEFCO 0300 Shoe Box</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• Reverse Tuck End (RTE)</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• Straight Tuck End (STE)</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• Auto Lock Bottom</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• Square Shipping (RSC)</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• Mailer & Tray Boxes</div>
-              <div className="p-1.5 rounded-lg bg-zinc-50">• Beverage Cans & Tubes</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• FEFCO 0426 Pizza Box</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• FEFCO 0300 Shoe Box</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• Reverse Tuck End (RTE)</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• Straight Tuck End (STE)</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• Auto Lock Bottom</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• Regular Slotted Carton (RSC)</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• Mailer & Tray Boxes</div>
+              <div className="p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">• Beverage Cans & Tubes</div>
             </div>
           </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* VIEW B: AI PROMPT STUDIO (TEXT-TO-3D & PACKAGING CHAT)  */}
+      {/* VIEW B: PARAMETRIC STUDIO (GENERATOR & SPEC CHAT)        */}
       {/* ======================================================== */}
       {subTab === 'prompt' && (
         <div className="flex flex-col space-y-4">
-          {/* Prominent Link Banner to AI Dieline Detector */}
+          {/* Prominent Architectural Banner for CAD Dieline Scanner */}
           <div 
             onClick={() => setSubTab('detector')}
-            className="p-3 bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-pink-50/50 rounded-2xl border border-indigo-200/70 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all shadow-2xs"
+            className="p-3 bg-zinc-900 text-white rounded-2xl border border-zinc-800 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all shadow-md"
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-200 flex items-center justify-center shadow-xs">
                 <ScanLine className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-extrabold text-zinc-900 flex items-center gap-1.5">
-                  <span>AI Dieline & CAD Detector</span>
-                  <span className="text-[9px] bg-indigo-100 text-indigo-700 font-extrabold px-1.5 py-0.2 rounded-full">NEW</span>
+                <div className="text-xs font-extrabold text-white flex items-center gap-1.5">
+                  <span>Vector Dieline & CAD Scanner</span>
+                  <span className="text-[9px] bg-zinc-800 text-zinc-300 font-bold px-1.5 py-0.2 rounded-md border border-zinc-700">CAD IMPORT</span>
                 </div>
-                <p className="text-[10px] text-zinc-600 font-medium">Upload DXF, SVG or photos to auto-detect box family & dimensions</p>
+                <p className="text-[10px] text-zinc-400 font-medium">Import DXF, SVG or scans to extract fold lines & box dimensions</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-indigo-600 shrink-0" />
+            <ArrowRight className="w-4 h-4 text-zinc-400 shrink-0" />
           </div>
 
           {/* Real Interactive 3D Canvas Card */}
           <div className="bg-[#121316] text-white rounded-3xl p-4 shadow-xl shadow-zinc-950/15 border border-zinc-800 flex flex-col relative overflow-hidden">
             {/* Top Stage Header */}
             <div className="flex items-center justify-between mb-2 z-10">
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-semibold tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                <span>AI 3D STAGE</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-zinc-300 text-[10px] font-semibold tracking-wider">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span>3D FOLD SIMULATION</span>
               </div>
 
               {/* Substrate Pill Switcher */}
@@ -667,7 +665,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
                   <button
                     key={s}
                     onClick={() => setActiveSubstrate(s)}
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] capitalize transition-all ${
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] capitalize transition-all cursor-pointer ${
                       activeSubstrate === s 
                         ? 'bg-white text-zinc-950 font-bold shadow-xs' 
                         : 'text-zinc-400 hover:text-white font-medium'
@@ -716,7 +714,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
               <button
                 key={i}
                 onClick={() => handleSendMessage(qp.text)}
-                className="shrink-0 px-2.5 py-1.5 rounded-xl bg-white border border-zinc-200/80 hover:border-purple-300 text-zinc-700 text-[11px] font-semibold flex items-center gap-1 shadow-2xs active:scale-95 transition-all"
+                className="shrink-0 px-2.5 py-1.5 rounded-xl bg-white border border-zinc-200/90 hover:border-zinc-400 text-zinc-800 text-[11px] font-semibold flex items-center gap-1 shadow-2xs active:scale-95 transition-all cursor-pointer"
               >
                 <span>{qp.label}</span>
               </button>
@@ -724,7 +722,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
           </div>
 
           {/* Chat Messages Log */}
-          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-3.5 flex flex-col space-y-3 max-h-[280px] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-3.5 flex flex-col space-y-3 max-h-[280px] overflow-y-auto">
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -734,7 +732,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
                   className={`max-w-[88%] p-3 rounded-2xl text-xs leading-relaxed ${
                     m.sender === 'user'
                       ? 'bg-zinc-900 text-white rounded-br-xs'
-                      : 'bg-zinc-100/90 text-zinc-900 rounded-bl-xs border border-zinc-200/50'
+                      : 'bg-zinc-50 text-zinc-900 rounded-bl-xs border border-zinc-200/80'
                   }`}
                 >
                   {m.filePreview && (
@@ -746,16 +744,16 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
                   <p className="whitespace-pre-wrap">{m.text}</p>
                   
                   {m.modelKey && m.sender === 'assistant' && (
-                    <div className="mt-2.5 pt-2 border-t border-zinc-200/60 flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-purple-700">
-                        Model: {MODEL_NAMES[m.modelKey] || m.modelKey}
+                    <div className="mt-2.5 pt-2 border-t border-zinc-200/80 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-700 bg-zinc-200/60 px-2 py-0.5 rounded-md">
+                        {MODEL_NAMES[m.modelKey] || m.modelKey}
                       </span>
                       <button
                         onClick={() => {
                           setActiveModel(m.modelKey!);
                           onOpenInStudio(m.modelKey!);
                         }}
-                        className="text-[10px] font-bold text-zinc-900 bg-white border border-zinc-300 rounded-md px-2 py-0.5 flex items-center gap-0.5 hover:bg-zinc-50"
+                        className="text-[10px] font-bold text-zinc-900 bg-white border border-zinc-300 rounded-md px-2 py-0.5 flex items-center gap-0.5 hover:bg-zinc-50 cursor-pointer shadow-2xs"
                       >
                         Open <ArrowRight className="w-2.5 h-2.5" />
                       </button>
@@ -767,9 +765,9 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             ))}
 
             {isLoading && (
-              <div className="flex items-center gap-2 text-zinc-500 text-xs py-1">
-                <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                <span className="font-semibold text-purple-700">AI is engineering structure & dielines...</span>
+              <div className="flex items-center gap-2 text-zinc-600 text-xs py-1">
+                <div className="w-4 h-4 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+                <span className="font-semibold text-zinc-800">Engineering 3D net and kinematics...</span>
               </div>
             )}
 
@@ -806,7 +804,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
               value={promptInput}
               onChange={(e) => setPromptInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Describe your packaging or product..."
+              placeholder="Describe packaging structure or dimensions..."
               disabled={isLoading || isScanning}
               className="flex-1 bg-transparent text-xs text-zinc-900 placeholder-zinc-400 outline-none px-1"
             />
@@ -816,7 +814,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
               disabled={!promptInput.trim() || isLoading || isScanning}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-95 shrink-0 cursor-pointer ${
                 promptInput.trim() && !isLoading && !isScanning
-                  ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25'
+                  ? 'bg-zinc-950 hover:bg-zinc-800 text-white shadow-xs'
                   : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
               }`}
             >

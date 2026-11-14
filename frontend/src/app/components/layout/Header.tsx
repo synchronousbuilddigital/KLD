@@ -86,7 +86,7 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
   const navItems = [
     { id: 'models', label: '3D Models', path: '/3d-models', icon: Box },
     { id: 'dielines', label: 'Dieline Templates', path: '/dielines', icon: Layers },
-    { id: 'aistudio', label: 'AI Creation', path: '/ai-studio', icon: Sparkles, isAi: true },
+    { id: 'aistudio', label: 'AI Studio', path: '/ai-studio', icon: Sparkles, isAi: true },
     { id: 'pricing', label: 'Pricing', path: '/pricing', icon: Tag },
     { id: 'about', label: 'About Us', path: '/about-us', icon: Users },
   ];
