@@ -502,19 +502,28 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
         
         {/* Header Left */}
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "16px" }}>
-          {isMobile ? (
-            <button
-              onClick={handleCloseClick}
-              style={{ background: "none", border: "none", cursor: "pointer", color: t.textMain, padding: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}
-              title="Close"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          ) : (
-            <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: t.textMain, color: t.bgPanel, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>K</div>
-          )}
-          <div style={{ fontWeight: "700", fontSize: isMobile ? "15px" : "20px" }}>
-            {isMobile ? "2D Dieline Studio" : "Keyline Design"}
+          <div
+            onClick={() => {
+              handleCloseClick();
+              window.dispatchEvent(new CustomEvent('navigate', { detail: 'landing' }));
+            }}
+            style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px", cursor: "pointer" }}
+            title="Return to Keyline Design Home"
+          >
+            {isMobile ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleCloseClick(); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: t.textMain, padding: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                title="Close"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            ) : (
+              <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: t.textMain, color: t.bgPanel, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "16px" }}>K</div>
+            )}
+            <div style={{ fontWeight: "700", fontSize: isMobile ? "15px" : "20px" }}>
+              {isMobile ? "2D Dieline Studio" : "Keyline Design"}
+            </div>
           </div>
           {!isMobile && (
             <>

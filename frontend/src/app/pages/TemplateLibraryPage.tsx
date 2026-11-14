@@ -200,7 +200,18 @@ export default function TemplateLibraryPage({ onBack, hideHeader }: { onBack: ()
       <BackgroundCanvas position="absolute" zIndex={-1} />
       
       {/* Header */}
-      {!hideHeader && <Header activeNav="dielines" onNavigate={onBack} />}
+      {!hideHeader && (
+        <Header 
+          activeNav="dielines" 
+          onNavigate={(view) => {
+            if (view === 'dielines') {
+              if (onBack) onBack();
+            } else {
+              window.dispatchEvent(new CustomEvent('navigate', { detail: view }));
+            }
+          }} 
+        />
+      )}
 
       <div className="flex flex-1 relative z-10 min-h-[600px]">
 

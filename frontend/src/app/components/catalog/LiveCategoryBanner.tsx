@@ -317,16 +317,35 @@ export const LiveCategoryBanner: React.FC<LiveCategoryBannerProps> = ({
           <div className="live-banner-text-col">
             {/* Breadcrumb Navigation */}
             <div className="live-banner-breadcrumbs">
-              <span className="live-crumb-link">Home</span>
+              <span 
+                className="live-crumb-link" 
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'landing' }))}
+                style={{ cursor: 'pointer' }}
+                title="Go to Keyline Design Home"
+              >
+                Home
+              </span>
               <span className="live-crumb-sep">/</span>
-              <span className="live-crumb-link">3D Mockups</span>
+              <span 
+                className="live-crumb-link" 
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'models' }))}
+                style={{ cursor: 'pointer' }}
+                title="Browse 3D Packaging Models"
+              >
+                3D Mockups
+              </span>
               <span className="live-crumb-sep">/</span>
               <span className="live-crumb-active">{config.breadcrumb}</span>
             </div>
 
             {/* Title with Arrow Icon */}
             <h1 className="live-banner-title">
-              <span className="live-banner-arrow" style={{ backgroundColor: config.accentColor }}>
+              <span 
+                className="live-banner-arrow" 
+                style={{ backgroundColor: config.accentColor, cursor: 'pointer' }}
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'models' }))}
+                title="Back to 3D Models"
+              >
                 <ArrowRight className="w-4 h-4 text-white" />
               </span>
               <span>{config.title}</span>

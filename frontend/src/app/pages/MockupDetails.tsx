@@ -12,6 +12,7 @@ import { LiveCategoryBanner } from '../components/catalog/LiveCategoryBanner';
 interface MockupDetailsProps {
   initialCategoryId: string;
   onBack: () => void;
+  onNavigate?: (view: any) => void;
 }
 
 const BOX_MOCKUP_IMAGES: Record<string, { white: string; kraft: string }> = {
@@ -697,7 +698,7 @@ const ensureAllMockupsComplete = (cats: MockupCategory[]): MockupCategory[] => {
   });
 };
 
-export default function MockupDetails({ initialCategoryId, onBack }: MockupDetailsProps) {
+export default function MockupDetails({ initialCategoryId, onBack, onNavigate }: MockupDetailsProps) {
   const [categories, setCategories] = useState<MockupCategory[]>(() => {
     const cached = catalogService.getCachedCatalog();
     if (cached && cached.length > 0) {
@@ -796,7 +797,16 @@ export default function MockupDetails({ initialCategoryId, onBack }: MockupDetai
   return (
     <div className="new-home-landing min-h-screen font-sans flex flex-col relative z-0">
       <BackgroundCanvas position="fixed" zIndex={-1} />
-      <Header activeNav="models" onNavigate={onBack} />
+      <Header 
+        activeNav="models" 
+        onNavigate={(view) => {
+          if (onNavigate) {
+            onNavigate(view);
+          } else {
+            window.dispatchEvent(new CustomEvent('navigate', { detail: view }));
+          }
+        }} 
+      />
 
       {/* Mobile Horizontal Category Bar (Visible on mobile/tablet < md) */}
       <div className="md:hidden w-full bg-white/95 backdrop-blur-md border-b border-zinc-200/80 px-3 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none z-20 sticky top-0 shadow-xs">

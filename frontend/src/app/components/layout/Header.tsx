@@ -76,11 +76,12 @@ export default function Header({ activeNav = 'landing', onNavigate }: HeaderProp
       window.dispatchEvent(new CustomEvent('ai-creation-click'));
     }
     window.history.pushState(null, '', targetPath);
+    // Always dispatch global navigate event so App-level routing and state (e.g. activeCategoryId) sync cleanly
+    window.dispatchEvent(new CustomEvent('navigate', { detail: view }));
     if (onNavigate) {
       onNavigate(view as any);
-    } else {
-      window.dispatchEvent(new CustomEvent('navigate', { detail: view }));
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const navItems = [

@@ -686,7 +686,11 @@ export default function App() {
   if (activeCategoryId) {
     return (
       <React.Suspense fallback={<ViewLoading />}>
-        <MockupDetails initialCategoryId={activeCategoryId} onBack={() => handleCategorySelect(null)} />
+        <MockupDetails
+          initialCategoryId={activeCategoryId}
+          onBack={() => handleCategorySelect(null)}
+          onNavigate={navigateTo}
+        />
       </React.Suspense>
     );
   }

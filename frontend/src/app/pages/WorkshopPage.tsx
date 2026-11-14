@@ -10,6 +10,7 @@ import { Printer, Sparkles } from "lucide-react";
 import AiPackagingAssistant from "../components/AiPackagingAssistant";
 import { setLargeData } from "../../lib/idbStorage";
 import MaterialDropdown from "../../components/dieline/MaterialDropdown";
+import AnimatedLogo from "../components/layout/AnimatedLogo";
 
 const themes: Record<string, any> = {
   dark: {
@@ -387,6 +388,19 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
               <span style={{ fontSize: "14px", fontWeight: "700", color: t.textMain }}>Back</span>
+            </div>
+
+            <div style={{ height: "20px", width: "1px", backgroundColor: t.border }} />
+
+            {/* Authentic Keyline Design Logo */}
+            <div 
+              style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate', { detail: 'landing' }));
+              }}
+              title="Return to Keyline Design Home"
+            >
+              <AnimatedLogo style={{ margin: 0, transform: 'scale(0.85)', transformOrigin: 'left center' }} />
             </div>
 
             {/* Editing Project Name Badge (Restored functionality) */}
