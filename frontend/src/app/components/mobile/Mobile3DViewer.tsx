@@ -5,6 +5,7 @@ import BeverageCan3D from '../3d/BeverageCan3D';
 import SlimCan3D from '../3d/SlimCan3D';
 import ToothpasteTube3D from '../3d/ToothpasteTube3D';
 import Box3DViewer from '../../../components/Box3DViewer';
+import { useBoxStore } from '../../../lib/useBoxStore';
 
 interface Mobile3DViewerProps {
   modelType: string;
@@ -174,21 +175,28 @@ export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
     ? (boxModelKey === 'rsc' ? 'corrugated-kraft' : 'natural-kraft') 
     : 'white-kraft';
 
+  const store = useBoxStore();
+  const boxT = store?.T || (boxModelKey === 'rsc' ? 0.1181 : 0.0197);
+  const boxL = store?.L || dims.L;
+  const boxW = store?.W || dims.W;
+  const boxH = store?.H || dims.H;
+
   return (
     <div className="relative w-full overflow-hidden flex items-center justify-center select-none bg-zinc-950" style={{ height }}>
       <Box3DViewer
         key={`${boxModelKey}-${substrate}-${progress}`}
         boxModelOverride={boxModelKey}
         overrideLayout="single"
-        L={dims.L}
-        W={dims.W}
-        H={dims.H}
+        L={boxL}
+        W={boxW}
+        H={boxH}
+        T={boxT}
         zoom={boxZoom}
         materialPreset={matPreset}
         packageColor={pkgColor}
         progress={progress}
         lightingPreset="studio"
-        activeAnimation="none"
+        activeAnimation={autoRotate ? "rotation" : "none"}
         showWatermark={false}
       />
       <div className="absolute bottom-2 right-2 text-[10px] text-zinc-400 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-full pointer-events-none border border-white/10">

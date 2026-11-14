@@ -269,10 +269,10 @@ function buildTEGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims) {
 // TE BOX 3D VIEWER COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function TEBox3DViewer({
-  L = 100,
-  W = 50,
-  H = 150,
-  T = 1.5,
+  L = 4.7244,
+  W = 2.3622,
+  H = 6.2992,
+  T = 0.0197,
   progress = 1,
   zoom = 1,
   lightingPreset = "studio",
@@ -285,23 +285,26 @@ export default function TEBox3DViewer({
   showWatermark = false
 }) {
   const store = useStore();
-  const nT    = Math.max(0.015, Number(T) || 0.0197);
+  const rawT = T !== undefined && T !== null ? Number(T) : (store?.T || 0.0197);
+  // Guard against legacy mm-thickness (e.g. 1.0 or 1.5) being used when dimensions are in inches (< 20)
+  const effectiveT = (rawT >= 0.5 && L < 20) ? (store?.T || 0.0197) : rawT;
+  const nT = Math.max(0.015, effectiveT || 0.0197);
 
   // Match 2D SVG dims exactly
   let manuL = L, manuW = W, manuH = H;
   if (store.sizeMode === "inner") {
-    manuL = L + 2 * T; manuW = W + 2 * T; manuH = H + 2 * T;
+    manuL = L + 2 * effectiveT; manuW = W + 2 * effectiveT; manuH = H + 2 * effectiveT;
   } else if (store.sizeMode === "outer") {
-    manuL = L - 2 * T; manuW = W - 2 * T; manuH = H - 2 * T;
+    manuL = L - 2 * effectiveT; manuW = W - 2 * effectiveT; manuH = H - 2 * effectiveT;
   }
 
   const dieline = useMemo(() =>
     generateTEDielineDXF({
-      L: manuL, W: manuW, H: manuH, T,
+      L: manuL, W: manuW, H: manuH, T: effectiveT,
       glueFlapWidth: store.glueFlapWidth,
       bleed: store.bleed,
     }),
-    [manuL, manuW, manuH, T, store.glueFlapWidth, store.bleed]
+    [manuL, manuW, manuH, effectiveT, store.glueFlapWidth, store.bleed]
   );
   const dims = dieline.dimensions;
 

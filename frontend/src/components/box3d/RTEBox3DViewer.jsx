@@ -261,11 +261,11 @@ function buildRTEGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims) {
 // RTE BOX 3D VIEWER COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RTEBox3DViewer({
-  L = 50,
-  W = 30,
-  H = 80,
-  T = 1,
-  progress = 0,
+  L = 4.7244,
+  W = 2.3622,
+  H = 6.2992,
+  T = 0.0197,
+  progress = 1,
   lightingPreset = "studio",
   decals = [],
   overrideLayout = null,
@@ -277,24 +277,27 @@ export default function RTEBox3DViewer({
   showWatermark = false
 }) {
   const store = useStore();
-  const nT    = Math.max(0.015, Number(T) || 0.0197);
+  const rawT = T !== undefined && T !== null ? Number(T) : (store?.T || 0.0197);
+  // Guard against legacy mm-thickness (e.g. 1.0 or 1.5) being used when dimensions are in inches (< 20)
+  const effectiveT = (rawT >= 0.5 && L < 20) ? (store?.T || 0.0197) : rawT;
+  const nT = Math.max(0.015, effectiveT || 0.0197);
 
   // Match 2D SVG dims exactly
   let manuL = L, manuW = W, manuH = H;
   if (store.sizeMode === "inner") {
-    manuL = L + 2 * T; manuW = W + 2 * T; manuH = H + 2 * T;
+    manuL = L + 2 * effectiveT; manuW = W + 2 * effectiveT; manuH = H + 2 * effectiveT;
   } else if (store.sizeMode === "outer") {
-    manuL = L - 2 * T; manuW = W - 2 * T; manuH = H - 2 * T;
+    manuL = L - 2 * effectiveT; manuW = W - 2 * effectiveT; manuH = H - 2 * effectiveT;
   }
 
   const dieline = useMemo(() =>
     generateRTEDieline({
-      L: manuL, W: manuW, H: manuH, T,
+      L: manuL, W: manuW, H: manuH, T: effectiveT,
       glueFlapWidth: store.glueFlapWidth,
       bleed: store.bleed,
       method: store.generatorMethod,
     }),
-    [manuL, manuW, manuH, T, store.glueFlapWidth, store.bleed, store.generatorMethod]
+    [manuL, manuW, manuH, effectiveT, store.glueFlapWidth, store.bleed, store.generatorMethod]
   );
   const dims = dieline.dimensions;
 
