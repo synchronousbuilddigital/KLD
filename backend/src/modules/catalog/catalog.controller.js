@@ -666,7 +666,7 @@ const getPublicCatalog = async (req, res) => {
     // Ensure all items have default variants if missing from database
     for (const item of items) {
       if (!item.variants || item.variants.length === 0) {
-        const defaultMatch = defaultCatalog.find(d => d.itemId === item.itemId);
+        const defaultMatch = DEFAULT_CATALOG_ITEMS.find(d => d.itemId === item.itemId);
         if (defaultMatch && defaultMatch.variants && defaultMatch.variants.length > 0) {
           item.variants = defaultMatch.variants;
         }
