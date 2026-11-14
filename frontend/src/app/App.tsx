@@ -478,7 +478,9 @@ export default function App() {
   }, []);
 
   const handleCategorySelect = (id: string | null) => {
-    setActiveCategoryId(id);
+    React.startTransition(() => {
+      setActiveCategoryId(id);
+    });
     if (id) {
       setLastSelectedCategory(id);
       window.history.pushState(null, '', `/mockup/${id}`);
@@ -498,11 +500,13 @@ export default function App() {
 
   const navigateTo = (view: 'landing' | 'models' | 'dielines' | 'pricing' | 'about' | 'profile' | 'library' | 'admin' | 'workspace' | 'mockups' | 'workshop', extra?: any) => {
     setIsSignInModalOpen(false); // Close any open sign-in modal when navigating
-    setCurrentView(view);
-    if (extra?.categoryId) {
-      setLastSelectedCategory(extra.categoryId);
-    }
-    setActiveCategoryId(null);
+    React.startTransition(() => {
+      setCurrentView(view);
+      if (extra?.categoryId) {
+        setLastSelectedCategory(extra.categoryId);
+      }
+      setActiveCategoryId(null);
+    });
     let targetPath = '/';
     if (view === 'admin') targetPath = '/admin';
     else if (view === 'workspace') targetPath = '/workspace';
@@ -567,13 +571,15 @@ export default function App() {
       }
     };
     const handleHashChange = () => {
-      setCurrentView(getViewFromUrl());
-      const path = window.location.pathname.replace('/', '').toLowerCase();
-      if (path.startsWith('mockup/')) {
-        setActiveCategoryId(path.split('/')[1] || null);
-      } else {
-        setActiveCategoryId(null);
-      }
+      React.startTransition(() => {
+        setCurrentView(getViewFromUrl());
+        const path = window.location.pathname.replace('/', '').toLowerCase();
+        if (path.startsWith('mockup/')) {
+          setActiveCategoryId(path.split('/')[1] || null);
+        } else {
+          setActiveCategoryId(null);
+        }
+      });
     };
 
     window.addEventListener('navigate', handleNavigate);
@@ -1048,7 +1054,11 @@ export default function App() {
           <motion.div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0" initial={{ opacity: 1 }} animate={{ opacity: stepIndex >= 7 ? 0 : 1 }} transition={{ duration: 0.6 }}><h1 className="text-[18vw] font-black tracking-[-0.1em] text-zinc-500 select-none uppercase leading-none">KEYLINE DESIGN</h1></motion.div>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10" style={{ perspective: 'calc(1400px * var(--app-scale, 1))' }}><motion.div variants={containerVariants} initial="initial" animate={steps[stepIndex] || 'initial'} style={{ width: W, height: D, transformStyle: 'preserve-3d' }} className="relative scale-[0.62] xs:scale-[0.75] sm:scale-90 md:scale-100 origin-center"><motion.div variants={centerVariants} className="absolute inset-0" /><motion.div variants={frontVariants} style={{ top: '100%', left: 0, width: W, height: H, transformOrigin: 'top', transformStyle: 'preserve-3d' }} className="absolute" /><motion.div variants={backVariants} style={{ bottom: '100%', left: 0, width: W, height: H, transformOrigin: 'bottom', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={lidVariants} style={{ bottom: '100%', left: 0, width: W, height: D, transformOrigin: 'bottom', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={tuckVariants} style={{ bottom: '100%', left: 1, width: W - 2, height: 30, transformOrigin: 'bottom' }} className="absolute" /></motion.div></motion.div><motion.div variants={leftVariants} style={{ right: '100%', top: 0, width: H, height: D, transformOrigin: 'right', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={leftDustVariants} style={{ right: '100%', top: 1, width: 60, height: D - 2, transformOrigin: 'right' }} className="absolute" /></motion.div><motion.div variants={rightVariants} style={{ left: '100%', top: 0, width: H, height: D, transformOrigin: 'left', transformStyle: 'preserve-3d' }} className="absolute"><motion.div variants={rightDustVariants} style={{ left: '100%', top: 1, width: 60, height: D - 2, transformOrigin: 'left' }} className="absolute" /></motion.div></motion.div></div>
           <motion.div className="absolute inset-0 z-50 flex flex-col pointer-events-none" initial={{ opacity: 0 }} animate={{ opacity: stepIndex >= 7 ? 1 : 0 }} transition={{ duration: 0.8 }} style={{ pointerEvents: stepIndex >= 7 ? 'auto' : 'none' }}>
-            <div className="w-full h-full bg-white relative"><NewHomeLanding /></div>
+            <div className="w-full h-full bg-white relative">
+              <React.Suspense fallback={<ViewLoading />}>
+                <NewHomeLanding />
+              </React.Suspense>
+            </div>
           </motion.div>
         </div>
         {stepIndex >= 7 && (
