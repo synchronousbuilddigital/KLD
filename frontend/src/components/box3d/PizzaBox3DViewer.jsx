@@ -537,7 +537,7 @@ export default function PizzaBox3DViewer({
                     </mesh>
 
                     {/* Lid Left Dust Flap (folds down inside left wall) */}
-                    <group position={[-L / 2 + nT * 2.2, 0, 0]} rotation={[0, 0, -effectiveSideFlapAngle]}>
+                    <group position={[-L / 2 + nT * 2.8, 0, 0]} rotation={[0, 0, -effectiveSideFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -548,7 +548,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Right Dust Flap (folds down inside right wall) */}
-                    <group position={[L / 2 - nT * 2.2, 0, 0]} rotation={[0, 0, effectiveSideFlapAngle]}>
+                    <group position={[L / 2 - nT * 2.8, 0, 0]} rotation={[0, 0, effectiveSideFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -559,7 +559,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Front Tuck Flap (folds down inside front rollover slot) */}
-                    <group position={[0, 0, -W + nT * 2.0]} rotation={[-effectiveTuckFlapAngle, 0, 0]}>
+                    <group position={[0, 0, -W + nT * 2.0]} rotation={[effectiveTuckFlapAngle, 0, 0]}>
                       <mesh
                         geometry={geoms.tuckFlapGeom}
                         material={matArray}
