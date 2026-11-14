@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useBoxStore } from '../../lib/useBoxStore';
-import { sendAiChatMessage } from '../../services/ai';
+import { sendAiChatMessage, detectDielineFile } from '../../services/ai';
 import Box3DViewer from '../../components/Box3DViewer';
 import AiPackagingAssistant from '../components/AiPackagingAssistant';
 import { generateRTEDielineDXF } from '../../lib/rteDielineGenerator';
@@ -43,7 +43,11 @@ import {
   Edit3,
   Move,
   Maximize2,
-  Scissors
+  Scissors,
+  Upload,
+  ScanLine,
+  FileCheck,
+  Check
 } from 'lucide-react';
 
 interface AiStudioPageProps {
@@ -111,6 +115,55 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
   const [showGrid, setShowGrid] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDielineStudioOpen, setIsDielineStudioOpen] = useState(false);
+
+  // AI Dieline Detector state
+  const dielineFileInputRef = useRef<HTMLInputElement>(null);
+  const [isDielineDetecting, setIsDielineDetecting] = useState(false);
+  const [dielineDetectionResult, setDielineDetectionResult] = useState<any>(null);
+
+  const handleDielineFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsDielineDetecting(true);
+    try {
+      const result = await detectDielineFile(file);
+      setDielineDetectionResult(result);
+
+      const targetKey = result.matchedModelKey || (result as any).model || 'rte';
+      setActiveBoxModel(targetKey);
+      if (typeof store.setBoxModel === 'function') {
+        store.setBoxModel(targetKey);
+      } else {
+        useBoxStore.setState({ boxModel: targetKey });
+      }
+
+      if (result.dimensionsIn) {
+        useBoxStore.setState({
+          L: result.dimensionsIn.L,
+          W: result.dimensionsIn.W,
+          H: result.dimensionsIn.H
+        });
+      } else if (result.dimensions) {
+        const isMm = result.dimensions.unit === 'mm' || result.dimensions.L > 30;
+        const scale = isMm ? 1 / 25.4 : 1;
+        useBoxStore.setState({
+          L: Number((result.dimensions.L * scale).toFixed(2)),
+          W: Number((result.dimensions.W * scale).toFixed(2)),
+          H: Number((result.dimensions.H * scale).toFixed(2))
+        });
+      }
+
+      // Switch to 3d mode so user sees the detected box
+      setCardMode('3d');
+    } catch (err: any) {
+      console.error('Dieline detection error:', err);
+      alert('Unable to analyze dieline file. Please ensure it is a valid DXF, SVG, PDF, or image.');
+    } finally {
+      setIsDielineDetecting(false);
+      if (dielineFileInputRef.current) dielineFileInputRef.current.value = '';
+    }
+  };
 
   // Per-prompt box tracking (Pacdora-accurate routing)
   const [activeBoxModel, setActiveBoxModel] = useState<string>(savedStudioState?.activeBoxModel || store.boxModel || 'rte');
@@ -341,13 +394,145 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
           {/* Subtle Ambient Radial Glow */}
           <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '650px', height: '280px', background: 'radial-gradient(ellipse at center, rgba(147, 51, 234, 0.09) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 80%)', pointerEvents: 'none', zIndex: 0 }} />
 
+          {/* Hidden File Input for Dieline Detector */}
+          <input
+            type="file"
+            ref={dielineFileInputRef}
+            onChange={handleDielineFileUpload}
+            accept=".dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp"
+            style={{ display: 'none' }}
+          />
+
           {/* Top Engine Badge */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '14px', zIndex: 5, textAlign: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '8px', zIndex: 5, textAlign: 'center' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 14px', borderRadius: '20px', background: 'rgba(147, 51, 234, 0.08)', border: '1px solid rgba(147, 51, 234, 0.22)', color: '#7e22ce', fontSize: '11px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               <Sparkles style={{ width: '12px', height: '12px', color: '#9333ea' }} />
               <span>AI Packaging Engine • Live Precision CAD</span>
             </div>
           </div>
+
+          {/* Prominent AI Dieline & CAD Detector Bar */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            width: '600px',
+            maxWidth: '92%',
+            padding: '10px 16px',
+            marginBottom: '12px',
+            borderRadius: '16px',
+            background: store.theme === 'dark' ? '#18181b' : '#ffffff',
+            border: '1.5px dashed rgba(99, 102, 241, 0.45)',
+            boxShadow: '0 4px 20px rgba(99, 102, 241, 0.08)',
+            zIndex: 10
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)'
+              }}>
+                <ScanLine style={{ width: '17px', height: '17px' }} />
+              </div>
+              <div style={{ textAlign: 'left', lineHeight: 1.25 }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: store.theme === 'dark' ? '#f4f4f5' : '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>AI Dieline & CAD Detector</span>
+                  <span style={{ fontSize: '9px', fontWeight: '800', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '6px' }}>
+                    NEW
+                  </span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
+                  Upload DXF, SVG, or photo to auto-detect box family, crease lines & dimensions
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => !isDielineDetecting && dielineFileInputRef.current?.click()}
+              disabled={isDielineDetecting}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                color: '#ffffff',
+                fontSize: '11px',
+                fontWeight: '800',
+                border: 'none',
+                cursor: isDielineDetecting ? 'not-allowed' : 'pointer',
+                flexShrink: 0,
+                boxShadow: '0 3px 10px rgba(79, 70, 229, 0.3)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {isDielineDetecting ? (
+                <>
+                  <div style={{ width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span>Scanning...</span>
+                </>
+              ) : (
+                <>
+                  <Upload style={{ width: '13px', height: '13px' }} />
+                  <span>Upload Dieline</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Dieline Detection Banner (when detected) */}
+          {dielineDetectionResult && (
+            <div style={{
+              width: '600px',
+              maxWidth: '92%',
+              padding: '10px 14px',
+              marginBottom: '10px',
+              borderRadius: '14px',
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              color: '#065f46',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              zIndex: 10
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 style={{ width: '16px', height: '16px', color: '#10b981', flexShrink: 0 }} />
+                <div style={{ fontSize: '11px', fontWeight: '700' }}>
+                  <span>Matched: <strong>{dielineDetectionResult.matchedTitle || dielineDetectionResult.matchedModelKey}</strong> ({Math.round(dielineDetectionResult.confidence > 1 ? dielineDetectionResult.confidence : dielineDetectionResult.confidence * 100)}% match)</span>
+                  {dielineDetectionResult.dimensionsIn && (
+                    <span style={{ opacity: 0.8, marginLeft: '6px' }}>
+                      ({dielineDetectionResult.dimensionsIn.L.toFixed(2)}″ × {dielineDetectionResult.dimensionsIn.W.toFixed(2)}″ × {dielineDetectionResult.dimensionsIn.H.toFixed(2)}″)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button
+                  onClick={() => setCardMode('2d')}
+                  style={{ background: '#fff', border: '1px solid #10b981', color: '#065f46', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', fontWeight: '800', cursor: 'pointer' }}
+                >
+                  View 2D CAD
+                </button>
+                <button
+                  onClick={() => setDielineDetectionResult(null)}
+                  style={{ background: 'transparent', border: 'none', color: '#065f46', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                  title="Dismiss"
+                >
+                  <X style={{ width: '14px', height: '14px' }} />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Interactive Card Canvas Container */}
           <div style={{ 
@@ -437,6 +622,29 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
                       <ExternalLink style={{ width: '11px', height: '11px', opacity: 0.6 }} />
                     </button>
                   )}
+
+                  {/* Quick AI Dieline Scan button */}
+                  <button
+                    onClick={() => dielineFileInputRef.current?.click()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: '#eff6ff',
+                      color: '#1d4ed8',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '8px',
+                      padding: '5px 10px',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Upload DXF, SVG or dieline photo for AI structural auto-detection"
+                  >
+                    <ScanLine style={{ width: '12px', height: '12px' }} />
+                    <span>AI Dieline</span>
+                  </button>
 
                   {/* 3-way pill: AI Render | 3D | 2D */}
                   <div style={{ display: 'flex', background: '#18181b', borderRadius: '10px', padding: '3px', gap: '2px' }}>

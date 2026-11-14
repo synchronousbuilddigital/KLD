@@ -783,6 +783,27 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
         </div>
 
         <div className="ai-header-actions">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="AI Dieline Detector: Upload DXF or dieline file to auto-detect structure"
+            style={{
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              borderRadius: '8px',
+              padding: '4px 8px',
+              fontSize: '11px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            <ScanLine style={{ width: '13px', height: '13px' }} />
+            <span>AI Dieline</span>
+          </button>
+
           {messages.length > 0 && (
             <button 
               className="ai-icon-btn" 
@@ -1578,10 +1599,36 @@ export default function AiPackagingAssistant({ onClose, isOpen = true, useStore:
       <div className="ai-footer">
         {/* Box Model Tag Selector */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', paddingLeft: '4px', scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              background: 'linear-gradient(135deg, #eff6ff, #f5f3ff)',
+              color: '#2563eb',
+              border: '1.5px dashed #bfdbfe',
+              padding: '4px 12px',
+              borderRadius: '16px',
+              fontSize: '11px',
+              fontWeight: '800',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 1px 4px rgba(37,99,235,0.08)'
+            }}
+            title="Upload DXF, SVG, or image to auto-detect box structure"
+          >
+            <ScanLine style={{ width: '12px', height: '12px' }} />
+            <span>AI Dieline Detector</span>
+          </button>
+
           {[
             { id: null, label: 'Auto (AI)' },
             { id: 'rte', label: 'Reverse Tuck' },
             { id: 'te', label: 'Straight Tuck' },
+            { id: 'fefco_0300', label: 'Shoe Box' },
+            { id: 'pizza_box', label: 'Pizza Box' },
+            { id: 'rsc', label: 'Shipping Box' },
             { id: 'auto_lock', label: 'Auto-Lock' },
             { id: 'cosmetic', label: 'Cosmetic Box' },
             { id: 'cosmetic_b', label: 'Mailer/Tray' },
