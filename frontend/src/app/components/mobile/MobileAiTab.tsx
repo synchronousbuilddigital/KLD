@@ -163,18 +163,34 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
       let detectedName = undefined;
 
       // Extract model or dimensions from AI response if present
-      if (aiResponse.actionsApplied && aiResponse.actionsApplied.length > 0) {
-        for (const action of aiResponse.actionsApplied) {
-          if (action.type === 'SET_BOX_MODEL' && action.payload?.boxModel) {
-            newModelKey = action.payload.boxModel;
+      const actionsList = aiResponse.actionsApplied || aiResponse.actions;
+      if (actionsList && actionsList.length > 0) {
+        for (const action of actionsList) {
+          const matchedModel = action.payload?.boxModel || action.model || (action.type === 'SET_BOX_MODEL' ? action.payload?.boxModel : null);
+          if (matchedModel) {
+            newModelKey = matchedModel;
             setActiveModel(newModelKey);
             useBoxStore.setState({ boxModel: newModelKey });
           }
           if (action.type === 'SET_DIMENSIONS' && action.payload) {
             newDimensions = action.payload;
             useBoxStore.setState(action.payload);
+          } else if (action.L || action.W || action.H) {
+            newDimensions = { L: action.L || store.L, W: action.W || store.W, H: action.H || store.H };
+            useBoxStore.setState(newDimensions);
           }
         }
+      }
+
+      if (aiResponse.model) {
+        newModelKey = aiResponse.model;
+        setActiveModel(newModelKey);
+        useBoxStore.setState({ boxModel: newModelKey });
+      }
+
+      if (aiResponse.dimensions) {
+        newDimensions = aiResponse.dimensions;
+        useBoxStore.setState(aiResponse.dimensions);
       }
 
       if (aiResponse.dielineMatch?.model) {

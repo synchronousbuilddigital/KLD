@@ -3,7 +3,8 @@ import { API_BASE_URL } from '../config/api';
 
 export interface AiChatResponse {
   reply: string;
-  actions: Array<{
+  text?: string;
+  actions?: Array<{
     type: string;
     model?: string;
     L?: number;
@@ -11,8 +12,21 @@ export interface AiChatResponse {
     H?: number;
     unit?: string;
     color?: string;
+    payload?: any;
     [key: string]: any;
   }>;
+  actionsApplied?: Array<{
+    type: string;
+    payload?: any;
+    model?: string;
+    [key: string]: any;
+  }>;
+  dielineMatch?: {
+    model?: string;
+    name?: string;
+    confidence?: number;
+    [key: string]: any;
+  };
   directions?: Array<{
     id: string;
     title: string;
@@ -35,6 +49,7 @@ export interface AiChatResponse {
   dielineSummary?: string;
   model?: string;
   dimensions?: { L: number; W: number; H: number; unit?: string };
+  [key: string]: any;
 }
 
 export interface DielineDetectionResult {
