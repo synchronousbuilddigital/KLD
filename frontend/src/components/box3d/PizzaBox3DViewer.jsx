@@ -148,23 +148,23 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   const lidSideFlapGeom = new THREE.ExtrudeGeometry(flapShape, extrudeSettings);
   assignMaterialGroups(lidSideFlapGeom, nT);
 
-  // 9. Lid Front Tuck Flap (exact match to 2D dieline: 20° tapered sides + smooth convex R15mm fillets)
-  const tuckW = (7.9528 / 8.0709) * L;
+  // 9. Lid Front Tuck Flap (sized to tuck cleanly inside side flaps with zero collision)
+  const tuckW = Math.max(0.1, L - (4 * nT) - 0.12);
   const halfW = tuckW / 2;
-  const tuckH = (1.9881 / 2.0472) * H;
+  const tuckH = Math.max(0.1, (1.9881 / 2.0472) * H * 0.96);
   const R_tuck = (0.5906 / 2.0472) * H;
 
   const tuckShape = new THREE.Shape();
   // Start at left corner along fold line (-halfW, 0)
   tuckShape.moveTo(-halfW, 0);
   // Left chamfer at 20° inward
-  tuckShape.lineTo(-halfW + chamferDx, chamferDy);
+  tuckShape.lineTo(-halfW + chamferDx * 0.9, chamferDy);
   // Left corner smooth convex fillet tangent to bottom tip (clockwise: 160° down to 90°)
-  tuckShape.absarc(-halfW + arcDx, tuckH - R_tuck, R_tuck, 160 * Math.PI / 180, 90 * Math.PI / 180, true);
+  tuckShape.absarc(-halfW + arcDx * 0.9, tuckH - R_tuck, R_tuck, 160 * Math.PI / 180, 90 * Math.PI / 180, true);
   // Straight bottom tip
-  tuckShape.lineTo(halfW - arcDx, tuckH);
+  tuckShape.lineTo(halfW - arcDx * 0.9, tuckH);
   // Right corner smooth convex fillet to right chamfer (clockwise: 90° down to 20°)
-  tuckShape.absarc(halfW - arcDx, tuckH - R_tuck, R_tuck, 90 * Math.PI / 180, 20 * Math.PI / 180, true);
+  tuckShape.absarc(halfW - arcDx * 0.9, tuckH - R_tuck, R_tuck, 90 * Math.PI / 180, 20 * Math.PI / 180, true);
   // Right chamfer back to fold line
   tuckShape.lineTo(halfW, 0);
   tuckShape.closePath();
@@ -183,6 +183,14 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
     lidSideFlapGeom,
     tuckFlapGeom
   };
+}
+
+function Invalidator({ isLidLifted, progress }) {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    invalidate();
+  }, [isLidLifted, progress, invalidate]);
+  return null;
 }
 
 // -----------------------------------------------------------------------------
@@ -269,27 +277,32 @@ export default function PizzaBox3DViewer({
     />
   );
 
-  // Kinematic fold angles matching Pacdora video:
+  // Kinematic fold sequence synchronized to packaging physics:
   // Phase 1 (0.00–0.25): Side walls fold UP 90°
-  // Phase 2 (0.15–0.35): Corner tabs fold IN 90°
-  // Phase 3 (0.25–0.45): Front wall folds UP 90°
-  // Phase 4 (0.35–0.55): Rollover wall folds 180° inside over tabs into slots
-  // Phase 5 (0.45–0.65): Rear wall folds UP 90°
-  // Phase 6 (0.55–0.75): Lid side dust flaps and front tuck flap fold 90°
-  // Phase 7 (0.65–0.98): Hinged lid swings closed forward 90° over the tray
   const sideFoldAngle = stageProgress(progress, 0.00, 0.25) * (Math.PI / 2);
-  const cornerTabAngle = stageProgress(progress, 0.15, 0.35) * (Math.PI / 2);
-  const frontWallAngle = stageProgress(progress, 0.25, 0.45) * (Math.PI / 2);
+  // Phase 2 (0.12–0.28): Corner tabs fold INWARD 90°
+  const cornerTabAngle = stageProgress(progress, 0.12, 0.28) * (Math.PI / 2);
+  // Phase 3 (0.20–0.40): Front wall & Rear wall fold UP 90° together (captures rear tabs without floating)
+  const frontWallAngle = stageProgress(progress, 0.20, 0.40) * (Math.PI / 2);
+  const rearWallAngle = stageProgress(progress, 0.20, 0.40) * (Math.PI / 2);
+  // Phase 4 (0.35–0.55): Rollover wall rolls 180° inside over tabs into floor slots
   const rolloverAngle = stageProgress(progress, 0.35, 0.55) * Math.PI;
 
-  const rearWallAngle = stageProgress(progress, 0.45, 0.65) * (Math.PI / 2);
-  const lidSideFlapAngle = stageProgress(progress, 0.55, 0.75) * (Math.PI / 2);
-  const baseLidHingeAngle = stageProgress(progress, 0.65, 0.98) * (Math.PI / 2);
+  // Phase 5 (0.50–0.95): Hinged lid swings forward from 0° (flat open) to 90° (closed over tray)
+  const baseLidHingeAngle = stageProgress(progress, 0.50, 0.95) * (Math.PI / 2);
 
-  // When lifted in closed mode: lid opens back by ~116° (2.02 rad) to expose interior cavity cleanly
-  const openOffset = isLidLifted ? 2.02 : 0;
+  // Phase 6 (0.65–0.95): As the lid closes over tray, side dust flaps fold 90° inward
+  const lidSideFlapAngle = stageProgress(progress, 0.65, 0.95) * (Math.PI / 2);
+  // Front tuck flap folds 90° into front rollover slot as lid finishes closing
+  const lidTuckFlapAngle = stageProgress(progress, 0.70, 0.95) * (Math.PI / 2);
+
+  // When lifted in closed mode:
+  // Lid opens smoothly back by ~105° (1.85 rad) to reveal interior
+  const openOffset = isLidLifted ? 1.85 : 0;
   const effectiveLidAngle = baseLidHingeAngle - openOffset;
-  const effectiveLidFlapAngle = Math.max(lidSideFlapAngle, isLidLifted ? Math.PI / 2 : 0);
+  const effectiveSideFlapAngle = isLidLifted ? (Math.PI / 2 * 0.92) : lidSideFlapAngle;
+  // Natural flap drape when lid is lifted: gentle crease angle ~22° (0.38 rad) instead of a harsh 90° sticking out
+  const effectiveTuckFlapAngle = isLidLifted ? 0.38 : lidTuckFlapAngle;
 
   // Layout instances
   const layout = overrideLayout || store?.sceneLayout || "single";
@@ -363,6 +376,7 @@ export default function PizzaBox3DViewer({
         />
 
         <LightingPreset preset={store?.lightingPreset || "studio"} />
+        <Invalidator isLidLifted={isLidLifted} progress={progress} />
 
         <SceneAnimator activeAnimation={activeAnimation}>
           <group position={[0, 0, 0]}>
@@ -521,7 +535,7 @@ export default function PizzaBox3DViewer({
                     </mesh>
 
                     {/* Lid Left Dust Flap (folds down inside left wall) */}
-                    <group position={[-L / 2 + nT * 1.5, 0, 0]} rotation={[0, 0, -effectiveLidFlapAngle]}>
+                    <group position={[-L / 2 + nT * 1.5, 0, 0]} rotation={[0, 0, -effectiveSideFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -532,7 +546,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Right Dust Flap (folds down inside right wall) */}
-                    <group position={[L / 2 - nT * 2.5, 0, 0]} rotation={[0, 0, effectiveLidFlapAngle]}>
+                    <group position={[L / 2 - nT * 2.5, 0, 0]} rotation={[0, 0, effectiveSideFlapAngle]}>
                       <mesh
                         geometry={geoms.lidSideFlapGeom}
                         material={matArray}
@@ -543,7 +557,7 @@ export default function PizzaBox3DViewer({
                     </group>
 
                     {/* Lid Front Tuck Flap (folds down inside front rollover slot) */}
-                    <group position={[0, 0, -W + nT * 2.0]} rotation={[effectiveLidFlapAngle, 0, 0]}>
+                    <group position={[0, 0, -W + nT * 2.0]} rotation={[effectiveTuckFlapAngle, 0, 0]}>
                       <mesh
                         geometry={geoms.tuckFlapGeom}
                         material={matArray}

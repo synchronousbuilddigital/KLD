@@ -71,8 +71,8 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isCosmeticB = !isBottle && !isCan && !isTube && (variant.name === 'Mailer / Tray Box' || variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
   const isButtonHole = !isBottle && !isCan && !isTube && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
   const isFefco0300 = !isBottle && !isCan && !isTube && (variant.name?.toLowerCase().includes('fefco 0300') || variant.name?.toLowerCase().includes('shoe box') || variant.boxModelKey === 'fefco_0300');
-  const isBox = isRSC || isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole || isFefco0300;
-  const boxType = variant.boxModelKey || (isFefco0300 ? 'fefco_0300' : isRSC ? 'rsc' : isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
+  const isBox = isRSC || isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole || isFefco0300 || isPizzaBox;
+  const boxType = variant.boxModelKey || (isPizzaBox ? 'pizza_box' : isFefco0300 ? 'fefco_0300' : isRSC ? 'rsc' : isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
   const [material, setMaterial] = useState<'white' | 'kraft'>('kraft');
 
@@ -287,24 +287,24 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       insideColor: null,
       decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
     } : {
-      L: isFefco0300 ? 11.89 : isButtonHole ? 75 / 25.4 : (isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244)),
-      W: isFefco0300 ? 8.03 : isButtonHole ? 75 / 25.4 : (isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622)),
-      H: isFefco0300 ? 2.40 : isButtonHole ? 60 / 25.4 : (isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992)),
-      T: 0.0197,
+      L: isPizzaBox ? 8.15 : isFefco0300 ? 11.89 : isButtonHole ? 75 / 25.4 : (isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244)),
+      W: isPizzaBox ? 8.07 : isFefco0300 ? 8.03 : isButtonHole ? 75 / 25.4 : (isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622)),
+      H: isPizzaBox ? 2.05 : isFefco0300 ? 2.40 : isButtonHole ? 60 / 25.4 : (isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992)),
+      T: isPizzaBox ? 0.059 : 0.0197,
       glueFlapWidth: isButtonHole ? 16 / 25.4 : 0.625,
       bleed: 2 / 25.4,
       sizeMode: "manufacture",
-      materialType: isKraft ? "corrugated" : "paperboard",
-      materialName: isKraft ? "Natural Kraft Cardboard" : "350g white paperboard(0.5mm)",
+      materialType: (isKraft || isPizzaBox) ? "corrugated" : "paperboard",
+      materialName: (isKraft || isPizzaBox) ? "Natural Kraft Cardboard" : "350g white paperboard(0.5mm)",
       isCustomMaterial: false,
       materialColor: isKraft ? "#c19a6b" : "#fdfbf7",
       materialCategory: isKraft ? "kraft_cardboard" : "white_paperboard",
       packageColor: null,
       insideColor: null,
-      decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], fefco_0300: [] }
+      decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], fefco_0300: [], pizza_box: [] }
     };
 
-    const targetModel = variant.boxModelKey || (isFefco0300 ? 'fefco_0300' : isRSC ? 'rsc' : isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
+    const targetModel = variant.boxModelKey || (isPizzaBox ? 'pizza_box' : isFefco0300 ? 'fefco_0300' : isRSC ? 'rsc' : isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
     useBoxStore.setState({ 
       boxModel: targetModel, 
