@@ -1,6 +1,6 @@
 /**
  * PizzaBox3DViewer.jsx
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * High-fidelity 3D Viewer & Kinematic Fold Simulation for:
  * FEFCO 0426 Pizza Box / Roll-End Tray with Hinged Lid Mockup.
  *
@@ -16,7 +16,7 @@
  *   - Phase 3 (0.35–0.60): Front rollover locking wall folds 180° over tabs into slots.
  *   - Phase 4 (0.50–0.75): Lid side dust flaps and front tuck flap fold down (90°).
  *   - Phase 5 (0.60–1.00): Hinged lid folds forward (90°) over the top of the box.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
@@ -38,9 +38,9 @@ import {
   useDebouncedDecals
 } from "./sharedUtils";
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // GEOMETRIES BUILDER FOR FEFCO 0426 PIZZA BOX
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 function buildPizzaBoxGeometries(L, W, H, nT) {
   const extrudeSettings = { depth: nT, bevelEnabled: false };
 
@@ -185,9 +185,9 @@ function buildPizzaBoxGeometries(L, W, H, nT) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // MAIN PIZZA BOX 3D VIEWER COMPONENT
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 export default function PizzaBox3DViewer({
   boxModelOverride = null,
   activeAnimation = "none",
@@ -372,9 +372,9 @@ export default function PizzaBox3DViewer({
                 position={inst.pos || inst.position || [0, 0, 0]}
                 rotation={inst.rot || inst.rotation || [0, 0, 0]}
               >
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 {/* 1. FLOOR PANEL (Base horizontal ground anchor at Y=0)    */}
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 <mesh
                   geometry={geoms.floorGeom}
                   material={matArray}
@@ -386,9 +386,9 @@ export default function PizzaBox3DViewer({
                   {D("base-floor")}
                 </mesh>
 
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 {/* 2. LEFT SIDE WALL (at X = -L/2, folds UP around Z)        */}
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 <group position={[-L / 2, 0, 0]} rotation={[0, 0, -sideFoldAngle]}>
                   <mesh
                     geometry={geoms.sideWallGeom}
@@ -424,9 +424,9 @@ export default function PizzaBox3DViewer({
                   </group>
                 </group>
 
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 {/* 3. RIGHT SIDE WALL (at X = +L/2, folds UP around Z)       */}
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 <group position={[L / 2, 0, 0]} rotation={[0, 0, sideFoldAngle]}>
                   <mesh
                     geometry={geoms.sideWallGeom}
@@ -462,9 +462,9 @@ export default function PizzaBox3DViewer({
                   </group>
                 </group>
 
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 {/* 4. FRONT OUTER WALL & INNER ROLLOVER LOCKING WALL        */}
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 <group position={[0, 0, W / 2]} rotation={[-frontWallAngle, 0, 0]}>
                   <mesh
                     geometry={geoms.frontWallGeom}
@@ -490,9 +490,9 @@ export default function PizzaBox3DViewer({
                   </group>
                 </group>
 
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 {/* 5. REAR HINGE WALL (at Z = -W/2, folds UP around X)       */}
-                {/* ───────────────────────────────────────────────────────── */}
+                {/* --------------------------------------------------------- */}
                 <group position={[0, 0, -W / 2]} rotation={[rearWallAngle, 0, 0]}>
                   <mesh
                     geometry={geoms.rearWallGeom}
@@ -505,9 +505,9 @@ export default function PizzaBox3DViewer({
                     {D("back-wall")}
                   </mesh>
 
-                  {/* ─────────────────────────────────────────────────────── */}
+                  {/* ------------------------------------------------------- */}
                   {/* 6. HINGED TOP LID (at top of rear wall at [0, 0, -H])   */}
-                  {/* ─────────────────────────────────────────────────────── */}
+                  {/* ------------------------------------------------------- */}
                   <group position={[0, 0, -H]} rotation={[effectiveLidAngle, 0, 0]}>
                     <mesh
                       geometry={geoms.lidGeom}

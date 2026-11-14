@@ -43,6 +43,10 @@ const BOX_MOCKUP_IMAGES: Record<string, { white: string; kraft: string }> = {
     white: '/images/boxes/button_hole_white.jpg',
     kraft: '/images/boxes/button_hole_kraft.jpg',
   },
+  fefco_0300: {
+    white: '/images/boxes/fefco_0300_white.png',
+    kraft: '/images/boxes/fefco_0300_kraft.png',
+  },
 };
 
 const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVariant }: any) => {
@@ -66,8 +70,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
   const isCosmetic = !isBottle && !isCan && !isTube && (variant.name === 'Cosmetic Box' || variant.boxModelKey === 'cosmetic');
   const isCosmeticB = !isBottle && !isCan && !isTube && (variant.name === 'Mailer / Tray Box' || variant.name === 'Cosmetic Box B (Mailer/Tray Style)' || variant.boxModelKey === 'cosmetic_b');
   const isButtonHole = !isBottle && !isCan && !isTube && (variant.name === 'Button Hole Box' || variant.boxModelKey === 'button_hole');
-  const isBox = isRSC || isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole;
-  const boxType = variant.boxModelKey || (isRSC ? 'rsc' : isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
+  const isFefco0300 = !isBottle && !isCan && !isTube && (variant.name?.toLowerCase().includes('fefco 0300') || variant.name?.toLowerCase().includes('shoe box') || variant.boxModelKey === 'fefco_0300');
+  const isBox = isRSC || isTE || isRTE || isAuto || isCosmetic || isCosmeticB || isButtonHole || isFefco0300;
+  const boxType = variant.boxModelKey || (isFefco0300 ? 'fefco_0300' : isRSC ? 'rsc' : isTE ? 'te' : isRTE ? 'rte' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
   const [material, setMaterial] = useState<'white' | 'kraft'>('kraft');
 
@@ -282,9 +287,9 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       insideColor: null,
       decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
     } : {
-      L: isButtonHole ? 75 / 25.4 : (isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244)),
-      W: isButtonHole ? 75 / 25.4 : (isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622)),
-      H: isButtonHole ? 60 / 25.4 : (isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992)),
+      L: isFefco0300 ? 11.89 : isButtonHole ? 75 / 25.4 : (isCosmeticB ? 270 / 25.4 : (isCosmetic ? 1.4016 : 4.7244)),
+      W: isFefco0300 ? 8.03 : isButtonHole ? 75 / 25.4 : (isCosmeticB ? 260 / 25.4 : (isCosmetic ? 1.4016 : 2.3622)),
+      H: isFefco0300 ? 2.40 : isButtonHole ? 60 / 25.4 : (isCosmeticB ? 62 / 25.4 : (isCosmetic ? 4.7874 : 6.2992)),
       T: 0.0197,
       glueFlapWidth: isButtonHole ? 16 / 25.4 : 0.625,
       bleed: 2 / 25.4,
@@ -296,10 +301,10 @@ const MockupCard = ({ variant, activeCategoryId, setHoveredVariant, hoveredVaria
       materialCategory: isKraft ? "kraft_cardboard" : "white_paperboard",
       packageColor: null,
       insideColor: null,
-      decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [] }
+      decalsByModel: { rsc: [], rte: [], te: [], auto_lock: [], cosmetic: [], cosmetic_b: [], button_hole: [], water_bottle: [], fefco_0300: [] }
     };
 
-    const targetModel = variant.boxModelKey || (isRSC ? 'rsc' : isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
+    const targetModel = variant.boxModelKey || (isFefco0300 ? 'fefco_0300' : isRSC ? 'rsc' : isRTE ? 'rte' : isTE ? 'te' : isAuto ? 'auto_lock' : isCosmeticB ? 'cosmetic_b' : isButtonHole ? 'button_hole' : isCosmetic ? 'cosmetic' : 'rte');
 
     useBoxStore.setState({ 
       boxModel: targetModel, 
