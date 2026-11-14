@@ -541,6 +541,55 @@ const ensureCatalogSeeded = async () => {
           console.log('🌱 Seeded supplement-bottle-mockups into database');
         }
       }
+
+      // Ensure all core production dielines exist in database
+      const dielinesToEnsure = [
+        {
+          itemId: 'rsc',
+          title: 'Square Shipping Box',
+          subtitle: 'Corrugated Shipping Box • 3D Studio',
+          img: '/images/boxes/rsc_kraft.jpg',
+          dieline2DImg: '/images/dielines/rsc.svg',
+          box3DImg: '/images/boxes/rsc_kraft.jpg',
+          group: 'dielines',
+          boxModelKey: 'rsc',
+          active: true,
+          order: 2,
+        },
+        {
+          itemId: 'pizza_box',
+          title: 'Pizza Box (FEFCO 0426)',
+          subtitle: 'Tray with Self-Locking Walls & Hinged Lid • 3D Studio',
+          img: '/images/pizza_box.png',
+          dieline2DImg: '/images/dielines/pizza_box.svg',
+          box3DImg: '/images/pizza_box.png',
+          group: 'dielines',
+          boxModelKey: 'pizza_box',
+          active: true,
+          order: 0,
+        },
+        {
+          itemId: 'fefco_0300',
+          title: 'FEFCO 0300 Shoe Box with Lid',
+          subtitle: 'Two-Piece Telescope Box • 3D Studio',
+          img: '/images/boxes/fefco_0300_white.png',
+          dieline2DImg: '/images/dielines/fefco_0300.svg',
+          box3DImg: '/images/boxes/fefco_0300_white.png',
+          group: 'dielines',
+          boxModelKey: 'fefco_0300',
+          active: true,
+          order: 1,
+        }
+      ];
+
+      for (const d of dielinesToEnsure) {
+        const found = await CatalogItem.findOne({ $or: [{ itemId: d.itemId }, { boxModelKey: d.boxModelKey, group: 'dielines' }] });
+        if (!found) {
+          await CatalogItem.create(d);
+          invalidateCatalogCache();
+          console.log(`🌱 Seeded missing dieline ${d.itemId} into database`);
+        }
+      }
     }
     isCatalogSeeded = true;
   } catch (err) {

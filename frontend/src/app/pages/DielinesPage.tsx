@@ -26,12 +26,14 @@ interface DielinesPageProps {
 }
 
 const CATEGORY_ITEMS = [
-  { id: 'all', label: 'All Box Models', count: 5, icon: Box, color: 'text-indigo-600' },
+  { id: 'all', label: 'All Box Models', count: 9, icon: Box, color: 'text-indigo-600' },
   { id: 'rsc', label: 'Square Shipping Box', count: 1, icon: Box, color: 'text-amber-600' },
   { id: 'te', label: 'Straight Tuck End (STE)', count: 1, icon: PackageCheck, color: 'text-blue-600' },
   { id: 'rte', label: 'Reverse Tuck End (RTE)', count: 1, icon: Layers, color: 'text-emerald-600' },
   { id: 'auto_lock', label: 'Auto Lock Bottom', count: 1, icon: Sparkles, color: 'text-amber-600' },
   { id: 'cosmetic', label: 'Cosmetic Boxes', count: 1, icon: Scissors, color: 'text-rose-600' },
+  { id: 'pizza_box', label: 'Pizza Box (FEFCO 0426)', count: 1, icon: Box, color: 'text-amber-700' },
+  { id: 'fefco_0300', label: 'Shoe Box (FEFCO 0300)', count: 1, icon: Box, color: 'text-purple-600' },
   { id: 'folding', label: 'Folding Box Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
   { id: 'tuck_end', label: 'Tuck End Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
   { id: 'paper_bag', label: 'Paper Bag Templates', count: 'CAD', icon: FolderOpen, color: 'text-zinc-600' },
@@ -153,18 +155,32 @@ const DEFAULT_DIELINES: CatalogItemData[] = [
   }
 ];
 
+const mergeDielinesWithDefaults = (items: CatalogItemData[]): CatalogItemData[] => {
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return DEFAULT_DIELINES;
+  }
+  const result = [...items];
+  for (const def of DEFAULT_DIELINES) {
+    const exists = result.some(item => 
+      (item.boxModelKey && item.boxModelKey === def.boxModelKey) || 
+      (item.itemId && item.itemId === def.itemId)
+    );
+    if (!exists) {
+      result.push(def);
+    }
+  }
+  return result.sort((a, b) => (a.order || 0) - (b.order || 0));
+};
+
 export default function DielinesPage({ onNavigate }: DielinesPageProps) {
-  const [selectedBoxModel, setSelectedBoxModel] = useState<"rsc" | "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | null>(null);
+  const [selectedBoxModel, setSelectedBoxModel] = useState<"rsc" | "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "pizza_box" | "fefco_0300" | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dielineModels, setDielineModels] = useState<CatalogItemData[]>(() => {
     const cached = catalogService.getCachedCatalog();
     if (cached && Array.isArray(cached) && cached.length > 0) {
-      const filtered = cached.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
-      if (!filtered.some(f => f.boxModelKey === 'rsc')) {
-        filtered.unshift(DEFAULT_DIELINES[0]);
-      }
-      return filtered;
+      const filtered = cached.filter(item => item.group === 'dielines' && item.active !== false);
+      return mergeDielinesWithDefaults(filtered);
     }
     return DEFAULT_DIELINES;
   });
@@ -186,15 +202,8 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
     const fetchDielines = async () => {
       try {
         const catalog = await catalogService.getPublicCatalog();
-        const items = catalog.filter(item => item.group === 'dielines' && item.active !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
-        if (items.length > 0) {
-          if (!items.some(f => f.boxModelKey === 'rsc')) {
-            items.unshift(DEFAULT_DIELINES[0]);
-          }
-          setDielineModels(items);
-        } else {
-          setDielineModels(DEFAULT_DIELINES);
-        }
+        const items = catalog.filter(item => item.group === 'dielines' && item.active !== false);
+        setDielineModels(mergeDielinesWithDefaults(items));
       } catch {
         setDielineModels(DEFAULT_DIELINES);
       } finally {
@@ -211,9 +220,13 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
   const handleCategorySelect = (category: string) => {
     setActiveCategory(category);
 
-    let targetModel: 'rsc' | 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' = 'rsc';
+    let targetModel: 'rsc' | 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | 'pizza_box' | 'fefco_0300' = 'rsc';
     if (category === 'rsc' || category === 'shipping' || category === 'corrugated') {
       targetModel = 'rsc';
+    } else if (category === 'pizza_box' || category === 'fefco_0426') {
+      targetModel = 'pizza_box';
+    } else if (category === 'fefco_0300' || category === 'shoe_box') {
+      targetModel = 'fefco_0300';
     } else if (category === 'tuck_end' || category === 'folding' || category === 'rte') {
       targetModel = 'rte';
     } else if (category === 'cosmetic_b' || category === 'mailer' || category === 'tray') {
@@ -244,12 +257,16 @@ export default function DielinesPage({ onNavigate }: DielinesPageProps) {
     
     const key = card.boxModelKey;
     if (activeCategory === key) return true;
-    if (activeCategory === 'folding' && key === 'rte') return true;
-    if (activeCategory === 'tuck_end' && key === 'rte') return true;
-    if (activeCategory === 'box_lid' && key === 'auto_lock') return true;
+    if (activeCategory === 'rsc' && (key === 'rsc' || card.itemId === 'rsc')) return true;
+    if (activeCategory === 'pizza_box' && (key === 'pizza_box' || card.itemId === 'pizza_box')) return true;
+    if (activeCategory === 'fefco_0300' && (key === 'fefco_0300' || card.itemId === 'fefco_0300')) return true;
+    if (activeCategory === 'folding' && (key === 'rte' || key === 'te')) return true;
+    if (activeCategory === 'tuck_end' && (key === 'rte' || key === 'te')) return true;
+    if (activeCategory === 'box_lid' && (key === 'auto_lock' || key === 'fefco_0300')) return true;
     if (activeCategory === 'paper_bag' && key === 'cosmetic') return true;
-    if (activeCategory === 'mailer' && key === 'cosmetic_b') return true;
-    if (activeCategory === 'tray' && key === 'cosmetic_b') return true;
+    if (activeCategory === 'mailer' && (key === 'cosmetic_b' || key === 'pizza_box')) return true;
+    if (activeCategory === 'tray' && (key === 'cosmetic_b' || key === 'pizza_box')) return true;
+    if (activeCategory === 'rigid_box' && key === 'fefco_0300') return true;
     
     return false;
   });
