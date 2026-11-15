@@ -18,7 +18,11 @@ import {
   FolderOpen,
   Info,
   Compass,
-  Cpu
+  Cpu,
+  Sparkles,
+  Palette,
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 import { useBoxStore } from '../../../lib/useBoxStore';
 import { sendAiChatMessageV2, detectDielineFile, DielineDetectionResult } from '../../../services/ai';
@@ -39,14 +43,17 @@ interface Message {
   dimensions?: { L: number; W: number; H: number };
   detectedName?: string;
   filePreview?: { name: string; url?: string };
+  variations?: any[];
+  directions?: any[];
+  expandedBrief?: string;
 }
 
 const QUICK_PROMPTS = [
-  { label: '🧴 Skincare Box', text: 'Design a sleek matte white cosmetic box for premium serum' },
-  { label: '🍕 Pizza Box', text: 'Create an eco-friendly FEFCO 0426 kraft pizza box with locking tabs' },
-  { label: '👟 Shoe Box with Lid', text: 'Generate a FEFCO 0300 shoe box with removable telescope lid' },
-  { label: '🥤 12oz Craft Can', text: 'Create an aluminum beverage can with organic botanical branding' },
-  { label: '📦 Shipping Carton', text: 'Generate a heavy duty RSC shipping box with structural CAD net' }
+  { label: '🍵 Matcha Tea Box', text: 'Design a luxury ceremonial matcha tea folding carton in deep forest green with gold foil logo and minimal botanical pattern' },
+  { label: '🧴 Botanical Serum', text: 'Create an organic skincare dropper box in matte off-white with delicate sage green botanical accents and clean typography' },
+  { label: '🍕 Artisan Pizza Box', text: 'Design an authentic Italian artisan pizza box in natural kraft with bold woodblock typography and red tomato stamp artwork' },
+  { label: '👟 Streetwear Shoe Box', text: 'Create a high-fashion streetwear shoe box in matte black with metallic silver foil geometric pattern and neon orange highlights' },
+  { label: '🥤 12oz Craft Beverage', text: 'Create an aluminum beverage can with organic citrus botanical branding and vibrant gradients' }
 ];
 
 const MODEL_NAMES: Record<string, string> = {
@@ -100,14 +107,20 @@ const SAMPLE_DIELINES = [
 export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavigateTab }) => {
   const store = useBoxStore();
   
-  // Navigation sub-tab: 'prompt' (Parametric Studio) | 'detector' (CAD Dieline Scanner)
-  const [subTab, setSubTab] = useState<'prompt' | 'detector'>('prompt');
+  // Navigation sub-tab: 'design' (AI Design Studio) | 'detector' (CAD Dieline Generator)
+  const [subTab, setSubTab] = useState<'design' | 'detector'>('design');
   
   const [activeModel, setActiveModel] = useState<string>(store.boxModel || 'rte');
   const [activeSubstrate, setActiveSubstrate] = useState<'white' | 'kraft' | 'metal'>('white');
   const [promptInput, setPromptInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+
+  // AI Design Variations State (Images & Artwork applied to 3D Box)
+  const [appliedVariation, setAppliedVariation] = useState<any | null>(null);
+  const [generatedVariations, setGeneratedVariations] = useState<any[]>(() => {
+    return (store as any)?.generatedRenders || [];
+  });
   
   // Dieline Detector State
   const [detectorResult, setDetectorResult] = useState<DielineDetectionResult | null>(null);
@@ -122,7 +135,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
     {
       id: 'welcome',
       sender: 'assistant',
-      text: 'Hello! I am your KLD Packaging CAD Assistant. You can describe any packaging geometry to generate 3D models, or use the CAD Dieline Scanner to import and verify DXF/SVG nets.',
+      text: 'Hello! I am your KLD AI Packaging Studio. You can describe any packaging concept to generate visual artwork & continuous 3D wraps, or use the CAD Dieline Generator to import DXF/SVG nets and extract parametric dimensions.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       modelKey: 'rte'
     }
@@ -131,6 +144,110 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  // Apply or remove full-bleed AI artwork wrap on the 3D box model
+  const applyVariationTo3D = (variation: any | null) => {
+    if (!variation) {
+      setAppliedVariation(null);
+      if (typeof store.clearAllAiDecals === 'function') store.clearAllAiDecals();
+      else if (typeof store.setAiDecals === 'function') store.setAiDecals([]);
+      if (typeof store.setDecals === 'function') store.setDecals([]);
+      return;
+    }
+
+    const bgUrl = variation.backgroundUrl || variation.url;
+    if (!bgUrl) return;
+
+    setAppliedVariation(variation);
+
+    const W = store.W || 2.36;
+    const H = store.H || 6.29;
+    const L = store.L || 4.72;
+    const glue = store.glueFlapWidth || 0.625;
+
+    // Full dieline span across all panels
+    const totalW = glue + L * 2 + W * 2;
+    const yTop = W + 0.625;
+    const totalH = H + W * 2 + 1.25;
+    const xCenter = totalW / 2;
+    const yCenter = yTop + (H / 2);
+
+    const wrapDecal = {
+      id: 'ai-wrap-' + Date.now(),
+      type: 'image',
+      url: bgUrl,
+      width: totalW,
+      height: totalH,
+      x: xCenter,
+      y: yCenter,
+      surface: 'Outside',
+      isWrap: true
+    };
+
+    const newDecals: any[] = [wrapDecal];
+    if (variation.typography && variation.typography.brandName) {
+      const frontX = glue + L / 2;
+      newDecals.push({
+        id: 'ai-typo',
+        type: 'text',
+        content: variation.typography.brandName,
+        fontFamily: variation.typography.fontStyle || 'sans-serif',
+        color: variation.typography.color || '#ffffff',
+        bold: true,
+        fontSize: Math.max(0.2, H * 0.05),
+        x: frontX,
+        y: yCenter,
+        width: L * 0.8,
+        height: H * 0.2,
+        surface: 'Outside',
+        textAlign: 'center'
+      });
+    }
+
+    if (typeof store.setAiDecals === 'function') {
+      store.setAiDecals(newDecals);
+    }
+    if (typeof store.setDecals === 'function') {
+      store.setDecals(newDecals);
+    }
+
+    // Automatically extract dominant color from the design and update package color
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      canvas.width = 50;
+      canvas.height = 50;
+      ctx.drawImage(img, 0, 0, 50, 50);
+      try {
+        const data = ctx.getImageData(0, 0, 50, 50).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let y = 0; y < 50; y++) {
+          for (let x = 0; x < 50; x++) {
+            if (x < 5 || x > 45 || y < 5 || y > 45) {
+              const idx = (y * 50 + x) * 4;
+              r += data[idx];
+              g += data[idx + 1];
+              b += data[idx + 2];
+              count++;
+            }
+          }
+        }
+        if (count > 0) {
+          r = Math.floor(r / count);
+          g = Math.floor(g / count);
+          b = Math.floor(b / count);
+          const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+          if (typeof store.setPackageColor === 'function') {
+            store.setPackageColor(hex);
+          }
+        }
+      } catch (e) {}
+    };
+    img.src = bgUrl;
+  };
 
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || promptInput).trim();
@@ -200,14 +317,26 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
         useBoxStore.setState({ boxModel: newModelKey });
       }
 
+      // Handle generated visual artwork variations
+      const variations = aiResponse.renderVariations || aiResponse.variations || [];
+      if (variations.length > 0) {
+        setGeneratedVariations(variations);
+        useBoxStore.setState({ generatedRenders: variations });
+        // Automatically wrap the first generated variation onto the 3D model!
+        applyVariationTo3D(variations[0]);
+      }
+
       const assistantMsg: Message = {
         id: `ai-${Date.now()}`,
         sender: 'assistant',
-        text: aiResponse.reply || aiResponse.text || 'I updated your 3D packaging model according to your prompt.',
+        text: aiResponse.reply || aiResponse.text || 'I generated 4 packaging designs and wrapped the hero artwork onto your 3D box model.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         modelKey: newModelKey,
         dimensions: newDimensions,
-        detectedName
+        detectedName,
+        variations,
+        directions: aiResponse.directions,
+        expandedBrief: aiResponse.expandedBrief
       };
 
       setMessages(prev => [...prev, assistantMsg]);
@@ -340,16 +469,16 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-center text-white shadow-xs">
-            <Layers className="w-4 h-4 text-zinc-100" />
+            <Sparkles className="w-4 h-4 text-purple-400" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="text-sm font-extrabold text-zinc-900 leading-tight">Packaging CAD Studio</h2>
+              <h2 className="text-sm font-extrabold text-zinc-900 leading-tight">AI Packaging Studio</h2>
               <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-700 text-[9px] font-bold uppercase tracking-wider">
-                v2.4 Engine
+                AI + CAD
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500 font-medium">Vector Dielines & Parametric 3D Net Modeling</p>
+            <p className="text-[10px] text-zinc-500 font-medium">Design & Image Generation • Precision CAD Dielines</p>
           </div>
         </div>
 
@@ -358,31 +487,33 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             setMessages([{
               id: 'welcome',
               sender: 'assistant',
-              text: 'Conversation reset. What packaging structure would you like to design next?',
+              text: 'Conversation reset. What packaging concept or dieline would you like to create next?',
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }]);
+            applyVariationTo3D(null);
+            setGeneratedVariations([]);
             setDetectorResult(null);
             setDetectorFile(null);
           }}
-          className="w-7 h-7 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-800 flex items-center justify-center active:scale-95 transition-all shadow-2xs"
-          title="Reset session"
+          className="w-7 h-7 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-800 flex items-center justify-center active:scale-95 transition-all shadow-2xs cursor-pointer"
+          title="Reset session & clear artwork"
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Segmented Sub-Tab Switcher: Parametric Studio VS CAD Dieline Scanner */}
+      {/* Segmented Sub-Tab Switcher: AI Design Studio VS CAD Dieline Generator */}
       <div className="grid grid-cols-2 p-1 bg-zinc-100 rounded-2xl border border-zinc-200 shadow-2xs">
         <button
-          onClick={() => setSubTab('prompt')}
+          onClick={() => setSubTab('design')}
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            subTab === 'prompt'
+            subTab === 'design'
               ? 'bg-white text-zinc-950 shadow-xs'
               : 'text-zinc-500 hover:text-zinc-800'
           }`}
         >
-          <Layers className={`w-3.5 h-3.5 ${subTab === 'prompt' ? 'text-zinc-950' : 'text-zinc-400'}`} />
-          <span>Parametric Studio</span>
+          <Sparkles className={`w-3.5 h-3.5 ${subTab === 'design' ? 'text-purple-600' : 'text-zinc-400'}`} />
+          <span>AI Design Studio</span>
         </button>
         
         <button
@@ -394,7 +525,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
           }`}
         >
           <ScanLine className={`w-3.5 h-3.5 ${subTab === 'detector' ? 'text-zinc-950' : 'text-zinc-400'}`} />
-          <span>CAD Dieline Scanner</span>
+          <span>CAD Dieline Generator</span>
           <span className="px-1.5 py-0.2 bg-zinc-900 text-white text-[8px] font-bold rounded-full uppercase tracking-wider">
             CAD
           </span>
@@ -642,11 +773,11 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
       )}
 
       {/* ======================================================== */}
-      {/* VIEW B: PARAMETRIC STUDIO (GENERATOR & SPEC CHAT)        */}
+      {/* VIEW B: AI DESIGN STUDIO (ARTWORK & 3D WRAP PACKSHOTS)   */}
       {/* ======================================================== */}
-      {subTab === 'prompt' && (
+      {subTab === 'design' && (
         <div className="flex flex-col space-y-4">
-          {/* Prominent Architectural Banner for CAD Dieline Scanner */}
+          {/* Quick Access Dieline Scanner CTA Banner */}
           <div 
             onClick={() => setSubTab('detector')}
             className="p-3 bg-zinc-900 text-white rounded-2xl border border-zinc-800 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all shadow-md"
@@ -666,30 +797,46 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             <ArrowRight className="w-4 h-4 text-zinc-400 shrink-0" />
           </div>
 
-          {/* Real Interactive 3D Canvas Card */}
+          {/* Real Interactive 3D Canvas Card with Live AI Wrap */}
           <div className="bg-[#121316] text-white rounded-3xl p-4 shadow-xl shadow-zinc-950/15 border border-zinc-800 flex flex-col relative overflow-hidden">
             {/* Top Stage Header */}
             <div className="flex items-center justify-between mb-2 z-10">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700 text-zinc-300 text-[10px] font-semibold tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>3D FOLD SIMULATION</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${appliedVariation ? 'bg-purple-400 animate-pulse' : 'bg-emerald-400'}`} />
+                <span>{appliedVariation ? '✨ LIVE 3D AI WRAP' : '3D FOLD SIMULATION'}</span>
               </div>
 
-              {/* Substrate Pill Switcher */}
-              <div className="flex items-center gap-0.5 bg-zinc-900/90 border border-zinc-800 p-0.5 rounded-full">
-                {(['white', 'kraft', 'metal'] as const).map(s => (
+              {/* Substrate Switcher & Clear Wrap button */}
+              <div className="flex items-center gap-1.5">
+                {appliedVariation && (
                   <button
-                    key={s}
-                    onClick={() => setActiveSubstrate(s)}
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] capitalize transition-all cursor-pointer ${
-                      activeSubstrate === s 
-                        ? 'bg-white text-zinc-950 font-bold shadow-xs' 
-                        : 'text-zinc-400 hover:text-white font-medium'
-                    }`}
+                    onClick={() => applyVariationTo3D(null)}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold hover:bg-rose-500/30 transition-all cursor-pointer"
+                    title="Remove applied artwork and restore plain substrate"
                   >
-                    {s}
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear Wrap</span>
                   </button>
-                ))}
+                )}
+
+                <div className="flex items-center gap-0.5 bg-zinc-900/90 border border-zinc-800 p-0.5 rounded-full">
+                  {(['white', 'kraft', 'metal'] as const).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        setActiveSubstrate(s);
+                        if (appliedVariation) applyVariationTo3D(null);
+                      }}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] capitalize transition-all cursor-pointer ${
+                        activeSubstrate === s && !appliedVariation
+                          ? 'bg-white text-zinc-950 font-bold shadow-xs' 
+                          : 'text-zinc-400 hover:text-white font-medium'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -706,9 +853,16 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             {/* Bottom Details & Open in Studio Button */}
             <div className="mt-3 flex items-center justify-between pt-2 border-t border-zinc-800/80">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-white leading-tight">
-                  {MODEL_NAMES[activeModel] || 'Custom Box Model'}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-white leading-tight">
+                    {MODEL_NAMES[activeModel] || 'Custom Box Model'}
+                  </span>
+                  {appliedVariation && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 truncate max-w-[120px]">
+                      {appliedVariation.title || 'AI Wrapped'}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] text-zinc-400 font-medium">
                   Dimensions: {(store.L || 4.72).toFixed(2)}″ × {(store.W || 2.36).toFixed(2)}″ × {(store.H || 6.29).toFixed(2)}″
                 </span>
@@ -724,6 +878,89 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             </div>
           </div>
 
+          {/* AI Artwork Variations Carousel (Tap to Wrap on 3D Box) */}
+          {generatedVariations.length > 0 && (
+            <div className="bg-white rounded-3xl p-3.5 border border-zinc-200/90 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span className="text-xs font-extrabold text-zinc-900 tracking-tight">AI Artwork Variations</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded-full">
+                    {generatedVariations.length} Styles
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-medium">Tap to wrap on 3D box</span>
+              </div>
+
+              <div className="flex items-stretch gap-2.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar -mx-1 px-1">
+                {generatedVariations.map((v: any, idx: number) => {
+                  const vUrl = v.backgroundUrl || v.url;
+                  const isApplied = appliedVariation?.id === v.id || (appliedVariation?.backgroundUrl || appliedVariation?.url) === vUrl;
+                  return (
+                    <div
+                      key={v.id || idx}
+                      onClick={() => applyVariationTo3D(isApplied ? null : v)}
+                      className={`shrink-0 w-36 p-2 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                        isApplied 
+                          ? 'border-blue-600 bg-blue-50/50 shadow-md ring-2 ring-blue-500/20' 
+                          : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100/70 hover:border-zinc-300 shadow-2xs'
+                      }`}
+                    >
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-zinc-900 mb-2">
+                        <img
+                          src={vUrl}
+                          alt={v.title || `Variation ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+                              `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="#18181b"/><text x="150" y="150" font-family="sans-serif" font-size="14" fill="#2563eb" text-anchor="middle">KLD AI RENDER</text></svg>`
+                            )}`;
+                          }}
+                        />
+                        {isApplied && (
+                          <div className="absolute top-1.5 right-1.5 bg-blue-600 text-white rounded-full p-0.5 shadow-md">
+                            <Check className="w-3 h-3" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col space-y-1.5">
+                        <span className="text-[11px] font-bold text-zinc-900 truncate leading-tight">
+                          {v.title || `Style ${idx + 1}`}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            applyVariationTo3D(isApplied ? null : v);
+                          }}
+                          className={`w-full py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                            isApplied
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-zinc-900 text-white hover:bg-zinc-800'
+                          }`}
+                        >
+                          {isApplied ? (
+                            <>
+                              <Check className="w-3 h-3" />
+                              <span>Wrapped</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3 h-3" />
+                              <span>Wrap on 3D</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Preset Quick Prompt Suggestions */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4">
             {QUICK_PROMPTS.map((qp, i) => (
@@ -738,7 +975,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
           </div>
 
           {/* Chat Messages Log */}
-          <div className="bg-white rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-3.5 flex flex-col space-y-3 max-h-[280px] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-zinc-200/90 shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-3.5 flex flex-col space-y-3 max-h-[300px] overflow-y-auto">
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -758,6 +995,48 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
                     </div>
                   )}
                   <p className="whitespace-pre-wrap">{m.text}</p>
+
+                  {/* Inline Variations inside Assistant Message */}
+                  {m.variations && m.variations.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-zinc-200/80 flex flex-col space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider">
+                          Generated Designs ({m.variations.length})
+                        </span>
+                        <span className="text-[9px] text-zinc-400">Tap to wrap 3D</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {m.variations.map((v: any, vIdx: number) => {
+                          const vUrl = v.backgroundUrl || v.url;
+                          const isApplied = appliedVariation?.id === v.id || (appliedVariation?.backgroundUrl || appliedVariation?.url) === vUrl;
+                          return (
+                            <div
+                              key={v.id || vIdx}
+                              onClick={() => applyVariationTo3D(isApplied ? null : v)}
+                              className={`p-1.5 rounded-xl border flex flex-col gap-1.5 cursor-pointer transition-all ${
+                                isApplied ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20' : 'border-zinc-200 bg-white hover:border-zinc-300'
+                              }`}
+                            >
+                              <div className="w-full aspect-square rounded-lg overflow-hidden bg-zinc-900">
+                                <img src={vUrl} alt={v.title} className="w-full h-full object-cover" />
+                              </div>
+                              <span className="text-[10px] font-semibold text-zinc-800 truncate">
+                                {v.title || `Style ${vIdx + 1}`}
+                              </span>
+                              <button
+                                type="button"
+                                className={`w-full py-1 rounded-md text-[9px] font-bold flex items-center justify-center gap-1 ${
+                                  isApplied ? 'bg-emerald-600 text-white' : 'bg-zinc-900 text-white'
+                                }`}
+                              >
+                                {isApplied ? '✓ Wrapped' : 'Wrap 3D'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   
                   {m.modelKey && m.sender === 'assistant' && (
                     <div className="mt-2.5 pt-2 border-t border-zinc-200/80 flex items-center justify-between">
@@ -783,7 +1062,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
             {isLoading && (
               <div className="flex items-center gap-2 text-zinc-600 text-xs py-1">
                 <div className="w-4 h-4 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
-                <span className="font-semibold text-zinc-800">Engineering 3D net and kinematics...</span>
+                <span className="font-semibold text-zinc-800">Generating AI artwork & 3D wrap...</span>
               </div>
             )}
 
@@ -820,7 +1099,7 @@ export const MobileAiTab: React.FC<MobileAiTabProps> = ({ onOpenInStudio, onNavi
               value={promptInput}
               onChange={(e) => setPromptInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Describe packaging structure or dimensions..."
+              placeholder="Describe packaging design (e.g. matcha box with gold foil)..."
               disabled={isLoading || isScanning}
               className="flex-1 bg-transparent text-xs text-zinc-900 placeholder-zinc-400 outline-none px-1"
             />

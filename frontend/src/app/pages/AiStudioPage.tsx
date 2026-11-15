@@ -391,9 +391,6 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
         {/* --- CENTER CANVAS WORKSPACE --- */}
         <div className="ai-canvas-workspace">
           
-          {/* Subtle Ambient Radial Glow */}
-          <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '650px', height: '280px', background: 'radial-gradient(ellipse at center, rgba(147, 51, 234, 0.09) 0%, rgba(99, 102, 241, 0.04) 50%, transparent 80%)', pointerEvents: 'none', zIndex: 0 }} />
-
           {/* Hidden File Input for Dieline Detector */}
           <input
             type="file"
@@ -402,14 +399,6 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
             accept=".dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp"
             style={{ display: 'none' }}
           />
-
-          {/* Top Engine Badge */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '8px', zIndex: 5, textAlign: 'center' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 14px', borderRadius: '20px', background: 'rgba(147, 51, 234, 0.08)', border: '1px solid rgba(147, 51, 234, 0.22)', color: '#7e22ce', fontSize: '11px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              <Sparkles style={{ width: '12px', height: '12px', color: '#9333ea' }} />
-              <span>AI Packaging Engine • Live Precision CAD</span>
-            </div>
-          </div>
 
           {/* Prominent AI Dieline & CAD Detector Bar */}
           <div style={{

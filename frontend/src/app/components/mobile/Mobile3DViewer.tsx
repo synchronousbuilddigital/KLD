@@ -13,6 +13,7 @@ interface Mobile3DViewerProps {
   height?: number;
   autoRotate?: boolean;
   progress?: number;
+  decals?: any[];
 }
 
 export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
@@ -21,6 +22,7 @@ export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
   height = 240,
   autoRotate = true,
   progress = 1,
+  decals,
 }) => {
   const typeKey = (modelType || '').toLowerCase();
 
@@ -181,10 +183,17 @@ export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
   const boxW = store?.W || dims.W;
   const boxH = store?.H || dims.H;
 
+  const effectiveDecals = decals !== undefined 
+    ? decals 
+    : (store?.decalsByModel?.[boxModelKey] || store?.decals || []);
+  const decalKey = effectiveDecals.length > 0 
+    ? effectiveDecals.map((d: any) => d.id || d.url || '').join('_')
+    : 'nodecal';
+
   return (
     <div className="relative w-full overflow-hidden flex items-center justify-center select-none bg-zinc-950" style={{ height }}>
       <Box3DViewer
-        key={`${boxModelKey}-${substrate}-${progress}`}
+        key={`${boxModelKey}-${substrate}-${progress}-${decalKey}`}
         boxModelOverride={boxModelKey}
         overrideLayout="single"
         L={boxL}
@@ -197,6 +206,7 @@ export const Mobile3DViewer: React.FC<Mobile3DViewerProps> = ({
         progress={progress}
         lightingPreset="studio"
         activeAnimation={autoRotate ? "rotation" : "none"}
+        decals={effectiveDecals}
         showWatermark={false}
       />
       <div className="absolute bottom-2 right-2 text-[10px] text-zinc-400 bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-full pointer-events-none border border-white/10">
