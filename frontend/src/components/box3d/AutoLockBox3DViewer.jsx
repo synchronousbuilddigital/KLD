@@ -28,35 +28,32 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
     const DUST_H = 38.0 * (W / orig_d);
     const botH = 48.35 * (W / orig_d);
     const GLUE_W = 16.0 * (W / orig_d);
+    const effT = (nT !== undefined && nT !== null && Number(nT) > 0) ? Number(nT) : 0.0197;
 
     function createUVGeometry(baseShape, physWidth, physHeight, svgX, svgY, svgW, svgH, pivotX, pivotY, holes = []) {
         if (holes && holes.length > 0) {
             baseShape.holes.push(...holes);
         }
 
-        const extrude = { depth: 0.015, bevelEnabled: false };
+        const extrude = { depth: effT, bevelEnabled: false };
         const geo = new THREE.ExtrudeGeometry(baseShape, extrude);
         
         // assign UVs for the front face
         const pos = geo.attributes.position;
         const uvs = new Float32Array(pos.count * 2);
-        const u0 = svgX / SVG_WIDTH;
-        const u1 = (svgX + svgW) / SVG_WIDTH;
-        const v1 = 1.0 - (svgY / SVG_HEIGHT);
-        const v0 = 1.0 - ((svgY + svgH) / SVG_HEIGHT);
 
         for (let i = 0; i < pos.count; i++) {
             const x = pos.getX(i);
             const y = pos.getY(i);
             const nx = (x + physWidth / 2) / physWidth;
             const ny = (y + physHeight / 2) / physHeight;
-            uvs[i * 2] = u0 + nx * (u1 - u0);
-            uvs[i * 2 + 1] = v0 + ny * (v1 - v0);
+            uvs[i * 2] = nx;
+            uvs[i * 2 + 1] = ny;
         }
 
         geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-        geo.translate(physWidth / 2 - pivotX, physHeight / 2 - pivotY, -0.015);
-        assignMaterialGroups(geo, 0.015);
+        geo.translate(physWidth / 2 - pivotX, physHeight / 2 - pivotY, -effT);
+        assignMaterialGroups(geo, effT);
         
         const filmGeom = (holes && holes.length > 0) ? new THREE.ShapeGeometry(holes) : null;
         if (filmGeom) filmGeom.translate(physWidth / 2 - pivotX, physHeight / 2 - pivotY, 0);
@@ -182,6 +179,7 @@ export default function AutoLockBox3DViewer({
   L: propL,
   W: propW,
   H: propH,
+  T: propT,
   overrideLayout,
   activeAnimation = "none",
   progress = 0,
@@ -193,10 +191,12 @@ export default function AutoLockBox3DViewer({
   ...restProps
 }) {
   const store = useStore();
-  const L = overrideL || propL || store.L || 4.7244;
-  const W = overrideW || propW || store.W || 2.3622;
-  const H = overrideH || propH || store.H || 6.2992;
-  const nT = store.T;
+  const L = overrideL || propL || store?.L || 4.7244;
+  const W = overrideW || propW || store?.W || 2.3622;
+  const H = overrideH || propH || store?.H || 6.2992;
+  const rawT = propT !== undefined && propT !== null ? Number(propT) : (store?.T || 0.0197);
+  const effectiveT = (rawT >= 0.5 && L < 20) ? (store?.T || 0.0197) : rawT;
+  const nT = Math.max(0.015, effectiveT || 0.0197);
   let manuL = L, manuW = W, manuH = H;
   if (store.sizeMode === "inner") {
     manuL = L + 2 * nT; manuW = W + 2 * nT; manuH = H + 2 * nT;
@@ -305,17 +305,6 @@ export default function AutoLockBox3DViewer({
 
   const geoms = useMemo(() => buildAutoLockGeometries(L, W, H, nT, debouncedDecals, manuL, manuW, manuH, dims), [L, W, H, nT, debouncedDecals, manuL, manuW, manuH, dims]);
 
-  const [autoTexture, setAutoTexture] = React.useState(null);
-  React.useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.load("/auto.svg", (tex) => {
-      tex.wrapS = THREE.ClampToEdgeWrapping;
-      tex.wrapT = THREE.ClampToEdgeWrapping;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      setAutoTexture(tex);
-    });
-  }, []);
-
   const packageColorToUse = colorOverride || store.packageColor;
   const texture = useMemo(
     () => createProceduralTexture(store.materialCategory, packageColorToUse, showWatermark),
@@ -323,19 +312,9 @@ export default function AutoLockBox3DViewer({
   );
 
   const mats = useMemo(() => {
-    const baseParams = {
-      color: packageColorToUse,
-      map: autoTexture,
-      transparent: true,
-      alphaTest: 0.5,
-      roughness: 0.4,
-      metalness: 0.1,
-      side: THREE.DoubleSide
-    };
+    const built = buildMaterials(store.materialCategory, texture, store.insideColor, packageColorToUse);
     return {
-      outside: new THREE.MeshStandardMaterial(baseParams),
-      inside: new THREE.MeshStandardMaterial({ ...baseParams, color: store.insideColor }),
-      flap: new THREE.MeshStandardMaterial(baseParams),
+      ...built,
       windowFilm: new THREE.MeshPhysicalMaterial({
         color: "#ffffff",
         transmission: 0.9,
@@ -345,10 +324,11 @@ export default function AutoLockBox3DViewer({
         ior: 1.5,
         thickness: 0.01,
         transparent: true,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        depthWrite: false
       })
     };
-  }, [store.packageColor, store.insideColor, autoTexture, colorOverride]);
+  }, [store.materialCategory, store.insideColor, texture, packageColorToUse]);
 
   const layout = overrideLayout || store.sceneLayout || "single";
   const sceneInstances = useMemo(() => buildSceneInstances(layout, L, W, H), [layout, L, W, H]);
@@ -361,19 +341,19 @@ export default function AutoLockBox3DViewer({
     <group key={key} position={pos} rotation={rot}>
       <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
         
-        <mesh geometry={geoms.p1Geom} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+        <mesh geometry={geoms.p1Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
             {D("p1")}
         </mesh>
         {geoms.windowFilmGeomP1 && (
             <mesh geometry={geoms.windowFilmGeomP1} material={mats.windowFilm} />
         )}
         <group position={[0, H/2, 0]} rotation={[topLidRotX, 0, 0]}>
-            <mesh geometry={geoms.coverGeom} material={[mats.flap, mats.inside, mats.flap]}>
+            <mesh geometry={geoms.coverGeom} material={[mats.flap, mats.inside, mats.edge]}>
                 {D("p1_top_cover")}
             </mesh>
             {geoms.windowFilmCover && <mesh geometry={geoms.windowFilmCover} material={mats.windowFilm} />}
             <group position={[0, geoms.coverH, 0]} rotation={[topTuckRotX, 0, 0]} scale={[topTuckScaleX, 1, 1]}>
-                <mesh geometry={geoms.lipGeom} material={[mats.flap, mats.inside, mats.flap]}>
+                <mesh geometry={geoms.lipGeom} material={[mats.flap, mats.inside, mats.edge]}>
                     {D("p1_top_lip")}
                 </mesh>
                 {geoms.windowFilmLip && <mesh geometry={geoms.windowFilmLip} material={mats.windowFilm} />}
@@ -381,21 +361,21 @@ export default function AutoLockBox3DViewer({
         </group>
 
         <group position={botLeftPos} rotation={[botAngleLeft, 0, 0]}>
-            <mesh geometry={geoms.p1BotGeom} material={[mats.flap, mats.inside, mats.flap]}>
-                {D("p1_bot_auto", { tex: autoTexture, w: L, h: botH, sx: 21.0, sy: 241.8, sw: 120.6, sh: 48.35, px: L/2, py: botH })}
+            <mesh geometry={geoms.p1BotGeom} material={[mats.flap, mats.inside, mats.edge]}>
+                {D("p1_bot_auto")}
             </mesh>
             {geoms.windowFilmP1Bot && <mesh geometry={geoms.windowFilmP1Bot} material={mats.windowFilm} />}
         </group>
 
         <group position={[gluePosX, 0, 0]} rotation={[0, glueRotY, 0]}>
-            <mesh geometry={geoms.glueGeom} material={[mats.flap, mats.inside, mats.flap]}>
+            <mesh geometry={geoms.glueGeom} material={[mats.flap, mats.inside, mats.edge]}>
                 {D("p1_glue")}
             </mesh>
             {geoms.windowFilmGlue && <mesh geometry={geoms.windowFilmGlue} material={mats.windowFilm} />}
         </group>
 
         <group position={[L/2, 0, 0]} rotation={[0, p2RotY, 0]}>
-            <mesh geometry={geoms.p2Geom} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+            <mesh geometry={geoms.p2Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
                 {D("p2")}
             </mesh>
             {geoms.windowFilmGeomP2 && (
@@ -403,21 +383,21 @@ export default function AutoLockBox3DViewer({
             )}
             
             <group position={td2Pos} rotation={[tdRotX, 0, 0]}>
-                <mesh geometry={geoms.p2DustGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                <mesh geometry={geoms.p2DustGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.edge]}>
                     {D("p2_top_dust")}
                 </mesh>
                 {geoms.windowFilmP2Dust && <mesh geometry={geoms.windowFilmP2Dust} position={[W/2, 0, 0]} material={mats.windowFilm} />}
             </group>
 
             <group position={botFrontPos} rotation={[botAngleFront, 0, 0]}>
-                <mesh geometry={geoms.p2BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
-                    {D("p2_bot_auto", { tex: autoTexture, w: W, h: botH, sx: 141.6, sy: 241.8, sw: 60.6, sh: 48.35, px: W/2, py: botH })}
+                <mesh geometry={geoms.p2BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.edge]}>
+                    {D("p2_bot_auto")}
                 </mesh>
                 {geoms.windowFilmP2Bot && <mesh geometry={geoms.windowFilmP2Bot} position={[W/2, 0, 0]} material={mats.windowFilm} />}
             </group>
 
             <group position={[W, 0, 0]} rotation={[0, p3RotY, 0]}>
-                <mesh geometry={geoms.p3Geom} position={[L/2, 0, 0]} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+                <mesh geometry={geoms.p3Geom} position={[L/2, 0, 0]} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
                     {D("p3")}
                 </mesh>
                 {geoms.windowFilmGeomP3 && (
@@ -425,14 +405,14 @@ export default function AutoLockBox3DViewer({
                 )}
                 
                 <group position={botRightPos} rotation={[botAngleRight, 0, 0]}>
-                    <mesh geometry={geoms.p3BotGeom} position={[L/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
-                        {D("p3_bot_auto", { tex: autoTexture, w: L, h: botH, sx: 202.2, sy: 241.8, sw: 120.6, sh: 48.35, px: L/2, py: botH })}
+                    <mesh geometry={geoms.p3BotGeom} position={[L/2, 0, 0]} material={[mats.flap, mats.inside, mats.edge]}>
+                        {D("p3_bot_auto")}
                     </mesh>
                     {geoms.windowFilmP3Bot && <mesh geometry={geoms.windowFilmP3Bot} position={[L/2, 0, 0]} material={mats.windowFilm} />}
                 </group>
 
                 <group position={[L, 0, 0]} rotation={[0, p4RotY, 0]}>
-                    <mesh geometry={geoms.p4Geom} material={[mats.outside, mats.inside, mats.flap]} castShadow receiveShadow>
+                    <mesh geometry={geoms.p4Geom} material={[mats.outside, mats.inside, mats.edge]} castShadow receiveShadow>
                         {D("p4")}
                     </mesh>
                     {geoms.windowFilmGeomP4 && (
@@ -440,15 +420,15 @@ export default function AutoLockBox3DViewer({
                     )}
                     
                     <group position={td4Pos} rotation={[tdRotX, 0, 0]}>
-                        <mesh geometry={geoms.p4DustGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
+                        <mesh geometry={geoms.p4DustGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.edge]}>
                             {D("p4_top_dust")}
                         </mesh>
                         {geoms.windowFilmP4Dust && <mesh geometry={geoms.windowFilmP4Dust} position={[W/2, 0, 0]} material={mats.windowFilm} />}
                     </group>
 
                     <group position={botBackPos} rotation={[botAngleBack, 0, 0]}>
-                        <mesh geometry={geoms.p4BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.flap]}>
-                            {D("p4_bot_auto", { tex: autoTexture, w: W, h: botH, sx: 322.8, sy: 241.8, sw: 60.6, sh: 48.35, px: W/2, py: botH })}
+                        <mesh geometry={geoms.p4BotGeom} position={[W/2, 0, 0]} material={[mats.flap, mats.inside, mats.edge]}>
+                            {D("p4_bot_auto")}
                         </mesh>
                         {geoms.windowFilmP4Bot && <mesh geometry={geoms.windowFilmP4Bot} position={[W/2, 0, 0]} material={mats.windowFilm} />}
                     </group>
