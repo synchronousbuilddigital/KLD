@@ -499,11 +499,8 @@ export default function WorkshopPage({ onBack }: { onBack?: () => void } = {}) {
               <div style={{ background: "#ffffff", borderRadius: "32px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
                 {[
                   { id: 'Edit', icon: <IconEdit /> },
-                  { id: 'Models', icon: <IconModels /> },
                   { id: 'Layout', icon: <IconLayout2 /> },
-                  { id: 'AI Background', icon: <IconImage /> },
-                  { id: 'Video', icon: <IconVideo /> },
-                  { id: 'More', icon: <IconMore /> }
+                  { id: 'Video', icon: <IconVideo /> }
                 ].map((item, i) => {
                   const isActive = activeSidebarTab === item.id;
                   return (
