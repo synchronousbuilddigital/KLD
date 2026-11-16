@@ -504,11 +504,13 @@ export default function ButtonHoleBox3DViewer({
           frames={1}
         />
 
-        <SceneAnimator activeAnimation={activeAnimation}>
-          <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
-            {sceneInstances.map(inst => renderBoxInstance(inst.key, inst.pos, inst.rot))}
-          </group>
-        </SceneAnimator>
+        <React.Suspense fallback={null}>
+          <SceneAnimator activeAnimation={activeAnimation}>
+            <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
+              {sceneInstances.map(inst => renderBoxInstance(inst.key, inst.pos, inst.rot))}
+            </group>
+          </SceneAnimator>
+        </React.Suspense>
 
         <OrbitControls makeDefault enableZoom={!disableZoom} enablePan={false} />
       </Canvas>

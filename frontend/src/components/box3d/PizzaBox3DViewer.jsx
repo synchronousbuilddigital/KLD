@@ -380,7 +380,8 @@ export default function PizzaBox3DViewer({
         <LightingPreset preset={store?.lightingPreset || "studio"} />
         <Invalidator isLidLifted={isLidLifted} progress={progress} />
 
-        <SceneAnimator activeAnimation={activeAnimation}>
+        <React.Suspense fallback={null}>
+          <SceneAnimator activeAnimation={activeAnimation}>
           <group position={[0, 0, 0]}>
             {sceneInstances.map((inst, i) => (
               <group
@@ -575,6 +576,7 @@ export default function PizzaBox3DViewer({
             ))}
           </group>
         </SceneAnimator>
+        </React.Suspense>
 
         <ContactShadows
           position={[0, -0.01, 0]}

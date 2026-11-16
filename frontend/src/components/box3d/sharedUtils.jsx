@@ -775,9 +775,9 @@ export function mapDecalToPanel(decal, panelInput, L, W, H, manuL, manuW, manuH,
   }
 
   if      (panel === "p1")          { scaleX = L/manuL; cx = (decal.x - (x1 + x2)/2)*scaleX; cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
-  else if (panel === "p2")          { scaleX = W/manuW; cx = (decal.x - x2)*scaleX;          cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
+  else if (panel === "p2")          { scaleX = W/manuW; cx = (decal.x - (x2 + x3)/2)*scaleX; cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
   else if (panel === "p3")          { scaleX = L/manuL; cx = (decal.x - (x3 + x4)/2)*scaleX; cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
-  else if (panel === "p4")          { scaleX = W/manuW; cx = (decal.x - x4)*scaleX;          cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
+  else if (panel === "p4")          { scaleX = W/manuW; cx = (decal.x - (x4 + x5)/2)*scaleX; cy = ((yTop + yBot)/2 - decal.y)*scaleY; }
   else if (panel === "p1_top_cover"){ scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-decal.y)*scaleY; }
   else if (panel === "p1_top_lip")  { scaleX = L/manuL; cx = (decal.x-x1)*scaleX - L/2; cy = (yTop-coverDepth-decal.y)*scaleY; }
   else if (panel === "p3_top_cover"){ scaleX = L/manuL; cx = (decal.x-x3)*scaleX - L/2; cy = (yTop-decal.y)*scaleY; }
@@ -855,7 +855,7 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
   else if (normPanel === "bot-flap-4") normPanel = "p4_bot_flap";
   else if (normPanel === "glue-flap") normPanel = "p1_glue";
 
-  if (normDecalPanel && normDecalPanel !== normPanel) {
+  if (decal.custom && normDecalPanel && normDecalPanel !== normPanel) {
     return null;
   }
 
@@ -874,7 +874,20 @@ export function DecalItem({ decal, index = 0, L, W, H, manuL, manuW, manuH, dims
     if (isShape) return createShapeTextureURL(decal);
     // Use a 1x1 transparent pixel as a fallback to prevent useTexture from crashing on undefined
     return decal.url || "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-  }, [decal]);
+  }, [
+    decal.type,
+    decal.content,
+    decal.fontFamily,
+    decal.fontSize,
+    decal.color,
+    decal.bold,
+    decal.italic,
+    decal.textAlign,
+    decal.strokeColor,
+    decal.strokeWidth,
+    decal.shapeType,
+    decal.url
+  ]);
 
   const texture = useTexture(textureUrl);
 

@@ -486,11 +486,13 @@ export default function RTEBox3DViewer({
         <LightingPreset preset={lightingPreset} />
         <ContactShadows position={[0, -H/2 - 0.02, 0]} opacity={0.5} scale={Math.max(L, W) * 4} blur={2.5} far={4} resolution={256} frames={activeAnimation === "none" && (progress === 0 || Math.abs(progress - 1) < 0.01) ? 1 : Infinity} />
 
-        <SceneAnimator activeAnimation={activeAnimation}>
-          <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
-            {sceneInstances.map(inst => renderBoxInstance(inst.key, inst.pos, inst.rot))}
-          </group>
-        </SceneAnimator>
+        <React.Suspense fallback={null}>
+          <SceneAnimator activeAnimation={activeAnimation}>
+            <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
+              {sceneInstances.map(inst => renderBoxInstance(inst.key, inst.pos, inst.rot))}
+            </group>
+          </SceneAnimator>
+        </React.Suspense>
 
         <OrbitControls
           makeDefault

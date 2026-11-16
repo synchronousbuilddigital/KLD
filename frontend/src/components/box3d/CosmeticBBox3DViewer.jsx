@@ -548,11 +548,13 @@ export default function CosmeticBBox3DViewer({
           frames={activeAnimation === "none" && (progress === 0 || Math.abs(progress - 1) < 0.01) ? 1 : Infinity}
         />
 
-        <SceneAnimator activeAnimation={activeAnimation}>
-          <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
-            {sceneInstances.map(inst => renderBoxInstance(inst.key, inst.pos, inst.rot))}
-          </group>
-        </SceneAnimator>
+        <React.Suspense fallback={null}>
+          <SceneAnimator activeAnimation={activeAnimation}>
+            <group rotation={layout !== "single" ? [Math.PI / 6, -Math.PI / 4, 0] : [0, 0, 0]}>
+              {sceneInstances.map(inst => renderBoxInstance(inst.key, inst.pos, inst.rot))}
+            </group>
+          </SceneAnimator>
+        </React.Suspense>
 
         <OrbitControls
           makeDefault

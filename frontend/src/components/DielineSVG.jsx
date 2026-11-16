@@ -376,11 +376,38 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
 
   const cachedContainerRectRef = useRef(null);
 
+  const getSvgCoordinates = useCallback((clientX, clientY) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const svg = svgRef.current;
+    try {
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const transformed = pt.matrixTransform(ctm.inverse());
+        return { x: transformed.x, y: transformed.y };
+      }
+    } catch (e) {
+      // fallback if CTM inversion fails
+    }
+    const rect = svg.getBoundingClientRect();
+    const v = viewRef.current;
+    const nx = activeSurface === 'Inside' ? 1 - ((clientX - rect.left) / rect.width) : ((clientX - rect.left) / rect.width);
+    const ny = (clientY - rect.top) / rect.height;
+    return {
+      x: v.x + nx * v.w,
+      y: v.y + ny * v.h
+    };
+  }, [activeSurface]);
+
   const handlePointerDown = (e) => {
     setIsDraggingCanvas(true);
     cachedContainerRectRef.current = containerRef.current?.getBoundingClientRect() || null;
     if (setActiveDecalId) setActiveDecalId(null);
-    e.target.setPointerCapture(e.pointerId);
+    try {
+      e.target.setPointerCapture(e.pointerId);
+    } catch (err) {}
   };
 
   const handlePointerMove = (e) => {
@@ -390,72 +417,72 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
     const dx = (e.movementX / rect.width) * v.w * (activeSurface === 'Inside' ? -1 : 1);
     const dy = (e.movementY / rect.height) * v.h;
 
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const normalizedMouseX = activeSurface === 'Inside' ? 1 - (mouseX / rect.width) : (mouseX / rect.width);
-    const svgMouseX = v.x + normalizedMouseX * v.w;
-    const svgMouseY = v.y + (mouseY / rect.height) * v.h;
+    const svgPt = getSvgCoordinates(e.clientX, e.clientY);
+    const svgMouseX = svgPt.x;
+    const svgMouseY = svgPt.y;
 
     if (activeDecalId && setDecals && interactionMode?.type === 'drag') {
       const { initialDecal, startX, startY } = interactionMode;
       const dragDx = svgMouseX - startX;
       const dragDy = svgMouseY - startY;
 
-      setDecals(prev => prev.map(d => {
-        if (d.id === activeDecalId) {
-          // Use virtual coordinates so it doesn't get permanently stuck in the snap well
-          let vX = initialDecal.x + dragDx;
-          let vY = initialDecal.y + dragDy;
+      // Virtual tracking ensures movement follows cursor 1:1 without stickiness
+      let vX = initialDecal.x + dragDx;
+      let vY = initialDecal.y + dragDy;
 
-          let newX = vX;
-          let newY = vY;
+      let newX = vX;
+      let newY = vY;
 
-          // Reduced threshold to avoid confusing aggressive snapping
-          const snapThreshold = 0.015;
-          const { x1, x2, x3, x4, x5, yTop, yBot } = dimensions;
+      // Magnetic snap (soft, threshold = 0.04 inches)
+      // Only snap if not holding Shift
+      const snapThreshold = 0.04;
+      const { x1, x2, x3, x4, x5, yTop, yBot } = dimensions || {};
 
-          // Skip snapping if dimensions aren't loaded yet
-          if (x1 !== undefined) {
-            const targetXs = [x1, x2, x3, x4, x5, (x1 + x2) / 2, (x2 + x3) / 2, (x3 + x4) / 2, (x4 + x5) / 2];
-            const targetYs = [yTop, yBot, (yTop + yBot) / 2];
+      if (x1 !== undefined && !e.shiftKey) {
+        const targetXs = [x1, x2, x3, x4, x5, (x1 + x2) / 2, (x2 + x3) / 2, (x3 + x4) / 2, (x4 + x5) / 2];
+        const targetYs = [yTop, yBot, (yTop + yBot) / 2];
 
-            // X-axis Magnetic Snap
-            let snappedX = false;
-            for (let tx of targetXs) {
-              if (snappedX) break;
-              const testXs = [newX - d.width / 2, newX, newX + d.width / 2]; // left, center, right
-              for (let i = 0; i < testXs.length; i++) {
-                if (Math.abs(tx - testXs[i]) < snapThreshold) {
-                  if (i === 0) newX = tx + d.width / 2;
-                  else if (i === 1) newX = tx;
-                  else if (i === 2) newX = tx - d.width / 2;
-                  snappedX = true;
-                  break;
-                }
-              }
-            }
-
-            // Y-axis Magnetic Snap
-            let snappedY = false;
-            for (let ty of targetYs) {
-              if (snappedY) break;
-              const testYs = [newY - d.height / 2, newY, newY + d.height / 2]; // top, center, bottom
-              for (let i = 0; i < testYs.length; i++) {
-                if (Math.abs(ty - testYs[i]) < snapThreshold) {
-                  if (i === 0) newY = ty + d.height / 2;
-                  else if (i === 1) newY = ty;
-                  else if (i === 2) newY = ty - d.height / 2;
-                  snappedY = true;
-                  break;
-                }
-              }
+        // X-axis Magnetic Snap (relative to virtual cursor position vX)
+        for (let tx of targetXs) {
+          const testXs = [vX - initialDecal.width / 2, vX, vX + initialDecal.width / 2];
+          let snapped = false;
+          for (let i = 0; i < testXs.length; i++) {
+            if (Math.abs(tx - testXs[i]) < snapThreshold) {
+              if (i === 0) newX = tx + initialDecal.width / 2;
+              else if (i === 1) newX = tx;
+              else if (i === 2) newX = tx - initialDecal.width / 2;
+              snapped = true;
+              break;
             }
           }
-
-          return { ...d, x: newX, y: newY, virtualX: vX, virtualY: vY };
+          if (snapped) break;
         }
-        return d;
-      }));
+
+        // Y-axis Magnetic Snap (relative to virtual cursor position vY)
+        for (let ty of targetYs) {
+          const testYs = [vY - initialDecal.height / 2, vY, vY + initialDecal.height / 2];
+          let snapped = false;
+          for (let i = 0; i < testYs.length; i++) {
+            if (Math.abs(ty - testYs[i]) < snapThreshold) {
+              if (i === 0) newY = ty + initialDecal.height / 2;
+              else if (i === 1) newY = ty;
+              else if (i === 2) newY = ty - initialDecal.height / 2;
+              snapped = true;
+              break;
+            }
+          }
+          if (snapped) break;
+        }
+      }
+
+      React.startTransition(() => {
+        setDecals(prev => prev.map(d => {
+          if (d.id === activeDecalId) {
+            return { ...d, x: newX, y: newY };
+          }
+          return d;
+        }));
+      });
     } else if (activeDecalId && setDecals && interactionMode?.type === 'resize') {
       const { handle, initialDecal } = interactionMode;
       let effectiveHandle = handle;
@@ -464,54 +491,63 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
         else if (handle.includes('w')) effectiveHandle = handle.replace('w', 'e');
       }
 
-      setDecals(prev => prev.map(d => {
-        if (d.id === activeDecalId) {
-          let left = initialDecal.x - initialDecal.width / 2;
-          let right = initialDecal.x + initialDecal.width / 2;
-          let top = initialDecal.y - initialDecal.height / 2;
-          let bottom = initialDecal.y + initialDecal.height / 2;
+      React.startTransition(() => {
+        setDecals(prev => prev.map(d => {
+          if (d.id === activeDecalId) {
+            let left = initialDecal.x - initialDecal.width / 2;
+            let right = initialDecal.x + initialDecal.width / 2;
+            let top = initialDecal.y - initialDecal.height / 2;
+            let bottom = initialDecal.y + initialDecal.height / 2;
 
-          if (effectiveHandle.includes('e')) right = svgMouseX;
-          if (effectiveHandle.includes('w')) left = svgMouseX;
-          if (effectiveHandle.includes('s')) bottom = svgMouseY;
-          if (effectiveHandle.includes('n')) top = svgMouseY;
+            if (effectiveHandle.includes('e')) right = svgMouseX;
+            if (effectiveHandle.includes('w')) left = svgMouseX;
+            if (effectiveHandle.includes('s')) bottom = svgMouseY;
+            if (effectiveHandle.includes('n')) top = svgMouseY;
 
-          if (effectiveHandle.length === 2) {
-            const aspect = initialDecal.width / initialDecal.height;
-            let w = Math.max(0.1, Math.abs(right - left));
-            let h = Math.max(0.1, Math.abs(bottom - top));
+            if (effectiveHandle.length === 2) {
+              const aspect = initialDecal.width / initialDecal.height;
+              let w = Math.max(0.1, Math.abs(right - left));
+              let h = Math.max(0.1, Math.abs(bottom - top));
 
-            if (w / h > aspect) h = w / aspect;
-            else w = h * aspect;
+              if (w / h > aspect) h = w / aspect;
+              else w = h * aspect;
 
-            if (effectiveHandle.includes('e')) right = left + w * (right > left ? 1 : -1);
-            if (effectiveHandle.includes('w')) left = right - w * (right > left ? 1 : -1);
-            if (effectiveHandle.includes('s')) bottom = top + h * (bottom > top ? 1 : -1);
-            if (effectiveHandle.includes('n')) top = bottom - h * (bottom > top ? 1 : -1);
+              if (effectiveHandle.includes('e')) right = left + w * (right > left ? 1 : -1);
+              if (effectiveHandle.includes('w')) left = right - w * (right > left ? 1 : -1);
+              if (effectiveHandle.includes('s')) bottom = top + h * (bottom > top ? 1 : -1);
+              if (effectiveHandle.includes('n')) top = bottom - h * (bottom > top ? 1 : -1);
+            }
+
+            return {
+              ...d,
+              width: Math.max(0.1, Math.abs(right - left)),
+              height: Math.max(0.1, Math.abs(bottom - top)),
+              x: (left + right) / 2,
+              y: (top + bottom) / 2
+            };
           }
-
-          return {
-            ...d,
-            width: Math.max(0.1, Math.abs(right - left)),
-            height: Math.max(0.1, Math.abs(bottom - top)),
-            x: (left + right) / 2,
-            y: (top + bottom) / 2
-          };
-        }
-        return d;
-      }));
+          return d;
+        }));
+      });
     } else if (isDraggingCanvas) {
       viewRef.current = { ...v, x: v.x - dx, y: v.y - dy };
       updateSvgViewBox();
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e) => {
     setIsDraggingCanvas(false);
-    if (interactionMode && props.onDragEnd) {
-      props.onDragEnd();
+    if (interactionMode) {
+      if (interactionMode.pointerId && e?.target?.hasPointerCapture?.(interactionMode.pointerId)) {
+        try {
+          e.target.releasePointerCapture(interactionMode.pointerId);
+        } catch (err) {}
+      }
+      if (props.onDragEnd) {
+        props.onDragEnd();
+      }
+      setInteractionMode(null);
     }
-    setInteractionMode(null);
   };
 
   // Fixed visual weights for physical scale (inches)
@@ -902,17 +938,18 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
             transform={`translate(${decal.x}, ${decal.y}) ${activeSurface === 'Inside' ? 'scale(-1, 1)' : ''}`}
             onPointerDown={(e) => {
               e.stopPropagation();
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch (err) {}
               setActiveDecalId(decal.id);
-              
-              const rect = containerRef.current.getBoundingClientRect();
-              const v = viewRef.current;
-              const mouseX = e.clientX - rect.left;
-              const mouseY = e.clientY - rect.top;
-              const normalizedMouseX = activeSurface === 'Inside' ? 1 - (mouseX / rect.width) : (mouseX / rect.width);
-              const svgMouseX = v.x + normalizedMouseX * v.w;
-              const svgMouseY = v.y + (mouseY / rect.height) * v.h;
-              
-              setInteractionMode({ type: 'drag', initialDecal: decal, startX: svgMouseX, startY: svgMouseY });
+              const pt = getSvgCoordinates(e.clientX, e.clientY);
+              setInteractionMode({
+                type: 'drag',
+                pointerId: e.pointerId,
+                initialDecal: { ...decal },
+                startX: pt.x,
+                startY: pt.y
+              });
             }}
             style={{ cursor: 'move' }}
           >
@@ -1159,8 +1196,19 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
                         key={i}
                         onPointerDown={(e) => {
                           e.stopPropagation();
+                          try {
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                          } catch (err) {}
                           setActiveDecalId(decal.id);
-                          setInteractionMode({ type: 'resize', handle: pos.handle, initialDecal: decal });
+                          const pt = getSvgCoordinates(e.clientX, e.clientY);
+                          setInteractionMode({
+                            type: 'resize',
+                            pointerId: e.pointerId,
+                            handle: pos.handle,
+                            initialDecal: { ...decal },
+                            startX: pt.x,
+                            startY: pt.y
+                          });
                         }}
                         style={{ cursor: pos.cursor }}
                       >

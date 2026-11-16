@@ -646,13 +646,15 @@ export default function FEFCO0300ShoeBox3DViewer({
 
         <CameraRig progress={progress} L={L} W={W} H={H} />
 
-        <SceneAnimator activeAnimation={activeAnimation}>
-          <group position={[-midX, 0, 0]}>
-            {sceneInstances.map((inst, i) =>
-              renderShoeBox(`box-${i}`, inst.pos || inst.position || [0, 0, 0], inst.rot || inst.rotation || [0, 0, 0])
-            )}
-          </group>
-        </SceneAnimator>
+        <React.Suspense fallback={null}>
+          <SceneAnimator activeAnimation={activeAnimation}>
+            <group position={[-midX, 0, 0]}>
+              {sceneInstances.map((inst, i) =>
+                renderShoeBox(`box-${i}`, inst.pos || inst.position || [0, 0, 0], inst.rot || inst.rotation || [0, 0, 0])
+              )}
+            </group>
+          </SceneAnimator>
+        </React.Suspense>
 
         <ContactShadows
           position={[0, -0.02, 0]}
@@ -663,7 +665,9 @@ export default function FEFCO0300ShoeBox3DViewer({
           resolution={256}
           frames={activeAnimation && activeAnimation !== "none" ? Infinity : 1}
         />
-        <Environment preset="city" />
+        <React.Suspense fallback={null}>
+          <Environment preset="city" />
+        </React.Suspense>
       </Canvas>
     </div>
   );

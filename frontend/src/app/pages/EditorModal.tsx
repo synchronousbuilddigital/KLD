@@ -96,16 +96,18 @@ export default function EditorModal({ isOpen, onClose, contextType = "mockup", i
   
   // Define setDecals directly to avoid relying on potentially corrupted store functions from HMR
   const setDecals = useCallback((newDecals) => {
-    useEditorStore.setState((state) => {
-      const currentModel = state.boxModel;
-      const currentDecals = state.decalsByModel[currentModel] || [];
-      const updatedDecals = typeof newDecals === "function" ? newDecals(currentDecals) : newDecals;
-      return {
-        decalsByModel: {
-          ...state.decalsByModel,
-          [currentModel]: updatedDecals
-        }
-      };
+    React.startTransition(() => {
+      useEditorStore.setState((state) => {
+        const currentModel = state.boxModel;
+        const currentDecals = state.decalsByModel[currentModel] || [];
+        const updatedDecals = typeof newDecals === "function" ? newDecals(currentDecals) : newDecals;
+        return {
+          decalsByModel: {
+            ...state.decalsByModel,
+            [currentModel]: updatedDecals
+          }
+        };
+      });
     });
   }, []);
 

@@ -390,14 +390,16 @@ export default function RSCBox3DViewer({
         gl={{ preserveDrawingBuffer: true, antialias: true, powerPreference: "high-performance" }}
       >
         <LightingPreset preset={lightingPreset} />
-        <Environment preset="studio" environmentIntensity={0.35} />
+        <React.Suspense fallback={null}>
+          <Environment preset="studio" environmentIntensity={0.35} />
 
-        <group position={[0, -H * 0.1, 0]}>
-          {sceneInstances.map((inst, idx) =>
-            renderBoxInstance(idx, inst.position, inst.rotation)
-          )}
-          <SceneAnimator activeAnimation={activeAnimation} />
-        </group>
+          <group position={[0, -H * 0.1, 0]}>
+            {sceneInstances.map((inst, idx) =>
+              renderBoxInstance(idx, inst.position, inst.rotation)
+            )}
+            <SceneAnimator activeAnimation={activeAnimation} />
+          </group>
+        </React.Suspense>
 
         <ContactShadows
           position={[0, -H * 0.55 - nT * 2, 0]}
