@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect, useDeferredValue } from "react";
+import React, { useMemo, useRef, useState, useEffect, useDeferredValue, useCallback } from "react";
 import DOMPurify from "dompurify";
 import { generateRTEDieline } from "../lib/rteDielineGenerator";
 import { generateTEDielineDXF } from "../lib/teDielineGenerator";
