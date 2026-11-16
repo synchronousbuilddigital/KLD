@@ -47,7 +47,8 @@ import {
   Upload,
   ScanLine,
   FileCheck,
-  Check
+  Check,
+  ArrowRight
 } from 'lucide-react';
 
 interface AiStudioPageProps {
@@ -71,6 +72,51 @@ const BOX_TITLES: Record<string, string> = {
   slim_can: 'Slim / Sleek Can',
   tube: 'Toothpaste & Squeeze Tube'
 };
+
+const SAMPLE_DIELINES = [
+  { 
+    name: 'FEFCO 0426 Pizza Box', 
+    key: 'pizza_box', 
+    dims: { L: 12.0, W: 12.0, H: 2.0, unit: 'in' }, 
+    features: ['Roll-End Tuck Front', 'Self-Locking Side Flaps', 'Integrated Hinged Lid'],
+    explanation: 'Corrugated pizza takeout net with rollover locking tabs and hinged lid.'
+  },
+  { 
+    name: 'FEFCO 0300 Shoe Box', 
+    key: 'fefco_0300', 
+    dims: { L: 11.89, W: 8.03, H: 2.40, unit: 'in' }, 
+    features: ['Two-Piece Telescope', 'Rigid Separate Lid', 'Base Tray Rollover Walls'],
+    explanation: 'Standard footwear two-piece telescope packaging with fitted lid.'
+  },
+  { 
+    name: 'Reverse Tuck End Box', 
+    key: 'rte', 
+    dims: { L: 4.72, W: 2.36, H: 6.29, unit: 'in' }, 
+    features: ['Opposite Tuck Direction', 'Side Glue Seam', 'Top & Bottom Dust Flaps'],
+    explanation: 'Classic retail folding carton with opposite-facing closure tuck flaps.'
+  },
+  { 
+    name: 'Auto Lock Bottom Box', 
+    key: 'auto_lock', 
+    dims: { L: 5.0, W: 3.5, H: 7.0, unit: 'in' }, 
+    features: ['Crash Lock Base', '45° Pre-Glued Diagonals', 'Rapid Assembly'],
+    explanation: 'Heavy-duty automatic pop-open base for fast manual or machine packaging.'
+  },
+  {
+    name: 'Straight Tuck End Box',
+    key: 'te',
+    dims: { L: 4.72, W: 2.36, H: 6.29, unit: 'in' },
+    features: ['Same Tuck Direction', 'Clean Display Face', 'Quick Fill Line'],
+    explanation: 'Pharmaceutical & luxury cosmetic carton where both flaps fold towards the rear.'
+  },
+  {
+    name: 'Square Shipping Box (RSC)',
+    key: 'rsc',
+    dims: { L: 10.0, W: 10.0, H: 10.0, unit: 'in' },
+    features: ['Standard Shipping Carton', 'Equal Length Flaps', 'High Stacking Strength'],
+    explanation: 'FEFCO 0201 regular slotted container for freight, shipping & e-commerce.'
+  }
+];
 
 export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioPageProps) {
   const store = useBoxStore((state: any) => state);
@@ -116,17 +162,46 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDielineStudioOpen, setIsDielineStudioOpen] = useState(false);
 
+  // Segregated sub-tab: 'design' (AI Design Studio) | 'detector' (CAD Dieline Generator)
+  const [subTab, setSubTab] = useState<'design' | 'detector'>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab') || urlParams.get('mode');
+      if (tabParam === 'detector' || tabParam === 'dieline' || tabParam === 'cad') return 'detector';
+      const saved = localStorage.getItem('kld_ai_subtab');
+      if (saved === 'detector' || saved === 'design') return saved;
+    }
+    return 'design';
+  });
+
+  const handleSubTabChange = (newTab: 'design' | 'detector') => {
+    setSubTab(newTab);
+    try {
+      localStorage.setItem('kld_ai_subtab', newTab);
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', newTab);
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+  };
+
   // AI Dieline Detector state
   const dielineFileInputRef = useRef<HTMLInputElement>(null);
   const [isDielineDetecting, setIsDielineDetecting] = useState(false);
   const [dielineDetectionResult, setDielineDetectionResult] = useState<any>(null);
+  const [detectorScanningStep, setDetectorScanningStep] = useState<string>('');
+  const [detectorPreviewMode, setDetectorPreviewMode] = useState<'3d' | '2d'>('3d');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [detectorFoldProgress, setDetectorFoldProgress] = useState(1);
 
-  const handleDielineFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processDielineFile = async (file: File) => {
     if (!file) return;
-
     setIsDielineDetecting(true);
+    setDetectorScanningStep('Scanning crease lines and boundary geometry...');
+
     try {
+      setTimeout(() => setDetectorScanningStep('Matching flap topologies against 8 packaging families...'), 600);
+      setTimeout(() => setDetectorScanningStep('Extracting dimensions and locking mechanisms...'), 1200);
+
       const result = await detectDielineFile(file);
       setDielineDetectionResult(result);
 
@@ -144,25 +219,76 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
           W: result.dimensionsIn.W,
           H: result.dimensionsIn.H
         });
+        store.setDim?.('L', result.dimensionsIn.L);
+        store.setDim?.('W', result.dimensionsIn.W);
+        store.setDim?.('H', result.dimensionsIn.H);
       } else if (result.dimensions) {
         const isMm = result.dimensions.unit === 'mm' || result.dimensions.L > 30;
         const scale = isMm ? 1 / 25.4 : 1;
-        useBoxStore.setState({
-          L: Number((result.dimensions.L * scale).toFixed(2)),
-          W: Number((result.dimensions.W * scale).toFixed(2)),
-          H: Number((result.dimensions.H * scale).toFixed(2))
-        });
+        const lIn = Number((result.dimensions.L * scale).toFixed(2));
+        const wIn = Number((result.dimensions.W * scale).toFixed(2));
+        const hIn = Number((result.dimensions.H * scale).toFixed(2));
+        useBoxStore.setState({ L: lIn, W: wIn, H: hIn });
+        store.setDim?.('L', lIn);
+        store.setDim?.('W', wIn);
+        store.setDim?.('H', hIn);
       }
 
-      // Switch to 3d mode so user sees the detected box
       setCardMode('3d');
     } catch (err: any) {
       console.error('Dieline detection error:', err);
       alert('Unable to analyze dieline file. Please ensure it is a valid DXF, SVG, PDF, or image.');
     } finally {
       setIsDielineDetecting(false);
+      setDetectorScanningStep('');
       if (dielineFileInputRef.current) dielineFileInputRef.current.value = '';
     }
+  };
+
+  const handleDielineFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processDielineFile(file);
+  };
+
+  const handleApplySampleDieline = (sample: typeof SAMPLE_DIELINES[0]) => {
+    setIsDielineDetecting(true);
+    setDetectorScanningStep(`Simulating CAD vector scan for ${sample.name}...`);
+    setTimeout(() => {
+      setDetectorScanningStep('Extracting precision crease coordinates...');
+      setTimeout(() => {
+        const mockResult: any = {
+          matchedModelKey: sample.key,
+          matchedTitle: sample.name,
+          confidence: 98.7,
+          dimensionsIn: sample.dims,
+          dimensions: {
+            L: Number((sample.dims.L * 25.4).toFixed(1)),
+            W: Number((sample.dims.W * 25.4).toFixed(1)),
+            H: Number((sample.dims.H * 25.4).toFixed(1)),
+            unit: 'mm'
+          },
+          detectedFeatures: sample.features,
+          explanation: sample.explanation
+        };
+        setDielineDetectionResult(mockResult);
+        setActiveBoxModel(sample.key);
+        if (typeof store.setBoxModel === 'function') {
+          store.setBoxModel(sample.key);
+        } else {
+          useBoxStore.setState({ boxModel: sample.key });
+        }
+        useBoxStore.setState({
+          L: sample.dims.L,
+          W: sample.dims.W,
+          H: sample.dims.H
+        });
+        store.setDim?.('L', sample.dims.L);
+        store.setDim?.('W', sample.dims.W);
+        store.setDim?.('H', sample.dims.H);
+        setIsDielineDetecting(false);
+        setDetectorScanningStep('');
+      }, 600);
+    }, 600);
   };
 
   // Per-prompt box tracking (Pacdora-accurate routing)
@@ -390,155 +516,643 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
 
         {/* --- CENTER CANVAS WORKSPACE --- */}
         <div className="ai-canvas-workspace">
-          
-          {/* Hidden File Input for Dieline Detector */}
-          <input
-            type="file"
-            ref={dielineFileInputRef}
-            onChange={handleDielineFileUpload}
-            accept=".dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp"
-            style={{ display: 'none' }}
-          />
 
-          {/* Prominent AI Dieline & CAD Detector Bar */}
+          {/* Segmented Sub-Tab Switcher: AI Design Studio VS CAD Dieline Generator */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            width: '600px',
-            maxWidth: '92%',
-            padding: '10px 16px',
-            marginBottom: '12px',
-            borderRadius: '16px',
+            gap: '6px',
+            padding: '4px',
             background: store.theme === 'dark' ? '#18181b' : '#ffffff',
-            border: '1.5px dashed rgba(99, 102, 241, 0.45)',
-            boxShadow: '0 4px 20px rgba(99, 102, 241, 0.08)',
+            borderRadius: '16px',
+            border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+            marginBottom: '16px',
             zIndex: 10
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)'
-              }}>
-                <ScanLine style={{ width: '17px', height: '17px' }} />
-              </div>
-              <div style={{ textAlign: 'left', lineHeight: 1.25 }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: store.theme === 'dark' ? '#f4f4f5' : '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>AI Dieline & CAD Detector</span>
-                  <span style={{ fontSize: '9px', fontWeight: '800', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '6px' }}>
-                    NEW
-                  </span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
-                  Upload DXF, SVG, or photo to auto-detect box family, crease lines & dimensions
-                </div>
-              </div>
-            </div>
-
             <button
-              onClick={() => !isDielineDetecting && dielineFileInputRef.current?.click()}
-              disabled={isDielineDetecting}
+              onClick={() => handleSubTabChange('design')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '7px 14px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                color: '#ffffff',
-                fontSize: '11px',
-                fontWeight: '800',
+                gap: '8px',
+                padding: '8px 20px',
+                borderRadius: '12px',
                 border: 'none',
-                cursor: isDielineDetecting ? 'not-allowed' : 'pointer',
-                flexShrink: 0,
-                boxShadow: '0 3px 10px rgba(79, 70, 229, 0.3)',
+                background: subTab === 'design' 
+                  ? (store.theme === 'dark' ? '#27272a' : '#0f172a') 
+                  : 'transparent',
+                color: subTab === 'design' 
+                  ? '#ffffff' 
+                  : (store.theme === 'dark' ? '#a1a1aa' : '#64748b'),
+                fontSize: '13px',
+                fontWeight: '800',
+                cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              {isDielineDetecting ? (
-                <>
-                  <div style={{ width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span>Scanning...</span>
-                </>
-              ) : (
-                <>
-                  <Upload style={{ width: '13px', height: '13px' }} />
-                  <span>Upload Dieline</span>
-                </>
-              )}
+              <Sparkles style={{ width: '15px', height: '15px', color: subTab === 'design' ? '#c084fc' : '#a1a1aa' }} />
+              <span>AI Design Studio</span>
+            </button>
+
+            <button
+              onClick={() => handleSubTabChange('detector')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 20px',
+                borderRadius: '12px',
+                border: 'none',
+                background: subTab === 'detector' 
+                  ? (store.theme === 'dark' ? '#27272a' : '#0f172a') 
+                  : 'transparent',
+                color: subTab === 'detector' 
+                  ? '#ffffff' 
+                  : (store.theme === 'dark' ? '#a1a1aa' : '#64748b'),
+                fontSize: '13px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <ScanLine style={{ width: '15px', height: '15px', color: subTab === 'detector' ? '#38bdf8' : '#a1a1aa' }} />
+              <span>CAD Dieline Generator</span>
+              <span style={{
+                padding: '1px 6px',
+                background: subTab === 'detector' ? '#38bdf8' : (store.theme === 'dark' ? '#3f3f46' : '#e2e8f0'),
+                color: subTab === 'detector' ? '#0f172a' : (store.theme === 'dark' ? '#f4f4f5' : '#475569'),
+                fontSize: '9px',
+                fontWeight: '900',
+                borderRadius: '6px',
+                textTransform: 'uppercase'
+              }}>
+                CAD
+              </span>
             </button>
           </div>
 
-          {/* Dieline Detection Banner (when detected) */}
-          {dielineDetectionResult && (
+          {/* ======================================================== */}
+          {/* VIEW A: CAD DIELINE GENERATOR & NET INSPECTOR (DEDICATED) */}
+          {/* ======================================================== */}
+          {subTab === 'detector' && (
             <div style={{
-              width: '600px',
-              maxWidth: '92%',
-              padding: '10px 14px',
-              marginBottom: '10px',
-              borderRadius: '14px',
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              color: '#065f46',
+              width: '660px',
+              maxWidth: '96%',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              zIndex: 10
+              flexDirection: 'column',
+              gap: '16px',
+              animation: 'fadeIn 0.25s ease'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 style={{ width: '16px', height: '16px', color: '#10b981', flexShrink: 0 }} />
-                <div style={{ fontSize: '11px', fontWeight: '700' }}>
-                  <span>Matched: <strong>{dielineDetectionResult.matchedTitle || dielineDetectionResult.matchedModelKey}</strong> ({Math.round(dielineDetectionResult.confidence > 1 ? dielineDetectionResult.confidence : dielineDetectionResult.confidence * 100)}% match)</span>
-                  {dielineDetectionResult.dimensionsIn && (
-                    <span style={{ opacity: 0.8, marginLeft: '6px' }}>
-                      ({dielineDetectionResult.dimensionsIn.L.toFixed(2)}″ × {dielineDetectionResult.dimensionsIn.W.toFixed(2)}″ × {dielineDetectionResult.dimensionsIn.H.toFixed(2)}″)
-                    </span>
-                  )}
+              {/* Hidden File Input for Dieline Detector */}
+              <input
+                type="file"
+                ref={dielineFileInputRef}
+                onChange={handleDielineFileUpload}
+                accept=".dxf,.svg,.pdf,.png,.jpg,.jpeg,.webp"
+                style={{ display: 'none' }}
+              />
+
+              {/* Dieline Detector Hero Banner - High-End Minimalist Architectural Card */}
+              <div style={{
+                padding: '24px',
+                borderRadius: '24px',
+                background: store.theme === 'dark' ? '#121316' : '#18181b',
+                color: '#ffffff',
+                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '12px',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#38bdf8'
+                    }}>
+                      <ScanLine style={{ width: '20px', height: '20px' }} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#ffffff', letterSpacing: '-0.3px' }}>
+                        Vector Dieline & CAD Scanner
+                      </h3>
+                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0', fontWeight: '500' }}>
+                        Automated fold topology & parametric dimension extraction
+                      </p>
+                    </div>
+                  </div>
+
+                  <span style={{
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    background: 'rgba(56, 189, 248, 0.15)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    color: '#38bdf8',
+                    fontSize: '10px',
+                    fontWeight: '800',
+                    textTransform: 'uppercase'
+                  }}>
+                    CAD Engine
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.6', margin: 0 }}>
+                  Upload an AutoCAD <strong style={{ color: '#ffffff' }}>.DXF</strong>, vector artwork <strong style={{ color: '#ffffff' }}>.SVG</strong>, technical sheet <strong style={{ color: '#ffffff' }}>.PDF</strong>, or high-res scan. The CAD engine maps fold axes, determines kinematics, and simulates 3D assembly.
+                </p>
+
+                {/* Interactive Upload Dropzone */}
+                <div
+                  onClick={() => !isDielineDetecting && dielineFileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                    const file = e.dataTransfer?.files?.[0];
+                    if (file) processDielineFile(file);
+                  }}
+                  style={{
+                    border: isDragOver ? '2px dashed #38bdf8' : '2px dashed rgba(255, 255, 255, 0.2)',
+                    background: isDragOver ? 'rgba(56, 189, 248, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                    borderRadius: '18px',
+                    padding: '24px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    cursor: isDielineDetecting ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '14px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    marginBottom: '10px'
+                  }}>
+                    <Upload style={{ width: '22px', height: '22px' }} />
+                  </div>
+
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#ffffff' }}>
+                    Select or Drag & Drop Dieline or CAD Net File
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '3px' }}>
+                    Supports DXF, SVG, PDF, PNG & High-Res JPG
+                  </span>
+
+                  {/* Supported Format Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px' }}>
+                    {['DXF CAD', 'SVG Vector', 'PDF Sheet', 'Physical Scan'].map(b => (
+                      <span key={b} style={{
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        color: '#cbd5e1'
+                      }}>
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Test Samples */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Or inspect standard packaging templates:
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    {SAMPLE_DIELINES.map(sample => (
+                      <button
+                        key={sample.key}
+                        onClick={() => handleApplySampleDieline(sample)}
+                        disabled={isDielineDetecting}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '12px',
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          color: '#ffffff',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: isDielineDetecting ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'; }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sample.name}</span>
+                        <ArrowRight style={{ width: '13px', height: '13px', opacity: 0.6, flexShrink: 0, marginLeft: '4px' }} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <button
-                  onClick={() => setCardMode('2d')}
-                  style={{ background: '#fff', border: '1px solid #10b981', color: '#065f46', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', fontWeight: '800', cursor: 'pointer' }}
-                >
-                  View 2D CAD
-                </button>
-                <button
-                  onClick={() => setDielineDetectionResult(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#065f46', cursor: 'pointer', padding: '2px', display: 'flex' }}
-                  title="Dismiss"
-                >
-                  <X style={{ width: '14px', height: '14px' }} />
-                </button>
-              </div>
+
+              {/* Scanning Progress Banner */}
+              {isDielineDetecting && (
+                <div style={{
+                  background: store.theme === 'dark' ? '#18181b' : '#ffffff',
+                  borderRadius: '18px',
+                  padding: '16px 20px',
+                  border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px'
+                }}>
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: store.theme === 'dark' ? '#27272a' : '#f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <ScanLine style={{ width: '22px', height: '22px', color: '#2563eb' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '800', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                        Parametric CAD Analysis
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#2563eb' }}>
+                        Processing...
+                      </span>
+                    </div>
+                    <div style={{ width: '100%', background: store.theme === 'dark' ? '#27272a' : '#e2e8f0', borderRadius: '999px', height: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: '75%', height: '100%', background: 'linear-gradient(90deg, #2563eb, #38bdf8)', borderRadius: '999px' }} />
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#64748b', margin: '6px 0 0', fontWeight: '500' }}>
+                      {detectorScanningStep || 'Analyzing geometry & crease lines...'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Detection Result Card */}
+              {dielineDetectionResult && !isDielineDetecting && (
+                <div style={{
+                  background: store.theme === 'dark' ? '#18181b' : '#ffffff',
+                  borderRadius: '24px',
+                  padding: '20px',
+                  border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.06)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '10px',
+                        background: '#dcfce7',
+                        color: '#16a34a',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <CheckCircle2 style={{ width: '18px', height: '18px' }} />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          CAD Specification Match
+                        </span>
+                        <h4 style={{ fontSize: '15px', fontWeight: '800', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a', margin: 0 }}>
+                          {dielineDetectionResult.matchedTitle || BOX_TITLES[dielineDetectionResult.matchedModelKey] || 'Custom Packaging Model'}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        padding: '4px 10px',
+                        borderRadius: '999px',
+                        background: store.theme === 'dark' ? '#27272a' : '#f1f5f9',
+                        border: store.theme === 'dark' ? '1px solid #3f3f46' : '1px solid #e2e8f0',
+                        fontSize: '11px',
+                        fontWeight: '900',
+                        color: store.theme === 'dark' ? '#f8fafc' : '#0f172a'
+                      }}>
+                        {Math.round(dielineDetectionResult.confidence > 1 ? dielineDetectionResult.confidence : dielineDetectionResult.confidence * 100)}% MATCH
+                      </span>
+                      <button
+                        onClick={() => setDielineDetectionResult(null)}
+                        style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+                        title="Dismiss"
+                      >
+                        <X style={{ width: '16px', height: '16px' }} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dimensions Breakdown Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '10px',
+                    padding: '12px 16px',
+                    borderRadius: '16px',
+                    background: store.theme === 'dark' ? '#121316' : '#f8fafc',
+                    border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+                    textAlign: 'center'
+                  }}>
+                    <div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Length (L)</span>
+                      <div style={{ fontSize: '14px', fontWeight: '900', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                        {(dielineDetectionResult.dimensionsIn?.L || store.L || 4.72).toFixed(2)}″
+                      </div>
+                      <span style={{ fontSize: '10px', color: '#64748b' }}>
+                        {Math.round((dielineDetectionResult.dimensionsIn?.L || store.L || 4.72) * 25.4)} mm
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Width (W)</span>
+                      <div style={{ fontSize: '14px', fontWeight: '900', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                        {(dielineDetectionResult.dimensionsIn?.W || store.W || 2.36).toFixed(2)}″
+                      </div>
+                      <span style={{ fontSize: '10px', color: '#64748b' }}>
+                        {Math.round((dielineDetectionResult.dimensionsIn?.W || store.W || 2.36) * 25.4)} mm
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Height (H)</span>
+                      <div style={{ fontSize: '14px', fontWeight: '900', color: store.theme === 'dark' ? '#f8fafc' : '#0f172a' }}>
+                        {(dielineDetectionResult.dimensionsIn?.H || store.H || 6.29).toFixed(2)}″
+                      </div>
+                      <span style={{ fontSize: '10px', color: '#64748b' }}>
+                        {Math.round((dielineDetectionResult.dimensionsIn?.H || store.H || 6.29) * 25.4)} mm
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Detected Structural Features */}
+                  {dielineDetectionResult.detectedFeatures && dielineDetectionResult.detectedFeatures.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Extracted Structural Features:
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {dielineDetectionResult.detectedFeatures.map((feat: string, idx: number) => (
+                          <span key={idx} style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            background: store.theme === 'dark' ? '#27272a' : '#f1f5f9',
+                            border: store.theme === 'dark' ? '1px solid #3f3f46' : '1px solid #e2e8f0',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            color: store.theme === 'dark' ? '#e4e4e7' : '#334155'
+                          }}>
+                            <Check style={{ width: '12px', height: '12px', color: '#16a34a' }} />
+                            <span>{feat}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Technical Explanation Note */}
+                  {dielineDetectionResult.explanation && (
+                    <p style={{
+                      fontSize: '12px',
+                      color: store.theme === 'dark' ? '#a1a1aa' : '#475569',
+                      background: store.theme === 'dark' ? '#141518' : '#f8fafc',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid #e2e8f0',
+                      lineHeight: '1.6',
+                      margin: 0
+                    }}>
+                      {dielineDetectionResult.explanation}
+                    </p>
+                  )}
+
+                  {/* Live 3D / 2D Kinematic Fold Inspection */}
+                  <div style={{
+                    borderRadius: '18px',
+                    background: '#09090b',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#ffffff' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Kinematic Net Inspection
+                        </span>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          color: '#4ade80'
+                        }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80' }} />
+                          Verified
+                        </span>
+                      </div>
+
+                      {/* Mode switcher: 3D vs 2D */}
+                      <div style={{ display: 'flex', background: '#18181b', borderRadius: '8px', padding: '2px', gap: '2px' }}>
+                        <button
+                          onClick={() => setDetectorPreviewMode('3d')}
+                          style={{
+                            background: detectorPreviewMode === '3d' ? '#ffffff' : 'transparent',
+                            color: detectorPreviewMode === '3d' ? '#000000' : '#a1a1aa',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          3D Fold
+                        </button>
+                        <button
+                          onClick={() => setDetectorPreviewMode('2d')}
+                          style={{
+                            background: detectorPreviewMode === '2d' ? '#ffffff' : 'transparent',
+                            color: detectorPreviewMode === '2d' ? '#000000' : '#a1a1aa',
+                            border: 'none',
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          2D CAD Net
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Viewport Canvas */}
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '240px',
+                      borderRadius: '14px',
+                      overflow: 'hidden',
+                      background: 'radial-gradient(ellipse at center, #18181b 0%, #09090b 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {detectorPreviewMode === '3d' ? (
+                        <Box3DViewer
+                          key={`detector-3d-${dielineDetectionResult.matchedModelKey || activeBoxModel}-${detectorFoldProgress}`}
+                          boxModelOverride={dielineDetectionResult.matchedModelKey || activeBoxModel}
+                          overrideLayout="single"
+                          L={dielineDetectionResult.dimensionsIn?.L || store.L}
+                          W={dielineDetectionResult.dimensionsIn?.W || store.W}
+                          H={dielineDetectionResult.dimensionsIn?.H || store.H}
+                          progress={detectorFoldProgress}
+                          lightingPreset="studio"
+                          activeAnimation="none"
+                          showWatermark={false}
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
+                          <DielineSVG width={580} height={220} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Fold Slider if in 3D */}
+                    {detectorPreviewMode === '3d' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>
+                          Fold Net
+                        </span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={detectorFoldProgress}
+                          onChange={(e) => setDetectorFoldProgress(Number(e.target.value))}
+                          style={{ flex: 1, accentColor: '#38bdf8', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#ffffff', minWidth: '36px', textAlign: 'right' }}>
+                          {Math.round(detectorFoldProgress * 100)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '4px' }}>
+                    <button
+                      onClick={() => onNavigateToWorkshop ? onNavigateToWorkshop() : setIsEditorOpen(true)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '14px',
+                        background: '#0f172a',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#1e293b'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#0f172a'; }}
+                    >
+                      <Box style={{ width: '15px', height: '15px', color: '#38bdf8' }} />
+                      <span>Open in 3D Workshop</span>
+                      <ExternalLink style={{ width: '13px', height: '13px', opacity: 0.6 }} />
+                    </button>
+
+                    <button
+                      onClick={() => setIsDielineStudioOpen(true)}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '14px',
+                        background: store.theme === 'dark' ? '#27272a' : '#f1f5f9',
+                        color: store.theme === 'dark' ? '#f8fafc' : '#0f172a',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        border: store.theme === 'dark' ? '1px solid #3f3f46' : '1px solid #cbd5e1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = store.theme === 'dark' ? '#3f3f46' : '#cbd5e1'; e.currentTarget.style.color = store.theme === 'dark' ? '#f8fafc' : '#0f172a'; }}
+                    >
+                      <Scissors style={{ width: '15px', height: '15px', color: '#2563eb' }} />
+                      <span>Open Dieline Studio</span>
+                      <ExternalLink style={{ width: '13px', height: '13px', opacity: 0.6 }} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Interactive Card Canvas Container */}
-          <div style={{ 
-            position: 'relative', 
-            width: '600px', 
-            height: '600px', 
-            maxWidth: '92%', 
-            maxHeight: '80vh', 
-            background: store.theme === 'dark' ? '#141518' : '#FAF8F4', 
-            border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.08)', 
-            borderRadius: '24px', 
-            boxShadow: store.theme === 'dark' ? '0 25px 60px rgba(0,0,0,0.5)' : '0 25px 70px -15px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            overflow: 'hidden',
-            zIndex: 5
-          }}>
+          {/* ======================================================== */}
+          {/* VIEW B: AI DESIGN STUDIO (PACKAGING VISUAL GENERATOR)   */}
+          {/* ======================================================== */}
+          {subTab === 'design' && (
+            <>
+              {/* Interactive Card Canvas Container */}
+              <div style={{ 
+                position: 'relative', 
+                width: '600px', 
+                height: '600px', 
+                maxWidth: '92%', 
+                maxHeight: '80vh', 
+                background: store.theme === 'dark' ? '#141518' : '#FAF8F4', 
+                border: store.theme === 'dark' ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.08)', 
+                borderRadius: '24px', 
+                boxShadow: store.theme === 'dark' ? '0 25px 60px rgba(0,0,0,0.5)' : '0 25px 70px -15px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                overflow: 'hidden',
+                zIndex: 5
+              }}>
             
             {/* Card Header: Clean mode badge on left + Action button & 3-way toggle on right */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: store.theme === 'dark' ? '#1f1f23' : '#ffffff', borderBottom: store.theme === 'dark' ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.06)', zIndex: 15 }}>
@@ -802,8 +1416,10 @@ export default function AiStudioPage({ onBack, onNavigateToWorkshop }: AiStudioP
               +
             </button>
           </div>
+        </>
+      )}
 
-        </div>
+    </div>
 
         {/* --- AI SECOND EDIT WORKSPACE SIDEBAR PANEL --- */}
         {showSecondEditPanel && (

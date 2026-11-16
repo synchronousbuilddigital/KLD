@@ -184,12 +184,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 20px 20px 40px;
   background-color: #FAF8F4;
   background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1.2px, transparent 1.2px);
   background-size: 26px 26px;
   background-position: center;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .dark-theme .ai-canvas-workspace {
