@@ -2265,6 +2265,48 @@
           </div>
         </div>
       </div>
+
+      <div class="divider" style="margin: 14px 0;"></div>
+
+      <!-- Box Flat Dimensions & Scale Adjustment -->
+      <div style="font-size:12px; font-weight:700; color:#18181b; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Box Flat Dimensions</span>
+        <button type="button" id="resetBoxBtn" class="linklike" style="background:none; border:none; color:var(--blue); font-size:11px; font-weight:600; cursor:pointer; padding:0; text-decoration:underline;">Reset to imported size</button>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="boxW" id="boxWLabel">Flat width (mm)</label>
+          <input type="number" id="boxW" min="10" step="1">
+        </div>
+        <div class="field">
+          <label for="boxH" id="boxHLabel">Flat height (mm)</label>
+          <input type="number" id="boxH" min="10" step="1">
+        </div>
+      </div>
+
+      <div class="divider" style="margin: 14px 0;"></div>
+
+      <!-- Presets Management -->
+      <div style="font-size:12px; font-weight:700; color:#18181b; margin-bottom:8px;">Saved Sheet Presets</div>
+      <div class="field" style="margin-bottom:8px;">
+        <select id="presetPick" style="width:100%; font-size:12px; padding:6px 8px; border:1px solid #e4e4e7; border-radius:6px; background:#fff;">
+          <option value="">(choose a saved preset)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:8px;">
+        <input type="text" id="presetName" placeholder="e.g. My Custom 720x1020" autocomplete="off" style="width:100%; font-size:12px; padding:6px 8px; border:1px solid #e4e4e7; border-radius:6px;">
+      </div>
+      <div class="preset-row" style="display:flex; gap:6px; margin-bottom:6px;">
+        <button type="button" id="presetSaveBtn" class="primary-btn" style="flex:1; font-size:11px; padding:6px 10px; margin-bottom:0;">Save</button>
+        <button type="button" id="presetDeleteBtn" class="secondary-btn" disabled style="flex:1; font-size:11px; padding:6px 10px; margin-bottom:0;">Delete</button>
+      </div>
+      <div class="preset-row" style="display:flex; gap:6px;">
+        <button type="button" id="presetExportBtn" class="secondary-btn" style="flex:1; font-size:11px; padding:6px 10px; margin-bottom:0;">Export All</button>
+        <button type="button" id="presetImportBtn" class="secondary-btn" style="flex:1; font-size:11px; padding:6px 10px; margin-bottom:0;">Import</button>
+      </div>
+      <input type="file" id="presetImportFile" accept=".json,application/json" style="display:none">
+      <div id="presetNote" style="display:none; font-size:11px; margin-top:6px;"></div>
     </div>
 
     <!-- 2. Auto-Size Sheet Floating Card -->
@@ -2424,9 +2466,6 @@
       <input type="number" id="boxL" value="300">
       <input type="number" id="boxWd" value="200">
       <input type="number" id="boxHt" value="150">
-      <input type="number" id="boxW">
-      <input type="number" id="boxH">
-      <button type="button" id="resetBoxBtn"></button>
       <input type="file" id="artworkUpload" multiple>
       <div id="artworkList"></div>
       <div id="artworkControls"></div>
@@ -2443,14 +2482,6 @@
       <button type="button" id="browseLibraryBtn"></button>
       <input type="text" id="librarySideSearch">
       <div id="librarySideNote"></div>
-      <select id="presetPick"></select>
-      <input type="text" id="presetName">
-      <button type="button" id="presetSaveBtn"></button>
-      <button type="button" id="presetDeleteBtn"></button>
-      <button type="button" id="presetExportBtn"></button>
-      <button type="button" id="presetImportBtn"></button>
-      <input type="file" id="presetImportFile">
-      <div id="presetNote"></div>
     </div>
 
     <div class="content">
@@ -2573,7 +2604,12 @@
             </div>
           </div>
 
-          <div style="display:flex; align-items:center; gap:10px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div class="legend" style="display:flex; align-items:center; gap:14px; font-size:11.5px; color:#64748b; background:#f8fafc; padding:4px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+              <div class="item" style="display:flex; align-items:center; gap:6px;"><span class="swatch" style="display:inline-block; width:12px; height:0; border-top:2px solid #231f1c;"></span> Cut</div>
+              <div class="item" style="display:flex; align-items:center; gap:6px;"><span class="swatch dash" style="display:inline-block; width:12px; height:0; border-top:2px dashed #2563eb;"></span> Crease</div>
+              <div class="item" style="display:flex; align-items:center; gap:6px;"><span class="swatch dot" style="display:inline-block; width:12px; height:0; border-top:2px dotted #10b981;"></span> Bleed</div>
+            </div>
             <span id="manualOverlapBadge" style="display: none; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; font-size: 11.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
@@ -7828,6 +7864,8 @@
         currentUnit = unit;
         document.getElementById('unitBtnMM').classList.toggle('unit-active', unit === 'mm');
         document.getElementById('unitBtnIN').classList.toggle('unit-active', unit === 'in');
+        const dockLbl = document.getElementById('dockUnitLabel');
+        if (dockLbl) dockLbl.textContent = unit.toUpperCase();
         FIELD_IDS.forEach(function (id) {
           const f = fields[id];
           if (!f) return;
