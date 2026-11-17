@@ -286,10 +286,179 @@
 
     main {
       flex: 1;
-      display: grid;
-      grid-template-columns: 330px 1fr;
-      gap: 24px;
-      padding: 24px 32px 40px;
+      display: block;
+      width: 100%;
+      max-width: 1720px;
+      margin: 0 auto;
+      padding: 20px 32px 40px 84px;
+      position: relative;
+    }
+
+    .content {
+      width: 100%;
+      min-width: 0;
+    }
+
+    /* Floating Tool Dock */
+    .kld-floating-dock {
+      position: fixed;
+      left: 18px;
+      top: 96px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 8px;
+      background: #ffffff;
+      border: 1px solid #e4e4e7;
+      border-radius: 9999px;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+      backdrop-filter: blur(8px);
+    }
+
+    .floating-dock-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.16s ease;
+      padding: 0;
+    }
+
+    .floating-dock-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      transform: scale(1.05);
+    }
+
+    .floating-dock-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    }
+
+    .floating-dock-btn.active #dockUnitLabel {
+      color: #ffffff !important;
+    }
+
+    .dock-divider {
+      width: 24px;
+      height: 1px;
+      background: #e2e8f0;
+      margin: 2px 0;
+    }
+
+    .dock-tooltip {
+      position: absolute;
+      left: calc(100% + 14px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1002;
+    }
+
+    .dock-tooltip::before {
+      content: '';
+      position: absolute;
+      right: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-right-color: #0f172a;
+    }
+
+    .floating-dock-btn:hover .dock-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Floating Flyout Panels */
+    .floating-panel {
+      display: none;
+      position: fixed;
+      left: 76px;
+      top: 96px;
+      width: 330px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid #e4e4e7;
+      border-radius: 16px;
+      box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+      padding: 18px 20px;
+      z-index: 999;
+      animation: floatPanelFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      scrollbar-width: thin;
+      scrollbar-color: #e4e4e7 transparent;
+    }
+
+    .floating-panel::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .floating-panel::-webkit-scrollbar-thumb {
+      background: #e4e4e7;
+      border-radius: 9999px;
+    }
+
+    @keyframes floatPanelFadeIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .floating-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .floating-panel-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .floating-panel-close {
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      line-height: 1;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.12s ease;
+    }
+
+    .floating-panel-close:hover {
+      color: #0f172a;
+      background: #f1f5f9;
     }
 
     .side {
@@ -1978,19 +2147,78 @@
   </div>
 
   <main>
-    <aside class="side">
-      <div class="field" id="unitSwitchBox" style="margin-bottom:16px;">
-        <label class="tip" data-tip="Switches Sheet W/H and Box L/W/H together"
-          style="display:inline-block; margin-bottom:8px;">Sheet &amp; Box Units</label>
+        <!-- FLOATING DOCK: Small floating buttons replacing the large static sidebar -->
+    <div class="kld-floating-dock" id="floatingDock">
+      <!-- 1. Units Toggle (MM/IN) -->
+      <button type="button" class="floating-dock-btn" id="dockBtnUnit" title="Toggle Units (MM / IN)" onclick="toggleUnitsQuick()">
+        <span id="dockUnitLabel" style="font-size:11px; font-weight:800; font-family:monospace; color:#18181b;">MM</span>
+        <span class="dock-tooltip">Toggle Units (MM / IN)</span>
+      </button>
+
+      <div class="dock-divider"></div>
+
+      <!-- 2. Sheet Setup Floating Button -->
+      <button type="button" class="floating-dock-btn" id="dockBtnSheet" title="Sheet Dimensions & Margins" onclick="toggleFloatingPanel('floatingSheetPanel', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </svg>
+        <span class="dock-tooltip">Sheet Dimensions</span>
+      </button>
+
+      <!-- 3. Auto-Size Sheet Floating Button -->
+      <button type="button" class="floating-dock-btn" id="dockBtnAutoSize" title="Auto-Size Sheet" onclick="toggleFloatingPanel('floatingAutoSizePanel', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="6"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+        <span class="dock-tooltip">Auto-Size Sheet</span>
+      </button>
+
+      <!-- 4. Nesting Engine Floating Button -->
+      <button type="button" class="floating-dock-btn" id="dockBtnEngine" title="Nesting Engine" onclick="toggleFloatingPanel('floatingEnginePanel', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+        </svg>
+        <span class="dock-tooltip">Nesting Engine</span>
+      </button>
+
+      <!-- 5. Layout Mode Floating Button -->
+      <button type="button" class="floating-dock-btn" id="dockBtnLayout" title="Layout Mode & Rotations" onclick="toggleFloatingPanel('floatingLayoutPanel', this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span class="dock-tooltip">Layout Mode</span>
+      </button>
+    </div>
+
+    <!-- FLOATING TOOL PANELS (Toggled by clicking the small floating buttons) -->
+    <!-- 1. Sheet Setup Floating Card -->
+    <div class="floating-panel" id="floatingSheetPanel">
+      <div class="floating-panel-header">
+        <div class="floating-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          Sheet Setup
+        </div>
+        <button type="button" class="floating-panel-close" onclick="closeFloatingPanel('floatingSheetPanel')">&times;</button>
+      </div>
+
+      <div class="field" id="unitSwitchBox" style="margin-bottom:14px;">
+        <label class="tip" data-tip="Switches Sheet W/H and Box L/W/H together" style="display:inline-block; margin-bottom:6px; font-size:12px;">Units</label>
         <div class="segmented-control" style="width:100%; display:flex;">
           <button type="button" id="unitBtnMM" class="unit-active" style="flex:1;">Millimeters</button>
           <button type="button" id="unitBtnIN" style="flex:1;">Inches</button>
         </div>
       </div>
-
-      <div class="divider"></div>
-
-      <h2>Sheet Setup</h2>
 
       <div class="field">
         <label for="preset">Sheet preset</label>
@@ -2037,14 +2265,25 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="divider"></div>
+    <!-- 2. Auto-Size Sheet Floating Card -->
+    <div class="floating-panel" id="floatingAutoSizePanel">
+      <div class="floating-panel-header">
+        <div class="floating-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+          Reverse Calculator
+        </div>
+        <button type="button" class="floating-panel-close" onclick="closeFloatingPanel('floatingAutoSizePanel')">&times;</button>
+      </div>
 
-      <h2>Reverse Calculator</h2>
-      <div class="row2" style="align-items:flex-end; margin-bottom: 4px;">
+      <div class="row2" style="align-items:flex-end; margin-bottom: 8px;">
         <div class="field" style="margin-bottom:0; flex:1;">
-          <label for="targetUpsInput" class="tip" data-tip="Enter the exact number of boxes you want to produce">Target
-            Boxes (UPs)</label>
+          <label for="targetUpsInput" class="tip" data-tip="Enter the exact number of boxes you want to produce">Target Boxes (UPs)</label>
           <input type="number" id="targetUpsInput" placeholder="e.g. 6" min="1" step="1">
         </div>
         <button type="button" id="autoSizeSheetBtn" class="primary-btn tip"
@@ -2054,26 +2293,49 @@
       <div id="autoSizeLoader"
         style="display:none; font-size:11px; color:#18181b; font-weight:600; text-align:center; padding:6px; background:#f4f4f5; border:1px solid #e4e4e7; border-radius:6px;">
         Calculating optimal dimensions...</div>
+    </div>
 
-      <div class="divider"></div>
+    <!-- 3. Nesting Engine Floating Card -->
+    <div class="floating-panel" id="floatingEnginePanel">
+      <div class="floating-panel-header">
+        <div class="floating-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+          </svg>
+          Nesting Engine
+        </div>
+        <button type="button" class="floating-panel-close" onclick="closeFloatingPanel('floatingEnginePanel')">&times;</button>
+      </div>
 
-      <h2>Nesting Engine</h2>
-      <div class="field" style="margin-bottom:12px;">
+      <div class="field" style="margin-bottom:8px;">
         <div class="segmented-control" style="width:100%; display:flex;">
           <button type="button" id="engineFastBtn" class="unit-active tip" data-tip="Fast Grid + AI Heuristic (&lt;1s)"
-            style="flex:1;">⚡ Fast (Grid)</button>
+            style="flex:1;">Fast (Grid)</button>
           <button type="button" id="engineDeepBtn" class="tip" data-tip="True No-Fit Polygon Interlocking (10-20s)"
-            style="flex:1;">🧩 Deep (NFP)</button>
+            style="flex:1;">Deep (NFP)</button>
         </div>
         <div id="deepEngineLoading"
-          style="display:none; text-align:center; font-size:11px; color:#f59e0b; font-weight:600; margin-top:6px; background:#fffbeb; padding:4px; border-radius:4px; border:1px solid #fde68a;">
+          style="display:none; text-align:center; font-size:11px; color:#b45309; font-weight:600; margin-top:8px; background:#fffbeb; padding:6px; border-radius:6px; border:1px solid #fde68a;">
           Calculating deep interlock... please wait.
         </div>
       </div>
+    </div>
 
-      <div class="divider"></div>
+    <!-- 4. Layout Mode Floating Card -->
+    <div class="floating-panel" id="floatingLayoutPanel">
+      <div class="floating-panel-header">
+        <div class="floating-panel-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Layout Mode
+        </div>
+        <button type="button" class="floating-panel-close" onclick="closeFloatingPanel('floatingLayoutPanel')">&times;</button>
+      </div>
 
-      <h2>Layout Mode</h2>
       <div class="toggle-row">
         <label for="manualMode">Manual Arrangement</label>
         <label class="switch">
@@ -2113,10 +2375,10 @@
           <button class="secondary-btn tip" data-tip="Clear all manual instances" id="clearDielinesBtn" style="color: #64748b; font-size: 11px; padding: 6px 10px; margin-bottom: 0;">Clear All Instances</button>
         </div>
         <div id="manualSidebarOverlapWarning" style="display: none; margin-top: 8px; padding: 7px 10px; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 8px; color: #b91c1c; font-size: 11px; font-weight: 600; line-height: 1.35;">
-          ⚠️ <strong>Collision Alert:</strong> Boxes are overlapping or out of bounds!
+          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#ef4444; margin-right:5px;"></span><strong>Collision Alert:</strong> Boxes are overlapping or out of bounds!
         </div>
         <p class="help-text tip" data-tip="Tap/Drag to move. Del to remove. Ctrl+Z to undo. Shift+Scroll to rotate"
-          style="font-size:10px; margin-top:8px; cursor:help; text-align:center; opacity:0.75;">ℹ️ <strong>Guide:</strong> Del: delete &middot; Ctrl+Z: undo &middot; Shift+Wheel: rotate</p>
+          style="font-size:10px; margin-top:8px; cursor:help; text-align:center; opacity:0.75;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#64748b; margin-right:4px;"></span><strong>Guide:</strong> Del: delete &middot; Ctrl+Z: undo &middot; Shift+Wheel: rotate</p>
       </div>
 
       <div id="autoControls">
@@ -2135,12 +2397,11 @@
             <button type="button" id="orientHorizontalBtn" style="flex:1;">Horizontal</button>
             <button type="button" id="orientVerticalBtn" style="flex:1;">Vertical</button>
           </div>
-          <div id="orientHelpText" style="font-size:11px; color:#64748b; margin-top:5px; line-height:1.35;">Auto mix
-            (default): the packer can rotate each copy independently.</div>
+          <div id="orientHelpText" style="font-size:11px; color:#64748b; margin-top:5px; line-height:1.35;">Auto mix (default): the packer can rotate each copy independently.</div>
         </div>
       </div>
 
-      <div class="divider"></div>
+      <div class="divider" style="margin: 12px 0;"></div>
 
       <div class="toggle-row">
         <label for="bleedEnabled">Enable bleed</label>
@@ -2155,295 +2416,98 @@
         <label for="bleedSize">Bleed size (mm)</label>
         <input type="number" id="bleedSize" value="5" min="0" max="25" step="0.5">
       </div>
+    </div>
 
-      <div class="divider"></div>
-
-      <h2>Box Dimensions</h2>
-
-      <!-- Hidden per Photo 2 request: external upload & library search removed from visible studio flow -->
-      <div style="display:none !important;" aria-hidden="true">
-        <button class="secondary-btn" id="uploadDxfBtn">Upload DXF File</button>
-        <button class="secondary-btn" id="browseLibraryBtn">Browse Dieline Library</button>
-        <div class="field">
-          <input type="text" id="librarySideSearch" placeholder="Search: pizza box, mailer, tuck end&hellip;"
-            autocomplete="off">
-          <p class="help-text" style="text-align:left;">Don&rsquo;t have a DXF? Search a ready-made dieline instead.
-            Picking one loads it exactly like an imported file &mdash; same bleed, panels, artwork placement, nesting
-            and Print Sheet.</p>
-          <div id="librarySideNote" class="lib-loaded-note" style="display:none;"></div>
-        </div>
-      </div>
-
-      <!-- "Box style" only ever had the one "Imported DXF (original shape)"
-         option (parametric box presets were removed earlier), so it never
-         offered any real choice. Removed from the visible UI entirely --
-         kept only as a hidden input so the existing #boxPreset JS (value
-         reads, the change listener, and the reset-to-custom line on DXF
-         upload) keeps working unchanged. Uploading a DXF file is the only
-         way to set the box shape, and this label/value never renders
-         anywhere -- not in the sidebar, not on the Dieline Canvas, not on
-         the Sheet Canvas. -->
+    <!-- Hidden preserved controls container (preserves DOM elements required by JS event listeners) -->
+    <div style="display:none !important;" aria-hidden="true">
       <input type="hidden" id="boxPreset" value="custom">
-
-      <div id="lwhFields" class="row2" style="display:none;">
-        <div class="field">
-          <label for="boxL">Length L (mm)</label>
-          <input type="number" id="boxL" min="10" step="1" value="300">
-        </div>
-        <div class="field">
-          <label for="boxWd">Width W (mm)</label>
-          <input type="number" id="boxWd" min="10" step="1" value="200">
-        </div>
-      </div>
-      <div id="lwhFields2" class="field" style="display:none;">
-        <label for="boxHt">Height H (mm)</label>
-        <input type="number" id="boxHt" min="10" step="1" value="150">
-      </div>
-
-      <div class="row2">
-        <div class="field">
-          <label for="boxW" id="boxWLabel">Box flat width (mm)</label>
-          <input type="number" id="boxW" min="10" step="1">
-        </div>
-        <div class="field">
-          <label for="boxH" id="boxHLabel">Box flat height (mm)</label>
-          <input type="number" id="boxH" min="10" step="1">
-        </div>
-      </div>
-      <div class="field" style="margin-top:-6px; margin-bottom:0;">
-        <button type="button" id="resetBoxBtn" class="linklike">Reset to imported size</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <h2>Layers</h2>
-      <div class="legend">
-        <div class="item"><span class="swatch" style="border-color:#231f1c;"></span> Cut line</div>
-        <div class="item"><span class="swatch dash" style="border-color:var(--blue);"></span> Crease / fold</div>
-        <div class="item"><span class="swatch dot" style="border-color:var(--bleed-green);"></span> Bleed</div>
-      </div>
-
-      <!-- Hidden Artwork & Printing sections per Photo 3 -->
-      <div style="display:none !important;" aria-hidden="true">
-        <div class="divider"></div>
-
-        <h2>Artwork</h2>
-
-        <div class="field">
-          <label for="artworkUpload">Upload artwork</label>
-          <input type="file" id="artworkUpload"
-            accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" multiple>
-          <p class="help-text artwork-hint" style="text-align:left;">PNG, JPG/JPEG, WEBP or SVG. New artwork lands
-            centered on the dieline &mdash; drag it, or use the handles, on the Dieline Canvas below.</p>
-        </div>
-
-        <div class="field">
-          <label>Artwork layers</label>
-          <div id="artworkList" class="artwork-list">
-            <p class="help-text" style="text-align:left; margin:0;">No artwork uploaded yet.</p>
-          </div>
-        </div>
-
-        <div id="artworkControls" style="display:none;">
-          <div class="row2">
-            <div class="field">
-              <label for="artX">Position X (mm)</label>
-              <input type="number" id="artX" step="0.5">
-            </div>
-            <div class="field">
-              <label for="artY">Position Y (mm)</label>
-              <input type="number" id="artY" step="0.5">
-            </div>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label for="artW">Width (mm)</label>
-              <input type="number" id="artW" step="0.5" min="1">
-            </div>
-            <div class="field">
-              <label for="artH">Height (mm)</label>
-              <input type="number" id="artH" step="0.5" min="1">
-            </div>
-          </div>
-          <div class="toggle-row">
-            <label for="artLockAspect">Maintain aspect ratio</label>
-            <label class="switch">
-              <input type="checkbox" id="artLockAspect" checked>
-              <span class="slider"></span>
-              <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
-            </label>
-          </div>
-          <div class="row2">
-            <div class="field">
-              <label for="artRotation">Rotation (&deg;)</label>
-              <input type="number" id="artRotation" step="1">
-            </div>
-            <div class="field">
-              <label for="artOpacity">Opacity (%)</label>
-              <input type="number" id="artOpacity" min="0" max="100" step="1">
-            </div>
-          </div>
-          <div class="field">
-            <label for="artPanel">Assign to dieline panel</label>
-            <select id="artPanel">
-              <option value="">Free (may span panels)</option>
-            </select>
-            <p class="help-text artwork-hint" style="text-align:left;">Assigning a panel clips the artwork to that panel
-              and stays attached to it if the dieline is resized. "Fit to Panel"/"Center on Panel" will auto-pick the
-              nearest panel if you haven't assigned one yet.</p>
-          </div>
-          <div class="row2">
-            <button type="button" id="fitToPanelBtn" class="secondary-btn">Fit to Panel</button>
-            <button type="button" id="centerOnPanelBtn" class="secondary-btn">Center on Panel</button>
-          </div>
-          <p class="help-text artwork-hint" id="artPanelNotice" style="display:none; text-align:left;"></p>
-          <div class="row2">
-            <button type="button" id="duplicateArtBtn" class="icon-btn tip" data-tip="Duplicate"><svg width="14"
-                height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg></button>
-            <button type="button" id="deleteArtBtn" class="icon-btn tip" data-tip="Delete"
-              style="color:var(--red);"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg></button>
-          </div>
-          <div class="row2">
-            <div class="toggle-row" style="margin:0;">
-              <label for="artVisible">Visible</label>
-              <label class="switch"><input type="checkbox" id="artVisible" checked><span class="slider"></span>
-                <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
-              </label>
-            </div>
-            <div class="toggle-row" style="margin:0;">
-              <label for="artLocked">Lock</label>
-              <label class="switch"><input type="checkbox" id="artLocked"><span class="slider"></span>
-                <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <h2>Printing</h2>
-
-        <div class="field">
-          <label for="colorMode">Color mode</label>
-          <select id="colorMode">
-            <option value="rgb">RGB</option>
-            <option value="cmyk">CMYK</option>
-            <option value="pantone">Pantone (Spot Color)</option>
-          </select>
-        </div>
-
-        <div class="toggle-row">
-          <label for="printPreview">Print preview</label>
-          <label class="switch">
-            <input type="checkbox" id="printPreview">
-            <span class="slider"></span>
-            <div class="switch-labels"><span class="lbl-off">Off</span><span class="lbl-on">On</span></div>
-          </label>
-        </div>
-        <p class="help-text" id="colorTargetHelp">Applies to: whole design</p>
-
-        <div class="field" id="rgbColorField">
-          <label for="objRgbColor">Color</label>
-          <input type="color" id="objRgbColor" value="#e8632c">
-        </div>
-
-        <div class="field" id="cmykFields" style="display:none;">
-          <label>CMYK values (%)</label>
-          <div class="row2" style="margin-bottom:10px;">
-            <div>
-              <label for="cmykC" class="sublabel">Cyan</label>
-              <input type="number" id="cmykC" min="0" max="100" step="1" value="0">
-            </div>
-            <div>
-              <label for="cmykM" class="sublabel">Magenta</label>
-              <input type="number" id="cmykM" min="0" max="100" step="1" value="0">
-            </div>
-          </div>
-          <div class="row2">
-            <div>
-              <label for="cmykY" class="sublabel">Yellow</label>
-              <input type="number" id="cmykY" min="0" max="100" step="1" value="0">
-            </div>
-            <div>
-              <label for="cmykK" class="sublabel">Black (K)</label>
-              <input type="number" id="cmykK" min="0" max="100" step="1" value="0">
-            </div>
-          </div>
-          <p class="help-text">Converted automatically from RGB &mdash; edit any field to override.</p>
-        </div>
-
-        <div class="field" id="pantoneFields" style="display:none;">
-          <label for="pantoneSearch">Pantone library</label>
-          <input type="text" id="pantoneSearch" placeholder="Search name or code&hellip;" autocomplete="off">
-          <div id="pantoneResults" class="pantone-results"></div>
-          <div id="pantoneAssigned" class="pantone-assigned" style="display:none;">
-            <span class="pantone-chip" id="pantoneChip"></span>
-            <span id="pantoneAssignedName"></span>
-            <button type="button" id="removePantoneBtn" class="linklike" style="margin-left:auto;">Remove</button>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="field">
-          <label for="outputProfile">Output profile</label>
-          <select id="outputProfile">
-            <option value="sRGB">sRGB (screen preview)</option>
-            <option value="uswebcoated">U.S. Web Coated SWOP v2</option>
-            <option value="gracol2013">GRACoL 2013 (Coated)</option>
-            <option value="fogra39">FOGRA39 (Coated)</option>
-            <option value="uncoated">U.S. Sheetfed Uncoated v2</option>
-          </select>
-          <p class="help-text">Reference profile for CMYK/Pantone conversion &amp; preview. Does not change dieline
-            geometry.</p>
-        </div>
-
-        <button type="button" id="exportColorDataBtn" class="secondary-btn">Export color data (JSON)</button>
-        <button type="button" id="downloadPrintSvgBtn" class="secondary-btn" style="margin-top:8px;">Download Vector Sheet (SVG)</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <h2>Presets</h2>
-      <div class="field">
-        <label for="presetName">Save current sheet &amp; box settings as</label>
-        <input type="text" id="presetName" placeholder="e.g. 720x1020 standard" autocomplete="off">
-      </div>
-      <div class="preset-row" style="margin-bottom:10px;">
-        <button type="button" id="presetSaveBtn" class="secondary-btn">Save</button>
-      </div>
-      <div class="field">
-        <label for="presetPick">Saved presets</label>
-        <select id="presetPick">
-          <option value="">No presets saved yet</option>
-        </select>
-      </div>
-      <div class="preset-row" style="margin-bottom:10px;">
-        <button type="button" id="presetLoadBtn" class="secondary-btn">Load</button>
-        <button type="button" id="presetDeleteBtn" class="secondary-btn" style="color:var(--red);">Delete</button>
-      </div>
-      <div class="preset-row">
-        <button type="button" id="presetExportBtn" class="secondary-btn">Export all</button>
-        <button type="button" id="presetImportBtn" class="secondary-btn">Import</button>
-      </div>
-      <input type="file" id="presetImportFile" accept=".json,application/json" style="display:none">
+      <input type="number" id="boxL" value="300">
+      <input type="number" id="boxWd" value="200">
+      <input type="number" id="boxHt" value="150">
+      <input type="number" id="boxW">
+      <input type="number" id="boxH">
+      <button type="button" id="resetBoxBtn"></button>
+      <input type="file" id="artworkUpload" multiple>
+      <div id="artworkList"></div>
+      <div id="artworkControls"></div>
+      <input type="number" id="artX">
+      <input type="number" id="artY">
+      <input type="number" id="artW">
+      <input type="number" id="artH">
+      <input type="number" id="artRot">
+      <input type="checkbox" id="artScaleLock">
+      <button type="button" id="fitPanelBtn"></button>
+      <button type="button" id="centerPanelBtn"></button>
+      <button type="button" id="delArtBtn"></button>
+      <button type="button" id="uploadDxfBtn"></button>
+      <button type="button" id="browseLibraryBtn"></button>
+      <input type="text" id="librarySideSearch">
+      <div id="librarySideNote"></div>
+      <select id="presetPick"></select>
+      <input type="text" id="presetName">
+      <button type="button" id="presetSaveBtn"></button>
+      <button type="button" id="presetDeleteBtn"></button>
+      <button type="button" id="presetExportBtn"></button>
+      <button type="button" id="presetImportBtn"></button>
+      <input type="file" id="presetImportFile">
       <div id="presetNote"></div>
-      <p class="help-text" style="text-align:left;">
-        This is the old <code>/api/presets</code> backend, running in the page instead of on a server &mdash;
-        presets live in this browser rather than in <code>backend/data/</code>. Export writes the same JSON to a
-        file you can keep or move to another machine.
-      </p>
-    </aside>
+    </div>
 
     <div class="content">
 
-      <!-- 1. Executive Metric HUD Ribbon -->
+            <!-- 1. Smart AI Print Efficiency Advisor (Expandable Copilot Card - AT TOP) -->
+      <section class="panel" id="advisorPanel"
+        style="border: 1px solid #e4e4e7; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden; margin-bottom: 20px;">
+        <div class="panel-head" style="background: #ffffff; cursor: pointer; border-bottom: 1px solid #f4f4f5; padding: 14px 20px;"
+          onclick="const b=document.getElementById('advisorPanelBody'); const a=document.getElementById('advisorChevron'); const isOpen=b.style.display!=='none'; b.style.display=isOpen?'none':'flex'; if(a) a.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:34px; height:34px; border-radius:10px; background:#eff6ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z">
+                </path>
+              </svg>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:14px; font-weight:700; color:#18181b; display:flex; align-items:center; gap:8px;">
+                Print Efficiency Advisor
+              </h3>
+              <div class="sub" style="font-size:12px; color:#71717a; margin-top:2px;">AI-powered layout strategy &amp; optimal sheet suggestions</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <span class="badge"
+              style="background:#18181b; color:#ffffff; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.1); font-weight:600; font-size:11px;">AI Active</span>
+            <svg id="advisorChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" style="color:#71717a; transform:rotate(180deg); transition:transform 0.2s ease;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="panel-body" id="advisorPanelBody"
+          style="display:flex; flex-direction:column; align-items:stretch; gap:16px; background:#fafafa; padding:20px;">
+          <div id="advisorInsights" class="advisor-insights"></div>
+
+          <div class="divider" style="margin:2px 0;"></div>
+
+          <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Box Layout Analysis</div>
+          <div id="advisorStrategy"
+            style="font-size:12.5px; line-height:1.5; color:#475569; background:#fff; padding:14px 16px; border:1px solid #e4e4e7; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+            <div class="advisor-loading">Analyzing box layout...</div>
+          </div>
+
+          <div class="divider" style="margin:2px 0;"></div>
+
+          <div style="font-size:13px; font-weight:700; color:#1e293b;">Optimal Sheet Suggestions</div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:-2px; margin-bottom:8px;">Scanning standard press formats analyzed for highest yield.</div>
+          <div id="advisorRecommendations" style="display:flex; flex-direction:column; gap:8px;">
+            <div class="advisor-loading">Finding best fits...</div>
+          </div>
+        </div>
+      </section>
+
+<!-- 1. Executive Metric HUD Ribbon -->
       <div class="kld-dashboard-ribbon">
         <div class="stat-row">
           <div class="stat green" id="statCardEff">
@@ -2542,62 +2606,57 @@
         </div>
       </section>
 
-      <!-- 3. Smart AI Print Efficiency Advisor (Expandable Copilot Card) -->
-      <section class="panel" id="advisorPanel"
-        style="border: 1px solid #e4e4e7; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden; margin-bottom: 24px;">
-        <div class="panel-head" style="background: #ffffff; cursor: pointer; border-bottom: 1px solid #f4f4f5; padding: 14px 20px;"
-          onclick="const b=document.getElementById('advisorPanelBody'); const a=document.getElementById('advisorChevron'); const isOpen=b.style.display!=='none'; b.style.display=isOpen?'none':'flex'; if(a) a.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:34px; height:34px; border-radius:10px; background:#eff6ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z">
-                </path>
-              </svg>
-            </div>
-            <div>
-              <h3 style="margin:0; font-size:14px; font-weight:700; color:#18181b; display:flex; align-items:center; gap:8px;">
-                Print Efficiency Advisor
-              </h3>
-              <div class="sub" style="font-size:12px; color:#71717a; margin-top:2px;">AI-powered layout strategy &amp; optimal sheet suggestions</div>
-            </div>
-          </div>
-          <div style="display:flex; gap:12px; align-items:center;">
-            <span class="badge"
-              style="background:#18181b; color:#ffffff; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.1); font-weight:600; font-size:11px;">AI Active</span>
-            <svg id="advisorChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round" style="color:#71717a; transition:transform 0.2s ease;">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </div>
-        </div>
-        <div class="panel-body" id="advisorPanelBody"
-          style="display:none; flex-direction:column; align-items:stretch; gap:16px; background:#fafafa; padding:20px;">
-          <div id="advisorInsights" class="advisor-insights"></div>
-
-          <div class="divider" style="margin:2px 0;"></div>
-
-          <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Box Layout Analysis</div>
-          <div id="advisorStrategy"
-            style="font-size:12.5px; line-height:1.5; color:#475569; background:#fff; padding:14px 16px; border:1px solid #e4e4e7; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-            <div class="advisor-loading">Analyzing box layout...</div>
-          </div>
-
-          <div class="divider" style="margin:2px 0;"></div>
-
-          <div style="font-size:13px; font-weight:700; color:#1e293b;">Optimal Sheet Suggestions</div>
-          <div style="font-size:11.5px; color:#64748b; margin-top:-2px; margin-bottom:8px;">Standard press formats analyzed for highest yield.</div>
-          <div id="advisorRecommendations" style="display:flex; flex-direction:column; gap:8px;">
-            <div class="advisor-loading">Finding best fits...</div>
-          </div>
-        </div>
-      </section>
+      
 
     </div>
   </main>
 
   <script>
+    // ============================================================
+    // Floating Dock & Floating Panels Controller
+    // ============================================================
+    window.toggleFloatingPanel = function (panelId, btn) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isOpen = panel.style.display === 'block';
+      document.querySelectorAll('.floating-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.floating-dock-btn').forEach(b => b.classList.remove('active'));
+      if (!isOpen) {
+        panel.style.display = 'block';
+        if (btn) btn.classList.add('active');
+      }
+    };
+
+    window.closeFloatingPanel = function (panelId) {
+      const panel = document.getElementById(panelId);
+      if (panel) panel.style.display = 'none';
+      document.querySelectorAll('.floating-dock-btn').forEach(b => b.classList.remove('active'));
+    };
+
+    window.toggleUnitsQuick = function () {
+      const mmBtn = document.getElementById('unitBtnMM');
+      const inBtn = document.getElementById('unitBtnIN');
+      const isMM = mmBtn && mmBtn.classList.contains('unit-active');
+      const target = isMM ? inBtn : mmBtn;
+      if (target) target.click();
+      const lbl = document.getElementById('dockUnitLabel');
+      if (lbl) lbl.textContent = isMM ? 'IN' : 'MM';
+    };
+
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.floating-panel') && !e.target.closest('.kld-floating-dock')) {
+        document.querySelectorAll('.floating-panel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.floating-dock-btn').forEach(b => b.classList.remove('active'));
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.floating-panel').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.floating-dock-btn').forEach(b => b.classList.remove('active'));
+      }
+    });
+
     // ============================================================
     // Original DIELINE and State Management
     // ============================================================
@@ -5774,13 +5833,13 @@
     }
 
     function tipHTML(text, headline, actionBtn = '') {
-      let icon = '<span class="dot"></span>';
+      let icon = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#94a3b8; flex-shrink:0;"></span>';
       if (headline) {
-        icon = '<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:#dcfce7; color:#15803d; font-size:12px; flex-shrink:0;">📊</span>';
+        icon = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,0.2); flex-shrink:0;"></span>';
       } else if (text.includes('Shrink') || text.includes('Grow') || text.includes('Scale') || text.includes('Box Solution') || text.includes('Opportunity')) {
-        icon = '<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:#eff6ff; color:#2563eb; font-size:12px; flex-shrink:0;">⚡</span>';
+        icon = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.2); flex-shrink:0;"></span>';
       } else if (text.includes('Sheet Solution') || text.includes('standard sheet') || text.includes('Alternative')) {
-        icon = '<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:#f4f4f5; color:#18181b; font-size:12px; flex-shrink:0;">📄</span>';
+        icon = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.2); flex-shrink:0;"></span>';
       }
       return `<div class="tip${headline ? ' headline' : ''}"><div class="tip-content">${icon}<span class="tip-text">${text}</span></div>${actionBtn}</div>`;
     }
