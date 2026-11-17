@@ -702,35 +702,76 @@
       border-radius: 10px;
     }
 
-    #dielineCanvasWrap {
+    #dielineCanvasWrap,
+    #sheetCanvasWrap {
       background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
-      background-size: 18px 18px;
+      background-size: 20px 20px;
       background-color: #f8fafc;
       border-radius: 14px;
       border: 1px solid var(--line);
       box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.03);
+      padding: 24px;
+      min-height: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
     }
 
-    .stat-row {
+    #sheetCanvas {
+      box-shadow: 0 14px 34px -4px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.05);
+      border-radius: 4px;
+      transition: transform 0.15s ease;
+    }
+
+    .kld-dashboard-ribbon {
+      background: #ffffff;
+      border: 1px solid #e4e4e7;
+      border-radius: 16px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .kld-dashboard-ribbon .stat-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
-      padding: 18px 24px 8px;
+      padding: 18px 20px 10px;
       background: #ffffff;
     }
 
     .stat {
-      border-radius: 14px;
-      padding: 14px 18px;
-      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e4e4e7;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
-      overflow: hidden;
+      background: #ffffff;
     }
 
     .stat:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px -2px rgba(15, 23, 42, 0.06);
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .stat-pill {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.04);
+      color: #71717a;
     }
 
     .stat .k {
@@ -742,16 +783,16 @@
 
     .stat .v {
       font-family: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 700;
-      margin-top: 4px;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.02em;
+      line-height: 1.1;
     }
 
     .stat.green {
       background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-      border-color: #86efac;
+      border-color: #bbf7d0;
     }
 
     .stat.green .k {
@@ -762,9 +803,14 @@
       color: #15803d;
     }
 
+    .stat.green .stat-pill {
+      background: #bbf7d0;
+      color: #166534;
+    }
+
     .stat.amber {
       background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
-      border-color: #fde047;
+      border-color: #fef08a;
     }
 
     .stat.amber .k {
@@ -775,9 +821,14 @@
       color: #b45309;
     }
 
+    .stat.amber .stat-pill {
+      background: #fef08a;
+      color: #854d0e;
+    }
+
     .stat.red {
       background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-      border-color: #fca5a5;
+      border-color: #fecaca;
     }
 
     .stat.red .k {
@@ -788,9 +839,14 @@
       color: #b91c1c;
     }
 
+    .stat.red .stat-pill {
+      background: #fecaca;
+      color: #991b1b;
+    }
+
     .stat.blue {
       background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-      border-color: #93c5fd;
+      border-color: #bfdbfe;
     }
 
     .stat.blue .k {
@@ -801,9 +857,14 @@
       color: #1d4ed8;
     }
 
+    .stat.blue .stat-pill {
+      background: #bfdbfe;
+      color: #1e40af;
+    }
+
     .stat.orange {
       background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-      border-color: #fdba74;
+      border-color: #fed7aa;
     }
 
     .stat.orange .k {
@@ -814,9 +875,14 @@
       color: #c2410c;
     }
 
-    .bar-wrap {
-      margin: 8px 24px 22px;
-      height: 10px;
+    .stat.orange .stat-pill {
+      background: #fed7aa;
+      color: #9a3412;
+    }
+
+    .kld-dashboard-ribbon .bar-wrap {
+      margin: 6px 20px 16px;
+      height: 9px;
       border-radius: 999px;
       background: #f1f5f9;
       border: 1px solid #e2e8f0;
@@ -832,6 +898,59 @@
       background-size: 200% 100%;
       box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
       animation: shimmer 2.8s linear infinite;
+    }
+
+    /* Workbench Tabs */
+    .workbench-tabs {
+      display: inline-flex;
+      background: #f4f4f5;
+      padding: 3px;
+      border-radius: 12px;
+      border: 1px solid #e4e4e7;
+      gap: 3px;
+    }
+
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: #71717a;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: #18181b;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #18181b;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-counter {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 9999px;
+      background: #e4e4e7;
+      color: #52525b;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn.active .tab-counter {
+      background: #18181b;
+      color: #ffffff;
     }
 
     @keyframes shimmer {
@@ -2324,93 +2443,72 @@
 
     <div class="content">
 
-      <section class="panel" id="advisorPanel"
-        style="border: 1px solid #e4e4e7; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden;">
-        <div class="panel-head" style="background: #ffffff; cursor: pointer; border-bottom: 1px solid #f4f4f5;"
-          onclick="const b=document.getElementById('advisorPanelBody'); b.style.display=b.style.display==='none'?'flex':'none';">
-          <div>
-            <h3>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path
-                  d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z">
-                </path>
-              </svg>
-              Print Efficiency Advisor
-            </h3>
-            <div class="sub">AI-powered layout strategy &amp; optimal sheet suggestions</div>
+      <!-- 1. Executive Metric HUD Ribbon -->
+      <div class="kld-dashboard-ribbon">
+        <div class="stat-row">
+          <div class="stat green" id="statCardEff">
+            <div class="stat-header">
+              <span class="k">Sheet Efficiency</span>
+              <span class="stat-pill" id="statEffPill">Optimal</span>
+            </div>
+            <div class="v" id="statEff">-</div>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <span class="badge"
-              style="background:#18181b; color:#ffffff; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.1); font-weight:600;">AI
-              Active</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" style="color:#71717a; margin-left:8px;">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+          <div class="stat blue" id="statCardUp">
+            <div class="stat-header">
+              <span class="k">Box Yield</span>
+              <span class="stat-pill" id="unitBadge">1 UP</span>
+            </div>
+            <div class="v" id="statUp">-</div>
           </div>
-        </div>
-        <div class="panel-body" id="advisorPanelBody"
-          style="display:none; flex-direction:column; align-items:stretch; gap:16px;">
-          <div id="advisorInsights" class="advisor-insights"></div>
-
-          <div class="divider" style="margin:2px 0;"></div>
-
-          <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Box Layout</div>
-          <div id="advisorStrategy"
-            style="font-size:12.5px; line-height:1.5; color:#475569; background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-            <div class="advisor-loading">Analyzing box layout...</div>
+          <div class="stat amber" id="wasteStat">
+            <div class="stat-header">
+              <span class="k">Trim Waste</span>
+              <span class="stat-pill" id="statWastePill">Calculated</span>
+            </div>
+            <div class="v" id="statWaste">-</div>
           </div>
-
-          <div class="divider" style="margin:2px 0;"></div>
-
-          <div style="font-size:13px; font-weight:700; color:#1e293b;">Optimal Sheet Suggestions</div>
-          <div style="font-size:11.5px; color:#64748b; margin-top:-2px; margin-bottom:8px;">Scanning standard press
-            sizes for better yields.</div>
-          <div id="advisorRecommendations" style="display:flex; flex-direction:column; gap:8px;">
-            <div class="advisor-loading">Finding best fits...</div>
+          <div class="stat orange" id="statCardWasteArea">
+            <div class="stat-header">
+              <span class="k">Waste Area</span>
+              <span class="stat-pill">Total Scrap</span>
+            </div>
+            <div class="v" id="statWasteArea">-</div>
           </div>
         </div>
-      </section>
 
-      <section class="panel">
+        <div class="bar-wrap" title="Production Yield Progress">
+          <div class="bar-fill" id="effBar" style="width:0%;"></div>
+        </div>
+      </div>
+
+      <!-- 2. Interactive CAD Workbench Stage (HERO) -->
+      <section class="panel" id="mainWorkbenchPanel" style="margin-bottom:16px;">
         <div class="panel-head">
-          <div>
-            <h3>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="3" y1="9" x2="21" y2="9"></line>
-                <line x1="9" y1="21" x2="9" y2="9"></line>
-              </svg>
-              Flat Dieline Canvas
-            </h3>
-            <div class="sub">Single flattened unit, as imported from active CAD geometry</div>
+          <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+            <div class="workbench-tabs">
+              <button type="button" class="tab-btn active" id="tabSheetView" onclick="switchCanvasTab('sheet')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                <span>Sheet Imposition Layout</span>
+                <span class="tab-counter" id="tabUpBadge">1 UP</span>
+              </button>
+              <button type="button" class="tab-btn" id="tabDielineView" onclick="switchCanvasTab('dieline')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span>Flat CAD Dieline</span>
+                <span class="tab-counter">1 UP</span>
+              </button>
+            </div>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <span class="badge" id="unitBadge" style="background:#f1f5f9; color:#334155; font-weight:700;">1 UP</span>
-          </div>
-        </div>
-        <div class="panel-body" id="dielineCanvasWrap">
-          <canvas id="dielineCanvas"></canvas>
-        </div>
-      </section>
 
-
-      <section class="panel">
-        <div class="panel-head">
-          <div>
-            <h3>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                <rect x="6" y="14" width="12" height="8"></rect>
-              </svg>
-              Sheet Imposition Layout
-            </h3>
-            <div class="sub">How the dieline tiles across the press sheet &middot; interactive arrangement</div>
-          </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span id="manualOverlapBadge" style="display: none; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 9999px; background: #fef2f2; border: 1.5px solid #ef4444; color: #b91c1c; font-size: 11.5px; font-weight: 700; box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -2433,31 +2531,66 @@
           </div>
         </div>
 
-        <div class="stat-row">
-          <div class="stat green">
-            <div class="k">Efficiency</div>
-            <div class="v" id="statEff">-</div>
-          </div>
-          <div class="stat amber" id="wasteStat">
-            <div class="k">Waste</div>
-            <div class="v" id="statWaste">-</div>
-          </div>
-          <div class="stat blue">
-            <div class="k">UP count</div>
-            <div class="v" id="statUp">-</div>
-          </div>
-          <div class="stat orange">
-            <div class="k">Waste area</div>
-            <div class="v" id="statWasteArea">-</div>
-          </div>
-        </div>
-
-        <div class="bar-wrap">
-          <div class="bar-fill" id="effBar" style="width:0%;"></div>
-        </div>
-
+        <!-- Sheet Imposition Canvas (Default Primary View) -->
         <div class="panel-body" id="sheetCanvasWrap" style="overflow: auto; position: relative;">
           <canvas id="sheetCanvas" tabindex="1" style="outline:none; cursor: grab;"></canvas>
+        </div>
+
+        <!-- Flat Dieline Canvas (Switched via Tab) -->
+        <div class="panel-body" id="dielineCanvasWrap" style="display:none; overflow: auto; position: relative;">
+          <canvas id="dielineCanvas"></canvas>
+        </div>
+      </section>
+
+      <!-- 3. Smart AI Print Efficiency Advisor (Expandable Copilot Card) -->
+      <section class="panel" id="advisorPanel"
+        style="border: 1px solid #e4e4e7; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); overflow: hidden; margin-bottom: 24px;">
+        <div class="panel-head" style="background: #ffffff; cursor: pointer; border-bottom: 1px solid #f4f4f5; padding: 14px 20px;"
+          onclick="const b=document.getElementById('advisorPanelBody'); const a=document.getElementById('advisorChevron'); const isOpen=b.style.display!=='none'; b.style.display=isOpen?'none':'flex'; if(a) a.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:34px; height:34px; border-radius:10px; background:#eff6ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="m12 3-1.9 5.8a2 2 0 0 1-1.27 1.27L3 12l5.8 1.9a2 2 0 0 1 1.27 1.27L12 21l1.9-5.8a2 2 0 0 1 1.27-1.27L21 12l-5.8-1.9a2 2 0 0 1-1.27-1.27L12 3Z">
+                </path>
+              </svg>
+            </div>
+            <div>
+              <h3 style="margin:0; font-size:14px; font-weight:700; color:#18181b; display:flex; align-items:center; gap:8px;">
+                Print Efficiency Advisor
+              </h3>
+              <div class="sub" style="font-size:12px; color:#71717a; margin-top:2px;">AI-powered layout strategy &amp; optimal sheet suggestions</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <span class="badge"
+              style="background:#18181b; color:#ffffff; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.1); font-weight:600; font-size:11px;">AI Active</span>
+            <svg id="advisorChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" style="color:#71717a; transition:transform 0.2s ease;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="panel-body" id="advisorPanelBody"
+          style="display:none; flex-direction:column; align-items:stretch; gap:16px; background:#fafafa; padding:20px;">
+          <div id="advisorInsights" class="advisor-insights"></div>
+
+          <div class="divider" style="margin:2px 0;"></div>
+
+          <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:8px;">Box Layout Analysis</div>
+          <div id="advisorStrategy"
+            style="font-size:12.5px; line-height:1.5; color:#475569; background:#fff; padding:14px 16px; border:1px solid #e4e4e7; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+            <div class="advisor-loading">Analyzing box layout...</div>
+          </div>
+
+          <div class="divider" style="margin:2px 0;"></div>
+
+          <div style="font-size:13px; font-weight:700; color:#1e293b;">Optimal Sheet Suggestions</div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:-2px; margin-bottom:8px;">Standard press formats analyzed for highest yield.</div>
+          <div id="advisorRecommendations" style="display:flex; flex-direction:column; gap:8px;">
+            <div class="advisor-loading">Finding best fits...</div>
+          </div>
         </div>
       </section>
 
@@ -4347,7 +4480,8 @@
       if (!BASE_VARIANT) return;
       const wrap = document.getElementById('dielineCanvasWrap');
       const cvs = document.getElementById('dielineCanvas');
-      const maxCssW = Math.min(wrap.parentElement.clientWidth - 32, 760);
+      const parentW = (wrap && wrap.parentElement) ? wrap.parentElement.clientWidth : 960;
+      const maxCssW = Math.min(parentW - 48, 1060);
       const pad = 24;
       const scale = (maxCssW - pad * 2) / BASE_VARIANT.widthMM;
       const cssW = maxCssW, cssH = BASE_VARIANT.heightMM * scale + pad * 2;
@@ -4553,7 +4687,8 @@
       const sideWarning = document.getElementById('manualSidebarOverlapWarning');
       if (sideWarning) sideWarning.style.display = hasCollision ? 'block' : 'none';
 
-      const maxCssW = Math.min(wrap.parentElement.clientWidth - 32, 780);
+      const parentW = (wrap && wrap.parentElement) ? wrap.parentElement.clientWidth : 960;
+      const maxCssW = Math.min(parentW - 48, 1060);
       currentScale = (maxCssW - canvasPad * 2) / sheetW;
       const cssW = maxCssW, cssH = sheetH * currentScale + canvasPad * 2;
 
@@ -4824,8 +4959,18 @@
       const stats = nestingResult.stats;
       document.getElementById('statEff').textContent = stats.efficiency_percent.toFixed(1) + '%';
       document.getElementById('statWaste').textContent = stats.waste_percent.toFixed(1) + '%';
-      document.getElementById('statUp').textContent = stats.up_count;
+      document.getElementById('statUp').textContent = stats.up_count + ' UP' + (stats.up_count === 1 ? '' : 's');
       document.getElementById('statWasteArea').textContent = Math.round(stats.waste_area_cm2).toLocaleString() + ' cm\u00B2';
+
+      const tabUp = document.getElementById('tabUpBadge');
+      if (tabUp) tabUp.textContent = stats.up_count + ' UP' + (stats.up_count === 1 ? '' : 's');
+
+      const effPill = document.getElementById('statEffPill');
+      if (effPill) {
+        if (stats.efficiency_percent >= 70) effPill.textContent = 'High Yield';
+        else if (stats.efficiency_percent >= 50) effPill.textContent = 'Good Yield';
+        else effPill.textContent = 'Moderate';
+      }
 
       const rotCounts = {};
       nestingResult.placements.forEach(p => rotCounts[p.angleDeg] = (rotCounts[p.angleDeg] || 0) + 1);
@@ -4851,6 +4996,30 @@
         bar.style.setProperty('--fill-a', '#c9432f'); bar.style.setProperty('--fill-b', '#e0685a'); wasteStat.classList.add('red');
       }
     }
+
+    window.switchCanvasTab = function (tab) {
+      const sheetWrap = document.getElementById('sheetCanvasWrap');
+      const dielineWrap = document.getElementById('dielineCanvasWrap');
+      const tabSheet = document.getElementById('tabSheetView');
+      const tabDieline = document.getElementById('tabDielineView');
+      if (!sheetWrap || !dielineWrap) return;
+      if (tab === 'sheet') {
+        sheetWrap.style.display = 'flex';
+        dielineWrap.style.display = 'none';
+        if (tabSheet) tabSheet.classList.add('active');
+        if (tabDieline) tabDieline.classList.remove('active');
+        const isManual = document.getElementById('manualMode').checked;
+        const res = isManual ? manualNestingResult : null;
+        if (res) renderSheetCanvas(res, currentSheetOpts().bleedEnabled);
+        else renderAll();
+      } else {
+        sheetWrap.style.display = 'none';
+        dielineWrap.style.display = 'flex';
+        if (tabSheet) tabSheet.classList.remove('active');
+        if (tabDieline) tabDieline.classList.add('active');
+        renderDielineCanvas(currentSheetOpts().bleedEnabled);
+      }
+    };
 
     // ---------- UI Events ----------
     document.getElementById('manualMode').addEventListener('change', (e) => {
@@ -5605,7 +5774,15 @@
     }
 
     function tipHTML(text, headline, actionBtn = '') {
-      return `<div class="tip${headline ? ' headline' : ''}"><div class="tip-content"><span class="dot"></span><span class="tip-text">${text}</span></div>${actionBtn}</div>`;
+      let icon = '<span class="dot"></span>';
+      if (headline) {
+        icon = '<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:#dcfce7; color:#15803d; font-size:12px; flex-shrink:0;">📊</span>';
+      } else if (text.includes('Shrink') || text.includes('Grow') || text.includes('Scale') || text.includes('Box Solution') || text.includes('Opportunity')) {
+        icon = '<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:#eff6ff; color:#2563eb; font-size:12px; flex-shrink:0;">⚡</span>';
+      } else if (text.includes('Sheet Solution') || text.includes('standard sheet') || text.includes('Alternative')) {
+        icon = '<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:#f4f4f5; color:#18181b; font-size:12px; flex-shrink:0;">📄</span>';
+      }
+      return `<div class="tip${headline ? ' headline' : ''}"><div class="tip-content">${icon}<span class="tip-text">${text}</span></div>${actionBtn}</div>`;
     }
 
     function findDeltaForNextUP(dieline, opts, currentUps, dim, step, maxSteps) {
