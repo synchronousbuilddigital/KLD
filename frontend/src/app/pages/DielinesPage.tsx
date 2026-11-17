@@ -173,7 +173,16 @@ const mergeDielinesWithDefaults = (items: CatalogItemData[]): CatalogItemData[] 
 };
 
 export default function DielinesPage({ onNavigate }: DielinesPageProps) {
-  const [selectedBoxModel, setSelectedBoxModel] = useState<"rsc" | "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "pizza_box" | "fefco_0300" | null>(null);
+  const [selectedBoxModel, setSelectedBoxModel] = useState<"rsc" | "rte" | "te" | "auto_lock" | "cosmetic" | "cosmetic_b" | "button_hole" | "pizza_box" | "fefco_0300" | null>(() => {
+    try {
+      const returnModel = sessionStorage.getItem('dieline_return_to_studio');
+      if (returnModel) {
+        sessionStorage.removeItem('dieline_return_to_studio');
+        return returnModel as any;
+      }
+    } catch (e) {}
+    return null;
+  });
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dielineModels, setDielineModels] = useState<CatalogItemData[]>(() => {

@@ -435,9 +435,15 @@ export default function App() {
   });
   const [stepIndex, setStepIndex] = useState(0);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
-  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' }>({
-    isOpen: false,
-    model: 'rte'
+  const [activeDielineBox, setActiveDielineBox] = useState<{ isOpen: boolean; model: 'rte' | 'te' | 'auto_lock' | 'cosmetic' | 'cosmetic_b' | 'button_hole' | 'pizza_box' | 'fefco_0300' }>(() => {
+    try {
+      const returnModel = sessionStorage.getItem('dieline_return_to_studio');
+      if (returnModel) {
+        sessionStorage.removeItem('dieline_return_to_studio');
+        return { isOpen: true, model: returnModel as any };
+      }
+    } catch (e) {}
+    return { isOpen: false, model: 'rte' };
   });
 
   useEffect(() => {

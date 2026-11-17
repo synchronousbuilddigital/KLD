@@ -313,6 +313,8 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
       } catch (e) {}
       
       sessionStorage.setItem('dieline_tool_referrer', window.location.href);
+      sessionStorage.setItem('dieline_return_to_studio', store.boxModel || 'rte');
+      sessionStorage.setItem('dieline_current_model', store.boxModel || 'rte');
       window.location.href = '/dieline-tool.html';
     } catch (err) {
       console.error("Print Error:", err);
@@ -536,6 +538,16 @@ export const BoxStudioModal: React.FC<BoxStudioModalProps> = ({
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
             
+            {/* Print Sheet Layout / Imposition Button */}
+            <button
+              onClick={handlePrint}
+              title="Open Production Sheet Layout & Print Imposition"
+              className="px-3.5 py-2 rounded-xl text-[13px] font-bold text-zinc-800 bg-white border border-zinc-300 hover:border-zinc-900 transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+            >
+              <Printer className="w-4 h-4 text-zinc-700" />
+              <span>Print</span>
+            </button>
+
             {/* Design Online Button matching screenshot */}
             <button
               onClick={() => setIsEditorOpen(true)}
