@@ -201,64 +201,12 @@ const DielineSVG = React.forwardRef(function DielineSVG(props, forwardedRef) {
   const effectiveCutPaths = useMemo(() => {
     if (!cutPaths || !Array.isArray(cutPaths)) return cutPaths || [];
     if (boxModel === 'cosmetic') return cutPaths;
-    const hasClosed = cutPaths.some(p => {
-      if (typeof p !== 'string') return false;
-      const t = p.trim();
-      if (t.endsWith('Z') || t.endsWith('z')) return true;
-      const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
-      if (nums && nums.length > 4) {
-        const sx = parseFloat(nums[0]), sy = parseFloat(nums[1]);
-        const ex = parseFloat(nums[nums.length - 2]), ey = parseFloat(nums[nums.length - 1]);
-        return Math.hypot(ex - sx, ey - sy) < 0.05;
-      }
-      return false;
-    });
-    if (hasClosed) {
-      return cutPaths.map(p => {
-        if (typeof p !== 'string') return p;
-        const t = p.trim();
-        if (t.endsWith('Z') || t.endsWith('z')) return t;
-        const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
-        if (nums && nums.length > 4) {
-          const sx = parseFloat(nums[0]), sy = parseFloat(nums[1]);
-          const ex = parseFloat(nums[nums.length - 2]), ey = parseFloat(nums[nums.length - 1]);
-          if (Math.hypot(ex - sx, ey - sy) < 0.05) return `${t} Z`;
-        }
-        return t;
-      });
-    }
     return chainCutPaths(cutPaths);
   }, [cutPaths, boxModel]);
 
   const effectiveBleedPaths = useMemo(() => {
     if (!bleedPaths || !Array.isArray(bleedPaths)) return bleedPaths || [];
     if (boxModel === 'cosmetic') return bleedPaths;
-    const hasClosed = bleedPaths.some(p => {
-      if (typeof p !== 'string') return false;
-      const t = p.trim();
-      if (t.endsWith('Z') || t.endsWith('z')) return true;
-      const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
-      if (nums && nums.length > 4) {
-        const sx = parseFloat(nums[0]), sy = parseFloat(nums[1]);
-        const ex = parseFloat(nums[nums.length - 2]), ey = parseFloat(nums[nums.length - 1]);
-        return Math.hypot(ex - sx, ey - sy) < 0.05;
-      }
-      return false;
-    });
-    if (hasClosed) {
-      return bleedPaths.map(p => {
-        if (typeof p !== 'string') return p;
-        const t = p.trim();
-        if (t.endsWith('Z') || t.endsWith('z')) return t;
-        const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
-        if (nums && nums.length > 4) {
-          const sx = parseFloat(nums[0]), sy = parseFloat(nums[1]);
-          const ex = parseFloat(nums[nums.length - 2]), ey = parseFloat(nums[nums.length - 1]);
-          if (Math.hypot(ex - sx, ey - sy) < 0.05) return `${t} Z`;
-        }
-        return t;
-      });
-    }
     return chainCutPaths(bleedPaths);
   }, [bleedPaths, boxModel]);
 

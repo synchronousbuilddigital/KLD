@@ -9,36 +9,14 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
     return cutPaths || [];
   }
 
-  // If paths already contain a closed loop (ends with Z/z) or start matches end, return as-is (with Z appended if needed)
-  const hasClosedPath = cutPaths.some(p => {
+  // Only bypass chaining if EVERY path in cutPaths is already a closed loop (ends with Z/z)
+  const allAlreadyClosed = cutPaths.length > 0 && cutPaths.every(p => {
     if (typeof p !== 'string') return false;
     const t = p.trim();
-    if (t.endsWith('Z') || t.endsWith('z')) return true;
-    const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
-    if (nums && nums.length > 4) {
-      const sx = parseFloat(nums[0]);
-      const sy = parseFloat(nums[1]);
-      const ex = parseFloat(nums[nums.length - 2]);
-      const ey = parseFloat(nums[nums.length - 1]);
-      if (Math.hypot(ex - sx, ey - sy) < tol) return true;
-    }
-    return false;
+    return t.endsWith('Z') || t.endsWith('z');
   });
-  if (hasClosedPath) {
-    return cutPaths.map(p => {
-      if (typeof p !== 'string') return p;
-      const t = p.trim();
-      if (t.endsWith('Z') || t.endsWith('z')) return t;
-      const nums = t.match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
-      if (nums && nums.length > 4) {
-        const sx = parseFloat(nums[0]);
-        const sy = parseFloat(nums[1]);
-        const ex = parseFloat(nums[nums.length - 2]);
-        const ey = parseFloat(nums[nums.length - 1]);
-        if (Math.hypot(ex - sx, ey - sy) < tol) return `${t} Z`;
-      }
-      return t;
-    });
+  if (allAlreadyClosed) {
+    return cutPaths;
   }
 
   // 1. Extract all subpaths/segments from cutPaths
@@ -78,6 +56,13 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
 
   if (segments.length === 0) return cutPaths;
 
+  // Determine coordinate space scale: mm (> 50) vs inches (<= 50)
+  let maxCoord = 0;
+  for (const s of segments) {
+    maxCoord = Math.max(maxCoord, Math.abs(s.sx), Math.abs(s.sy), Math.abs(s.ex), Math.abs(s.ey));
+  }
+  const effectiveTol = maxCoord > 50 ? Math.max(tol, 1.0) : Math.min(tol, 0.05);
+
   // 2. Chaining algorithm:
   const pool = [...segments];
   const chains = [];
@@ -107,7 +92,7 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
       changed = false;
       
       // If loop already closed, stop extending this loop
-      if (chain.length > 2 && dist(currStart.x, currStart.y, currEnd.x, currEnd.y) < tol) {
+      if (chain.length > 2 && dist(currStart.x, currStart.y, currEnd.x, currEnd.y) < effectiveTol) {
         break;
       }
 
@@ -119,28 +104,28 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
         const cand = pool[i];
         
         const dEndStart = dist(currEnd.x, currEnd.y, cand.sx, cand.sy);
-        if (dEndStart < bestDist && dEndStart < tol) {
+        if (dEndStart < bestDist && dEndStart < effectiveTol) {
           bestDist = dEndStart;
           bestIdx = i;
           attachMode = 'end-start';
         }
         
         const dEndEnd = dist(currEnd.x, currEnd.y, cand.ex, cand.ey);
-        if (dEndEnd < bestDist && dEndEnd < tol) {
+        if (dEndEnd < bestDist && dEndEnd < effectiveTol) {
           bestDist = dEndEnd;
           bestIdx = i;
           attachMode = 'end-end';
         }
         
         const dStartEnd = dist(currStart.x, currStart.y, cand.ex, cand.ey);
-        if (dStartEnd < bestDist && dStartEnd < tol) {
+        if (dStartEnd < bestDist && dStartEnd < effectiveTol) {
           bestDist = dStartEnd;
           bestIdx = i;
           attachMode = 'start-end';
         }
         
         const dStartStart = dist(currStart.x, currStart.y, cand.sx, cand.sy);
-        if (dStartStart < bestDist && dStartStart < tol) {
+        if (dStartStart < bestDist && dStartStart < effectiveTol) {
           bestDist = dStartStart;
           bestIdx = i;
           attachMode = 'start-start';
@@ -190,8 +175,8 @@ export function chainCutPaths(cutPaths, tol = 0.5) {
       d += ` ${chain[i].body}`;
     }
 
-    const isClosed = dist(currStart.x, currStart.y, currEnd.x, currEnd.y) < tol;
-    if (isClosed && chain.length > 2) {
+    const isClosed = dist(currStart.x, currStart.y, currEnd.x, currEnd.y) < effectiveTol;
+    if (isClosed && chain.length >= 3) {
       d += ` Z`;
     }
     resultPaths.push(d);

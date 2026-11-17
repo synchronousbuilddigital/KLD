@@ -283,7 +283,7 @@ export function generateRTEDielineDXF({ L, W, H, T = 0.018, glueFlapWidth = 0.62
       const firstPt = chain[0].pts[0];
       const lastSeg = chain[chain.length - 1];
       const lastPt = lastSeg.pts[lastSeg.pts.length - 1];
-      if (nearlyEqual(firstPt, lastPt, 0.05)) {
+      if (chain.length >= 3 && nearlyEqual(firstPt, lastPt, 0.01)) {
         d += " Z";
       }
       return d;
