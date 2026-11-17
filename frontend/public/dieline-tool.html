@@ -2463,9 +2463,8 @@
     <!-- Hidden preserved controls container (preserves DOM elements required by JS event listeners) -->
     <div style="display:none !important;" aria-hidden="true">
       <input type="hidden" id="boxPreset" value="custom">
-      <input type="number" id="boxL" value="300">
-      <input type="number" id="boxWd" value="200">
-      <input type="number" id="boxHt" value="150">
+      <div id="lwhFields"><input type="number" id="boxL" value="300"><input type="number" id="boxWd" value="200"></div>
+      <div id="lwhFields2"><input type="number" id="boxHt" value="150"></div>
       <input type="file" id="artworkUpload" multiple>
       <div id="artworkList"></div>
       <div id="artworkControls"></div>
@@ -2474,7 +2473,14 @@
       <input type="number" id="artW">
       <input type="number" id="artH">
       <input type="number" id="artRot">
+      <input type="number" id="artRotation">
+      <input type="number" id="artOpacity">
+      <select id="artPanel"></select>
+      <input type="checkbox" id="artVisible">
+      <input type="checkbox" id="artLocked">
       <input type="checkbox" id="artScaleLock">
+      <input type="checkbox" id="artLockAspect">
+      <div id="artPanelNotice"></div>
       <button type="button" id="fitPanelBtn"></button>
       <button type="button" id="centerPanelBtn"></button>
       <button type="button" id="delArtBtn"></button>
@@ -2482,6 +2488,25 @@
       <button type="button" id="browseLibraryBtn"></button>
       <input type="text" id="librarySideSearch">
       <div id="librarySideNote"></div>
+      <button type="button" id="presetLoadBtn"></button>
+      <div id="colorTargetHelp"></div>
+      <div id="rgbColorField"></div>
+      <div id="cmykFields"></div>
+      <div id="pantoneFields"></div>
+      <input type="text" id="objRgbColor">
+      <input type="number" id="cmykC">
+      <input type="number" id="cmykM">
+      <input type="number" id="cmykY">
+      <input type="number" id="cmykK">
+      <div id="pantoneAssigned"></div>
+      <div id="pantoneChip"></div>
+      <div id="pantoneAssignedName"></div>
+      <input type="text" id="pantoneSearch">
+      <select id="colorMode"><option value="rgb">RGB</option></select>
+      <input type="checkbox" id="printPreview">
+      <button type="button" id="removePantoneBtn"></button>
+      <select id="outputProfile"><option value="sRGB">sRGB</option></select>
+      <button type="button" id="exportColorDataBtn"></button>
     </div>
 
     <div class="content">
@@ -2648,6 +2673,29 @@
   </main>
 
   <script>
+    // ============================================================
+    // Global Studio Navigation (defined upfront)
+    // ============================================================
+    window.goBackToStudio = function () {
+      try {
+        const currentModel = sessionStorage.getItem('dieline_current_model_key') || sessionStorage.getItem('dieline_current_model') || 'rte';
+        sessionStorage.setItem('dieline_return_to_studio', currentModel);
+      } catch (e) {}
+
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
+      }
+      const ref = sessionStorage.getItem('dieline_tool_referrer');
+      if (ref && !ref.includes('dieline-tool.html') && ref !== window.location.href) {
+        window.location.href = ref;
+      } else if (document.referrer && !document.referrer.includes('dieline-tool.html')) {
+        window.location.href = document.referrer;
+      } else {
+        window.location.href = '/dielines';
+      }
+    };
+
     // ============================================================
     // Floating Dock & Floating Panels Controller
     // ============================================================
@@ -5255,13 +5303,20 @@
     function updateBoxStyleUI() {
       // Only the imported DXF style remains, so L/W/H stay visible and the flat
       // width/height fields become computed (driven by L/W/H) rather than free-typed.
-      document.getElementById('lwhFields').style.display = '';
-      document.getElementById('lwhFields2').style.display = '';
-      document.getElementById('boxW').readOnly = true;
-      document.getElementById('boxH').readOnly = true;
-      document.getElementById('boxWLabel').textContent = 'Flat blank width (mm, computed)';
-      document.getElementById('boxHLabel').textContent = 'Flat blank height (mm, computed)';
-      document.getElementById('resetBoxBtn').style.display = '';
+      const lwh1 = document.getElementById('lwhFields');
+      if (lwh1) lwh1.style.display = '';
+      const lwh2 = document.getElementById('lwhFields2');
+      if (lwh2) lwh2.style.display = '';
+      const bw = document.getElementById('boxW');
+      if (bw) bw.readOnly = true;
+      const bh = document.getElementById('boxH');
+      if (bh) bh.readOnly = true;
+      const bwl = document.getElementById('boxWLabel');
+      if (bwl) bwl.textContent = 'Flat blank width (mm, computed)';
+      const bhl = document.getElementById('boxHLabel');
+      if (bhl) bhl.textContent = 'Flat blank height (mm, computed)';
+      const rb = document.getElementById('resetBoxBtn');
+      if (rb) rb.style.display = '';
     }
 
     // Scales the imported DXF's flat width/height proportionally to how L/W/H changed
@@ -6925,115 +6980,159 @@
     // syncs every Printing panel control to match it. Called whenever the
     // selection changes or the panel needs to reflect a fresh state.
     function refreshColorPanelUI() {
+      const targetHelp = document.getElementById('colorTargetHelp');
+      if (!targetHelp) return;
       const { color, label } = getColorTarget();
-      document.getElementById('colorTargetHelp').textContent = 'Applies to: ' + label;
+      targetHelp.textContent = 'Applies to: ' + label;
 
       const mode = PRINT_SETTINGS.colorMode;
-      document.getElementById('rgbColorField').style.display = mode === 'rgb' ? 'block' : 'none';
-      document.getElementById('cmykFields').style.display = mode === 'cmyk' ? 'block' : 'none';
-      document.getElementById('pantoneFields').style.display = mode === 'pantone' ? 'block' : 'none';
+      const rgbF = document.getElementById('rgbColorField');
+      if (rgbF) rgbF.style.display = mode === 'rgb' ? 'block' : 'none';
+      const cmykF = document.getElementById('cmykFields');
+      if (cmykF) cmykF.style.display = mode === 'cmyk' ? 'block' : 'none';
+      const panF = document.getElementById('pantoneFields');
+      if (panF) panF.style.display = mode === 'pantone' ? 'block' : 'none';
 
-      if (color.rgb) {
-        document.getElementById('objRgbColor').value = rgbToHex(color.rgb.r, color.rgb.g, color.rgb.b);
+      const objRgb = document.getElementById('objRgbColor');
+      if (color.rgb && objRgb) {
+        objRgb.value = rgbToHex(color.rgb.r, color.rgb.g, color.rgb.b);
       }
       const cmyk = color.cmyk || (color.rgb ? rgbToCmyk(color.rgb.r, color.rgb.g, color.rgb.b) : { c: 0, m: 0, y: 0, k: 0 });
-      document.getElementById('cmykC').value = cmyk.c;
-      document.getElementById('cmykM').value = cmyk.m;
-      document.getElementById('cmykY').value = cmyk.y;
-      document.getElementById('cmykK').value = cmyk.k;
+      const elC = document.getElementById('cmykC'); if (elC) elC.value = cmyk.c;
+      const elM = document.getElementById('cmykM'); if (elM) elM.value = cmyk.m;
+      const elY = document.getElementById('cmykY'); if (elY) elY.value = cmyk.y;
+      const elK = document.getElementById('cmykK'); if (elK) elK.value = cmyk.k;
 
       const assignedBox = document.getElementById('pantoneAssigned');
-      if (color.pantone) {
-        assignedBox.style.display = 'flex';
-        document.getElementById('pantoneChip').style.background = color.pantone.hex;
-        document.getElementById('pantoneAssignedName').textContent = color.pantone.name;
-      } else {
-        assignedBox.style.display = 'none';
+      if (assignedBox) {
+        if (color.pantone) {
+          assignedBox.style.display = 'flex';
+          const chip = document.getElementById('pantoneChip');
+          if (chip) chip.style.background = color.pantone.hex;
+          const panName = document.getElementById('pantoneAssignedName');
+          if (panName) panName.textContent = color.pantone.name;
+        } else {
+          assignedBox.style.display = 'none';
+        }
       }
-      renderPantoneResults(document.getElementById('pantoneSearch').value);
+      const panSearch = document.getElementById('pantoneSearch');
+      if (panSearch) renderPantoneResults(panSearch.value);
     }
 
-    document.getElementById('colorMode').addEventListener('change', (e) => {
-      PRINT_SETTINGS.colorMode = e.target.value;
-      const { color } = getColorTarget();
-      color.mode = e.target.value;
-      if (color.mode === 'cmyk' && !color.cmyk && color.rgb) {
-        color.cmyk = rgbToCmyk(color.rgb.r, color.rgb.g, color.rgb.b);
-      }
-      refreshColorPanelUI();
-    });
-
-    document.getElementById('printPreview').addEventListener('change', (e) => {
-      PRINT_SETTINGS.printPreview = e.target.checked;
-      renderDielineCanvas(document.getElementById('bleedEnabled').checked);
-      if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
-    });
-
-    document.getElementById('objRgbColor').addEventListener('input', (e) => {
-      const { color } = getColorTarget();
-      const rgb = hexToRgb(e.target.value);
-      color.rgb = rgb;
-      color.cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b); // keep CMYK in sync automatically
-      document.getElementById('cmykC').value = color.cmyk.c;
-      document.getElementById('cmykM').value = color.cmyk.m;
-      document.getElementById('cmykY').value = color.cmyk.y;
-      document.getElementById('cmykK').value = color.cmyk.k;
-      renderDielineCanvas(document.getElementById('bleedEnabled').checked);
-      if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
-    });
-
-    ['cmykC', 'cmykM', 'cmykY', 'cmykK'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
+    const colorModeEl = document.getElementById('colorMode');
+    if (colorModeEl) {
+      colorModeEl.addEventListener('change', (e) => {
+        PRINT_SETTINGS.colorMode = e.target.value;
         const { color } = getColorTarget();
-        const c = Math.max(0, Math.min(100, parseFloat(document.getElementById('cmykC').value) || 0));
-        const m = Math.max(0, Math.min(100, parseFloat(document.getElementById('cmykM').value) || 0));
-        const y = Math.max(0, Math.min(100, parseFloat(document.getElementById('cmykY').value) || 0));
-        const k = Math.max(0, Math.min(100, parseFloat(document.getElementById('cmykK').value) || 0));
-        color.cmyk = { c, m, y, k };
-        color.rgb = cmykToRgb(c, m, y, k); // keep RGB in sync automatically
-        document.getElementById('objRgbColor').value = rgbToHex(color.rgb.r, color.rgb.g, color.rgb.b);
-        renderDielineCanvas(document.getElementById('bleedEnabled').checked);
+        color.mode = e.target.value;
+        if (color.mode === 'cmyk' && !color.cmyk && color.rgb) {
+          color.cmyk = rgbToCmyk(color.rgb.r, color.rgb.g, color.rgb.b);
+        }
+        refreshColorPanelUI();
+      });
+    }
+
+    const printPreviewEl = document.getElementById('printPreview');
+    if (printPreviewEl) {
+      printPreviewEl.addEventListener('change', (e) => {
+        PRINT_SETTINGS.printPreview = e.target.checked;
+        const bleedEl = document.getElementById('bleedEnabled');
+        renderDielineCanvas(bleedEl ? bleedEl.checked : false);
         if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
       });
+    }
+
+    const objRgbColorEl = document.getElementById('objRgbColor');
+    if (objRgbColorEl) {
+      objRgbColorEl.addEventListener('input', (e) => {
+        const { color } = getColorTarget();
+        const rgb = hexToRgb(e.target.value);
+        color.rgb = rgb;
+        color.cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+        const elC = document.getElementById('cmykC'); if (elC) elC.value = color.cmyk.c;
+        const elM = document.getElementById('cmykM'); if (elM) elM.value = color.cmyk.m;
+        const elY = document.getElementById('cmykY'); if (elY) elY.value = color.cmyk.y;
+        const elK = document.getElementById('cmykK'); if (elK) elK.value = color.cmyk.k;
+        const bleedEl = document.getElementById('bleedEnabled');
+        renderDielineCanvas(bleedEl ? bleedEl.checked : false);
+        if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
+      });
+    }
+
+    ['cmykC', 'cmykM', 'cmykY', 'cmykK'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', () => {
+          const { color } = getColorTarget();
+          const elC = document.getElementById('cmykC');
+          const elM = document.getElementById('cmykM');
+          const elY = document.getElementById('cmykY');
+          const elK = document.getElementById('cmykK');
+          const c = elC ? Math.max(0, Math.min(100, parseFloat(elC.value) || 0)) : 0;
+          const m = elM ? Math.max(0, Math.min(100, parseFloat(elM.value) || 0)) : 0;
+          const y = elY ? Math.max(0, Math.min(100, parseFloat(elY.value) || 0)) : 0;
+          const k = elK ? Math.max(0, Math.min(100, parseFloat(elK.value) || 0)) : 0;
+          color.cmyk = { c, m, y, k };
+          color.rgb = cmykToRgb(c, m, y, k);
+          const objR = document.getElementById('objRgbColor');
+          if (objR) objR.value = rgbToHex(color.rgb.r, color.rgb.g, color.rgb.b);
+          const bleedEl = document.getElementById('bleedEnabled');
+          renderDielineCanvas(bleedEl ? bleedEl.checked : false);
+          if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
+        });
+      }
     });
 
-    document.getElementById('pantoneSearch').addEventListener('input', (e) => {
-      renderPantoneResults(e.target.value);
-    });
+    const panSearchEl = document.getElementById('pantoneSearch');
+    if (panSearchEl) {
+      panSearchEl.addEventListener('input', (e) => {
+        renderPantoneResults(e.target.value);
+      });
+    }
 
-    document.getElementById('removePantoneBtn').addEventListener('click', () => {
-      const { color } = getColorTarget();
-      color.pantone = null;
-      refreshColorPanelUI();
-      renderDielineCanvas(document.getElementById('bleedEnabled').checked);
-      if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
-    });
+    const removePanBtn = document.getElementById('removePantoneBtn');
+    if (removePanBtn) {
+      removePanBtn.addEventListener('click', () => {
+        const { color } = getColorTarget();
+        color.pantone = null;
+        refreshColorPanelUI();
+        const bleedEl = document.getElementById('bleedEnabled');
+        renderDielineCanvas(bleedEl ? bleedEl.checked : false);
+        if (manualNestingResult) renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
+      });
+    }
 
-    document.getElementById('outputProfile').addEventListener('change', (e) => {
-      PRINT_SETTINGS.outputProfile = e.target.value;
-    });
+    const outputProfileEl = document.getElementById('outputProfile');
+    if (outputProfileEl) {
+      outputProfileEl.addEventListener('change', (e) => {
+        PRINT_SETTINGS.outputProfile = e.target.value;
+      });
+    }
 
-    document.getElementById('exportColorDataBtn').addEventListener('click', () => {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        printSettings: PRINT_SETTINGS,
-        design: DESIGN_COLOR,
-        objects: manualPlacements.map((p, i) => ({
-          index: i,
-          x: p.x, y: p.y, angleDeg: p.angleDeg,
-          color: p.color || null
-        }))
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'dieline-color-data.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
+    const exportColorDataEl = document.getElementById('exportColorDataBtn');
+    if (exportColorDataEl) {
+      exportColorDataEl.addEventListener('click', () => {
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          printSettings: PRINT_SETTINGS,
+          design: DESIGN_COLOR,
+          objects: manualPlacements.map((p, i) => ({
+            index: i,
+            x: p.x, y: p.y, angleDeg: p.angleDeg,
+            color: p.color || null
+          }))
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dieline-color-data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
 
     // Initialize the panel to match the default state on load.
     refreshColorPanelUI();
@@ -10291,14 +10390,26 @@
           : 'Saved <b>' + res.name + '</b> for this session only &mdash; this browser is blocking local storage, so use <b>Export all</b> to keep it.', !res.durable);
       });
 
-      document.getElementById('presetLoadBtn').addEventListener('click', function () {
-        const n = pickEl.value;
-        if (!n) { note('No preset selected.', true); return; }
-        const data = load(n);
-        if (!data) { note('Preset not found.', true); return; }
-        restore(data);
-        note('Loaded <b>' + n + '</b>.');
-      });
+      const loadBtn = document.getElementById('presetLoadBtn');
+      if (loadBtn) {
+        loadBtn.addEventListener('click', function () {
+          const n = pickEl ? pickEl.value : '';
+          if (!n) { note('No preset selected.', true); return; }
+          const data = load(n);
+          if (!data) { note('Preset not found.', true); return; }
+          restore(data);
+          note('Loaded <b>' + n + '</b>.');
+        });
+      }
+      if (pickEl) {
+        pickEl.addEventListener('change', function () {
+          const n = pickEl.value;
+          if (n) {
+            const data = load(n);
+            if (data) { restore(data); note('Loaded <b>' + n + '</b>.'); }
+          }
+        });
+      }
 
       document.getElementById('presetDeleteBtn').addEventListener('click', function () {
         const n = pickEl.value;
@@ -10381,8 +10492,15 @@
       }
 
       function checkAutoLoadDXF() {
+        if (dxfUploaded) return;
         try {
-          const autoLoadParamsRaw = localStorage.getItem("autoLoadParams");
+          const autoLoadParamsRaw = sessionStorage.getItem("autoLoadParams") || localStorage.getItem("autoLoadParams");
+          const syncDxf = sessionStorage.getItem("autoLoadDXF") || localStorage.getItem("autoLoadDXF");
+          if (syncDxf && !dxfUploaded) {
+            applyLoadedDXFData(syncDxf, autoLoadParamsRaw);
+            if (typeof autoFitAndRender === 'function') autoFitAndRender();
+            return;
+          }
 
           const req = indexedDB.open('dieline_db', 2);
           req.onupgradeneeded = (e) => {
@@ -10410,7 +10528,12 @@
         }
       }
 
-      window.addEventListener('DOMContentLoaded', checkAutoLoadDXF);
+      if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', checkAutoLoadDXF);
+      } else {
+        checkAutoLoadDXF();
+      }
+      setTimeout(checkAutoLoadDXF, 100);
       setTimeout(checkAutoLoadDXF, 400);
     })();
   </script>
