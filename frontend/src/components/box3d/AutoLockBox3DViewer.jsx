@@ -71,6 +71,72 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
         return shape;
     }
 
+    function createLipShape(w, h) {
+        const shape = new THREE.Shape();
+        const hw = w / 2;
+        const notchX = w * (0.5 / 120.6);
+        const lipHW = hw - notchX;
+        const straightH = h * (6.25 / 14.7);
+        const tipR = Math.min(w * (8.0 / 120.6), h * 0.48);
+
+        const yBot = -h / 2;
+        const yTop = h / 2;
+        const yStraight = yBot + straightH;
+
+        shape.moveTo(-lipHW, yBot);
+        shape.lineTo(-lipHW, yStraight);
+        shape.quadraticCurveTo(-lipHW, yTop, -lipHW + tipR, yTop);
+        shape.lineTo(lipHW - tipR, yTop);
+        shape.quadraticCurveTo(lipHW, yTop, lipHW, yStraight);
+        shape.lineTo(lipHW, yBot);
+        shape.closePath();
+        return shape;
+    }
+
+    function createDustP2Shape(w, h) {
+        const shape = new THREE.Shape();
+        const hw = w / 2;
+        const yBot = -h / 2;
+        const yTop = h / 2;
+        
+        const cStartX = hw - w * (17.154 / 60.6);
+        const cEndX = cStartX + w * (8.769 / 60.6);
+        const cEndY = yTop - w * (6.975 / 60.6);
+
+        shape.moveTo(-hw + w * (1.065 / 60.6), yBot);
+        shape.lineTo(-hw + w * (3.5 / 60.6), yBot + w * (3.5 / 60.6));
+        shape.lineTo(-hw + w * (4.5 / 60.6), yTop);
+        shape.lineTo(cStartX, yTop);
+        shape.quadraticCurveTo(cEndX, yTop, cEndX, cEndY);
+        shape.lineTo(cEndX + w * (5.085 / 60.6), cEndY - w * (22.025 / 60.6));
+        shape.lineTo(cEndX + w * (8.085 / 60.6), cEndY - w * (25.025 / 60.6));
+        shape.lineTo(hw - w * (0.3 / 60.6), yBot);
+        shape.closePath();
+        return shape;
+    }
+
+    function createDustP4Shape(w, h) {
+        const shape = new THREE.Shape();
+        const hw = w / 2;
+        const yBot = -h / 2;
+        const yTop = h / 2;
+
+        const cStartX = hw - w * (17.154 / 60.6);
+        const cEndX = cStartX + w * (8.769 / 60.6);
+        const cEndY = yTop - w * (6.975 / 60.6);
+
+        shape.moveTo(hw - w * (1.065 / 60.6), yBot);
+        shape.lineTo(hw - w * (3.5 / 60.6), yBot + w * (3.5 / 60.6));
+        shape.lineTo(hw - w * (4.5 / 60.6), yTop);
+        shape.lineTo(-cStartX, yTop);
+        shape.quadraticCurveTo(-cEndX, yTop, -cEndX, cEndY);
+        shape.lineTo(-cEndX - w * (5.085 / 60.6), cEndY - w * (22.025 / 60.6));
+        shape.lineTo(-cEndX - w * (8.085 / 60.6), cEndY - w * (25.025 / 60.6));
+        shape.lineTo(-hw + w * (0.3 / 60.6), yBot);
+        shape.closePath();
+        return shape;
+    }
+
     function createWideBotShape(w, h) {
         const shape = new THREE.Shape();
         shape.moveTo(-w / 2, h / 2);
@@ -106,8 +172,9 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
     const coverGeom = coverRes.geo;
     const windowFilmCover = coverRes.filmGeom;
 
-    const lipHoles = getPanelWindowHoles("p1_top_lip", decals, createRectShape(L, TUCK_FLAP_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -TUCK_FLAP_H/2);
-    const lipRes = createUVGeometry(createRectShape(L, TUCK_FLAP_H), L, TUCK_FLAP_H, 21.0, 5.0, 120.6, 14.7, L / 2, 0, lipHoles);
+    const lipShape = createLipShape(L, TUCK_FLAP_H);
+    const lipHoles = getPanelWindowHoles("p1_top_lip", decals, lipShape, L, W, H, manuL, manuW, manuH, dims, nT, 0, -TUCK_FLAP_H/2);
+    const lipRes = createUVGeometry(lipShape, L, TUCK_FLAP_H, 21.0, 5.0, 120.6, 14.7, L / 2, 0, lipHoles);
     const lipGeom = lipRes.geo;
     const windowFilmLip = lipRes.filmGeom;
 
@@ -126,8 +193,9 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
     const p2Geom = p2Res.geo;
     const windowFilmGeomP2 = p2Res.filmGeom;
     
-    const p2DustHoles = getPanelWindowHoles("p2_top_dust", decals, createRectShape(W, DUST_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
-    const p2DustRes = createUVGeometry(createRectShape(W, DUST_H), W, DUST_H, 141.6, 42.35, 60.6, 38.0, W / 2, 0, p2DustHoles);
+    const p2DustShape = createDustP2Shape(W, DUST_H);
+    const p2DustHoles = getPanelWindowHoles("p2_top_dust", decals, p2DustShape, L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
+    const p2DustRes = createUVGeometry(p2DustShape, W, DUST_H, 141.6, 42.35, 60.6, 38.0, W / 2, 0, p2DustHoles);
     const p2DustGeom = p2DustRes.geo;
     const windowFilmP2Dust = p2DustRes.filmGeom;
 
@@ -151,8 +219,9 @@ function buildAutoLockGeometries(L, W, H, nT, decals, manuL, manuW, manuH, dims)
     const p4Geom = p4Res.geo;
     const windowFilmGeomP4 = p4Res.filmGeom;
     
-    const p4DustHoles = getPanelWindowHoles("p4_top_dust", decals, createRectShape(W, DUST_H), L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
-    const p4DustRes = createUVGeometry(createRectShape(W, DUST_H), W, DUST_H, 322.8, 42.35, 60.6, 38.0, W / 2, 0, p4DustHoles);
+    const p4DustShape = createDustP4Shape(W, DUST_H);
+    const p4DustHoles = getPanelWindowHoles("p4_top_dust", decals, p4DustShape, L, W, H, manuL, manuW, manuH, dims, nT, 0, -DUST_H/2);
+    const p4DustRes = createUVGeometry(p4DustShape, W, DUST_H, 322.8, 42.35, 60.6, 38.0, W / 2, 0, p4DustHoles);
     const p4DustGeom = p4DustRes.geo;
     const windowFilmP4Dust = p4DustRes.filmGeom;
 
