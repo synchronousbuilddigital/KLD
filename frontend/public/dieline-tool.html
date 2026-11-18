@@ -862,7 +862,9 @@
       display: flex;
       justify-content: center;
       position: relative;
-      background: #f8fafc;
+      background-color: #f8fafc;
+      background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+      background-size: 20px 20px;
     }
 
     canvas {
@@ -959,94 +961,103 @@
       line-height: 1.1;
     }
 
+    .stat {
+      background: #ffffff;
+      border: 1px solid #e4e4e7;
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      padding: 16px 20px;
+      transition: all 0.16s ease;
+      position: relative;
+    }
+
+    .stat:hover {
+      transform: translateY(-2px);
+      border-color: #d4d4d8;
+      box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.06);
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .stat-pill {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: #f4f4f5;
+      color: #52525b;
+      border: 1px solid #e4e4e7;
+    }
+
+    .stat .k {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #71717a;
+    }
+
+    .stat .v {
+      font-family: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #09090b;
+    }
+
     .stat.green {
-      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-      border-color: #bbf7d0;
+      border-top: 3px solid #10b981;
     }
-
-    .stat.green .k {
-      color: #166534;
-    }
-
-    .stat.green .v {
-      color: #15803d;
-    }
-
     .stat.green .stat-pill {
-      background: #bbf7d0;
-      color: #166534;
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
     }
 
     .stat.amber {
-      background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
-      border-color: #fef08a;
+      border-top: 3px solid #f59e0b;
     }
-
-    .stat.amber .k {
-      color: #854d0e;
-    }
-
-    .stat.amber .v {
-      color: #b45309;
-    }
-
     .stat.amber .stat-pill {
-      background: #fef08a;
-      color: #854d0e;
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
     }
 
     .stat.red {
-      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      border-top: 3px solid #ef4444;
+    }
+    .stat.red .stat-pill {
+      background: #fef2f2;
+      color: #b91c1c;
       border-color: #fecaca;
     }
 
-    .stat.red .k {
-      color: #991b1b;
-    }
-
-    .stat.red .v {
-      color: #b91c1c;
-    }
-
-    .stat.red .stat-pill {
-      background: #fecaca;
-      color: #991b1b;
-    }
-
     .stat.blue {
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-top: 3px solid #3b82f6;
+    }
+    .stat.blue .stat-pill {
+      background: #eff6ff;
+      color: #1d4ed8;
       border-color: #bfdbfe;
     }
 
-    .stat.blue .k {
-      color: #1e40af;
-    }
-
-    .stat.blue .v {
-      color: #1d4ed8;
-    }
-
-    .stat.blue .stat-pill {
-      background: #bfdbfe;
-      color: #1e40af;
-    }
-
     .stat.orange {
-      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-      border-color: #fed7aa;
+      border-top: 3px solid #71717a;
     }
-
-    .stat.orange .k {
-      color: #9a3412;
-    }
-
-    .stat.orange .v {
-      color: #c2410c;
-    }
-
     .stat.orange .stat-pill {
-      background: #fed7aa;
-      color: #9a3412;
+      background: #fafaf9;
+      color: #52525b;
+      border-color: #e7e5e4;
     }
 
     .kld-dashboard-ribbon .bar-wrap {
@@ -2629,8 +2640,21 @@
             </div>
           </div>
 
-          <div style="display:flex; align-items:center; gap:16px;">
-            <div class="legend" style="display:flex; align-items:center; gap:14px; font-size:11.5px; color:#64748b; background:#f8fafc; padding:4px 12px; border-radius:8px; border:1px solid #e2e8f0;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <!-- On-Canvas Manual Arrangement Quick Action Pill -->
+            <div id="canvasManualToolbar" style="display:none; align-items:center; gap:6px; background:#ffffff; border:1.5px solid #2563eb; padding:3px 8px; border-radius:9999px; box-shadow:0 2px 8px rgba(37,99,235,0.12);">
+              <span style="font-size:11px; font-weight:700; color:#2563eb; display:flex; align-items:center; gap:5px; padding:0 4px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:#2563eb; display:inline-block;"></span> Manual Mode
+              </span>
+              <div style="width:1px; height:14px; background:#cbd5e1;"></div>
+              <button type="button" class="secondary-btn" style="font-size:11px; padding:3px 8px; margin:0; border-radius:6px;" onclick="document.getElementById('addDielineBtn').click()">+ Add</button>
+              <button type="button" class="secondary-btn" style="font-size:11px; padding:3px 8px; margin:0; border-radius:6px;" onclick="document.getElementById('rotateSelectedBtn').click()" title="Rotate 90 deg">Rotate</button>
+              <button type="button" class="secondary-btn" style="font-size:11px; padding:3px 8px; margin:0; border-radius:6px; color:#ef4444;" onclick="document.getElementById('deleteSelectedBtn').click()" title="Delete instance">Delete</button>
+              <button type="button" class="secondary-btn" style="font-size:11px; padding:3px 8px; margin:0; border-radius:6px;" onclick="document.getElementById('undoManualBtn').click()" title="Undo (Ctrl+Z)">Undo</button>
+              <button type="button" class="secondary-btn" style="font-size:11px; padding:3px 8px; margin:0; border-radius:6px; color:#71717a;" onclick="document.getElementById('manualMode').click()">Exit</button>
+            </div>
+
+            <div class="legend" style="display:flex; align-items:center; gap:14px; font-size:11.5px; color:#64748b; background:#ffffff; padding:5px 12px; border-radius:8px; border:1px solid #e4e4e7; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
               <div class="item" style="display:flex; align-items:center; gap:6px;"><span class="swatch" style="display:inline-block; width:12px; height:0; border-top:2px solid #231f1c;"></span> Cut</div>
               <div class="item" style="display:flex; align-items:center; gap:6px;"><span class="swatch dash" style="display:inline-block; width:12px; height:0; border-top:2px dashed #2563eb;"></span> Crease</div>
               <div class="item" style="display:flex; align-items:center; gap:6px;"><span class="swatch dot" style="display:inline-block; width:12px; height:0; border-top:2px dotted #10b981;"></span> Bleed</div>
@@ -4922,6 +4946,27 @@
           }
         }
 
+        // Draw crisp CAD selection handles around the selected instance in manual mode
+        if (isManual && isSelected) {
+          ctx.save();
+          ctx.strokeStyle = '#2563eb';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
+          const bw = variant.widthMM * currentScale;
+          const bh = variant.heightMM * currentScale;
+          ctx.strokeRect(ox - 2, oy - 2, bw + 4, bh + 4);
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#2563eb';
+          ctx.setLineDash([]);
+          ctx.lineWidth = 1.5;
+          const hs = 6;
+          [[ox - 2, oy - 2], [ox + bw + 2, oy - 2], [ox - 2, oy + bh + 2], [ox + bw + 2, oy + bh + 2]].forEach(([hx, hy]) => {
+            ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+            ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs);
+          });
+          ctx.restore();
+        }
+
         ctx.restore();
       }
     }
@@ -4998,8 +5043,8 @@
       updateManualStats();
       renderSheetCanvas(manualNestingResult, currentSheetOpts().bleedEnabled);
     }
-    cvs.addEventListener('mousemove', (e) => {
-      if (draggedIdx === -1 || !document.getElementById('manualMode').checked) return;
+    window.addEventListener('mousemove', (e) => {
+      if (draggedIdx === -1 || !document.getElementById('manualMode')?.checked) return;
       pendingSheetMouseEvent = e;
       if (sheetMouseRafScheduled) return;
       sheetMouseRafScheduled = true;
@@ -5010,7 +5055,7 @@
       });
     });
 
-    cvs.addEventListener('mouseup', () => {
+    window.addEventListener('mouseup', () => {
       if (draggedIdx === -1) return;
       if (dragMoved && preDragSnapshot) {
         const oldP = preDragSnapshot.placements[draggedIdx];
@@ -5166,22 +5211,42 @@
 
     // ---------- UI Events ----------
     document.getElementById('manualMode').addEventListener('change', (e) => {
-      if (!dxfUploaded) { e.target.checked = false; return; }
+      const activeD = getActiveDieline();
+      if (!activeD || !activeD.cuts || activeD.cuts.length === 0) {
+        e.target.checked = false;
+        return;
+      }
+      dxfUploaded = true;
       const isManual = e.target.checked;
-      document.getElementById('manualControls').style.display = isManual ? 'block' : 'none';
-      document.getElementById('autoControls').style.display = isManual ? 'none' : 'block';
+      const mCtrl = document.getElementById('manualControls');
+      if (mCtrl) mCtrl.style.display = isManual ? 'block' : 'none';
+      const aCtrl = document.getElementById('autoControls');
+      if (aCtrl) aCtrl.style.display = isManual ? 'none' : 'block';
+      const cToolbar = document.getElementById('canvasManualToolbar');
+      if (cToolbar) cToolbar.style.display = isManual ? 'inline-flex' : 'none';
+
       selectedIdx = -1;
       draggedIdx = -1;
       lastMergedBleeds = null;
       updateManualBtnStates();
       refreshColorPanelUI();
       if (isManual) {
-        if (!manualPlacementsInitialized) {
-          manualPlacements = JSON.parse(JSON.stringify(manualNestingResult.placements));
+        if (typeof switchCanvasTab === 'function') switchCanvasTab('sheet');
+        if (!manualPlacementsInitialized || !manualPlacements || manualPlacements.length === 0) {
+          if (!manualNestingResult || !manualNestingResult.placements || manualNestingResult.placements.length === 0) {
+            manualNestingResult = computeNestingBestFit(activeD, currentSheetOpts());
+          }
+          if (manualNestingResult && manualNestingResult.placements && manualNestingResult.placements.length > 0) {
+            manualPlacements = JSON.parse(JSON.stringify(manualNestingResult.placements));
+          } else {
+            const margin = parseFloat(document.getElementById('margin')?.value) || 10;
+            manualPlacements = [{ x: margin, y: margin, angleDeg: 0, variant: BASE_VARIANT }];
+          }
           manualPlacementsInitialized = true;
           manualUndoStack = [];
           manualRedoStack = [];
         }
+        ensureManualFullVariants();
         syncManualPlacementVariants();
         updateManualStats();
         updateManualBtnStates();
@@ -5198,9 +5263,12 @@
     });
 
     document.getElementById('addDielineBtn').addEventListener('click', () => {
-      if (!manualNestingResult) return;
+      if (!manualNestingResult) {
+        const activeD = getActiveDieline();
+        manualNestingResult = computeNestingBestFit(activeD, currentSheetOpts()) || { placements: [], stats: {} };
+      }
       pushManualUndo();
-      const margin = parseFloat(document.getElementById('margin').value) || 0;
+      const margin = parseFloat(document.getElementById('margin')?.value) || 10;
       manualPlacements.push({ x: margin, y: margin, angleDeg: 0, variant: BASE_VARIANT });
       selectedIdx = manualPlacements.length - 1;
       lastMergedBleeds = null;
